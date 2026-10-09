@@ -41,7 +41,7 @@ export const useSettingsStore = defineStore('settings', () => {
           .schema('threads')
           .from('auto_reply_settings')
           .select('*')
-          .eq('account_id', accData.id')
+          .eq('account_id', accData.id)
           .maybeSingle()
 
         if (setData) settings.value = setData
