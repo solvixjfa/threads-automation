@@ -143,7 +143,7 @@ async function schedulePost() {
 
     const isoDate = new Date(scheduledDate.value).toISOString()
 
-    // Menggunakan account_id sesuai nama kolom di database
+    // generate idempotency_key unik untuk memenuhi NOT NULL constraint
     const { error } = await supabase
       .schema('threads')
       .from('scheduled_posts')
@@ -151,7 +151,8 @@ async function schedulePost() {
         account_id: accounts.id,
         text: postText.value,
         scheduled_for: isoDate,
-        status: 'scheduled'
+        status: 'scheduled',
+        idempotency_key: crypto.randomUUID()
       })
 
     if (error) throw error
