@@ -16,23 +16,25 @@
           @click="connectThreads"
           class="bg-white hover:bg-zinc-200 text-black text-xs font-bold px-4 py-2 rounded-lg transition"
         >
-          {{ settingsStore.account ? 'Re-connect Account' : 'Connect Account' }}
+          {{ settingsStore.account?.connection_status === 'connected' ? 'Re-connect Account' : 'Connect Account' }}
         </button>
       </div>
 
-      <div v-if="settingsStore.account" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
         <div class="p-4 bg-black border border-white/10 rounded-lg space-y-1">
           <span class="text-zinc-500">Username Terhubung</span>
-          <p class="text-white font-bold text-sm">@{{ settingsStore.account.username || 'Unlinked' }}</p>
+          <p class="text-white font-bold text-sm">@{{ settingsStore.account?.username || 'Belum Terhubung' }}</p>
         </div>
         <div class="p-4 bg-black border border-white/10 rounded-lg space-y-1">
           <span class="text-zinc-500">Status Koneksi</span>
-          <p class="text-emerald-400 font-bold text-sm uppercase tracking-wider">{{ settingsStore.account.connection_status }}</p>
+          <p :class="['font-bold text-sm uppercase tracking-wider', settingsStore.account?.connection_status === 'connected' ? 'text-emerald-400' : 'text-amber-400']">
+            {{ settingsStore.account?.connection_status || 'Disconnected' }}
+          </p>
         </div>
       </div>
 
       <!-- Emergency Kill Switch -->
-      <div v-if="settingsStore.account" class="p-5 bg-black border border-white/10 rounded-lg flex items-center justify-between mt-4">
+      <div v-if="settingsStore.account?.id" class="p-5 bg-black border border-white/10 rounded-lg flex items-center justify-between mt-4">
         <div>
           <h3 class="text-xs font-bold text-rose-500 uppercase tracking-wider">Emergency Kill Switch</h3>
           <p class="text-[11px] text-zinc-400 mt-1">Hentikan paksa semua jadwal publish & auto-reply.</p>
@@ -71,7 +73,7 @@
 
         <div class="space-y-2">
           <label class="font-medium text-zinc-300">Knowledge Base (Fakta Bisnis)</label>
-          <textarea v-model="form.knowledge_base" rows="4" class="w-full bg-black border border-white/10 text-white rounded-lg p-3 focus:outline-none focus:border-white transition resize-none"></textarea>
+          <textarea v-model="form.knowledge_base" rows="4" placeholder="Tuliskan FAQ, detail layanan, atau fakta bisnis..." class="w-full bg-black border border-white/10 text-white rounded-lg p-3 focus:outline-none focus:border-white transition resize-none"></textarea>
         </div>
 
         <div class="pt-4 flex justify-end">
@@ -102,10 +104,7 @@ function connectThreads() {
 }
 
 async function handleSave() {
-  const res = await settingsStore.saveSettings(form.value)
-  if (res.success) {
-    alert('Pengaturan AI berhasil disimpan!')
-  }
+  await settingsStore.saveSettings(form.value)
 }
 
 onMounted(async () => {
@@ -113,8 +112,8 @@ onMounted(async () => {
   if (settingsStore.settings) {
     form.value.enabled = settingsStore.settings.enabled
     form.value.mode = settingsStore.settings.mode
-    form.value.tone_prompt = settingsStore.settings.tone_prompt
-    form.value.knowledge_base = settingsStore.settings.knowledge_base
+    form.value.tone_prompt = settingsStore.settings.tone_prompt || 'Balas dengan ramah, profesional, dan ringkas.'
+    form.value.knowledge_base = settingsStore.settings.knowledge_base || ''
   }
 })
 </script>
