@@ -27,7 +27,8 @@ async function getEmbedding(text: string, apiKey: string): Promise<number[] | nu
     );
     const data = await res.json();
     return data.embedding?.values || null;
-  } catch {
+  } catch (e) {
+    console.error("[WORKER-REPLIES] Embedding error:", e);
     return null;
   }
 }
@@ -65,9 +66,17 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const geminiApiKey = Deno.env.get("GEMINI_API_KEY")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
+
+    if (!supabaseUrl || !serviceRoleKey || !geminiApiKey) {
+      return new Response(
+        JSON.stringify({ error: "Missing required environment variables." }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     let action = "poll";
@@ -77,16 +86,15 @@ serve(async (req) => {
 
     try {
       const body = await req.json();
-      action = body.action || "poll";
-      commentText = body.comment || "";
-      approveLogId = body.log_id || "";
-      finalTextToPublish = body.final_text || "";
+      action = body?.action || "poll";
+      commentText = body?.comment || "";
+      approveLogId = body?.log_id || "";
+      finalTextToPublish = body?.final_text || "";
     } catch {
-      // Default action is poll
+      // Body kosong / invalid JSON -> fallback default
     }
 
-    // Ambil akun Threads terhubung
-    const { data: account } = await supabase
+    const { data: account, error: accErr } = await supabase
       .schema("threads")
       .from("threads_accounts")
       .select("*")
@@ -94,7 +102,7 @@ serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    if (!account) {
+    if (accErr || !account) {
       return new Response(
         JSON.stringify({ error: "Belum ada akun Threads tersambung." }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -104,7 +112,7 @@ serve(async (req) => {
     const accessToken = account.settings?.access_token || "";
     const threadsUserId = account.threads_user_id || "";
 
-    // ACTION 1: PUBLISH APPROVED REPLY TO THREADS API
+    // ACTION 1: PUBLISH APPROVED REPLY
     if (action === "publish_reply") {
       if (!approveLogId || !finalTextToPublish) {
         return new Response(
@@ -118,13 +126,17 @@ serve(async (req) => {
         .from("auto_reply_logs")
         .select("*")
         .eq("id", approveLogId)
-        .single();
+        .maybeSingle();
 
-      if (!targetLog) throw new Error("Log balasan tidak ditemukan.");
+      if (!targetLog) {
+        return new Response(
+          JSON.stringify({ error: "Log balasan tidak ditemukan." }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
 
       const targetReplyId = targetLog.llm_meta?.threads_reply_id || targetLog.reply_id;
 
-      // 1. Create Reply Container
       const createRes = await fetch(`https://graph.threads.net/v1.0/${threadsUserId}/threads`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -138,7 +150,6 @@ serve(async (req) => {
       const createData = await createRes.json();
       if (createData.error) throw new Error(createData.error.message);
 
-      // 2. Publish Container
       const pubRes = await fetch(`https://graph.threads.net/v1.0/${threadsUserId}/threads_publish`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -150,7 +161,6 @@ serve(async (req) => {
       const pubData = await pubRes.json();
       if (pubData.error) throw new Error(pubData.error.message);
 
-      // Update Log Status
       await supabase
         .schema("threads")
         .from("auto_reply_logs")
@@ -167,7 +177,7 @@ serve(async (req) => {
       );
     }
 
-    // ACTION 2: SIMULATE OR POLL COMMENTS FROM THREADS GRAPH API
+    // ACTION 2: POLL / SIMULATE WITH SAFE PARALLEL PROMISE.ALL
     const { data: settings } = await supabase
       .schema("threads")
       .from("auto_reply_settings")
@@ -181,14 +191,12 @@ serve(async (req) => {
     let itemsToProcess: Array<{ reply_id: string; comment: string; media_id: string }> = [];
 
     if (commentText) {
-      // Manual/Simulated
       itemsToProcess.push({
         reply_id: crypto.randomUUID(),
         comment: commentText,
         media_id: "simulated_media"
       });
     } else {
-      // Real Polling dari Meta Threads API
       const { data: publishedPosts } = await supabase
         .schema("threads")
         .from("scheduled_posts")
@@ -198,57 +206,57 @@ serve(async (req) => {
         .order("created_at", { ascending: false })
         .limit(5);
 
-      for (const p of publishedPosts || []) {
-        if (!p.published_media_id || !accessToken) continue;
-        try {
-          const res = await fetch(`https://graph.threads.net/v1.0/${p.published_media_id}/replies?access_token=${accessToken}`);
-          const resData = await res.json();
-
-          if (resData.data && Array.isArray(resData.data)) {
-            for (const rep of resData.data) {
-              itemsToProcess.push({
+      if (publishedPosts && publishedPosts.length > 0 && accessToken) {
+        const fetchPromises = publishedPosts.map(async (p) => {
+          try {
+            const res = await fetch(`https://graph.threads.net/v1.0/${p.published_media_id}/replies?access_token=${accessToken}`);
+            const resData = await res.json();
+            if (resData?.data && Array.isArray(resData.data)) {
+              return resData.data.map((rep: any) => ({
                 reply_id: rep.id,
                 comment: rep.text || "",
                 media_id: p.published_media_id
-              });
+              }));
             }
+          } catch (e) {
+            console.error("[WORKER-REPLIES] Fetch replies error:", e);
           }
-        } catch {
-          // Ignore polling errors for individual posts
-        }
+          return [];
+        });
+
+        const results = await Promise.all(fetchPromises);
+        itemsToProcess = results.flat();
       }
     }
 
-    const processedLogs = [];
+    // SAFE PARALLEL PROCESSING (Bungkus try-catch per item)
+    const processPromises = itemsToProcess.map(async (item) => {
+      try {
+        const { data: existing } = await supabase
+          .schema("threads")
+          .from("auto_reply_logs")
+          .select("id")
+          .eq("reply_id", item.reply_id)
+          .maybeSingle();
 
-    for (const item of itemsToProcess) {
-      // Cek apakah reply_id sudah pernah dicatat di auto_reply_logs
-      const { data: existing } = await supabase
-        .schema("threads")
-        .from("auto_reply_logs")
-        .select("id")
-        .eq("reply_id", item.reply_id)
-        .maybeSingle();
+        if (existing) return null;
 
-      if (existing) continue; // Skip jika sudah pernah diolah
+        let ragContexts: string[] = [];
+        const commentVector = await getEmbedding(item.comment, geminiApiKey);
+        if (commentVector) {
+          const { data: matchedDocs } = await supabase.rpc("match_brand_knowledge", {
+            query_embedding: JSON.stringify(commentVector),
+            match_threshold: 0.25,
+            match_count: 5,
+            p_account_id: account.id
+          }, { schema: "threads" });
 
-      // RAG Vector Similarity Search
-      let ragContexts: string[] = [];
-      const commentVector = await getEmbedding(item.comment, geminiApiKey);
-      if (commentVector) {
-        const { data: matchedDocs } = await supabase.rpc("match_brand_knowledge", {
-          query_embedding: JSON.stringify(commentVector),
-          match_threshold: 0.25,
-          match_count: 5,
-          p_account_id: account.id
-        }, { schema: "threads" });
-
-        if (matchedDocs && matchedDocs.length > 0) {
-          ragContexts = matchedDocs.map((d: any) => `[FAKTA KNOWLEDGE BASE: ${d.title}] ${d.content}`);
+          if (matchedDocs && matchedDocs.length > 0) {
+            ragContexts = matchedDocs.map((d: any) => `[FAKTA KNOWLEDGE BASE: ${d.title}] ${d.content}`);
+          }
         }
-      }
 
-      const systemPrompt = `Kamu adalah AI Auto-Reply Assistant untuk Threads (Meta).
+        const systemPrompt = `Kamu adalah AI Auto-Reply Assistant untuk Threads (Meta).
 Tugasmu membalas komentar audiens secara natural berdasarkan fakta bisnis & persona yang diberikan.
 
 FAKTA/DOKUMEN RAG TERKAIT (Vector Search Result):
@@ -269,52 +277,60 @@ ATURAN BALASAN:
   "reply": "isi teks balasan..."
 }`;
 
-      const result = await generateReplyWithFallback(geminiApiKey, systemPrompt);
-      if (!result.success || !result.data) continue;
+        const result = await generateReplyWithFallback(geminiApiKey, systemPrompt);
+        if (!result.success || !result.data) return null;
 
-      let rawText = result.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-      rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+        let rawText = result.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+        rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
 
-      let generatedText = "";
-      try {
-        const parsed = JSON.parse(rawText);
-        generatedText = parsed.reply || rawText;
-      } catch {
-        generatedText = rawText;
+        let generatedText = "";
+        try {
+          const parsed = JSON.parse(rawText);
+          generatedText = parsed.reply || rawText;
+        } catch {
+          generatedText = rawText;
+        }
+
+        const initialStatus = mode === "auto" ? "sent" : "pending";
+        const { data: insertedLog } = await supabase
+          .schema("threads")
+          .from("auto_reply_logs")
+          .insert({
+            account_id: account.id,
+            reply_id: item.reply_id,
+            status: initialStatus,
+            generated_text: generatedText,
+            final_text: generatedText,
+            llm_meta: {
+              model: result.modelUsed,
+              incoming_comment: item.comment,
+              threads_reply_id: item.reply_id,
+              media_id: item.media_id,
+              rag_matched_count: ragContexts.length
+            }
+          })
+          .select('*')
+          .single();
+
+        return insertedLog;
+      } catch (itemErr) {
+        console.error("[WORKER-REPLIES] Error processing item:", itemErr);
+        return null;
       }
+    });
 
-      const initialStatus = mode === "auto" ? "sent" : "pending";
-      const { data: insertedLog } = await supabase
-        .schema("threads")
-        .from("auto_reply_logs")
-        .insert({
-          account_id: account.id,
-          reply_id: item.reply_id,
-          status: initialStatus,
-          generated_text: generatedText,
-          final_text: generatedText,
-          llm_meta: {
-            model: result.modelUsed,
-            incoming_comment: item.comment,
-            threads_reply_id: item.reply_id,
-            media_id: item.media_id,
-            rag_matched_count: ragContexts.length
-          }
-        })
-        .select('*')
-        .single();
-
-      if (insertedLog) processedLogs.push(insertedLog);
-    }
+    const processedResults = await Promise.all(processPromises);
+    const validLogs = processedResults.filter(Boolean);
 
     return new Response(
-      JSON.stringify({ success: true, processedCount: processedLogs.length, logs: processedLogs }),
+      JSON.stringify({ success: true, processedCount: validLogs.length, logs: validLogs }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
-  } catch (err: any) {
+  } catch (globalErr: any) {
+    console.error("[WORKER-REPLIES] Uncaught global error:", globalErr);
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: globalErr.message || "Global execution error." }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
