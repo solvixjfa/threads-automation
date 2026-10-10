@@ -1,46 +1,28 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://meta.ixiera.id";
 
   try {
     const url = new URL(req.url);
-    let code = url.searchParams.get("code");
-    let state = url.searchParams.get("state");
+    const code = url.searchParams.get("code");
+    const state = url.searchParams.get("state");
+    const errorReason = url.searchParams.get("error_reason") || url.searchParams.get("error");
 
-    // Fallback jika dipanggil via POST body JSON
-    if (!code || !state) {
-      try {
-        const body = await req.json();
-        code = body.code || code;
-        state = body.state || state;
-      } catch (_) {
-        // Biarkan jika request tidak memiliki body JSON
-      }
+    if (errorReason) {
+      return Response.redirect(`${appBaseUrl}/settings?error=${encodeURIComponent(errorReason)}`, 302);
     }
 
-    const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://meta.ixiera.id";
-
     if (!code || !state) {
-      return new Response(JSON.stringify({ error: "Missing code or state in request" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return Response.redirect(`${appBaseUrl}/settings?error=Missing_code_or_state`, 302);
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // 1. Validasi OAuth State
+    // 1. Check & Consume OAuth State
     const { data: stateData, error: stateError } = await supabase
       .schema("threads")
       .from("oauth_states")
@@ -49,14 +31,10 @@ serve(async (req) => {
       .eq("used", false)
       .single();
 
-    if (stateError || !stateData || new Date(stateData.expires_at) < new Date()) {
-      return new Response(JSON.stringify({ error: "Invalid or expired state" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (stateError || !stateData) {
+      return Response.redirect(`${appBaseUrl}/settings?error=Invalid_or_expired_state`, 302);
     }
 
-    // Tandai state sudah dipakai
     await supabase
       .schema("threads")
       .from("oauth_states")
@@ -67,7 +45,7 @@ serve(async (req) => {
     const appSecret = Deno.env.get("THREADS_APP_SECRET")!;
     const redirectUri = Deno.env.get("THREADS_REDIRECT_URI")!;
 
-    // 2. Tukar Authorization Code dengan Short-Lived Access Token
+    // 2. Exchange Short-Lived Access Token
     const tokenRes = await fetch("https://graph.threads.net/oauth/access_token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -81,33 +59,41 @@ serve(async (req) => {
     });
 
     const tokenData = await tokenRes.json();
-    if (tokenData.error) throw new Error(tokenData.error.message || JSON.stringify(tokenData.error));
+    if (tokenData.error) {
+      const errMsg = tokenData.error.message || tokenData.error_message || JSON.stringify(tokenData.error);
+      return Response.redirect(`${appBaseUrl}/settings?error=${encodeURIComponent(errMsg)}`, 302);
+    }
 
     const shortToken = tokenData.access_token;
 
-    // 3. Tukar Short-Lived Token ke Long-Lived Token (60 Hari)
+    // 3. Exchange Long-Lived Token (60 Days)
     const longTokenRes = await fetch(
       `https://graph.threads.net/access_token?grant_type=th_exchange_token&client_secret=${appSecret}&access_token=${shortToken}`
     );
     const longTokenData = await longTokenRes.json();
-    if (longTokenData.error) throw new Error(longTokenData.error.message || JSON.stringify(longTokenData.error));
+    if (longTokenData.error) {
+      const errMsg = longTokenData.error.message || JSON.stringify(longTokenData.error);
+      return Response.redirect(`${appBaseUrl}/settings?error=${encodeURIComponent(errMsg)}`, 302);
+    }
 
     const longToken = longTokenData.access_token;
     const expiresIn = longTokenData.expires_in || 5184000;
     const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
 
-    // 4. Ambil Profil Threads User
+    // 4. Fetch Threads User Profile
     const profileRes = await fetch(`https://graph.threads.net/v1.0/me?fields=id,username&access_token=${longToken}`);
     const profileData = await profileRes.json();
-    if (profileData.error) throw new Error(profileData.error.message || JSON.stringify(profileData.error));
+    if (profileData.error) {
+      const errMsg = profileData.error.message || JSON.stringify(profileData.error);
+      return Response.redirect(`${appBaseUrl}/settings?error=${encodeURIComponent(errMsg)}`, 302);
+    }
 
-    // 5. Simpan Akun ke Database threads.threads_accounts
+    // 5. Save/Upsert Account to DB threads.threads_accounts
     const { error: accountError } = await supabase
       .schema("threads")
       .from("threads_accounts")
       .upsert(
         {
-          user_id: stateData.user_id,
           threads_user_id: profileData.id,
           username: profileData.username,
           connection_status: "connected",
@@ -118,16 +104,15 @@ serve(async (req) => {
         { onConflict: "threads_user_id" }
       );
 
-    if (accountError) throw accountError;
+    if (accountError) {
+      return Response.redirect(`${appBaseUrl}/settings?error=${encodeURIComponent(accountError.message)}`, 302);
+    }
 
-    // 6. Redirect kembali ke Web App Settings
-    return Response.redirect(`${appBaseUrl}/settings?connected=true`, 302);
+    // 6. SUCCESS! Redirect back to Frontend Settings with Success Flag
+    return Response.redirect(`${appBaseUrl}/settings?connected=true&username=${profileData.username}`, 302);
 
   } catch (err: any) {
-    console.error("OAuth Callback Error:", err);
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    console.error("Callback Error:", err);
+    return Response.redirect(`${appBaseUrl}/settings?error=${encodeURIComponent(err.message)}`, 302);
   }
 });

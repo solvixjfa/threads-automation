@@ -5,6 +5,16 @@
       <p class="text-zinc-400 text-sm mt-1">Atur koneksi akun Threads, prompt AI Gemini, serta batas keamanan otomatisasi.</p>
     </div>
 
+    <!-- Notification Banners -->
+    <div v-if="successMsg" class="p-4 bg-emerald-950/80 border border-emerald-500/40 text-emerald-200 text-xs rounded-xl flex items-center justify-between">
+      <span>{{ successMsg }}</span>
+      <button @click="successMsg = ''" class="text-emerald-400 font-bold">✕</button>
+    </div>
+    <div v-if="errorMsg" class="p-4 bg-rose-950/80 border border-rose-500/40 text-rose-200 text-xs rounded-xl flex items-center justify-between">
+      <span>Error OAuth: {{ errorMsg }}</span>
+      <button @click="errorMsg = ''" class="text-rose-400 font-bold">✕</button>
+    </div>
+
     <!-- SECTION 1: ACCOUNT CONNECTION -->
     <div class="bg-zinc-950/80 backdrop-blur-xl border border-white/10 rounded-xl p-6 space-y-6 shadow-2xl">
       <div class="flex items-center justify-between border-b border-white/10 pb-4">
@@ -14,9 +24,10 @@
         </div>
         <button
           @click="connectThreads"
-          class="bg-white hover:bg-zinc-200 text-black text-xs font-bold px-4 py-2 rounded-lg transition"
+          :disabled="connecting"
+          class="bg-white hover:bg-zinc-200 text-black text-xs font-bold px-4 py-2 rounded-lg transition disabled:opacity-50"
         >
-          {{ settingsStore.account?.connection_status === 'connected' ? 'Re-connect Account' : 'Connect Account' }}
+          {{ connecting ? 'Memengarahkan...' : (settingsStore.account?.connection_status === 'connected' ? 'Re-connect Account' : 'Connect Account') }}
         </button>
       </div>
 
@@ -31,20 +42,6 @@
             {{ settingsStore.account?.connection_status || 'Disconnected' }}
           </p>
         </div>
-      </div>
-
-      <!-- Emergency Kill Switch -->
-      <div v-if="settingsStore.account?.id" class="p-5 bg-black border border-white/10 rounded-lg flex items-center justify-between mt-4">
-        <div>
-          <h3 class="text-xs font-bold text-rose-500 uppercase tracking-wider">Emergency Kill Switch</h3>
-          <p class="text-[11px] text-zinc-400 mt-1">Hentikan paksa semua jadwal publish & auto-reply.</p>
-        </div>
-        <button
-          @click="settingsStore.toggleKillSwitch(!settingsStore.account.kill_switch)"
-          :class="['px-5 py-2 text-xs font-bold rounded-lg transition uppercase tracking-wider', settingsStore.account.kill_switch ? 'bg-rose-600 text-white' : 'bg-zinc-900 border border-white/10 text-white hover:bg-zinc-800']"
-        >
-          {{ settingsStore.account.kill_switch ? 'Kill Switch Active' : 'Enable Kill Switch' }}
-        </button>
       </div>
     </div>
 
@@ -88,9 +85,18 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useSettingsStore } from '../stores/settings'
+import { supabase } from '../lib/supabase'
 
+const route = useRoute()
+const router = useRouter()
 const settingsStore = useSettingsStore()
+
+const connecting = ref(false)
+const successMsg = ref('')
+const errorMsg = ref('')
+
 const form = ref({
   enabled: false,
   mode: 'review' as 'review' | 'auto',
@@ -98,9 +104,21 @@ const form = ref({
   knowledge_base: ''
 })
 
-function connectThreads() {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://xtarsaurwclktwhhryas.supabase.co'
-  window.location.href = `${supabaseUrl}/functions/v1/threads-oauth-start`
+async function connectThreads() {
+  connecting.value = true
+  try {
+    const { data, error } = await supabase.functions.invoke('threads-oauth-start')
+    if (error) throw error
+    if (data?.url) {
+      window.location.href = data.url
+    } else {
+      throw new Error('Gagal mendapatkan URL otorisasi Threads')
+    }
+  } catch (err: any) {
+    alert('Error Connect Threads: ' + err.message)
+  } finally {
+    connecting.value = false
+  }
 }
 
 async function handleSave() {
@@ -108,6 +126,16 @@ async function handleSave() {
 }
 
 onMounted(async () => {
+  // Tangkap query params hasil redirect callback
+  if (route.query.connected === 'true') {
+    const username = route.query.username as string
+    successMsg.value = `Berhasil! Akun Threads @${username || ''} sukses terhubung ke sistem Ixiera.`
+    router.replace({ query: {} })
+  } else if (route.query.error) {
+    errorMsg.value = decodeURIComponent(route.query.error as string)
+    router.replace({ query: {} })
+  }
+
   await settingsStore.fetchAccountAndSettings()
   if (settingsStore.settings) {
     form.value.enabled = settingsStore.settings.enabled
