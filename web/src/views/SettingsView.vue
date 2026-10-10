@@ -1,101 +1,81 @@
 <template>
   <div class="max-w-4xl mx-auto space-y-8">
     <div>
-      <h1 class="text-2xl font-bold text-slate-100">Settings & Configuration</h1>
-      <p class="text-slate-400 text-sm mt-1">Atur koneksi akun Threads, prompt AI Gemini, serta batas keamanan otomatisasi.</p>
+      <h1 class="text-2xl font-bold text-white tracking-tight">Settings & Configuration</h1>
+      <p class="text-zinc-400 text-sm mt-1">Atur koneksi akun Threads, prompt AI Gemini, serta batas keamanan otomatisasi.</p>
     </div>
 
-    <!-- SECTION 1: ACCOUNT CONNECTION & EMERGENCY KILL SWITCH -->
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-6 shadow-xl">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+    <!-- SECTION 1: ACCOUNT CONNECTION -->
+    <div class="bg-zinc-950/80 backdrop-blur-xl border border-white/10 rounded-xl p-6 space-y-6 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-white/10 pb-4">
         <div>
-          <h2 class="text-base font-semibold text-slate-200">Koneksi Akun Threads</h2>
-          <p class="text-xs text-slate-400">Status tautan OAuth Meta Threads API.</p>
+          <h2 class="text-base font-semibold text-white">Koneksi Akun Threads</h2>
+          <p class="text-xs text-zinc-400">Status tautan OAuth Meta Threads API.</p>
         </div>
-        
         <button
           @click="connectThreads"
-          class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium px-4 py-2 rounded-lg transition"
+          class="bg-white hover:bg-zinc-200 text-black text-xs font-bold px-4 py-2 rounded-lg transition"
         >
-          {{ settingsStore.account ? 'Re-connect Account' : 'Connect Threads Account' }}
+          {{ settingsStore.account ? 'Re-connect Account' : 'Connect Account' }}
         </button>
       </div>
 
       <div v-if="settingsStore.account" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-        <div class="p-4 bg-slate-950 border border-slate-800 rounded-lg space-y-1">
-          <span class="text-slate-500">Username Terhubung</span>
-          <p class="text-slate-200 font-bold text-sm">@{{ settingsStore.account.username || 'Unlinked' }}</p>
+        <div class="p-4 bg-black border border-white/10 rounded-lg space-y-1">
+          <span class="text-zinc-500">Username Terhubung</span>
+          <p class="text-white font-bold text-sm">@{{ settingsStore.account.username || 'Unlinked' }}</p>
         </div>
-
-        <div class="p-4 bg-slate-950 border border-slate-800 rounded-lg space-y-1">
-          <span class="text-slate-500">Status Koneksi</span>
-          <p class="text-emerald-400 font-bold text-sm uppercase">{{ settingsStore.account.connection_status }}</p>
+        <div class="p-4 bg-black border border-white/10 rounded-lg space-y-1">
+          <span class="text-zinc-500">Status Koneksi</span>
+          <p class="text-emerald-400 font-bold text-sm uppercase tracking-wider">{{ settingsStore.account.connection_status }}</p>
         </div>
       </div>
 
       <!-- Emergency Kill Switch -->
-      <div v-if="settingsStore.account" class="p-4 bg-rose-950/20 border border-rose-900/40 rounded-lg flex items-center justify-between">
+      <div v-if="settingsStore.account" class="p-5 bg-black border border-white/10 rounded-lg flex items-center justify-between mt-4">
         <div>
-          <h3 class="text-xs font-bold text-rose-300">Emergency Kill Switch</h3>
-          <p class="text-[11px] text-rose-400/80">Hentikan secara paksa semua jadwal publish dan auto-reply AI.</p>
+          <h3 class="text-xs font-bold text-rose-500 uppercase tracking-wider">Emergency Kill Switch</h3>
+          <p class="text-[11px] text-zinc-400 mt-1">Hentikan paksa semua jadwal publish & auto-reply.</p>
         </div>
         <button
           @click="settingsStore.toggleKillSwitch(!settingsStore.account.kill_switch)"
-          :class="['px-4 py-1.5 text-xs font-bold rounded-lg transition', settingsStore.account.kill_switch ? 'bg-rose-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700']"
+          :class="['px-5 py-2 text-xs font-bold rounded-lg transition uppercase tracking-wider', settingsStore.account.kill_switch ? 'bg-rose-600 text-white' : 'bg-zinc-900 border border-white/10 text-white hover:bg-zinc-800']"
         >
-          {{ settingsStore.account.kill_switch ? 'KILL SWITCH ACTIVE' : 'Enable Kill Switch' }}
+          {{ settingsStore.account.kill_switch ? 'Kill Switch Active' : 'Enable Kill Switch' }}
         </button>
       </div>
     </div>
 
-    <!-- SECTION 2: GEMINI AI AUTO-REPLY CONFIGURATION -->
-    <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-6 shadow-xl">
-      <h2 class="text-base font-semibold text-slate-200 border-b border-slate-800 pb-4">Pengaturan Gemini AI Auto-Reply</h2>
+    <!-- SECTION 2: GEMINI AI CONFIGURATION -->
+    <div class="bg-zinc-950/80 backdrop-blur-xl border border-white/10 rounded-xl p-6 space-y-6 shadow-2xl">
+      <h2 class="text-base font-semibold text-white border-b border-white/10 pb-4">Pengaturan Gemini AI Auto-Reply</h2>
 
-      <div class="space-y-4 text-xs">
+      <div class="space-y-5 text-sm">
         <div class="flex items-center justify-between">
-          <label class="font-medium text-slate-300">Aktifkan Auto-Reply Engine</label>
-          <input
-            type="checkbox"
-            v-model="form.enabled"
-            class="w-4 h-4 accent-indigo-600 rounded"
-          />
+          <label class="font-medium text-zinc-300">Aktifkan Auto-Reply Engine</label>
+          <input type="checkbox" v-model="form.enabled" class="w-4 h-4 rounded bg-black border-white/10" />
         </div>
 
-        <div class="space-y-1">
-          <label class="font-medium text-slate-300">Mode Operasi</label>
-          <select v-model="form.mode" class="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg p-2.5 focus:outline-none">
+        <div class="space-y-2">
+          <label class="font-medium text-zinc-300">Mode Operasi</label>
+          <select v-model="form.mode" class="w-full bg-black border border-white/10 text-white rounded-lg p-3 focus:outline-none focus:border-white transition">
             <option value="review">Review Queue (Setujui manual sebelum terkirim)</option>
             <option value="auto">Fully Automatic (Kirim otomatis via Gemini)</option>
           </select>
         </div>
 
-        <div class="space-y-1">
-          <label class="font-medium text-slate-300">Tone & Instruksi AI (Tone Prompt)</label>
-          <textarea
-            v-model="form.tone_prompt"
-            rows="3"
-            placeholder="Balas dengan ramah, suportif, dan sertakan gaya santai khas Threads..."
-            class="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg p-3 focus:outline-none"
-          ></textarea>
+        <div class="space-y-2">
+          <label class="font-medium text-zinc-300">Tone & Instruksi AI (Prompt)</label>
+          <textarea v-model="form.tone_prompt" rows="3" class="w-full bg-black border border-white/10 text-white rounded-lg p-3 focus:outline-none focus:border-white transition resize-none"></textarea>
         </div>
 
-        <div class="space-y-1">
-          <label class="font-medium text-slate-300">Knowledge Base (Fakta & Referensi AI)</label>
-          <textarea
-            v-model="form.knowledge_base"
-            rows="4"
-            placeholder="Tuliskan FAQ, harga produk, atau detail layanan bisnis kamu di sini agar AI tidak berhalusinasi..."
-            class="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-lg p-3 focus:outline-none"
-          ></textarea>
+        <div class="space-y-2">
+          <label class="font-medium text-zinc-300">Knowledge Base (Fakta Bisnis)</label>
+          <textarea v-model="form.knowledge_base" rows="4" class="w-full bg-black border border-white/10 text-white rounded-lg p-3 focus:outline-none focus:border-white transition resize-none"></textarea>
         </div>
 
         <div class="pt-4 flex justify-end">
-          <button
-            @click="handleSave"
-            :disabled="settingsStore.loading"
-            class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-5 py-2.5 rounded-lg transition disabled:opacity-50"
-          >
+          <button @click="handleSave" :disabled="settingsStore.loading" class="bg-white hover:bg-zinc-200 text-black font-bold px-6 py-2.5 rounded-lg transition disabled:opacity-50">
             {{ settingsStore.loading ? 'Menyimpan...' : 'Simpan Pengaturan' }}
           </button>
         </div>
@@ -109,7 +89,6 @@ import { ref, onMounted } from 'vue'
 import { useSettingsStore } from '../stores/settings'
 
 const settingsStore = useSettingsStore()
-
 const form = ref({
   enabled: false,
   mode: 'review' as 'review' | 'auto',
