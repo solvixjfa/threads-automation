@@ -15,19 +15,18 @@
       <textarea
         v-model="postText"
         rows="5"
-        placeholder="Tulis ide brilian lu di sini..."
+        placeholder="Tulis draf postingan di sini..."
         class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none"
         maxlength="500"
       ></textarea>
 
       <div class="flex flex-wrap items-center gap-3 pt-2">
-        <!-- TOMBOL AI YANG UDAH HIDUP -->
         <button 
           @click="checkScore" 
           :disabled="isChecking || !postText"
           class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold py-2.5 px-4 rounded-lg transition border border-indigo-100 disabled:opacity-50"
         >
-          {{ isChecking ? 'Menganalisa...' : '✨ Cek Skor AI' }}
+          {{ isChecking ? 'Menganalisa...' : 'Cek Skor AI' }}
         </button>
 
         <div class="flex-1 flex justify-end items-center gap-3">
@@ -56,7 +55,7 @@
       <div v-if="loading" class="p-8 text-center text-xs text-slate-400 font-medium animate-pulse">Memuat data...</div>
       
       <div v-else-if="posts.length === 0" class="p-8 text-center text-xs text-slate-400 font-medium">
-        Belum ada postingan yang nyantol.
+        Belum ada postingan dalam antrean.
       </div>
 
       <div v-else class="divide-y divide-slate-100">
@@ -99,6 +98,7 @@ function formatDate(isoString: string) {
 
 async function loadPosts() {
   const { data } = await supabase
+    .schema('threads')
     .from('scheduled_posts')
     .select('*')
     .order('created_at', { ascending: false })
@@ -107,7 +107,6 @@ async function loadPosts() {
   loading.value = false
 }
 
-// Fungsi Panggil AI Score (Nembak ke Edge Function score-draft)
 async function checkScore() {
   isChecking.value = true
   try {
@@ -115,37 +114,48 @@ async function checkScore() {
       body: { text: postText.value }
     })
     if (error) throw error
-    alert(`📊 Skor: ${data.score}/100\n\n💡 Feedback:\n${data.feedback || data.message || 'Mantap, gas posting!'}`)
+    
+    const scoreVal = data?.score || data?.result?.score || 'N/A'
+    const feedbackVal = data?.feedback || data?.result?.feedback || data?.message || 'Tidak ada catatan tambahan.'
+    
+    alert(`Skor AI: ${scoreVal}/100\n\nCatatan:\n${feedbackVal}`)
   } catch (err: any) {
-    alert('Gagal nembak AI: ' + err.message)
+    alert('Gagal menghubungi AI: ' + err.message)
   } finally {
     isChecking.value = false
   }
 }
 
 async function schedulePost() {
-  if (!postText.value || !scheduledDate.value) return alert('Isi teks dan pilih tanggal dulu bos.')
+  if (!postText.value || !scheduledDate.value) return alert('Isi teks dan pilih tanggal terlebih dahulu.')
   isSaving.value = true
   
   try {
-    // FIX: Gunakan maybeSingle() biar kebal dari error RLS/Duplicate constraint
-    const { data: accounts, error: accErr } = await supabase.from('threads_accounts').select('id').limit(1).maybeSingle()
-    if (accErr) throw new Error('Database error: ' + accErr.message)
-    if (!accounts) throw new Error('Akun Threads belum tersambung. Hubungkan di menu Settings dulu.')
+    const { data: accounts, error: accErr } = await supabase
+      .schema('threads')
+      .from('threads_accounts')
+      .select('id')
+      .limit(1)
+      .maybeSingle()
+      
+    if (accErr) throw new Error(accErr.message)
+    if (!accounts) throw new Error('Akun Threads belum tersambung. Hubungkan di menu Settings.')
 
     const isoDate = new Date(scheduledDate.value).toISOString()
 
-    const { error } = await supabase.from('scheduled_posts').insert({
-      threads_account_id: accounts.id,
-      text: postText.value,
-      scheduled_for: isoDate,
-      status: 'scheduled'
-    })
+    const { error } = await supabase
+      .schema('threads')
+      .from('scheduled_posts')
+      .insert({
+        threads_account_id: accounts.id,
+        text: postText.value,
+        scheduled_for: isoDate,
+        status: 'scheduled'
+      })
 
     if (error) throw error
     postText.value = ''
     
-    // Reset date ke 1 jam dari sekarang
     const d = new Date()
     d.setHours(d.getHours() + 1)
     d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
@@ -153,7 +163,7 @@ async function schedulePost() {
     
     await loadPosts()
   } catch (err: any) {
-    alert(err.message)
+    alert('Database error: ' + err.message)
   } finally {
     isSaving.value = false
   }
