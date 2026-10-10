@@ -1,16 +1,101 @@
 <template>
   <div class="space-y-8 max-w-5xl">
     <div>
-      <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Settings & RAG Knowledge Base</h1>
-      <p class="text-slate-500 text-sm mt-1">Kelola instruksi persona, fakta portofolio, dan pengetahuan AI untuk penjadwalan & auto-reply.</p>
+      <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Pengaturan & Konfigurasi System</h1>
+      <p class="text-slate-500 text-sm mt-1">Kelola koneksi akun Threads, automasi balasan komentar, dan RAG Knowledge Base.</p>
     </div>
 
-    <!-- Section 1: Form Tambah Pengetahuan / RAG Context -->
+    <!-- Section 1: Connect Threads Account Status -->
     <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-4">
         <div>
-          <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Tambah Pengetahuan RAG Baru</h2>
-          <p class="text-xs text-slate-500 mt-0.5">Dokumen ini otomatis dibaca Gemini saat membuat draf post atau membalas komentar.</p>
+          <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Koneksi Akun Threads</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Status tautan OAuth Meta Threads API.</p>
+        </div>
+        <span 
+          class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md"
+          :class="accountConnected ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'"
+        >
+          {{ accountConnected ? 'Tersambung' : 'Belum Terhubung' }}
+        </span>
+      </div>
+
+      <div class="flex items-center justify-between text-xs pt-1">
+        <div>
+          <p class="font-bold text-slate-800">{{ accountUsername ? `@${accountUsername}` : 'Tidak Ada Akun Aktif' }}</p>
+          <p class="text-slate-500 text-[11px] mt-0.5">{{ accountConnected ? 'Sistem siap mempublikasikan postingan dan membaca interaksi.' : 'Hubungkan akun Threads kamu untuk mulai automasi.' }}</p>
+        </div>
+        <button 
+          @click="connectThreads" 
+          class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-sm text-xs"
+        >
+          {{ accountConnected ? 'Hubungkan Ulang' : 'Hubungkan Threads' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Section 2: Auto Reply Settings -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div>
+          <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Pengaturan Auto Reply</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Atur perilaku AI saat membalas komentar audiens secara otomatis.</p>
+        </div>
+        <label class="relative inline-flex items-center cursor-pointer">
+          <input type="checkbox" v-model="autoReply.enabled" class="sr-only peer">
+          <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+        </label>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+        <div class="space-y-1">
+          <label class="text-[11px] font-bold text-slate-700 uppercase">Mode Operasi</label>
+          <select
+            v-model="autoReply.mode"
+            class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+          >
+            <option value="review">Mode Review (Draf masuk ke Inbox untuk di-approve)</option>
+            <option value="auto">Mode Fully Auto (AI langsung kirim balasan)</option>
+          </select>
+        </div>
+
+        <div class="space-y-1">
+          <label class="text-[11px] font-bold text-slate-700 uppercase">Batas Maksimal / Jam</label>
+          <input
+            v-model.number="autoReply.max_per_hour"
+            type="number"
+            class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+          />
+        </div>
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-[11px] font-bold text-slate-700 uppercase">Instruksi Tone & Gaya Bahasa Balasan</label>
+        <textarea
+          v-model="autoReply.tone_prompt"
+          rows="3"
+          placeholder="Contoh: Gunakan bahasa kasual, ramah, tidak menggurui, dan selalu jawab pertanyaan teknis dengan to the point..."
+          class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none"
+        ></textarea>
+      </div>
+
+      <div class="flex justify-end pt-2">
+        <button
+          @click="saveAutoReplySettings"
+          :disabled="isSavingSettings"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition shadow-md disabled:opacity-50"
+        >
+          {{ isSavingSettings ? 'Menyimpan...' : 'Simpan Pengaturan Auto Reply' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Section 3: Form Tambah Pengetahuan RAG Knowledge Base -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div>
+          <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide">RAG Knowledge Base</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Dokumen ini dibaca Gemini saat membuat draf post dan menyusun balasan komentar.</p>
         </div>
       </div>
 
@@ -18,7 +103,7 @@
         <div class="space-y-1">
           <label class="text-[11px] font-bold text-slate-700 uppercase">Kategori</label>
           <select
-            v-model="form.category"
+            v-model="ragForm.category"
             class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
           >
             <option value="portfolio">Portfolio / Project</option>
@@ -31,9 +116,9 @@
         <div class="md:col-span-2 space-y-1">
           <label class="text-[11px] font-bold text-slate-700 uppercase">Judul Dokumen</label>
           <input
-            v-model="form.title"
+            v-model="ragForm.title"
             type="text"
-            placeholder="Contoh: Customer Churn Prediction / Aturan Gaya Bahasa"
+            placeholder="Contoh: Customer Churn Prediction / Aturan Persona 7 Poin"
             class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
           />
         </div>
@@ -42,7 +127,7 @@
       <div class="space-y-1">
         <label class="text-[11px] font-bold text-slate-700 uppercase">Isi Detail / Konten Fakta</label>
         <textarea
-          v-model="form.content"
+          v-model="ragForm.content"
           rows="4"
           placeholder="Tulis fakta teknis, instruksi spesifik, angka hasil eksperimen, atau aturan yang wajib diikuti AI..."
           class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none"
@@ -52,32 +137,32 @@
       <div class="flex justify-end pt-2">
         <button
           @click="saveKnowledge"
-          :disabled="isSaving || !form.title || !form.content"
+          :disabled="isSavingRag || !ragForm.title || !ragForm.content"
           class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition shadow-md disabled:opacity-50"
         >
-          {{ isSaving ? 'Memproses...' : 'Simpan ke Knowledge Base' }}
+          {{ isSavingRag ? 'Memproses...' : 'Tambah ke Knowledge Base' }}
         </button>
       </div>
     </div>
 
-    <!-- Section 2: Daftar Dokumen RAG Tersimpan -->
+    <!-- Section 4: Daftar Dokumen RAG Tersimpan -->
     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
       <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
         <div class="flex items-center gap-2">
           <span class="text-xs font-bold text-slate-700 uppercase tracking-wide">Daftar Dokumen RAG</span>
-          <span class="text-xs font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">{{ items.length }} Item</span>
+          <span class="text-xs font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">{{ ragItems.length }} Item</span>
         </div>
         <button @click="fetchKnowledge" class="text-xs font-bold text-indigo-600 hover:text-indigo-800">Refresh</button>
       </div>
 
-      <div v-if="loading" class="p-8 text-center text-xs text-slate-400 font-medium animate-pulse">Memuat data RAG...</div>
+      <div v-if="loadingRag" class="p-8 text-center text-xs text-slate-400 font-medium animate-pulse">Memuat data RAG...</div>
 
-      <div v-else-if="items.length === 0" class="p-8 text-center text-xs text-slate-400 font-medium">
+      <div v-else-if="ragItems.length === 0" class="p-8 text-center text-xs text-slate-400 font-medium">
         Belum ada dokumen RAG tersimpan. Tambahkan fakta/persona pertama kamu di atas.
       </div>
 
       <div v-else class="divide-y divide-slate-100">
-        <div v-for="item in items" :key="item.id" class="p-5 hover:bg-slate-50/80 transition space-y-2">
+        <div v-for="item in ragItems" :key="item.id" class="p-5 hover:bg-slate-50/80 transition space-y-2">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <span
@@ -113,39 +198,91 @@
 import { ref, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 
-const loading = ref(true)
-const isSaving = ref(false)
-const items = ref<any[]>([])
+const accountConnected = ref(false)
+const accountUsername = ref('')
 const accountId = ref<string | null>(null)
 
-const form = ref({
+const autoReply = ref({
+  enabled: true,
+  mode: 'review',
+  max_per_hour: 10,
+  tone_prompt: ''
+})
+
+const isSavingSettings = ref(false)
+const isSavingRag = ref(false)
+const loadingRag = ref(true)
+const ragItems = ref<any[]>([])
+
+const ragForm = ref({
   category: 'portfolio',
   title: '',
   content: ''
 })
 
-async function getAccountId() {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-
+async function initAccountAndSettings() {
   const { data: account } = await supabase
     .schema('threads')
     .from('threads_accounts')
-    .select('id')
+    .select('*')
     .limit(1)
     .maybeSingle()
 
   if (account) {
     accountId.value = account.id
+    accountConnected.value = account.connection_status === 'connected'
+    accountUsername.value = account.username || ''
+
+    const { data: settings } = await supabase
+      .schema('threads')
+      .from('auto_reply_settings')
+      .select('*')
+      .eq('account_id', account.id)
+      .maybeSingle()
+
+    if (settings) {
+      autoReply.value.enabled = settings.enabled ?? true
+      autoReply.value.mode = settings.mode || 'review'
+      autoReply.value.max_per_hour = settings.max_per_hour || 10
+      autoReply.value.tone_prompt = settings.tone_prompt || ''
+    }
   }
-  return accountId.value
+}
+
+function connectThreads() {
+  const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`)
+  alert('Gunakan link pendaftaran OAuth Threads untuk menghubungkan akun.')
+}
+
+async function saveAutoReplySettings() {
+  if (!accountId.value) return alert('Hubungkan akun Threads dulu.')
+  isSavingSettings.value = true
+  try {
+    const { error } = await supabase
+      .schema('threads')
+      .from('auto_reply_settings')
+      .upsert({
+        account_id: accountId.value,
+        enabled: autoReply.value.enabled,
+        mode: autoReply.value.mode,
+        max_per_hour: autoReply.value.max_per_hour,
+        tone_prompt: autoReply.value.tone_prompt
+      })
+
+    if (error) throw error
+    alert('Pengaturan Auto Reply berhasil disimpan.')
+  } catch (err: any) {
+    alert('Gagal simpan pengaturan: ' + err.message)
+  } finally {
+    isSavingSettings.value = false
+  }
 }
 
 async function fetchKnowledge() {
-  loading.value = true
-  const accId = accountId.value || await getAccountId()
-  if (!accId) {
-    loading.value = false
+  loadingRag.value = true
+  if (!accountId.value) await initAccountAndSettings()
+  if (!accountId.value) {
+    loadingRag.value = false
     return
   }
 
@@ -153,47 +290,45 @@ async function fetchKnowledge() {
     .schema('threads')
     .from('brand_knowledge')
     .select('*')
-    .eq('account_id', accId)
+    .eq('account_id', accountId.value)
     .order('created_at', { ascending: false })
 
   if (data && !error) {
-    items.value = data
+    ragItems.value = data
   }
-  loading.value = false
+  loadingRag.value = false
 }
 
 async function saveKnowledge() {
-  if (!form.value.title || !form.value.content) return alert('Isi judul dan konten pengetahuan.')
-  
-  const accId = accountId.value || await getAccountId()
-  if (!accId) return alert('Akun Threads belum tersambung. Sambungkan di dashboard dulu.')
+  if (!ragForm.value.title || !ragForm.value.content) return alert('Isi judul dan konten pengetahuan.')
+  if (!accountId.value) return alert('Akun Threads belum tersambung.')
 
-  isSaving.value = true
+  isSavingRag.value = true
   try {
     const { error } = await supabase
       .schema('threads')
       .from('brand_knowledge')
       .insert({
-        account_id: accId,
-        category: form.value.category,
-        title: form.value.title,
-        content: form.value.content
+        account_id: accountId.value,
+        category: ragForm.value.category,
+        title: ragForm.value.title,
+        content: ragForm.value.content
       })
 
     if (error) throw error
 
-    form.value.title = ''
-    form.value.content = ''
+    ragForm.value.title = ''
+    ragForm.value.content = ''
     await fetchKnowledge()
   } catch (err: any) {
     alert('Gagal simpan RAG: ' + err.message)
   } finally {
-    isSaving.value = false
+    isSavingRag.value = false
   }
 }
 
 async function deleteKnowledge(id: string) {
-  if (!confirm('Hapus dokumen pengetahuan ini dari RAG?')) return
+  if (!confirm('Hapus dokumen pengetahuan ini?')) return
   try {
     const { error } = await supabase
       .schema('threads')
@@ -208,7 +343,8 @@ async function deleteKnowledge(id: string) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await initAccountAndSettings()
   fetchKnowledge()
 })
 </script>
