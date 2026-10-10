@@ -42,7 +42,7 @@ export const useComposerStore = defineStore('composer', () => {
       }
     } catch (err: any) {
       console.error('Error scoring draft:', err)
-      alert('Error AI Score: ' + (err.message || 'Gagal menghubungi server Edge Function. Cek CORS atau log Supabase.'))
+      alert('Error AI Score: ' + (err.message || 'Gagal menghubungi Edge Function score-draft'))
     } finally {
       scoring.value = false
     }
@@ -51,7 +51,6 @@ export const useComposerStore = defineStore('composer', () => {
   async function createScheduledPost(post: ScheduledPost) {
     loading.value = true
     try {
-      // Perbaikan FINAL: Tambahkan idempotency_key otomatis
       const { data, error } = await supabase
         .schema('threads')
         .from('scheduled_posts')
@@ -60,7 +59,7 @@ export const useComposerStore = defineStore('composer', () => {
           text: post.text,
           scheduled_for: post.scheduled_for,
           status: 'scheduled',
-          idempotency_key: crypto.randomUUID() 
+          idempotency_key: crypto.randomUUID()
         })
         .select('*')
         .single()
@@ -72,7 +71,7 @@ export const useComposerStore = defineStore('composer', () => {
       return { success: true }
     } catch (err: any) {
       console.error('Error scheduling post:', err)
-      alert('Error Database: ' + (err.message || 'Gagal menyimpan ke skema threads'))
+      alert('Error Database: ' + (err.message || 'Gagal menyimpan postingan terjadwal'))
       return { success: false, error: err.message }
     } finally {
       loading.value = false
@@ -80,6 +79,7 @@ export const useComposerStore = defineStore('composer', () => {
   }
 
   async function fetchScheduledPosts(accountId: string) {
+    if (!accountId) return
     loading.value = true
     try {
       const { data, error } = await supabase

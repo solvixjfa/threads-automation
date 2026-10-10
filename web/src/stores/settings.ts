@@ -25,43 +25,34 @@ export const useSettingsStore = defineStore('settings', () => {
   async function fetchAccountAndSettings() {
     loading.value = true
     try {
-      // 1. Ambil akun terhubung dari skema threads
       const { data: accData } = await supabase
         .schema('threads')
         .from('threads_accounts')
         .select('id, username, connection_status, kill_switch')
+        .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle()
 
       if (accData) {
         account.value = {
           id: accData.id,
-          username: accData.username || 'tester_account',
-          connection_status: accData.connection_status || 'connected',
+          username: accData.username || 'Unlinked Account',
+          connection_status: accData.connection_status || 'disconnected',
           kill_switch: !!accData.kill_switch
         }
-      } else {
-        // Fallback akun lokal untuk testing jika belum pernah OAuth
-        account.value = {
-          id: '00000000-0000-0000-0000-000000000000',
-          username: 'Unlinked / Tester',
-          connection_status: 'disconnected',
-          kill_switch: false
-        }
-      }
 
-      // 2. Ambil settingan auto-reply jika ada
-      if (account.value?.id) {
         const { data: settData } = await supabase
           .schema('threads')
           .from('auto_reply_settings')
           .select('*')
-          .eq('account_id', account.value.id)
+          .eq('account_id', accData.id)
           .maybeSingle()
 
         if (settData) {
           settings.value = settData
         }
+      } else {
+        account.value = null
       }
     } catch (err: any) {
       console.error('Error fetching settings:', err)
@@ -76,39 +67,15 @@ export const useSettingsStore = defineStore('settings', () => {
     tone_prompt: string
     knowledge_base: string
   }) {
+    if (!account.value?.id) {
+      alert('Gagal menyimpan: Belum ada akun Threads terhubung.')
+      return { success: false }
+    }
+
     loading.value = true
     try {
-      // Pastikan ada account_id yang valid
-      let targetAccountId = account.value?.id
-
-      if (!targetAccountId || targetAccountId === '00000000-0000-0000-0000-000000000000') {
-        // Buatkan account_id valid di threads_accounts
-        const newId = crypto.randomUUID()
-        const { data: createdAcc, error: createErr } = await supabase
-          .schema('threads')
-          .from('threads_accounts')
-          .insert({
-            id: newId,
-            username: 'tester_account',
-            connection_status: 'connected'
-          })
-          .select('id, username, connection_status')
-          .single()
-
-        if (createErr) throw createErr
-        if (createdAcc) {
-          targetAccountId = createdAcc.id
-          account.value = {
-            id: createdAcc.id,
-            username: createdAcc.username,
-            connection_status: createdAcc.connection_status,
-            kill_switch: false
-          }
-        }
-      }
-
       const payload = {
-        account_id: targetAccountId,
+        account_id: account.value.id,
         enabled: formData.enabled,
         mode: formData.mode,
         tone_prompt: formData.tone_prompt,
@@ -125,7 +92,7 @@ export const useSettingsStore = defineStore('settings', () => {
       if (error) throw error
 
       settings.value = data
-      alert('Pengaturan AI berhasil disimpan ke database!')
+      alert('Pengaturan AI berhasil disimpan!')
       return { success: true }
     } catch (err: any) {
       console.error('Error saving settings:', err)
@@ -147,7 +114,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
       if (error) throw error
       account.value.kill_switch = status
-      alert(`Kill switch ${status ? 'AKTIF' : 'NONAKTIF'}`)
+      alert(`Kill switch status updated to: ${status ? 'ACTIVE' : 'INACTIVE'}`)
     } catch (err: any) {
       alert('Error Kill Switch: ' + err.message)
     }
