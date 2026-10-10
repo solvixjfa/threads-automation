@@ -1,5 +1,7 @@
 <template>
-  <div class="space-y-8 max-w-5xl">
+  <div class="space-y-8 max-w-5xl relative">
+    <NotifyOverlay />
+
     <div>
       <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Settings & RAG Knowledge Base</h1>
       <p class="text-slate-500 text-sm mt-1">Konfigurasi akun, aturan auto-reply, dan manajemen vector RAG per tenant.</p>
@@ -83,9 +85,10 @@
         <button
           @click="saveAutoReplySettings"
           :disabled="isSavingSettings"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition shadow-md disabled:opacity-50"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition shadow-md disabled:opacity-50 flex items-center gap-2"
         >
-          {{ isSavingSettings ? 'Menyimpan...' : 'Simpan Pengaturan' }}
+          <span v-if="isSavingSettings" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+          <span>{{ isSavingSettings ? 'Menyimpan...' : 'Simpan Pengaturan' }}</span>
         </button>
       </div>
     </div>
@@ -141,9 +144,10 @@
         <button
           @click="saveKnowledge"
           :disabled="isSavingRag || !ragForm.title || !ragForm.content"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition shadow-md disabled:opacity-50"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition shadow-md disabled:opacity-50 flex items-center gap-2"
         >
-          {{ isSavingRag ? 'Memproses Vector...' : 'Tambah ke Vector Database' }}
+          <span v-if="isSavingRag" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+          <span>{{ isSavingRag ? 'Memproses Vector...' : 'Tambah ke Vector Database' }}</span>
         </button>
       </div>
     </div>
@@ -185,7 +189,7 @@
               </span>
             </div>
             <button
-              @click="deleteKnowledge(item.id)"
+              @click="confirmDeleteKnowledge(item.id, item.title)"
               class="text-xs font-bold text-rose-600 hover:text-rose-800 transition"
             >
               Hapus
@@ -203,6 +207,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
+import { useNotify } from '../composables/useNotify'
+import NotifyOverlay from '../components/NotifyOverlay.vue'
+
+const { showToast, askConfirm } = useNotify()
 
 const accountConnected = ref(false)
 const accountUsername = ref('')
@@ -256,11 +264,11 @@ async function initAccountAndSettings() {
 }
 
 function connectThreads() {
-  alert('Gunakan link pendaftaran OAuth Threads untuk menghubungkan akun.')
+  showToast('Gunakan link pendaftaran OAuth Threads untuk menghubungkan akun.', 'info')
 }
 
 async function saveAutoReplySettings() {
-  if (!accountId.value) return alert('Hubungkan akun Threads dulu.')
+  if (!accountId.value) return showToast('Hubungkan akun Threads terlebih dahulu.', 'error')
   isSavingSettings.value = true
   try {
     const { error } = await supabase
@@ -275,9 +283,9 @@ async function saveAutoReplySettings() {
       })
 
     if (error) throw error
-    alert('Pengaturan Auto Reply berhasil disimpan.')
+    showToast('Pengaturan Auto Reply berhasil disimpan!', 'success')
   } catch (err: any) {
-    alert('Gagal simpan pengaturan: ' + err.message)
+    showToast('Gagal menyimpan pengaturan: ' + err.message, 'error')
   } finally {
     isSavingSettings.value = false
   }
@@ -305,8 +313,8 @@ async function fetchKnowledge() {
 }
 
 async function saveKnowledge() {
-  if (!ragForm.value.title || !ragForm.value.content) return alert('Isi judul dan konten pengetahuan.')
-  if (!accountId.value) return alert('Akun Threads belum tersambung.')
+  if (!ragForm.value.title || !ragForm.value.content) return showToast('Isi judul dan konten pengetahuan.', 'error')
+  if (!accountId.value) return showToast('Akun Threads belum tersambung.', 'error')
 
   isSavingRag.value = true
   try {
@@ -324,7 +332,6 @@ async function saveKnowledge() {
 
     if (error) throw error
 
-    // Panggil Edge Function untuk meng-generate vector embedding
     if (inserted?.id) {
       await supabase.functions.invoke('embed-knowledge', {
         body: { id: inserted.id, content: ragForm.value.content }
@@ -333,16 +340,25 @@ async function saveKnowledge() {
 
     ragForm.value.title = ''
     ragForm.value.content = ''
+    showToast('Dokumen berhasil ditambahkan & di-indexing ke Vector DB!', 'success')
     await fetchKnowledge()
   } catch (err: any) {
-    alert('Gagal simpan RAG: ' + err.message)
+    showToast('Gagal menyimpan RAG: ' + err.message, 'error')
   } finally {
     isSavingRag.value = false
   }
 }
 
+function confirmDeleteKnowledge(id: string, title: string) {
+  askConfirm({
+    title: 'Hapus Dokumen RAG',
+    message: `Apakah kamu yakin ingin menghapus "${title}" dari Vector Database?`,
+    confirmText: 'Hapus Dokumen',
+    onConfirm: () => deleteKnowledge(id)
+  })
+}
+
 async function deleteKnowledge(id: string) {
-  if (!confirm('Hapus dokumen pengetahuan ini dari Vector Database?')) return
   try {
     const { error } = await supabase
       .schema('threads')
@@ -351,9 +367,10 @@ async function deleteKnowledge(id: string) {
       .eq('id', id)
 
     if (error) throw error
+    showToast('Dokumen pengetahuan berhasil dihapus.', 'info')
     await fetchKnowledge()
   } catch (err: any) {
-    alert('Gagal hapus: ' + err.message)
+    showToast('Gagal menghapus: ' + err.message, 'error')
   }
 }
 
