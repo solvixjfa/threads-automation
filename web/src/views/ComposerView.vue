@@ -1,70 +1,75 @@
 <template>
   <div class="space-y-8">
     <div>
-      <h1 class="text-2xl font-bold text-zinc-900 tracking-tight">Composer & Scheduler</h1>
-      <p class="text-zinc-500 text-sm mt-1">Buat, evaluasi skor keterlibatan konten, dan jadwalkan postingan ke Threads.</p>
+      <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Composer & Scheduler</h1>
+      <p class="text-slate-500 text-sm mt-1">Buat konten, cek skor AI, dan jadwalkan postingan Threads.</p>
     </div>
 
     <!-- Form Bikin Post -->
-    <div class="bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm space-y-4">
+    <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
       <div class="flex justify-between items-center">
-        <span class="text-xs font-bold text-zinc-700 tracking-wide uppercase">Teks Postingan Threads</span>
-        <span class="text-xs font-medium text-zinc-400">{{ postText.length }} / 500</span>
+        <span class="text-xs font-bold text-slate-700 tracking-wide uppercase">Teks Postingan</span>
+        <span class="text-xs font-medium" :class="postText.length > 450 ? 'text-amber-500' : 'text-slate-400'">{{ postText.length }} / 500</span>
       </div>
-      
+
       <textarea
         v-model="postText"
         rows="5"
-        placeholder="Apa yang menarik hari ini? Tulis pemikiran, diskusi, atau pertanyaan..."
-        class="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-4 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-black focus:bg-white transition resize-none"
+        placeholder="Tulis ide brilian lu di sini..."
+        class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none"
         maxlength="500"
       ></textarea>
 
       <div class="flex flex-wrap items-center gap-3 pt-2">
-        <button class="bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-xs font-bold py-2.5 px-4 rounded-lg transition border border-zinc-200">
-          Cek Skor AI
+        <!-- TOMBOL AI YANG UDAH HIDUP -->
+        <button 
+          @click="checkScore" 
+          :disabled="isChecking || !postText"
+          class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold py-2.5 px-4 rounded-lg transition border border-indigo-100 disabled:opacity-50"
+        >
+          {{ isChecking ? 'Menganalisa...' : '✨ Cek Skor AI' }}
         </button>
-        
+
         <div class="flex-1 flex justify-end items-center gap-3">
-          <input 
-            v-model="scheduledDate" 
-            type="datetime-local" 
-            class="bg-zinc-50 border border-zinc-200 rounded-lg p-2.5 text-xs text-zinc-700 focus:outline-none focus:border-black transition"
+          <input
+            v-model="scheduledDate"
+            type="datetime-local"
+            class="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
           />
-          <button 
-            @click="schedulePost" 
+          <button
+            @click="schedulePost"
             :disabled="!postText || isSaving"
-            class="bg-black hover:bg-zinc-800 text-white text-xs font-bold py-2.5 px-6 rounded-lg transition shadow-md disabled:opacity-50"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-6 rounded-lg transition shadow-md disabled:opacity-50"
           >
-            {{ isSaving ? 'Menjadwalkan...' : 'Jadwalkan' }}
+            {{ isSaving ? 'Memproses...' : 'Jadwalkan' }}
           </button>
         </div>
       </div>
     </div>
 
     <!-- List Antrean -->
-    <div class="bg-white border border-zinc-200 rounded-2xl shadow-sm overflow-hidden">
-      <div class="p-5 border-b border-zinc-100 bg-zinc-50/50">
-        <span class="text-xs font-bold text-zinc-700 tracking-wide uppercase">Antrean Postingan Terjadwal</span>
-      </div>
-      
-      <div v-if="loading" class="p-8 text-center text-xs text-zinc-400 font-medium">Memuat antrean...</div>
-      
-      <div v-else-if="posts.length === 0" class="p-8 text-center text-xs text-zinc-400 font-medium">
-        Belum ada postingan yang dijadwalkan.
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div class="p-5 border-b border-slate-100 bg-slate-50">
+        <span class="text-xs font-bold text-slate-700 tracking-wide uppercase">Antrean Terjadwal</span>
       </div>
 
-      <div v-else class="divide-y divide-zinc-100">
-        <div v-for="post in posts" :key="post.id" class="p-5 hover:bg-zinc-50 transition">
-          <p class="text-sm font-medium text-zinc-900 mb-3 whitespace-pre-wrap">{{ post.text }}</p>
+      <div v-if="loading" class="p-8 text-center text-xs text-slate-400 font-medium animate-pulse">Memuat data...</div>
+      
+      <div v-else-if="posts.length === 0" class="p-8 text-center text-xs text-slate-400 font-medium">
+        Belum ada postingan yang nyantol.
+      </div>
+
+      <div v-else class="divide-y divide-slate-100">
+        <div v-for="post in posts" :key="post.id" class="p-5 hover:bg-slate-50 transition">
+          <p class="text-sm font-medium text-slate-800 mb-3 whitespace-pre-wrap">{{ post.text }}</p>
           <div class="flex items-center justify-between">
-            <span class="text-xs text-zinc-500 font-medium">{{ formatDate(post.scheduled_for) }}</span>
-            <span 
+            <span class="text-xs text-slate-500 font-medium">{{ formatDate(post.scheduled_for) }}</span>
+            <span
               class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md"
               :class="{
-                'bg-zinc-100 text-zinc-600': post.status === 'scheduled',
-                'bg-emerald-50 text-emerald-600 border border-emerald-200': post.status === 'published',
-                'bg-rose-50 text-rose-600 border border-rose-200': ['error', 'failed'].includes(post.status)
+                'bg-amber-50 text-amber-600 border border-amber-100': post.status === 'scheduled',
+                'bg-emerald-50 text-emerald-600 border border-emerald-100': post.status === 'published',
+                'bg-rose-50 text-rose-600 border border-rose-100': ['error', 'failed', 'quota_exceeded'].includes(post.status)
               }"
             >
               {{ post.status }}
@@ -83,6 +88,7 @@ import { supabase } from '../lib/supabase'
 const postText = ref('')
 const scheduledDate = ref('')
 const isSaving = ref(false)
+const isChecking = ref(false)
 const loading = ref(true)
 const posts = ref<any[]>([])
 
@@ -101,15 +107,32 @@ async function loadPosts() {
   loading.value = false
 }
 
+// Fungsi Panggil AI Score (Nembak ke Edge Function score-draft)
+async function checkScore() {
+  isChecking.value = true
+  try {
+    const { data, error } = await supabase.functions.invoke('score-draft', {
+      body: { text: postText.value }
+    })
+    if (error) throw error
+    alert(`📊 Skor: ${data.score}/100\n\n💡 Feedback:\n${data.feedback || data.message || 'Mantap, gas posting!'}`)
+  } catch (err: any) {
+    alert('Gagal nembak AI: ' + err.message)
+  } finally {
+    isChecking.value = false
+  }
+}
+
 async function schedulePost() {
-  if (!postText.value || !scheduledDate.value) return alert('Isi teks dan pilih tanggal dulu.')
+  if (!postText.value || !scheduledDate.value) return alert('Isi teks dan pilih tanggal dulu bos.')
   isSaving.value = true
   
   try {
-    const { data: accounts } = await supabase.from('threads_accounts').select('id').single()
-    if (!accounts) throw new Error('Akun Threads belum tersambung. Hubungkan di Settings.')
+    // FIX: Gunakan maybeSingle() biar kebal dari error RLS/Duplicate constraint
+    const { data: accounts, error: accErr } = await supabase.from('threads_accounts').select('id').limit(1).maybeSingle()
+    if (accErr) throw new Error('Database error: ' + accErr.message)
+    if (!accounts) throw new Error('Akun Threads belum tersambung. Hubungkan di menu Settings dulu.')
 
-    // Ubah local time ke UTC ISO string agar akurat
     const isoDate = new Date(scheduledDate.value).toISOString()
 
     const { error } = await supabase.from('scheduled_posts').insert({
@@ -121,7 +144,13 @@ async function schedulePost() {
 
     if (error) throw error
     postText.value = ''
-    scheduledDate.value = ''
+    
+    // Reset date ke 1 jam dari sekarang
+    const d = new Date()
+    d.setHours(d.getHours() + 1)
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+    scheduledDate.value = d.toISOString().slice(0, 16)
+    
     await loadPosts()
   } catch (err: any) {
     alert(err.message)
@@ -131,7 +160,6 @@ async function schedulePost() {
 }
 
 onMounted(() => {
-  // Set default ke 1 jam ke depan
   const d = new Date()
   d.setHours(d.getHours() + 1)
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
