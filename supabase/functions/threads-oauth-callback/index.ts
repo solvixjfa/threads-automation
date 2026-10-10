@@ -17,7 +17,7 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // 1. Verifikasi state
+    // 1. Verifikasi OAuth State
     const { data: stateData, error: stateError } = await supabase
       .schema("threads")
       .from("oauth_states")
@@ -32,7 +32,7 @@ serve(async (req) => {
 
     await supabase.schema("threads").from("oauth_states").update({ used: true }).eq("state", state);
 
-    // 2. Exchange Short Token
+    // 2. Exchange Short-Lived Token
     const appId = Deno.env.get("THREADS_APP_ID")!;
     const appSecret = Deno.env.get("THREADS_APP_SECRET")!;
     const redirectUri = Deno.env.get("THREADS_REDIRECT_URI")!;
@@ -45,38 +45,58 @@ serve(async (req) => {
     const tokenData = await tokenRes.json();
     if (tokenData.error) throw new Error(tokenData.error.message || JSON.stringify(tokenData.error));
 
-    // 3. Exchange Long Token
+    // 3. Exchange Long-Lived Token (60 Hari)
     const longTokenRes = await fetch(`https://graph.threads.net/access_token?grant_type=th_exchange_token&client_secret=${appSecret}&access_token=${tokenData.access_token}`);
     const longTokenData = await longTokenRes.json();
     if (longTokenData.error) throw new Error(longTokenData.error.message || JSON.stringify(longTokenData.error));
 
-    // 4. Get Profile
+    // 4. Ambil Profil User Meta
     const profileRes = await fetch(`https://graph.threads.net/v1.0/me?fields=id,username&access_token=${longTokenData.access_token}`);
     const profileData = await profileRes.json();
     if (profileData.error) throw new Error(profileData.error.message || JSON.stringify(profileData.error));
 
     const expiresAt = new Date(Date.now() + (longTokenData.expires_in || 5184000) * 1000).toISOString();
 
-    // 5. Upsert ke threads_accounts DENGAN LENGKAP SEMUA KOLOM NOT NULL (settings & kill_switch)
-    const { error: accountError } = await supabase
+    // 5. Cek ketersediaan akun berdasarkan user_id
+    const { data: existingAccount } = await supabase
       .schema("threads")
       .from("threads_accounts")
-      .upsert(
-        {
-          user_id: stateData.user_id,
-          threads_user_id: profileData.id,
-          username: profileData.username,
-          connection_status: "connected",
-          connected_at: new Date().toISOString(),
-          token_expires_at: expiresAt,
-          kill_switch: false,          // KOLOM NOT NULL
-          settings: {},                // KOLOM NOT NULL
-          last_error: null
-        },
-        { onConflict: "user_id" }
-      );
+      .select("id")
+      .eq("user_id", stateData.user_id)
+      .maybeSingle();
 
-    if (accountError) throw new Error("DB Error: " + accountError.message);
+    const accountPayload = {
+      threads_user_id: profileData.id,
+      username: profileData.username,
+      connection_status: "connected",
+      connected_at: new Date().toISOString(),
+      token_expires_at: expiresAt,
+      kill_switch: false,
+      settings: {},
+      last_error: null
+    };
+
+    if (existingAccount) {
+      // Update jika data akun sudah ada
+      const { error: updateError } = await supabase
+        .schema("threads")
+        .from("threads_accounts")
+        .update(accountPayload)
+        .eq("id", existingAccount.id);
+
+      if (updateError) throw new Error("DB Update Error: " + updateError.message);
+    } else {
+      // Insert jika data akun baru
+      const { error: insertError } = await supabase
+        .schema("threads")
+        .from("threads_accounts")
+        .insert({
+          user_id: stateData.user_id,
+          ...accountPayload
+        });
+
+      if (insertError) throw new Error("DB Insert Error: " + insertError.message);
+    }
 
     return Response.redirect(`${appBaseUrl}/settings?connected=true&username=${profileData.username}`, 302);
   } catch (err: any) {
