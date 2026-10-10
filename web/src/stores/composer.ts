@@ -51,6 +51,7 @@ export const useComposerStore = defineStore('composer', () => {
   async function createScheduledPost(post: ScheduledPost) {
     loading.value = true
     try {
+      // Perbaikan FINAL: Tambahkan idempotency_key otomatis
       const { data, error } = await supabase
         .schema('threads')
         .from('scheduled_posts')
@@ -58,7 +59,8 @@ export const useComposerStore = defineStore('composer', () => {
           account_id: post.account_id,
           text: post.text,
           scheduled_for: post.scheduled_for,
-          status: 'scheduled'
+          status: 'scheduled',
+          idempotency_key: crypto.randomUUID() 
         })
         .select('*')
         .single()
