@@ -2,13 +2,87 @@
   <div class="space-y-8">
     <div>
       <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Composer & Thread Builder</h1>
-      <p class="text-slate-500 text-sm mt-1">Tulis konten panjang, pecah otomatis jadi utasan (thread), dan kelola antrean postingan.</p>
+      <p class="text-slate-500 text-sm mt-1">Tulis atau buat draf otomatis dengan AI, pecah utasan, dan jadwalkan postingan.</p>
+    </div>
+
+    <!-- AI Generator Section Accordion / Panel -->
+    <div class="bg-indigo-50/60 border border-indigo-100 rounded-2xl p-6 shadow-sm space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
+          <h2 class="text-xs font-bold text-indigo-900 uppercase tracking-wide">AI Post Generator</h2>
+        </div>
+        <button 
+          @click="showAiPanel = !showAiPanel" 
+          class="text-xs font-bold text-indigo-700 hover:text-indigo-900 transition"
+        >
+          {{ showAiPanel ? 'Sembunyikan Panel' : 'Buat Draf Otomatis' }}
+        </button>
+      </div>
+
+      <div v-if="showAiPanel" class="space-y-4 pt-2">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="md:col-span-2 space-y-1">
+            <label class="text-[11px] font-bold text-slate-700 uppercase">Topik / Ide Utama</label>
+            <input
+              v-model="aiTopic"
+              type="text"
+              placeholder="Contoh: Belajar automasi bisnis tanpa koding, tips website agency..."
+              class="w-full bg-white border border-indigo-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+            />
+          </div>
+          <div class="space-y-1">
+            <label class="text-[11px] font-bold text-slate-700 uppercase">Gaya Bahasa / Tone</label>
+            <select
+              v-model="aiTone"
+              class="w-full bg-white border border-indigo-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+            >
+              <option value="Edukasi & Insight Kasual">Edukasi & Insight</option>
+              <option value="Storytelling Pengalaman">Storytelling</option>
+              <option value="Hot Take & Diskusi">Hot Take / Opini</option>
+              <option value="Pertanyaan / Q&A">Q&A / Memancing Diskusi</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex justify-end">
+          <button
+            @click="generateAiIdeas"
+            :disabled="isGenerating || !aiTopic"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition shadow-sm disabled:opacity-50"
+          >
+            {{ isGenerating ? 'Mengekstrak Ide...' : 'Hasilkan 3 Draf Post' }}
+          </button>
+        </div>
+
+        <!-- Render Hasil Opsi AI -->
+        <div v-if="aiResults.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3 border-t border-indigo-100">
+          <div
+            v-for="item in aiResults"
+            :key="item.id"
+            class="bg-white border border-indigo-100 rounded-xl p-4 flex flex-col justify-between space-y-3 shadow-sm hover:border-indigo-300 transition"
+          >
+            <div class="space-y-1.5">
+              <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider bg-indigo-50 px-2 py-0.5 rounded">
+                {{ item.title }}
+              </span>
+              <p class="text-xs text-slate-800 whitespace-pre-wrap leading-relaxed">{{ item.content }}</p>
+            </div>
+            <button
+              @click="applyAiDraft(item.content)"
+              class="w-full py-2 bg-slate-100 hover:bg-indigo-600 hover:text-white text-slate-700 text-xs font-bold rounded-lg transition"
+            >
+              Gunakan Draf Ini
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Form Main Composer / Thread Builder -->
     <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
       <div class="flex justify-between items-center">
-        <span class="text-xs font-bold text-slate-700 tracking-wide uppercase">Teks Utama</span>
+        <span class="text-xs font-bold text-slate-700 tracking-wide uppercase">Teks Postingan Utama</span>
         <div class="flex items-center gap-2">
           <span v-if="postText.length > 500" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
             Auto-Split Ready ({{ threadParts.length }} Parts)
@@ -27,7 +101,7 @@
         class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none"
       ></textarea>
 
-      <!-- Multi-Part Preview / Manual Edit Parts -->
+      <!-- Multi-Part Preview -->
       <div v-if="threadParts.length > 1" class="space-y-3 pt-2 border-t border-slate-100">
         <span class="text-xs font-bold text-slate-700 uppercase tracking-wide">Pratinjau Utasan Thread ({{ threadParts.length }} Bagian)</span>
         <div v-for="(part, idx) in threadParts" :key="idx" class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
@@ -69,7 +143,7 @@
       </div>
     </div>
 
-    <!-- Antrean Postingan & Management (Edit / Delete / Cancel) -->
+    <!-- Antrean Postingan -->
     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
       <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
         <span class="text-xs font-bold text-slate-700 tracking-wide uppercase">Antrean Terjadwal</span>
@@ -157,8 +231,40 @@ const isUpdating = ref(false)
 const loading = ref(true)
 const posts = ref<any[]>([])
 
+// AI Generator States
+const showAiPanel = ref(true)
+const aiTopic = ref('')
+const aiTone = ref('Edukasi & Insight Kasual')
+const isGenerating = ref(false)
+const aiResults = ref<any[]>([])
+
 const editingPost = ref<any>(null)
 const editForm = ref({ text: '', scheduled_for: '' })
+
+async function generateAiIdeas() {
+  if (!aiTopic.value) return
+  isGenerating.value = true
+  aiResults.value = []
+  
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-post', {
+      body: { topic: aiTopic.value, tone: aiTone.value }
+    })
+    if (error) throw error
+    if (data?.options) {
+      aiResults.value = data.options
+    }
+  } catch (err: any) {
+    alert('Gagal membuat draf AI: ' + err.message)
+  } finally {
+    isGenerating.value = false
+  }
+}
+
+function applyAiDraft(content: string) {
+  postText.value = content
+  handleTextChange()
+}
 
 function splitTextIntoParts(text: string, maxLen = 480): string[] {
   if (text.length <= maxLen) return [text]
