@@ -5,7 +5,7 @@
       <p class="text-slate-500 text-sm mt-1">Buat konten, cek skor AI, dan jadwalkan postingan Threads.</p>
     </div>
 
-    <!-- Form Bikin Post -->
+    <!-- Form Post -->
     <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
       <div class="flex justify-between items-center">
         <span class="text-xs font-bold text-slate-700 tracking-wide uppercase">Teks Postingan</span>
@@ -46,7 +46,7 @@
       </div>
     </div>
 
-    <!-- List Antrean -->
+    <!-- Antrean -->
     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
       <div class="p-5 border-b border-slate-100 bg-slate-50">
         <span class="text-xs font-bold text-slate-700 tracking-wide uppercase">Antrean Terjadwal</span>
@@ -115,19 +115,19 @@ async function checkScore() {
     })
     if (error) throw error
     
-    const scoreVal = data?.score || data?.result?.score || 'N/A'
-    const feedbackVal = data?.feedback || data?.result?.feedback || data?.message || 'Tidak ada catatan tambahan.'
+    const scoreVal = data?.score ?? data?.result?.score ?? 'N/A'
+    const feedbackVal = data?.feedback ?? data?.result?.feedback ?? data?.message ?? 'Tidak ada catatan.'
     
     alert(`Skor AI: ${scoreVal}/100\n\nCatatan:\n${feedbackVal}`)
   } catch (err: any) {
-    alert('Gagal menghubungi AI: ' + err.message)
+    alert('Gagal analisa AI: ' + err.message)
   } finally {
     isChecking.value = false
   }
 }
 
 async function schedulePost() {
-  if (!postText.value || !scheduledDate.value) return alert('Isi teks dan pilih tanggal terlebih dahulu.')
+  if (!postText.value || !scheduledDate.value) return alert('Isi teks dan tanggal dulu.')
   isSaving.value = true
   
   try {
@@ -139,15 +139,16 @@ async function schedulePost() {
       .maybeSingle()
       
     if (accErr) throw new Error(accErr.message)
-    if (!accounts) throw new Error('Akun Threads belum tersambung. Hubungkan di menu Settings.')
+    if (!accounts) throw new Error('Akun Threads belum tersambung. Hubungkan di Settings.')
 
     const isoDate = new Date(scheduledDate.value).toISOString()
 
+    // Menggunakan account_id sesuai nama kolom di database
     const { error } = await supabase
       .schema('threads')
       .from('scheduled_posts')
       .insert({
-        threads_account_id: accounts.id,
+        account_id: accounts.id,
         text: postText.value,
         scheduled_for: isoDate,
         status: 'scheduled'
@@ -163,7 +164,7 @@ async function schedulePost() {
     
     await loadPosts()
   } catch (err: any) {
-    alert('Database error: ' + err.message)
+    alert('Gagal simpan: ' + err.message)
   } finally {
     isSaving.value = false
   }
