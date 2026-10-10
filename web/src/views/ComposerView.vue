@@ -314,7 +314,7 @@ async function saveEdit() {
     await loadPosts()
   } catch (err: any) {
     alert('Gagal update: ' + err.message)
-  } font-medium {
+  } finally {
     isUpdating.value = false
   }
 }
