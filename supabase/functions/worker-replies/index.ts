@@ -1,6 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Deklarasi Global EdgeRuntime agar Deno tidak mematikan isolate di background
+declare const EdgeRuntime: {
+  waitUntil(promise: Promise<any>): void;
+};
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -12,15 +17,11 @@ const CANDIDATE_MODELS = [
   "gemini-2.5-flash"
 ];
 
-// Helper Fetch dengan Timeout Guard (AbortController)
 async function fetchWithTimeout(resource: string, options: any = {}, timeoutMs = 8000) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch(resource, {
-      ...options,
-      signal: controller.signal
-    });
+    const response = await fetch(resource, { ...options, signal: controller.signal });
     clearTimeout(id);
     return response;
   } catch (err) {
@@ -41,7 +42,7 @@ async function getEmbedding(text: string, apiKey: string): Promise<number[] | nu
           content: { parts: [{ text }] }
         }),
       },
-      6000 // 6s timeout max untuk embedding
+      6000
     );
     const data = await res.json();
     return data.embedding?.values || null;
@@ -64,7 +65,7 @@ async function generateReplyWithFallback(apiKey: string, systemPrompt: string) {
             generationConfig: { responseMimeType: "application/json" }
           }),
         },
-        8000 // 8s timeout max per model
+        8000
       );
       const data = await res.json();
       if (res.ok && !data.error) {
@@ -122,9 +123,7 @@ serve(async (req) => {
     const accessToken = account.settings?.access_token || "";
     const threadsUserId = account.threads_user_id || "";
 
-    // ---------------------------------------------------------
-    // ACTION 1: PUBLISH APPROVED REPLY TO THREADS API
-    // ---------------------------------------------------------
+    // 1. PUBLISH APPROVED REPLY
     if (action === "publish_reply") {
       if (!approveLogId || !finalTextToPublish) {
         return new Response(
@@ -184,9 +183,7 @@ serve(async (req) => {
       );
     }
 
-    // ---------------------------------------------------------
-    // ACTION 2: FAST INGESTION / SYNC (< 1.5 DETIK)
-    // ---------------------------------------------------------
+    // 2. FAST SYNC (< 1 DETIK)
     if (action === "sync" || action === "sync_and_process") {
       let itemsToInsert = [];
 
@@ -234,13 +231,12 @@ serve(async (req) => {
                 }
               }
             } catch {
-              // Ignore API timeout per post
+              // Ignore individual fetch error
             }
           }
         }
       }
 
-      // Fast Insert / Upsert Deduplicated
       let newInsertedCount = 0;
       for (const item of itemsToInsert) {
         const { data: existing } = await supabase
@@ -256,27 +252,27 @@ serve(async (req) => {
         }
       }
 
-      // Pemicu otomatis pemrosesan antrean di background (non-blocking)
-      if (newInsertedCount > 0 || action === "sync_and_process") {
-        fetch(`${supabaseUrl}/functions/v1/worker-replies`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${serviceRoleKey}`
-          },
-          body: JSON.stringify({ action: "process_queue" })
-        }).catch(() => {}); // Fire and forget
+      // Tahan Isolate Deno via waitUntil agar background process AI tidak mati paksa
+      if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) {
+        EdgeRuntime.waitUntil(
+          fetch(`${supabaseUrl}/functions/v1/worker-replies`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${serviceRoleKey}`
+            },
+            body: JSON.stringify({ action: "process_queue" })
+          }).catch((err) => console.error("Background Queue Error:", err))
+        );
       }
 
       return new Response(
-        JSON.stringify({ success: true, message: "Sync cepat selesai.", newItems: newInsertedCount }),
+        JSON.stringify({ success: true, message: "Sync selesai.", newItems: newInsertedCount }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // ---------------------------------------------------------
-    // ACTION 3: ASYNC AI QUEUE PROCESSOR (BACKGROUND WORKER)
-    // ---------------------------------------------------------
+    // 3. ASYNC AI QUEUE PROCESSOR
     if (action === "process_queue") {
       const { data: settings } = await supabase
         .schema("threads")
@@ -288,13 +284,12 @@ serve(async (req) => {
       const mode = settings?.mode || "review";
       const tonePrompt = settings?.tone_prompt || "Gunakan bahasa kasual, ramah, to the point, dan profesional.";
 
-      // Ambil maksimal 5 item unprocessed per batch
       const { data: queueItems } = await supabase
         .schema("threads")
         .from("auto_reply_logs")
         .select("*")
         .eq("status", "unprocessed")
-        .limit(5);
+        .limit(3);
 
       if (!queueItems || queueItems.length === 0) {
         return new Response(
@@ -303,15 +298,14 @@ serve(async (req) => {
         );
       }
 
-      const processPromises = queueItems.map(async (item) => {
+      for (const item of queueItems) {
         try {
           const incomingComment = item.llm_meta?.incoming_comment || "";
           if (!incomingComment) {
             await supabase.schema("threads").from("auto_reply_logs").delete().eq("id", item.id);
-            return null;
+            continue;
           }
 
-          // Vector Search RAG
           let ragContexts: string[] = [];
           const commentVector = await getEmbedding(incomingComment, geminiApiKey);
           if (commentVector) {
@@ -351,7 +345,7 @@ ATURAN BALASAN:
           const result = await generateReplyWithFallback(geminiApiKey, systemPrompt);
           if (!result.success || !result.data) {
             await supabase.schema("threads").from("auto_reply_logs").update({ status: "failed" }).eq("id", item.id);
-            return null;
+            continue;
           }
 
           let rawText = result.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
@@ -382,14 +376,10 @@ ATURAN BALASAN:
             })
             .eq("id", item.id);
 
-          return item.id;
         } catch {
           await supabase.schema("threads").from("auto_reply_logs").update({ status: "failed" }).eq("id", item.id);
-          return null;
         }
-      });
-
-      await Promise.all(processPromises);
+      }
 
       return new Response(
         JSON.stringify({ success: true, message: "Queue AI selesai diproses." }),
