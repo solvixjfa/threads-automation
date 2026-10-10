@@ -18,13 +18,13 @@ serve(async (req) => {
 
     const now = new Date().toISOString();
 
-    // 1. Ambil post yang siap dipublish (status: scheduled dan scheduled_for <= now)
     const { data: duePosts, error: fetchErr } = await supabase
       .schema("threads")
       .from("scheduled_posts")
       .select("*, threads_accounts(*)")
       .eq("status", "scheduled")
       .lte("scheduled_for", now)
+      .order("sequence_number", { ascending: true })
       .limit(10);
 
     if (fetchErr) throw fetchErr;
@@ -38,7 +38,6 @@ serve(async (req) => {
         continue;
       }
 
-      // Ambil token dari settings JSONB
       const accessToken = account.settings?.access_token || '';
       const userId = account.threads_user_id;
 
@@ -53,7 +52,23 @@ serve(async (req) => {
         continue;
       }
 
-      // Kunci status ke 'publishing'
+      // Jika post ini adalah bagian dari thread (memiliki parent_id), pastikan parent sudah dipublish
+      let replyToMediaId: string | null = null;
+      if (post.parent_id) {
+        const { data: parentPost } = await supabase
+          .schema("threads")
+          .from("scheduled_posts")
+          .select("status, published_media_id")
+          .eq("id", post.parent_id)
+          .single();
+
+        if (!parentPost || parentPost.status !== "published" || !parentPost.published_media_id) {
+          // Parent belum selesai terbit, tunda eksekusi part ini
+          continue;
+        }
+        replyToMediaId = parentPost.published_media_id;
+      }
+
       await supabase
         .schema("threads")
         .from("scheduled_posts")
@@ -61,17 +76,22 @@ serve(async (req) => {
         .eq("id", post.id);
 
       try {
-        // Step A: Buat Container Post di Threads API
         let creationId = post.creation_id;
         if (!creationId) {
+          const bodyParams: Record<string, string> = {
+            media_type: "TEXT",
+            text: post.text || "",
+            access_token: accessToken,
+          };
+
+          if (replyToMediaId) {
+            bodyParams.reply_to_id = replyToMediaId;
+          }
+
           const createRes = await fetch(`https://graph.threads.net/v1.0/${userId}/threads`, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({
-              media_type: "TEXT",
-              text: post.text || "",
-              access_token: accessToken,
-            }),
+            body: new URLSearchParams(bodyParams),
           });
           const createData = await createRes.json();
           if (createData.error) throw new Error(createData.error.message || JSON.stringify(createData.error));
@@ -85,7 +105,6 @@ serve(async (req) => {
             .eq("id", post.id);
         }
 
-        // Step B: Publish Container
         const pubRes = await fetch(`https://graph.threads.net/v1.0/${userId}/threads_publish`, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -97,7 +116,6 @@ serve(async (req) => {
         const pubData = await pubRes.json();
         if (pubData.error) throw new Error(pubData.error.message || JSON.stringify(pubData.error));
 
-        // Update status ke 'published'
         await supabase
           .schema("threads")
           .from("scheduled_posts")

@@ -1,52 +1,81 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+const CANDIDATE_MODELS = [
+  "gemini-3.8-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-2.5-flash"
+];
 
 serve(async (req) => {
-  // 1. Handle CORS Preflight Request
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { text, account_id } = await req.json()
+    const { text } = await req.json();
+    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
 
-    if (!text) {
-      return new Response(JSON.stringify({ error: 'Text is required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+    if (!geminiApiKey) {
+      return new Response(
+        JSON.stringify({ error: "GEMINI_API_KEY belum terpasang." }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // --- LOGIKA AI SEDERHANA (GANTI DENGAN CALL API GEMINI LU NANTI) ---
-    // Di sini kita bikin dummy response dulu biar jalurnya lancar.
-    const mockScore = Math.floor(Math.random() * 41) + 50 // Random 50-90
-    const mockSuggestions = [
-      'Gunakan pertanyaan di awal kalimat (Hook).',
-      'Tambahkan jeda baris agar lebih mudah dibaca.',
-    ]
+    const prompt = `Analisa draf postingan Threads berikut dan berikan skor potensi engagement (0-100) serta feedback singkat.
+Teks: "${text || ''}"
 
-    const responsePayload = {
-      result: {
-        score: mockScore,
-        breakdown: { clarity: 80, engagement_potential: 75 },
-        suggestions: mockSuggestions
+HANYA kembalikan JSON valid format berikut:
+{
+  "score": 85,
+  "feedback": "Teks sudah ringkas dan to the point, bahasanya natural."
+}`;
+
+    let lastError = "";
+    for (const model of CANDIDATE_MODELS) {
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { responseMimeType: "application/json" }
+            }),
+          }
+        );
+
+        const data = await res.json();
+        if (res.ok && !data.error) {
+          let rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+          rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+          const parsed = JSON.parse(rawText);
+
+          return new Response(
+            JSON.stringify({ success: true, modelUsed: model, score: parsed.score || 80, feedback: parsed.feedback || "Cukup baik." }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        lastError = data.error?.message || res.statusText;
+      } catch (e: any) {
+        lastError = e.message;
       }
     }
 
-    return new Response(JSON.stringify(responsePayload), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
-
-  } catch (error) {
-    console.error('Error di score-draft:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({ error: "Gagal memproses skor AI: " + lastError }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (err: any) {
+    return new Response(
+      JSON.stringify({ error: err.message }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
-})
+});

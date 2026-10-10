@@ -6,26 +6,61 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// List model dengan prioritas fallback
+const CANDIDATE_MODELS = [
+  "gemini-3.8-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-2.5-flash"
+];
+
+async function generateContentWithFallback(apiKey: string, systemPrompt: string) {
+  let lastError = "";
+
+  for (const model of CANDIDATE_MODELS) {
+    console.log(`[GENERATE-POST] Trying model: ${model}`);
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: systemPrompt }] }],
+            generationConfig: { responseMimeType: "application/json" }
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (res.ok && !data.error) {
+        console.log(`[GENERATE-POST] Success using model: ${model}`);
+        return { success: true, modelUsed: model, data };
+      }
+
+      lastError = data.error?.message || `Status HTTP ${res.status}`;
+      console.warn(`[GENERATE-POST] Model ${model} returned error: ${lastError}`);
+    } catch (err: any) {
+      lastError = err.message;
+      console.warn(`[GENERATE-POST] Exception calling model ${model}: ${lastError}`);
+    }
+  }
+
+  return { success: false, error: `Semua model Gemini gagal. Error terakhir: ${lastError}` };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // Verbose Logger Helper
-  const log = (step: string, details?: any) => {
-    console.log(`[GENERATE-POST] [${step}]`, details ? JSON.stringify(details) : '');
-  };
-
   try {
-    log("1_START_REQUEST");
-
     const authHeader = req.headers.get("Authorization");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
 
     if (!supabaseUrl || !serviceRoleKey) {
-      log("ERR_MISSING_SUPABASE_ENV");
       return new Response(
         JSON.stringify({ error: "Environment SUPABASE_URL / SERVICE_ROLE_KEY belum terpasang." }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -33,27 +68,23 @@ serve(async (req) => {
     }
 
     if (!geminiApiKey) {
-      log("ERR_MISSING_GEMINI_KEY");
       return new Response(
         JSON.stringify({ error: "GEMINI_API_KEY belum terpasang di Supabase Secrets." }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Parse Body
     let body;
     try {
       body = await req.json();
-    } catch (parseErr: any) {
-      log("ERR_BAD_JSON_BODY", parseErr.message);
+    } catch {
       return new Response(
-        JSON.stringify({ error: "Format request JSON tidak valid." }),
+        JSON.stringify({ error: "Format JSON request tidak valid." }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const { topic, tone } = body || {};
-    log("2_BODY_PARSED", { topicLength: topic?.length, tone });
 
     if (!topic || typeof topic !== "string") {
       return new Response(
@@ -67,20 +98,14 @@ serve(async (req) => {
     let userKnowledgeBase = "";
     let ragDocs: string[] = [];
 
-    // Fetch Tenant Context & RAG Data
     if (authHeader) {
-      log("3_FETCH_TENANT_CONTEXT");
       const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
         global: { headers: { Authorization: authHeader } }
       });
-      const { data: { user }, error: userErr } = await userClient.auth.getUser();
-
-      if (userErr) {
-        log("WARN_AUTH_USER_FAILED", userErr.message);
-      }
+      const { data: { user } } = await userClient.auth.getUser();
 
       if (user) {
-        const { data: account, error: accErr } = await supabase
+        const { data: account } = await supabase
           .schema("threads")
           .from("threads_accounts")
           .select("id")
@@ -88,10 +113,7 @@ serve(async (req) => {
           .limit(1)
           .maybeSingle();
 
-        if (accErr) log("WARN_ACC_FETCH_ERR", accErr.message);
-
         if (account) {
-          // Fetch Auto Reply Settings Context
           const { data: settings } = await supabase
             .schema("threads")
             .from("auto_reply_settings")
@@ -104,7 +126,6 @@ serve(async (req) => {
             userKnowledgeBase = settings.knowledge_base || "";
           }
 
-          // Fetch RAG Documents dari tabel brand_knowledge
           const { data: docs } = await supabase
             .schema("threads")
             .from("brand_knowledge")
@@ -118,8 +139,6 @@ serve(async (req) => {
         }
       }
     }
-
-    log("4_BUILD_PROMPT", { ragDocsCount: ragDocs.length });
 
     const systemPrompt = `Kamu adalah AI Assistant pembuat konten Threads (Meta).
 Tugasmu adalah merancang 3 variasi draf postingan Threads berdasarkan topik yang diberikan.
@@ -147,54 +166,33 @@ ATURAN OUTPUT:
   { "id": 3, "title": "Format Utasan / Thread", "content": "isi draf 3..." }
 ]`;
 
-    log("5_CALL_GEMINI_API");
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: systemPrompt }] }],
-          generationConfig: { responseMimeType: "application/json" }
-        }),
-      }
-    );
+    const result = await generateContentWithFallback(geminiApiKey, systemPrompt);
 
-    const geminiData = await geminiRes.json();
-
-    if (!geminiRes.ok || geminiData.error) {
-      log("ERR_GEMINI_API_RESPONSE", geminiData.error || geminiRes.statusText);
+    if (!result.success || !result.data) {
       return new Response(
-        JSON.stringify({ error: geminiData.error?.message || "Gemini API mengembalikan respons error." }),
+        JSON.stringify({ error: result.error }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    log("6_PARSE_GEMINI_OUTPUT");
-    let rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
+    let rawText = result.data.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
     rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
 
     let options = [];
     try {
       options = JSON.parse(rawText);
-    } catch (jsonErr: any) {
-      log("WARN_JSON_PARSE_FALLBACK", jsonErr.message);
+    } catch {
       options = [{ id: 1, title: "Draf Post", content: rawText }];
     }
 
-    log("7_SUCCESS_FINISH");
     return new Response(
-      JSON.stringify({ success: true, options }),
+      JSON.stringify({ success: true, modelUsed: result.modelUsed, options }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (globalErr: any) {
-    console.error("[CRITICAL_EDGE_FUNCTION_CRASH]", globalErr.stack || globalErr.message || globalErr);
     return new Response(
-      JSON.stringify({ 
-        error: "Uncaught Edge Function Exception: " + (globalErr.message || "Unknown error"),
-        stack: globalErr.stack 
-      }),
+      JSON.stringify({ error: "Exception: " + globalErr.message }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
