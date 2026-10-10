@@ -12,9 +12,26 @@ const CANDIDATE_MODELS = [
   "gemini-2.5-flash"
 ];
 
+// Helper Fetch dengan Timeout Guard (AbortController)
+async function fetchWithTimeout(resource: string, options: any = {}, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(resource, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(id);
+    return response;
+  } catch (err) {
+    clearTimeout(id);
+    throw err;
+  }
+}
+
 async function getEmbedding(text: string, apiKey: string): Promise<number[] | null> {
   try {
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${apiKey}`,
       {
         method: "POST",
@@ -23,12 +40,12 @@ async function getEmbedding(text: string, apiKey: string): Promise<number[] | nu
           model: "models/text-embedding-004",
           content: { parts: [{ text }] }
         }),
-      }
+      },
+      6000 // 6s timeout max untuk embedding
     );
     const data = await res.json();
     return data.embedding?.values || null;
-  } catch (e) {
-    console.error("[WORKER-REPLIES] Embedding error:", e);
+  } catch {
     return null;
   }
 }
@@ -37,7 +54,7 @@ async function generateReplyWithFallback(apiKey: string, systemPrompt: string) {
   let lastError = "";
   for (const model of CANDIDATE_MODELS) {
     try {
-      const res = await fetch(
+      const res = await fetchWithTimeout(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
         {
           method: "POST",
@@ -46,7 +63,8 @@ async function generateReplyWithFallback(apiKey: string, systemPrompt: string) {
             contents: [{ parts: [{ text: systemPrompt }] }],
             generationConfig: { responseMimeType: "application/json" }
           }),
-        }
+        },
+        8000 // 8s timeout max per model
       );
       const data = await res.json();
       if (res.ok && !data.error) {
@@ -66,35 +84,27 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
-
-    if (!supabaseUrl || !serviceRoleKey || !geminiApiKey) {
-      return new Response(
-        JSON.stringify({ error: "Missing required environment variables." }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const geminiApiKey = Deno.env.get("GEMINI_API_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    let action = "poll";
+    let action = "sync";
     let commentText = "";
     let approveLogId = "";
     let finalTextToPublish = "";
 
     try {
       const body = await req.json();
-      action = body?.action || "poll";
+      action = body?.action || "sync";
       commentText = body?.comment || "";
       approveLogId = body?.log_id || "";
       finalTextToPublish = body?.final_text || "";
     } catch {
-      // Body kosong / invalid JSON -> fallback default
+      // Default action: sync
     }
 
-    const { data: account, error: accErr } = await supabase
+    const { data: account } = await supabase
       .schema("threads")
       .from("threads_accounts")
       .select("*")
@@ -102,7 +112,7 @@ serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    if (accErr || !account) {
+    if (!account) {
       return new Response(
         JSON.stringify({ error: "Belum ada akun Threads tersambung." }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -112,7 +122,9 @@ serve(async (req) => {
     const accessToken = account.settings?.access_token || "";
     const threadsUserId = account.threads_user_id || "";
 
-    // ACTION 1: PUBLISH APPROVED REPLY
+    // ---------------------------------------------------------
+    // ACTION 1: PUBLISH APPROVED REPLY TO THREADS API
+    // ---------------------------------------------------------
     if (action === "publish_reply") {
       if (!approveLogId || !finalTextToPublish) {
         return new Response(
@@ -128,16 +140,11 @@ serve(async (req) => {
         .eq("id", approveLogId)
         .maybeSingle();
 
-      if (!targetLog) {
-        return new Response(
-          JSON.stringify({ error: "Log balasan tidak ditemukan." }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+      if (!targetLog) throw new Error("Log balasan tidak ditemukan.");
 
       const targetReplyId = targetLog.llm_meta?.threads_reply_id || targetLog.reply_id;
 
-      const createRes = await fetch(`https://graph.threads.net/v1.0/${threadsUserId}/threads`, {
+      const createRes = await fetchWithTimeout(`https://graph.threads.net/v1.0/${threadsUserId}/threads`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
@@ -146,18 +153,18 @@ serve(async (req) => {
           reply_to_id: targetReplyId,
           access_token: accessToken,
         }),
-      });
+      }, 10000);
       const createData = await createRes.json();
       if (createData.error) throw new Error(createData.error.message);
 
-      const pubRes = await fetch(`https://graph.threads.net/v1.0/${threadsUserId}/threads_publish`, {
+      const pubRes = await fetchWithTimeout(`https://graph.threads.net/v1.0/${threadsUserId}/threads_publish`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
           creation_id: createData.id,
           access_token: accessToken,
         }),
-      });
+      }, 10000);
       const pubData = await pubRes.json();
       if (pubData.error) throw new Error(pubData.error.message);
 
@@ -177,61 +184,65 @@ serve(async (req) => {
       );
     }
 
-    // ACTION 2: POLL / SIMULATE WITH SAFE PARALLEL PROMISE.ALL
-    const { data: settings } = await supabase
-      .schema("threads")
-      .from("auto_reply_settings")
-      .select("*")
-      .eq("account_id", account.id)
-      .maybeSingle();
+    // ---------------------------------------------------------
+    // ACTION 2: FAST INGESTION / SYNC (< 1.5 DETIK)
+    // ---------------------------------------------------------
+    if (action === "sync" || action === "sync_and_process") {
+      let itemsToInsert = [];
 
-    const mode = settings?.mode || "review";
-    const tonePrompt = settings?.tone_prompt || "Gunakan bahasa kasual, ramah, to the point, dan profesional.";
-
-    let itemsToProcess: Array<{ reply_id: string; comment: string; media_id: string }> = [];
-
-    if (commentText) {
-      itemsToProcess.push({
-        reply_id: crypto.randomUUID(),
-        comment: commentText,
-        media_id: "simulated_media"
-      });
-    } else {
-      const { data: publishedPosts } = await supabase
-        .schema("threads")
-        .from("scheduled_posts")
-        .select("published_media_id")
-        .eq("status", "published")
-        .not("published_media_id", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(5);
-
-      if (publishedPosts && publishedPosts.length > 0 && accessToken) {
-        const fetchPromises = publishedPosts.map(async (p) => {
-          try {
-            const res = await fetch(`https://graph.threads.net/v1.0/${p.published_media_id}/replies?access_token=${accessToken}`);
-            const resData = await res.json();
-            if (resData?.data && Array.isArray(resData.data)) {
-              return resData.data.map((rep: any) => ({
-                reply_id: rep.id,
-                comment: rep.text || "",
-                media_id: p.published_media_id
-              }));
-            }
-          } catch (e) {
-            console.error("[WORKER-REPLIES] Fetch replies error:", e);
+      if (commentText) {
+        itemsToInsert.push({
+          account_id: account.id,
+          reply_id: crypto.randomUUID(),
+          status: "unprocessed",
+          generated_text: "",
+          final_text: "",
+          llm_meta: {
+            incoming_comment: commentText,
+            media_id: "simulated_media"
           }
-          return [];
         });
+      } else {
+        const { data: publishedPosts } = await supabase
+          .schema("threads")
+          .from("scheduled_posts")
+          .select("published_media_id")
+          .eq("status", "published")
+          .not("published_media_id", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(5);
 
-        const results = await Promise.all(fetchPromises);
-        itemsToProcess = results.flat();
+        if (publishedPosts && publishedPosts.length > 0 && accessToken) {
+          for (const p of publishedPosts) {
+            try {
+              const res = await fetchWithTimeout(`https://graph.threads.net/v1.0/${p.published_media_id}/replies?access_token=${accessToken}`, {}, 5000);
+              const resData = await res.json();
+              if (resData?.data && Array.isArray(resData.data)) {
+                for (const rep of resData.data) {
+                  itemsToInsert.push({
+                    account_id: account.id,
+                    reply_id: rep.id,
+                    status: "unprocessed",
+                    generated_text: "",
+                    final_text: "",
+                    llm_meta: {
+                      incoming_comment: rep.text || "",
+                      threads_reply_id: rep.id,
+                      media_id: p.published_media_id
+                    }
+                  });
+                }
+              }
+            } catch {
+              // Ignore API timeout per post
+            }
+          }
+        }
       }
-    }
 
-    // SAFE PARALLEL PROCESSING (Bungkus try-catch per item)
-    const processPromises = itemsToProcess.map(async (item) => {
-      try {
+      // Fast Insert / Upsert Deduplicated
+      let newInsertedCount = 0;
+      for (const item of itemsToInsert) {
         const { data: existing } = await supabase
           .schema("threads")
           .from("auto_reply_logs")
@@ -239,24 +250,84 @@ serve(async (req) => {
           .eq("reply_id", item.reply_id)
           .maybeSingle();
 
-        if (existing) return null;
-
-        let ragContexts: string[] = [];
-        const commentVector = await getEmbedding(item.comment, geminiApiKey);
-        if (commentVector) {
-          const { data: matchedDocs } = await supabase.rpc("match_brand_knowledge", {
-            query_embedding: JSON.stringify(commentVector),
-            match_threshold: 0.25,
-            match_count: 5,
-            p_account_id: account.id
-          }, { schema: "threads" });
-
-          if (matchedDocs && matchedDocs.length > 0) {
-            ragContexts = matchedDocs.map((d: any) => `[FAKTA KNOWLEDGE BASE: ${d.title}] ${d.content}`);
-          }
+        if (!existing) {
+          await supabase.schema("threads").from("auto_reply_logs").insert(item);
+          newInsertedCount++;
         }
+      }
 
-        const systemPrompt = `Kamu adalah AI Auto-Reply Assistant untuk Threads (Meta).
+      // Pemicu otomatis pemrosesan antrean di background (non-blocking)
+      if (newInsertedCount > 0 || action === "sync_and_process") {
+        fetch(`${supabaseUrl}/functions/v1/worker-replies`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${serviceRoleKey}`
+          },
+          body: JSON.stringify({ action: "process_queue" })
+        }).catch(() => {}); // Fire and forget
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, message: "Sync cepat selesai.", newItems: newInsertedCount }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ---------------------------------------------------------
+    // ACTION 3: ASYNC AI QUEUE PROCESSOR (BACKGROUND WORKER)
+    // ---------------------------------------------------------
+    if (action === "process_queue") {
+      const { data: settings } = await supabase
+        .schema("threads")
+        .from("auto_reply_settings")
+        .select("*")
+        .eq("account_id", account.id)
+        .maybeSingle();
+
+      const mode = settings?.mode || "review";
+      const tonePrompt = settings?.tone_prompt || "Gunakan bahasa kasual, ramah, to the point, dan profesional.";
+
+      // Ambil maksimal 5 item unprocessed per batch
+      const { data: queueItems } = await supabase
+        .schema("threads")
+        .from("auto_reply_logs")
+        .select("*")
+        .eq("status", "unprocessed")
+        .limit(5);
+
+      if (!queueItems || queueItems.length === 0) {
+        return new Response(
+          JSON.stringify({ success: true, message: "Antrean kosong." }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const processPromises = queueItems.map(async (item) => {
+        try {
+          const incomingComment = item.llm_meta?.incoming_comment || "";
+          if (!incomingComment) {
+            await supabase.schema("threads").from("auto_reply_logs").delete().eq("id", item.id);
+            return null;
+          }
+
+          // Vector Search RAG
+          let ragContexts: string[] = [];
+          const commentVector = await getEmbedding(incomingComment, geminiApiKey);
+          if (commentVector) {
+            const { data: matchedDocs } = await supabase.rpc("match_brand_knowledge", {
+              query_embedding: JSON.stringify(commentVector),
+              match_threshold: 0.25,
+              match_count: 5,
+              p_account_id: account.id
+            }, { schema: "threads" });
+
+            if (matchedDocs && matchedDocs.length > 0) {
+              ragContexts = matchedDocs.map((d: any) => `[FAKTA KNOWLEDGE BASE: ${d.title}] ${d.content}`);
+            }
+          }
+
+          const systemPrompt = `Kamu adalah AI Auto-Reply Assistant untuk Threads (Meta).
 Tugasmu membalas komentar audiens secara natural berdasarkan fakta bisnis & persona yang diberikan.
 
 FAKTA/DOKUMEN RAG TERKAIT (Vector Search Result):
@@ -266,7 +337,7 @@ TONE & INSTRUKSI PENULISAN:
 ${tonePrompt}
 
 KOMENTAR AUDIENS:
-"${item.comment}"
+"${incomingComment}"
 
 ATURAN BALASAN:
 1. Balas dengan ringkas (1-3 kalimat).
@@ -277,60 +348,63 @@ ATURAN BALASAN:
   "reply": "isi teks balasan..."
 }`;
 
-        const result = await generateReplyWithFallback(geminiApiKey, systemPrompt);
-        if (!result.success || !result.data) return null;
+          const result = await generateReplyWithFallback(geminiApiKey, systemPrompt);
+          if (!result.success || !result.data) {
+            await supabase.schema("threads").from("auto_reply_logs").update({ status: "failed" }).eq("id", item.id);
+            return null;
+          }
 
-        let rawText = result.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-        rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+          let rawText = result.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+          rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
 
-        let generatedText = "";
-        try {
-          const parsed = JSON.parse(rawText);
-          generatedText = parsed.reply || rawText;
+          let generatedText = "";
+          try {
+            const parsed = JSON.parse(rawText);
+            generatedText = parsed.reply || rawText;
+          } catch {
+            generatedText = rawText;
+          }
+
+          const targetStatus = mode === "auto" ? "sent" : "pending";
+
+          await supabase
+            .schema("threads")
+            .from("auto_reply_logs")
+            .update({
+              status: targetStatus,
+              generated_text: generatedText,
+              final_text: generatedText,
+              llm_meta: {
+                ...item.llm_meta,
+                model: result.modelUsed,
+                rag_matched_count: ragContexts.length
+              }
+            })
+            .eq("id", item.id);
+
+          return item.id;
         } catch {
-          generatedText = rawText;
+          await supabase.schema("threads").from("auto_reply_logs").update({ status: "failed" }).eq("id", item.id);
+          return null;
         }
+      });
 
-        const initialStatus = mode === "auto" ? "sent" : "pending";
-        const { data: insertedLog } = await supabase
-          .schema("threads")
-          .from("auto_reply_logs")
-          .insert({
-            account_id: account.id,
-            reply_id: item.reply_id,
-            status: initialStatus,
-            generated_text: generatedText,
-            final_text: generatedText,
-            llm_meta: {
-              model: result.modelUsed,
-              incoming_comment: item.comment,
-              threads_reply_id: item.reply_id,
-              media_id: item.media_id,
-              rag_matched_count: ragContexts.length
-            }
-          })
-          .select('*')
-          .single();
+      await Promise.all(processPromises);
 
-        return insertedLog;
-      } catch (itemErr) {
-        console.error("[WORKER-REPLIES] Error processing item:", itemErr);
-        return null;
-      }
-    });
-
-    const processedResults = await Promise.all(processPromises);
-    const validLogs = processedResults.filter(Boolean);
+      return new Response(
+        JSON.stringify({ success: true, message: "Queue AI selesai diproses." }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     return new Response(
-      JSON.stringify({ success: true, processedCount: validLogs.length, logs: validLogs }),
+      JSON.stringify({ error: "Action tidak dikenal." }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (globalErr: any) {
-    console.error("[WORKER-REPLIES] Uncaught global error:", globalErr);
     return new Response(
-      JSON.stringify({ error: globalErr.message || "Global execution error." }),
+      JSON.stringify({ error: globalErr.message }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

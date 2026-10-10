@@ -1,5 +1,7 @@
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8 relative">
+    <NotifyOverlay />
+
     <div class="flex flex-wrap justify-between items-center gap-4">
       <div>
         <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Auto Reply Inbox</h1>
@@ -8,19 +10,30 @@
       <div class="flex items-center gap-3">
         <button 
           @click="pollRealComments" 
-          :disabled="isPolling"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition shadow-sm disabled:opacity-50"
+          :disabled="isPolling || isSimulating"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition shadow-sm disabled:opacity-50 flex items-center gap-2"
         >
-          {{ isPolling ? 'Mengecek Threads API...' : 'Sync Komentar Threads' }}
+          <span v-if="isPolling" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+          <span>{{ isPolling ? 'Menyinkronkan...' : 'Sync Komentar Threads' }}</span>
         </button>
         <button 
           @click="simulateComment" 
-          :disabled="isSimulating"
-          class="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-bold py-2.5 px-4 rounded-xl border border-indigo-100 transition disabled:opacity-50"
+          :disabled="isSimulating || isPolling"
+          class="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-bold py-2.5 px-4 rounded-xl border border-indigo-100 transition disabled:opacity-50 flex items-center gap-2"
         >
-          {{ isSimulating ? 'Memproses...' : '+ Tes Simulasi' }}
+          <span v-if="isSimulating" class="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></span>
+          <span>{{ isSimulating ? 'Memproses...' : '+ Tes Simulasi' }}</span>
         </button>
       </div>
+    </div>
+
+    <!-- Status Processing Indicator -->
+    <div v-if="unprocessedCount > 0" class="bg-indigo-50 border border-indigo-100 rounded-xl p-3.5 flex items-center justify-between text-xs">
+      <div class="flex items-center gap-2.5 text-indigo-900 font-bold">
+        <span class="w-2 h-2 rounded-full bg-indigo-600 animate-ping"></span>
+        <span>AI sedang memproses {{ unprocessedCount }} komentar di background (Vector RAG + Gemini)...</span>
+      </div>
+      <button @click="fetchLogs" class="text-indigo-700 font-bold underline hover:text-indigo-900">Refresh Status</button>
     </div>
 
     <!-- Filter Tab -->
@@ -47,7 +60,7 @@
       Memuat pesan dan balasan AI...
     </div>
 
-    <!-- Tab 1: Antrean Pending Review -->
+    <!-- Tab 1: Pending Review -->
     <div v-else-if="activeTab === 'pending'" class="space-y-4">
       <div v-if="pendingLogs.length === 0" class="bg-white border border-slate-200 rounded-2xl p-12 text-center text-xs text-slate-400 font-medium space-y-3">
         <p>Belum ada balasan komentar yang menunggu review.</p>
@@ -56,13 +69,13 @@
             @click="pollRealComments" 
             class="bg-indigo-600 text-white font-bold px-4 py-2 rounded-lg text-xs hover:bg-indigo-700 transition"
           >
-            Sync Komentar Asli dari Threads
+            Sync Komentar Asli
           </button>
           <button 
             @click="simulateComment" 
             class="bg-indigo-50 text-indigo-700 font-bold px-4 py-2 rounded-lg text-xs hover:bg-indigo-100 transition"
           >
-            Uji Coba Komentar Simulasi
+            Uji Coba Simulasi
           </button>
         </div>
       </div>
@@ -106,9 +119,10 @@
           <button
             @click="approveAndPublish(log)"
             :disabled="approvingId === log.id"
-            class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition shadow-sm disabled:opacity-50"
+            class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition shadow-sm disabled:opacity-50 flex items-center gap-2"
           >
-            {{ approvingId === log.id ? 'Menerbitkan Balasan...' : 'Approve & Kirim ke Threads' }}
+            <span v-if="approvingId === log.id" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            <span>{{ approvingId === log.id ? 'Menerbitkan...' : 'Approve & Kirim ke Threads' }}</span>
           </button>
         </div>
       </div>
@@ -148,8 +162,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { supabase } from '../lib/supabase'
+import { useNotify } from '../composables/useNotify'
+import NotifyOverlay from '../components/NotifyOverlay.vue'
+
+const { showToast } = useNotify()
 
 const loading = ref(true)
 const isPolling = ref(false)
@@ -157,9 +175,11 @@ const isSimulating = ref(false)
 const approvingId = ref<string | null>(null)
 const activeTab = ref<'pending' | 'history'>('pending')
 const logs = ref<any[]>([])
+let pollTimer: any = null
 
 const pendingLogs = computed(() => logs.value.filter(l => l.status === 'pending' || l.status === 'generated'))
 const historyLogs = computed(() => logs.value.filter(l => l.status !== 'pending' && l.status !== 'generated'))
+const unprocessedCount = computed(() => logs.value.filter(l => l.status === 'unprocessed').length)
 
 function formatDate(isoString: string) {
   if (!isoString) return ''
@@ -167,7 +187,6 @@ function formatDate(isoString: string) {
 }
 
 async function fetchLogs() {
-  loading.value = true
   const { data } = await supabase
     .schema('threads')
     .from('auto_reply_logs')
@@ -183,15 +202,15 @@ async function pollRealComments() {
   isPolling.value = true
   try {
     const { data, error } = await supabase.functions.invoke('worker-replies', {
-      body: { action: 'poll' }
+      body: { action: 'sync' }
     })
     if (error) throw error
     if (data?.error) throw new Error(data.error)
 
-    alert(`Sync selesai! Ditemukan ${data?.processedCount || 0} komentar baru.`)
+    showToast(`Sync selesai dalam < 1s! ${data?.newItems || 0} komentar baru sedang diproses AI.`, 'success')
     await fetchLogs()
   } catch (err: any) {
-    alert('Gagal sync komentar Threads: ' + err.message)
+    showToast('Gagal sync komentar: ' + err.message, 'error')
   } finally {
     isPolling.value = false
   }
@@ -209,15 +228,16 @@ async function simulateComment() {
   isSimulating.value = true
   try {
     const { data, error } = await supabase.functions.invoke('worker-replies', {
-      body: { action: 'poll', comment: randomComment }
+      body: { action: 'sync', comment: randomComment }
     })
 
     if (error) throw error
     if (data?.error) throw new Error(data.error)
 
+    showToast('Komentar simulasi ditambahkan, AI sedang memproses di background!', 'info')
     await fetchLogs()
   } catch (err: any) {
-    alert('Gagal simulasi komentar: ' + err.message)
+    showToast('Gagal simulasi komentar: ' + err.message, 'error')
   } finally {
     isSimulating.value = false
   }
@@ -227,22 +247,20 @@ async function approveAndPublish(log: any) {
   approvingId.value = log.id
   try {
     if (log.llm_meta?.media_id === 'simulated_media') {
-      // Jika data simulasi, cukup update status tanpa hit Graph API
       await updateStatus(log.id, 'approved', log.final_text)
-      alert('Balasan simulasi disetujui (status: approved).')
+      showToast('Balasan simulasi disetujui.', 'info')
     } else {
-      // Hit worker-replies untuk publish asli ke Threads Graph API
       const { data, error } = await supabase.functions.invoke('worker-replies', {
         body: { action: 'publish_reply', log_id: log.id, final_text: log.final_text }
       })
       if (error) throw error
       if (data?.error) throw new Error(data.error)
 
-      alert('Balasan berhasil diterbitkan ke Threads!')
+      showToast('Balasan berhasil diterbitkan ke Threads!', 'success')
       await fetchLogs()
     }
   } catch (err: any) {
-    alert('Gagal menerbitkan balasan: ' + err.message)
+    showToast('Gagal menerbitkan balasan: ' + err.message, 'error')
   } finally {
     approvingId.value = null
   }
@@ -262,11 +280,19 @@ async function updateStatus(id: string, newStatus: string, finalText: string) {
     if (error) throw error
     await fetchLogs()
   } catch (err: any) {
-    alert('Gagal perbarui status: ' + err.message)
+    showToast('Gagal perbarui status: ' + err.message, 'error')
   }
 }
 
 onMounted(() => {
   fetchLogs()
+  // Auto refresh tiap 4 detik jika ada item unprocessed
+  pollTimer = setInterval(() => {
+    if (unprocessedCount.value > 0) fetchLogs()
+  }, 4000)
+})
+
+onUnmounted(() => {
+  if (pollTimer) clearInterval(pollTimer)
 })
 </script>
