@@ -42,6 +42,7 @@ export const useComposerStore = defineStore('composer', () => {
       }
     } catch (err: any) {
       console.error('Error scoring draft:', err)
+      alert('Error AI Score: ' + (err.message || 'Gagal menghubungi server Edge Function. Cek CORS atau log Supabase.'))
     } finally {
       scoring.value = false
     }
@@ -69,6 +70,7 @@ export const useComposerStore = defineStore('composer', () => {
       return { success: true }
     } catch (err: any) {
       console.error('Error scheduling post:', err)
+      alert('Error Database: ' + (err.message || 'Gagal menyimpan ke skema threads'))
       return { success: false, error: err.message }
     } finally {
       loading.value = false
