@@ -235,11 +235,15 @@ const ragForm = ref({
 })
 
 async function initAccountAndSettings() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  // Filter khusus per user_id agar akun tidak saling nyangkut antar user!
   const { data: account } = await supabase
     .schema('threads')
     .from('threads_accounts')
     .select('*')
-    .limit(1)
+    .eq('user_id', user.id)
     .maybeSingle()
 
   if (account) {
@@ -260,11 +264,20 @@ async function initAccountAndSettings() {
       autoReply.value.max_per_hour = settings.max_per_hour || 10
       autoReply.value.tone_prompt = settings.tone_prompt || ''
     }
+  } else {
+    accountId.value = null
+    accountConnected.value = false
+    accountUsername.value = ''
   }
 }
 
 function connectThreads() {
-  showToast('Gunakan link pendaftaran OAuth Threads untuk menghubungkan akun.', 'info')
+  const appId = 'YOUR_META_APP_ID' // Sesuaikan dengan Meta App ID
+  const redirectUri = encodeURIComponent(`${window.location.origin}/auth/threads/callback`)
+  const scope = encodeURIComponent('threads_basic,threads_content_publish,threads_read_replies,threads_manage_replies')
+  
+  const oauthUrl = `https://threads.net/oauth/authorize?client_id=${appId}&redirect_uri=${redirectUri}&scope=${scope}&response_type=code`
+  window.location.href = oauthUrl
 }
 
 async function saveAutoReplySettings() {
