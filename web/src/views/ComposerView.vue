@@ -41,7 +41,7 @@
               />
               <button
                 @click="handleSchedule"
-                :disabled="!postText.trim() || textLength > 500 || !scheduledTime || composerStore.loading"
+                :disabled="!postText.trim() || textLength > 500 || !scheduledTime || composerStore.loading || !activeAccountId"
                 class="bg-white hover:bg-zinc-200 text-black text-xs font-semibold px-5 py-2.5 rounded-lg transition disabled:opacity-40"
               >
                 {{ composerStore.loading ? 'Menyimpan...' : 'Jadwalkan' }}
@@ -122,21 +122,59 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useComposerStore } from '../stores/composer'
+import { supabase } from '../lib/supabase'
 
 const composerStore = useComposerStore()
 
 const postText = ref('')
 const scheduledTime = ref('')
-const activeAccountId = ref('00000000-0000-0000-0000-000000000000')
+const activeAccountId = ref<string | null>(null)
 
 const textLength = computed(() => postText.value.length)
 
+async function loadAccountAndPosts() {
+  const { data, error } = await supabase
+    .schema('threads')
+    .from('threads_accounts')
+    .select('id')
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Error fetching threads account:', error)
+  }
+
+  if (data?.id) {
+    activeAccountId.value = data.id
+    await composerStore.fetchScheduledPosts(data.id)
+  } else {
+    // Jika belum ada akun tersimpan, buatkan row fallback di threads_accounts untuk testing
+    const fallbackId = crypto.randomUUID()
+    const { data: createdAcc } = await supabase
+      .schema('threads')
+      .from('threads_accounts')
+      .insert({
+        id: fallbackId,
+        username: 'tester_account',
+        connection_status: 'connected'
+      })
+      .select('id')
+      .single()
+
+    if (createdAcc?.id) {
+      activeAccountId.value = createdAcc.id
+      await composerStore.fetchScheduledPosts(createdAcc.id)
+    }
+  }
+}
+
 function handleScore() {
+  if (!activeAccountId.value) return
   composerStore.scoreDraft(postText.value, activeAccountId.value)
 }
 
 async function handleSchedule() {
-  if (!postText.value.trim() || !scheduledTime.value) return
+  if (!postText.value.trim() || !scheduledTime.value || !activeAccountId.value) return
 
   const res = await composerStore.createScheduledPost({
     account_id: activeAccountId.value,
@@ -167,5 +205,6 @@ function formatDate(isoStr: string) {
 onMounted(() => {
   const nextHour = new Date(Date.now() + 60 * 60 * 1000)
   scheduledTime.value = nextHour.toISOString().slice(0, 16)
+  loadAccountAndPosts()
 })
 </script>
