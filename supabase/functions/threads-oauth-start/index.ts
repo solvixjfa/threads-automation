@@ -14,47 +14,47 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
-
-    let userId: string | null = null;
-
-    // 1. Coba ambil user dari token Auth jika dikirim oleh frontend
     const authHeader = req.headers.get("Authorization");
-    if (authHeader) {
-      const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-        global: { headers: { Authorization: authHeader } }
+
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Sesi login tidak ditemukan. Silakan login terlebih dahulu." }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
       });
-      const { data: { user } } = await userClient.auth.getUser();
-      if (user) userId = user.id;
     }
 
-    // 2. Jika tidak ada session Auth di browser, ambil user_id ASLI dari auth.users via Admin API
-    if (!userId) {
-      const { data: { users }, error: listErr } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1 });
-      if (listErr || !users || users.length === 0) {
-        throw new Error("Tidak ada user terdaftar di auth.users Supabase.");
-      }
-      userId = users[0].id; // UUID sah yang pasti lolos foreign key constraint
+    // Ambil user asli dari token JWT session
+    const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } }
+    });
+    const { data: { user }, error: userErr } = await userClient.auth.getUser();
+
+    if (userErr || !user) {
+      return new Response(JSON.stringify({ error: "Sesi tidak valid. Silakan login ulang." }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
     const appId = Deno.env.get("THREADS_APP_ID")!;
     const redirectUri = Deno.env.get("THREADS_REDIRECT_URI")!;
     const state = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-    // 3. Insert ke oauth_states menggunakan user_id valid dari auth.users
+    // Insert state dengan user_id asli milik user yang sedang terautentikasi
     const { error: stateErr } = await supabaseAdmin
       .schema("threads")
       .from("oauth_states")
       .insert({
         state: state,
-        user_id: userId,
+        user_id: user.id,
         expires_at: expiresAt,
         used: false
       });
 
     if (stateErr) {
-      throw new Error("Gagal insert oauth_states: " + stateErr.message);
+      throw new Error("Gagal menyimpan OAuth state: " + stateErr.message);
     }
 
     const scope = "threads_basic,threads_content_publish,threads_manage_replies,threads_read_replies,threads_manage_insights";
