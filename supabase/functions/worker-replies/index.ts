@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Deklarasi Global EdgeRuntime agar Deno tidak mematikan isolate di background
 declare const EdgeRuntime: {
   waitUntil(promise: Promise<any>): void;
 };
@@ -17,7 +16,7 @@ const CANDIDATE_MODELS = [
   "gemini-2.5-flash"
 ];
 
-async function fetchWithTimeout(resource: string, options: any = {}, timeoutMs = 8000) {
+async function fetchWithTimeout(resource: string, options: any = {}, timeoutMs = 6000) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -42,7 +41,7 @@ async function getEmbedding(text: string, apiKey: string): Promise<number[] | nu
           content: { parts: [{ text }] }
         }),
       },
-      6000
+      5000
     );
     const data = await res.json();
     return data.embedding?.values || null;
@@ -65,7 +64,7 @@ async function generateReplyWithFallback(apiKey: string, systemPrompt: string) {
             generationConfig: { responseMimeType: "application/json" }
           }),
         },
-        8000
+        7000
       );
       const data = await res.json();
       if (res.ok && !data.error) {
@@ -77,6 +76,115 @@ async function generateReplyWithFallback(apiKey: string, systemPrompt: string) {
     }
   }
   return { success: false, error: lastError };
+}
+
+// Fungsi Internal untuk Memproses Queue Tanpa Self-HTTP Fetch
+async function processQueueInternal(supabase: any, account: any, geminiApiKey: string) {
+  try {
+    const { data: settings } = await supabase
+      .schema("threads")
+      .from("auto_reply_settings")
+      .select("*")
+      .eq("account_id", account.id)
+      .maybeSingle();
+
+    const mode = settings?.mode || "review";
+    const tonePrompt = settings?.tone_prompt || "Gunakan bahasa kasual, ramah, to the point, dan profesional.";
+
+    const { data: queueItems } = await supabase
+      .schema("threads")
+      .from("auto_reply_logs")
+      .select("*")
+      .eq("status", "unprocessed")
+      .limit(2);
+
+    if (!queueItems || queueItems.length === 0) return;
+
+    for (const item of queueItems) {
+      try {
+        const incomingComment = item.llm_meta?.incoming_comment || "";
+        if (!incomingComment) {
+          await supabase.schema("threads").from("auto_reply_logs").delete().eq("id", item.id);
+          continue;
+        }
+
+        let ragContexts: string[] = [];
+        const commentVector = await getEmbedding(incomingComment, geminiApiKey);
+        if (commentVector) {
+          const { data: matchedDocs } = await supabase.rpc("match_brand_knowledge", {
+            query_embedding: JSON.stringify(commentVector),
+            match_threshold: 0.25,
+            match_count: 5,
+            p_account_id: account.id
+          }, { schema: "threads" });
+
+          if (matchedDocs && matchedDocs.length > 0) {
+            ragContexts = matchedDocs.map((d: any) => `[FAKTA KNOWLEDGE BASE: ${d.title}] ${d.content}`);
+          }
+        }
+
+        const systemPrompt = `Kamu adalah AI Auto-Reply Assistant untuk Threads (Meta).
+Tugasmu membalas komentar audiens secara natural berdasarkan fakta bisnis & persona yang diberikan.
+
+FAKTA/DOKUMEN RAG TERKAIT (Vector Search Result):
+${ragContexts.length > 0 ? ragContexts.join("\n") : "Tidak ada fakta khusus yang ditemukan."}
+
+TONE & INSTRUKSI PENULISAN:
+${tonePrompt}
+
+KOMENTAR AUDIENS:
+"${incomingComment}"
+
+ATURAN BALASAN:
+1. Balas dengan ringkas (1-3 kalimat).
+2. Jangan gunakan emoji berlebihan.
+3. Langsung jawab fakta dari RAG jika ditanyakan detail teknis/bisnis.
+4. HANYA kembalikan JSON valid:
+{
+  "reply": "isi teks balasan..."
+}`;
+
+        const result = await generateReplyWithFallback(geminiApiKey, systemPrompt);
+        if (!result.success || !result.data) {
+          await supabase.schema("threads").from("auto_reply_logs").update({ status: "failed" }).eq("id", item.id);
+          continue;
+        }
+
+        let rawText = result.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+        rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+
+        let generatedText = "";
+        try {
+          const parsed = JSON.parse(rawText);
+          generatedText = parsed.reply || rawText;
+        } catch {
+          generatedText = rawText;
+        }
+
+        const targetStatus = mode === "auto" ? "sent" : "pending";
+
+        await supabase
+          .schema("threads")
+          .from("auto_reply_logs")
+          .update({
+            status: targetStatus,
+            generated_text: generatedText,
+            final_text: generatedText,
+            llm_meta: {
+              ...item.llm_meta,
+              model: result.modelUsed,
+              rag_matched_count: ragContexts.length
+            }
+          })
+          .eq("id", item.id);
+
+      } catch {
+        await supabase.schema("threads").from("auto_reply_logs").update({ status: "failed" }).eq("id", item.id);
+      }
+    }
+  } catch (err) {
+    console.error("Queue Processing Error:", err);
+  }
 }
 
 serve(async (req) => {
@@ -152,7 +260,7 @@ serve(async (req) => {
           reply_to_id: targetReplyId,
           access_token: accessToken,
         }),
-      }, 10000);
+      }, 8000);
       const createData = await createRes.json();
       if (createData.error) throw new Error(createData.error.message);
 
@@ -163,7 +271,7 @@ serve(async (req) => {
           creation_id: createData.id,
           access_token: accessToken,
         }),
-      }, 10000);
+      }, 8000);
       const pubData = await pubRes.json();
       if (pubData.error) throw new Error(pubData.error.message);
 
@@ -183,7 +291,7 @@ serve(async (req) => {
       );
     }
 
-    // 2. FAST SYNC (< 1 DETIK)
+    // 2. FAST SYNC (< 1 DETIK) - DIBATASI 2 UTAS TERBARU Saja
     if (action === "sync" || action === "sync_and_process") {
       let itemsToInsert = [];
 
@@ -200,6 +308,7 @@ serve(async (req) => {
           }
         });
       } else {
+        // HANYA CEK 2 UTAS TERBARU
         const { data: publishedPosts } = await supabase
           .schema("threads")
           .from("scheduled_posts")
@@ -207,12 +316,12 @@ serve(async (req) => {
           .eq("status", "published")
           .not("published_media_id", "is", null)
           .order("created_at", { ascending: false })
-          .limit(5);
+          .limit(2);
 
         if (publishedPosts && publishedPosts.length > 0 && accessToken) {
           for (const p of publishedPosts) {
             try {
-              const res = await fetchWithTimeout(`https://graph.threads.net/v1.0/${p.published_media_id}/replies?access_token=${accessToken}`, {}, 5000);
+              const res = await fetchWithTimeout(`https://graph.threads.net/v1.0/${p.published_media_id}/replies?access_token=${accessToken}`, {}, 4000);
               const resData = await res.json();
               if (resData?.data && Array.isArray(resData.data)) {
                 for (const rep of resData.data) {
@@ -231,7 +340,7 @@ serve(async (req) => {
                 }
               }
             } catch {
-              // Ignore individual fetch error
+              // Ignore single timeout
             }
           }
         }
@@ -252,135 +361,22 @@ serve(async (req) => {
         }
       }
 
-      // Tahan Isolate Deno via waitUntil agar background process AI tidak mati paksa
+      // EKSEKUSI LANGSUNG DI MEMORI VIA waitUntil (Tanpa HTTP Self-Fetch)
       if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) {
         EdgeRuntime.waitUntil(
-          fetch(`${supabaseUrl}/functions/v1/worker-replies`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${serviceRoleKey}`
-            },
-            body: JSON.stringify({ action: "process_queue" })
-          }).catch((err) => console.error("Background Queue Error:", err))
+          processQueueInternal(supabase, account, geminiApiKey)
         );
       }
 
       return new Response(
-        JSON.stringify({ success: true, message: "Sync selesai.", newItems: newInsertedCount }),
+        JSON.stringify({ success: true, message: "Sync instan selesai.", newItems: newInsertedCount }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // 3. ASYNC AI QUEUE PROCESSOR
+    // 3. ACTION PROCESS QUEUE MANUAL
     if (action === "process_queue") {
-      const { data: settings } = await supabase
-        .schema("threads")
-        .from("auto_reply_settings")
-        .select("*")
-        .eq("account_id", account.id)
-        .maybeSingle();
-
-      const mode = settings?.mode || "review";
-      const tonePrompt = settings?.tone_prompt || "Gunakan bahasa kasual, ramah, to the point, dan profesional.";
-
-      const { data: queueItems } = await supabase
-        .schema("threads")
-        .from("auto_reply_logs")
-        .select("*")
-        .eq("status", "unprocessed")
-        .limit(3);
-
-      if (!queueItems || queueItems.length === 0) {
-        return new Response(
-          JSON.stringify({ success: true, message: "Antrean kosong." }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      for (const item of queueItems) {
-        try {
-          const incomingComment = item.llm_meta?.incoming_comment || "";
-          if (!incomingComment) {
-            await supabase.schema("threads").from("auto_reply_logs").delete().eq("id", item.id);
-            continue;
-          }
-
-          let ragContexts: string[] = [];
-          const commentVector = await getEmbedding(incomingComment, geminiApiKey);
-          if (commentVector) {
-            const { data: matchedDocs } = await supabase.rpc("match_brand_knowledge", {
-              query_embedding: JSON.stringify(commentVector),
-              match_threshold: 0.25,
-              match_count: 5,
-              p_account_id: account.id
-            }, { schema: "threads" });
-
-            if (matchedDocs && matchedDocs.length > 0) {
-              ragContexts = matchedDocs.map((d: any) => `[FAKTA KNOWLEDGE BASE: ${d.title}] ${d.content}`);
-            }
-          }
-
-          const systemPrompt = `Kamu adalah AI Auto-Reply Assistant untuk Threads (Meta).
-Tugasmu membalas komentar audiens secara natural berdasarkan fakta bisnis & persona yang diberikan.
-
-FAKTA/DOKUMEN RAG TERKAIT (Vector Search Result):
-${ragContexts.length > 0 ? ragContexts.join("\n") : "Tidak ada fakta khusus yang ditemukan."}
-
-TONE & INSTRUKSI PENULISAN:
-${tonePrompt}
-
-KOMENTAR AUDIENS:
-"${incomingComment}"
-
-ATURAN BALASAN:
-1. Balas dengan ringkas (1-3 kalimat).
-2. Jangan gunakan emoji berlebihan.
-3. Langsung jawab fakta dari RAG jika ditanyakan detail teknis/bisnis.
-4. HANYA kembalikan JSON valid:
-{
-  "reply": "isi teks balasan..."
-}`;
-
-          const result = await generateReplyWithFallback(geminiApiKey, systemPrompt);
-          if (!result.success || !result.data) {
-            await supabase.schema("threads").from("auto_reply_logs").update({ status: "failed" }).eq("id", item.id);
-            continue;
-          }
-
-          let rawText = result.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-          rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
-
-          let generatedText = "";
-          try {
-            const parsed = JSON.parse(rawText);
-            generatedText = parsed.reply || rawText;
-          } catch {
-            generatedText = rawText;
-          }
-
-          const targetStatus = mode === "auto" ? "sent" : "pending";
-
-          await supabase
-            .schema("threads")
-            .from("auto_reply_logs")
-            .update({
-              status: targetStatus,
-              generated_text: generatedText,
-              final_text: generatedText,
-              llm_meta: {
-                ...item.llm_meta,
-                model: result.modelUsed,
-                rag_matched_count: ragContexts.length
-              }
-            })
-            .eq("id", item.id);
-
-        } catch {
-          await supabase.schema("threads").from("auto_reply_logs").update({ status: "failed" }).eq("id", item.id);
-        }
-      }
-
+      await processQueueInternal(supabase, account, geminiApiKey);
       return new Response(
         JSON.stringify({ success: true, message: "Queue AI selesai diproses." }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
