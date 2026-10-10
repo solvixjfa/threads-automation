@@ -17,20 +17,22 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // 1. Validasi state & tarik user_id
+    // 1. Verifikasi state
     const { data: stateData, error: stateError } = await supabase
       .schema("threads")
       .from("oauth_states")
-      .select("user_id, expires_at")
+      .select("user_id")
       .eq("state", state)
       .eq("used", false)
       .single();
 
-    if (stateError || !stateData) return Response.redirect(`${appBaseUrl}/settings?error=Invalid_state`, 302);
+    if (stateError || !stateData) {
+      return Response.redirect(`${appBaseUrl}/settings?error=Invalid_or_expired_state`, 302);
+    }
 
     await supabase.schema("threads").from("oauth_states").update({ used: true }).eq("state", state);
 
-    // 2. Tukar Code -> Token
+    // 2. Exchange Short Token
     const appId = Deno.env.get("THREADS_APP_ID")!;
     const appSecret = Deno.env.get("THREADS_APP_SECRET")!;
     const redirectUri = Deno.env.get("THREADS_REDIRECT_URI")!;
@@ -41,32 +43,35 @@ serve(async (req) => {
       body: new URLSearchParams({ client_id: appId, client_secret: appSecret, grant_type: "authorization_code", redirect_uri: redirectUri, code }),
     });
     const tokenData = await tokenRes.json();
-    if (tokenData.error) throw new Error(tokenData.error.message);
+    if (tokenData.error) throw new Error(tokenData.error.message || JSON.stringify(tokenData.error));
 
-    // 3. Tukar -> Long Token
+    // 3. Exchange Long Token
     const longTokenRes = await fetch(`https://graph.threads.net/access_token?grant_type=th_exchange_token&client_secret=${appSecret}&access_token=${tokenData.access_token}`);
     const longTokenData = await longTokenRes.json();
-    if (longTokenData.error) throw new Error(longTokenData.error.message);
-    
-    // 4. Ambil Profil Threads
+    if (longTokenData.error) throw new Error(longTokenData.error.message || JSON.stringify(longTokenData.error));
+
+    // 4. Get Profile
     const profileRes = await fetch(`https://graph.threads.net/v1.0/me?fields=id,username&access_token=${longTokenData.access_token}`);
     const profileData = await profileRes.json();
-    if (profileData.error) throw new Error(profileData.error.message);
+    if (profileData.error) throw new Error(profileData.error.message || JSON.stringify(profileData.error));
 
-    // 5. Simpan ke threads_accounts dengan USER_ID dari state! (PRD Compliant)
     const expiresAt = new Date(Date.now() + (longTokenData.expires_in || 5184000) * 1000).toISOString();
+
+    // 5. Upsert ke threads_accounts DENGAN LENGKAP SEMUA KOLOM NOT NULL (settings & kill_switch)
     const { error: accountError } = await supabase
       .schema("threads")
       .from("threads_accounts")
       .upsert(
         {
-          user_id: stateData.user_id, // DATA PENTING INI KEMBALI
+          user_id: stateData.user_id,
           threads_user_id: profileData.id,
           username: profileData.username,
           connection_status: "connected",
           connected_at: new Date().toISOString(),
           token_expires_at: expiresAt,
-          last_error: null,
+          kill_switch: false,          // KOLOM NOT NULL
+          settings: {},                // KOLOM NOT NULL
+          last_error: null
         },
         { onConflict: "user_id" }
       );
@@ -75,6 +80,7 @@ serve(async (req) => {
 
     return Response.redirect(`${appBaseUrl}/settings?connected=true&username=${profileData.username}`, 302);
   } catch (err: any) {
+    console.error("Callback Error:", err);
     return Response.redirect(`${appBaseUrl}/settings?error=${encodeURIComponent(err.message)}`, 302);
   }
 });
