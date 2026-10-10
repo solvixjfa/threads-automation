@@ -14,28 +14,40 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    // Ambil auth token yang dikirim otomatis oleh supabase-js dari frontend
+    const authHeader = req.headers.get("Authorization");
+    
+    if (!authHeader) {
+      throw new Error("Missing Authorization header");
+    }
+
+    // Buat client dengan token user untuk narik UID
+    const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    if (userError || !user) throw new Error("Unauthorized user");
 
     const appId = Deno.env.get("THREADS_APP_ID")!;
     const redirectUri = Deno.env.get("THREADS_REDIRECT_URI")!;
-
-    // Generate random state
     const state = crypto.randomUUID();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 menit
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-    // Simpan state ke database threads.oauth_states
-    const { error: stateErr } = await supabase
+    // Insert menggunakan Service Role, tapi menyertakan user_id yang valid!
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    const { error: stateErr } = await adminClient
       .schema("threads")
       .from("oauth_states")
       .insert({
         state: state,
+        user_id: user.id, // INI YANG BIKIN ERROR 500 TADI KARENA SEBELUMNYA KELUPAAN
         expires_at: expiresAt,
         used: false
       });
 
-    if (stateErr) throw stateErr;
+    if (stateErr) throw new Error("Gagal menyimpan state: " + stateErr.message);
 
-    // Scope resmi Threads API
     const scope = "threads_basic,threads_content_publish,threads_manage_replies,threads_read_replies,threads_manage_insights";
     const authUrl = `https://threads.net/oauth/authorize?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&response_type=code&state=${state}`;
 
