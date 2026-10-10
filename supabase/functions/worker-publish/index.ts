@@ -1,7 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders } from "../_shared/cors.ts";
-import { checkAndIncrementQuota } from "../_shared/quota.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -15,7 +18,7 @@ serve(async (req) => {
 
     const now = new Date().toISOString();
 
-    // 1. Ambil post yang siap dipublish
+    // 1. Ambil post yang siap dipublish (status: scheduled dan scheduled_for <= now)
     const { data: duePosts, error: fetchErr } = await supabase
       .schema("threads")
       .from("scheduled_posts")
@@ -30,38 +33,35 @@ serve(async (req) => {
 
     for (const post of duePosts || []) {
       const account = post.threads_accounts;
-      
-      // Abaikan jika akun dalam kondisi kill_switch aktif atau suspended
+
       if (!account || account.kill_switch || account.connection_status === "suspended") {
         continue;
       }
 
-      // Cek Quota (Maks 250 post / 24 jam)
-      const { allowed } = await checkAndIncrementQuota(supabase, account.id, "publish", 250);
-      if (!allowed) {
-        // Kuota habis: tunda postingan ke jam berikutnya
+      // Ambil token dari settings JSONB
+      const accessToken = account.settings?.access_token || '';
+      const userId = account.threads_user_id;
+
+      if (!accessToken || !userId) {
         await supabase
           .schema("threads")
           .from("scheduled_posts")
-          .update({ last_error: "Rate limit reached. Postponed." })
+          .update({ last_error: "Missing access token or threads_user_id" })
           .eq("id", post.id);
-        
-        results.push({ post_id: post.id, status: "quota_exceeded" });
+
+        results.push({ post_id: post.id, status: "error", error: "Missing token" });
         continue;
       }
 
-      // Kunci status jadi 'publishing' untuk cegah duplikasi
+      // Kunci status ke 'publishing'
       await supabase
         .schema("threads")
         .from("scheduled_posts")
-        .update({ status: "publishing", attempts: post.attempts + 1 })
+        .update({ status: "publishing", attempts: (post.attempts || 0) + 1 })
         .eq("id", post.id);
 
       try {
-        const accessToken = account.last_error || ''; // Token 60 hari
-        const userId = account.threads_user_id;
-
-        // Step A: Buat Container Post di Threads
+        // Step A: Buat Container Post di Threads API
         let creationId = post.creation_id;
         if (!creationId) {
           const createRes = await fetch(`https://graph.threads.net/v1.0/${userId}/threads`, {
@@ -74,11 +74,10 @@ serve(async (req) => {
             }),
           });
           const createData = await createRes.json();
-          if (createData.error) throw new Error(createData.error.message);
-          
+          if (createData.error) throw new Error(createData.error.message || JSON.stringify(createData.error));
+
           creationId = createData.id;
-          
-          // Simpan creation_id untuk idempotency
+
           await supabase
             .schema("threads")
             .from("scheduled_posts")
@@ -96,7 +95,7 @@ serve(async (req) => {
           }),
         });
         const pubData = await pubRes.json();
-        if (pubData.error) throw new Error(pubData.error.message);
+        if (pubData.error) throw new Error(pubData.error.message || JSON.stringify(pubData.error));
 
         // Update status ke 'published'
         await supabase
@@ -111,7 +110,7 @@ serve(async (req) => {
 
         results.push({ post_id: post.id, status: "published", media_id: pubData.id });
       } catch (err: any) {
-        const isFailedPermanently = post.attempts >= 5;
+        const isFailedPermanently = (post.attempts || 1) >= 5;
         await supabase
           .schema("threads")
           .from("scheduled_posts")

@@ -32,7 +32,7 @@ serve(async (req) => {
 
     await supabase.schema("threads").from("oauth_states").update({ used: true }).eq("state", state);
 
-    // 2. Exchange Short-Lived Token
+    // 2. Exchange Short Token
     const appId = Deno.env.get("THREADS_APP_ID")!;
     const appSecret = Deno.env.get("THREADS_APP_SECRET")!;
     const redirectUri = Deno.env.get("THREADS_REDIRECT_URI")!;
@@ -45,13 +45,15 @@ serve(async (req) => {
     const tokenData = await tokenRes.json();
     if (tokenData.error) throw new Error(tokenData.error.message || JSON.stringify(tokenData.error));
 
-    // 3. Exchange Long-Lived Token (60 Hari)
+    // 3. Exchange Long Token (60 Hari)
     const longTokenRes = await fetch(`https://graph.threads.net/access_token?grant_type=th_exchange_token&client_secret=${appSecret}&access_token=${tokenData.access_token}`);
     const longTokenData = await longTokenRes.json();
     if (longTokenData.error) throw new Error(longTokenData.error.message || JSON.stringify(longTokenData.error));
 
-    // 4. Ambil Profil User Meta
-    const profileRes = await fetch(`https://graph.threads.net/v1.0/me?fields=id,username&access_token=${longTokenData.access_token}`);
+    const longToken = longTokenData.access_token;
+
+    // 4. Ambil Profil User
+    const profileRes = await fetch(`https://graph.threads.net/v1.0/me?fields=id,username&access_token=${longToken}`);
     const profileData = await profileRes.json();
     if (profileData.error) throw new Error(profileData.error.message || JSON.stringify(profileData.error));
 
@@ -61,9 +63,12 @@ serve(async (req) => {
     const { data: existingAccount } = await supabase
       .schema("threads")
       .from("threads_accounts")
-      .select("id")
+      .select("id, settings")
       .eq("user_id", stateData.user_id)
       .maybeSingle();
+
+    const currentSettings = existingAccount?.settings && typeof existingAccount.settings === 'object' ? existingAccount.settings : {};
+    const updatedSettings = { ...currentSettings, access_token: longToken };
 
     const accountPayload = {
       threads_user_id: profileData.id,
@@ -72,12 +77,11 @@ serve(async (req) => {
       connected_at: new Date().toISOString(),
       token_expires_at: expiresAt,
       kill_switch: false,
-      settings: {},
+      settings: updatedSettings, // Long token disimpan di sini!
       last_error: null
     };
 
     if (existingAccount) {
-      // Update jika data akun sudah ada
       const { error: updateError } = await supabase
         .schema("threads")
         .from("threads_accounts")
@@ -86,7 +90,6 @@ serve(async (req) => {
 
       if (updateError) throw new Error("DB Update Error: " + updateError.message);
     } else {
-      // Insert jika data akun baru
       const { error: insertError } = await supabase
         .schema("threads")
         .from("threads_accounts")
