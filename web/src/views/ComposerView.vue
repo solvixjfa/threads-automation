@@ -5,7 +5,7 @@
       <p class="text-slate-500 text-sm mt-1">Tulis atau buat draf otomatis dengan AI, pecah utasan, dan jadwalkan postingan.</p>
     </div>
 
-    <!-- AI Generator Section Accordion / Panel -->
+    <!-- AI Generator Section -->
     <div class="bg-indigo-50/60 border border-indigo-100 rounded-2xl p-6 shadow-sm space-y-4">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
@@ -23,11 +23,11 @@
       <div v-if="showAiPanel" class="space-y-4 pt-2">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div class="md:col-span-2 space-y-1">
-            <label class="text-[11px] font-bold text-slate-700 uppercase">Topik / Ide Utama</label>
+            <label class="text-[11px] font-bold text-slate-700 uppercase">Topik / Ide Singkat</label>
             <input
               v-model="aiTopic"
               type="text"
-              placeholder="Contoh: Belajar automasi bisnis tanpa koding, tips website agency..."
+              placeholder="Masukan topik singkat (contoh: Eksperimen XGBoost buat prediksi churn)..."
               class="w-full bg-white border border-indigo-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
             />
           </div>
@@ -79,7 +79,7 @@
       </div>
     </div>
 
-    <!-- Form Main Composer / Thread Builder -->
+    <!-- Form Main Composer -->
     <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
       <div class="flex justify-between items-center">
         <span class="text-xs font-bold text-slate-700 tracking-wide uppercase">Teks Postingan Utama</span>
@@ -250,12 +250,18 @@ async function generateAiIdeas() {
     const { data, error } = await supabase.functions.invoke('generate-post', {
       body: { topic: aiTopic.value, tone: aiTone.value }
     })
+
     if (error) throw error
+    if (data?.error) {
+      alert('Gagal AI Generator: ' + data.error)
+      return
+    }
+
     if (data?.options) {
       aiResults.value = data.options
     }
   } catch (err: any) {
-    alert('Gagal membuat draf AI: ' + err.message)
+    alert('Gagal membuat draf AI: ' + (err.message || err))
   } finally {
     isGenerating.value = false
   }
