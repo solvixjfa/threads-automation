@@ -5,6 +5,16 @@
       <p class="text-zinc-400 text-sm mt-1">Buat, evaluasi skor keterlibatan konten, dan jadwalkan postingan ke Threads.</p>
     </div>
 
+    <!-- Banner Peringatan jika Belum Konek Akun -->
+    <div v-if="!activeAccountId && !loadingAccount" class="bg-zinc-900 border border-amber-500/30 p-4 rounded-xl flex items-center justify-between">
+      <div class="text-xs text-amber-200">
+        <span class="font-bold">Akun Threads Belum Terhubung:</span> Silakan hubungkan akun Threads kamu di halaman Settings untuk mulai menjadwalkan postingan.
+      </div>
+      <RouterLink to="/settings" class="bg-white text-black text-xs font-bold px-3 py-1.5 rounded hover:bg-zinc-200 transition">
+        Ke Settings
+      </RouterLink>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- Editor Column (2/3) -->
       <div class="lg:col-span-2 space-y-6">
@@ -41,7 +51,7 @@
               />
               <button
                 @click="handleSchedule"
-                :disabled="!postText.trim() || textLength > 500 || !scheduledTime || composerStore.loading"
+                :disabled="!postText.trim() || textLength > 500 || !scheduledTime || composerStore.loading || !activeAccountId"
                 class="bg-white hover:bg-zinc-200 text-black text-xs font-semibold px-5 py-2.5 rounded-lg transition disabled:opacity-40"
               >
                 {{ composerStore.loading ? 'Menyimpan...' : 'Jadwalkan' }}
@@ -121,6 +131,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useComposerStore } from '../stores/composer'
 import { supabase } from '../lib/supabase'
 
@@ -128,56 +139,45 @@ const composerStore = useComposerStore()
 
 const postText = ref('')
 const scheduledTime = ref('')
-const activeAccountId = ref<string>('00000000-0000-0000-0000-000000000000')
+const activeAccountId = ref<string | null>(null)
+const loadingAccount = ref(true)
 
 const textLength = computed(() => postText.value.length)
 
-async function ensureAccountId(): Promise<string> {
-  // 1. Coba ambil akun pertama dari DB
-  const { data } = await supabase
-    .schema('threads')
-    .from('threads_accounts')
-    .select('id')
-    .limit(1)
-    .maybeSingle()
+async function fetchActiveAccount() {
+  loadingAccount.value = true
+  try {
+    // Tarik akun Threads asli yang terhubung di DB
+    const { data, error } = await supabase
+      .schema('threads')
+      .from('threads_accounts')
+      .select('id')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
 
-  if (data?.id) {
-    activeAccountId.value = data.id
-    return data.id
+    if (error) throw error
+
+    if (data?.id) {
+      activeAccountId.value = data.id
+      await composerStore.fetchScheduledPosts(data.id)
+    }
+  } catch (err) {
+    console.error('Failed to resolve active Threads account:', err)
+  } finally {
+    loadingAccount.value = false
   }
-
-  // 2. Jika belum ada di DB, buatkan baris baru di threads_accounts
-  const newId = crypto.randomUUID()
-  const { data: newAcc, error } = await supabase
-    .schema('threads')
-    .from('threads_accounts')
-    .insert({
-      id: newId,
-      username: 'tester_account',
-      connection_status: 'connected'
-    })
-    .select('id')
-    .single()
-
-  if (!error && newAcc?.id) {
-    activeAccountId.value = newAcc.id
-    return newAcc.id
-  }
-
-  return activeAccountId.value
 }
 
-async function handleScore() {
-  const accId = await ensureAccountId()
-  composerStore.scoreDraft(postText.value, accId)
+function handleScore() {
+  composerStore.scoreDraft(postText.value, activeAccountId.value || '')
 }
 
 async function handleSchedule() {
-  if (!postText.value.trim() || !scheduledTime.value) return
+  if (!postText.value.trim() || !scheduledTime.value || !activeAccountId.value) return
 
-  const accId = await ensureAccountId()
   const res = await composerStore.createScheduledPost({
-    account_id: accId,
+    account_id: activeAccountId.value,
     text: postText.value,
     scheduled_for: new Date(scheduledTime.value).toISOString()
   })
@@ -202,13 +202,9 @@ function formatDate(isoStr: string) {
   })
 }
 
-onMounted(async () => {
+onMounted(() => {
   const nextHour = new Date(Date.now() + 60 * 60 * 1000)
   scheduledTime.value = nextHour.toISOString().slice(0, 16)
-  
-  const accId = await ensureAccountId()
-  if (accId) {
-    composerStore.fetchScheduledPosts(accId)
-  }
+  fetchActiveAccount()
 })
 </script>
