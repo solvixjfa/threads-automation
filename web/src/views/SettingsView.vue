@@ -1,11 +1,11 @@
 <template>
   <div class="space-y-8 max-w-5xl">
     <div>
-      <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Pengaturan & Konfigurasi System</h1>
-      <p class="text-slate-500 text-sm mt-1">Kelola koneksi akun Threads, automasi balasan komentar, dan RAG Knowledge Base.</p>
+      <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Settings & RAG Knowledge Base</h1>
+      <p class="text-slate-500 text-sm mt-1">Konfigurasi akun, aturan auto-reply, dan manajemen vector RAG per tenant.</p>
     </div>
 
-    <!-- Section 1: Connect Threads Account Status -->
+    <!-- CARD 1: Connection Status -->
     <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-4">
         <div>
@@ -34,12 +34,12 @@
       </div>
     </div>
 
-    <!-- Section 2: Auto Reply Settings -->
+    <!-- CARD 2: Auto Reply Operational Settings -->
     <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-4">
         <div>
-          <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Pengaturan Auto Reply</h2>
-          <p class="text-xs text-slate-500 mt-0.5">Atur perilaku AI saat membalas komentar audiens secara otomatis.</p>
+          <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Pengaturan Gemini AI Auto-Reply</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Atur aturan operasional dan gaya bahasa balasan komentar.</p>
         </div>
         <label class="relative inline-flex items-center cursor-pointer">
           <input type="checkbox" v-model="autoReply.enabled" class="sr-only peer">
@@ -54,8 +54,8 @@
             v-model="autoReply.mode"
             class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
           >
-            <option value="review">Mode Review (Draf masuk ke Inbox untuk di-approve)</option>
-            <option value="auto">Mode Fully Auto (AI langsung kirim balasan)</option>
+            <option value="review">Review Queue (Setujui manual dulu)</option>
+            <option value="auto">Fully Automatic (Langsung respon)</option>
           </select>
         </div>
 
@@ -70,11 +70,11 @@
       </div>
 
       <div class="space-y-1">
-        <label class="text-[11px] font-bold text-slate-700 uppercase">Instruksi Tone & Gaya Bahasa Balasan</label>
+        <label class="text-[11px] font-bold text-slate-700 uppercase">Tone & Instruksi AI (Prompt)</label>
         <textarea
           v-model="autoReply.tone_prompt"
           rows="3"
-          placeholder="Contoh: Gunakan bahasa kasual, ramah, tidak menggurui, dan selalu jawab pertanyaan teknis dengan to the point..."
+          placeholder="Contoh: Balas dengan ramah, profesional, ringkas, dan tanpa menggurui..."
           class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none"
         ></textarea>
       </div>
@@ -85,18 +85,21 @@
           :disabled="isSavingSettings"
           class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition shadow-md disabled:opacity-50"
         >
-          {{ isSavingSettings ? 'Menyimpan...' : 'Simpan Pengaturan Auto Reply' }}
+          {{ isSavingSettings ? 'Menyimpan...' : 'Simpan Pengaturan' }}
         </button>
       </div>
     </div>
 
-    <!-- Section 3: Form Tambah Pengetahuan RAG Knowledge Base -->
+    <!-- CARD 3: Dedicated RAG Knowledge Base Management -->
     <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
       <div class="flex items-center justify-between border-b border-slate-100 pb-4">
         <div>
-          <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide">RAG Knowledge Base</h2>
-          <p class="text-xs text-slate-500 mt-0.5">Dokumen ini dibaca Gemini saat membuat draf post dan menyusun balasan komentar.</p>
+          <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Vector RAG Knowledge Base</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Semakin detail dokumen ini, semakin akurat AI dalam memahami konteks bisnismu.</p>
         </div>
+        <span class="text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 px-2.5 py-1 rounded-md uppercase">
+          pgvector + embedding-004
+        </span>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -118,18 +121,18 @@
           <input
             v-model="ragForm.title"
             type="text"
-            placeholder="Contoh: Customer Churn Prediction / Aturan Persona 7 Poin"
+            placeholder="Contoh: Customer Churn Prediction / Aturan Personal Branding"
             class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
           />
         </div>
       </div>
 
       <div class="space-y-1">
-        <label class="text-[11px] font-bold text-slate-700 uppercase">Isi Detail / Konten Fakta</label>
+        <label class="text-[11px] font-bold text-slate-700 uppercase">Isi Teks Dokumen (Fakta Bisnis / Detail Teknis)</label>
         <textarea
           v-model="ragForm.content"
-          rows="4"
-          placeholder="Tulis fakta teknis, instruksi spesifik, angka hasil eksperimen, atau aturan yang wajib diikuti AI..."
+          rows="5"
+          placeholder="Tuliskan fakta spesifik, angka eksperimen, rincian produk, atau aturan yang wajib diingat AI..."
           class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none"
         ></textarea>
       </div>
@@ -140,22 +143,22 @@
           :disabled="isSavingRag || !ragForm.title || !ragForm.content"
           class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition shadow-md disabled:opacity-50"
         >
-          {{ isSavingRag ? 'Memproses...' : 'Tambah ke Knowledge Base' }}
+          {{ isSavingRag ? 'Memproses Vector...' : 'Tambah ke Vector Database' }}
         </button>
       </div>
     </div>
 
-    <!-- Section 4: Daftar Dokumen RAG Tersimpan -->
+    <!-- CARD 4: Index List Dokumen RAG -->
     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
       <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
         <div class="flex items-center gap-2">
-          <span class="text-xs font-bold text-slate-700 uppercase tracking-wide">Daftar Dokumen RAG</span>
+          <span class="text-xs font-bold text-slate-700 uppercase tracking-wide">Indeks Dokumen Knowledge Base</span>
           <span class="text-xs font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">{{ ragItems.length }} Item</span>
         </div>
         <button @click="fetchKnowledge" class="text-xs font-bold text-indigo-600 hover:text-indigo-800">Refresh</button>
       </div>
 
-      <div v-if="loadingRag" class="p-8 text-center text-xs text-slate-400 font-medium animate-pulse">Memuat data RAG...</div>
+      <div v-if="loadingRag" class="p-8 text-center text-xs text-slate-400 font-medium animate-pulse">Memuat indeks RAG...</div>
 
       <div v-else-if="ragItems.length === 0" class="p-8 text-center text-xs text-slate-400 font-medium">
         Belum ada dokumen RAG tersimpan. Tambahkan fakta/persona pertama kamu di atas.
@@ -177,6 +180,9 @@
                 {{ item.category }}
               </span>
               <h3 class="text-xs font-bold text-slate-900">{{ item.title }}</h3>
+              <span v-if="item.embedding" class="text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded">
+                Indexed (768d)
+              </span>
             </div>
             <button
               @click="deleteKnowledge(item.id)"
@@ -250,7 +256,6 @@ async function initAccountAndSettings() {
 }
 
 function connectThreads() {
-  const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`)
   alert('Gunakan link pendaftaran OAuth Threads untuk menghubungkan akun.')
 }
 
@@ -305,7 +310,7 @@ async function saveKnowledge() {
 
   isSavingRag.value = true
   try {
-    const { error } = await supabase
+    const { data: inserted, error } = await supabase
       .schema('threads')
       .from('brand_knowledge')
       .insert({
@@ -314,8 +319,17 @@ async function saveKnowledge() {
         title: ragForm.value.title,
         content: ragForm.value.content
       })
+      .select('id')
+      .single()
 
     if (error) throw error
+
+    // Panggil Edge Function untuk meng-generate vector embedding
+    if (inserted?.id) {
+      await supabase.functions.invoke('embed-knowledge', {
+        body: { id: inserted.id, content: ragForm.value.content }
+      })
+    }
 
     ragForm.value.title = ''
     ragForm.value.content = ''
@@ -328,7 +342,7 @@ async function saveKnowledge() {
 }
 
 async function deleteKnowledge(id: string) {
-  if (!confirm('Hapus dokumen pengetahuan ini?')) return
+  if (!confirm('Hapus dokumen pengetahuan ini dari Vector Database?')) return
   try {
     const { error } = await supabase
       .schema('threads')

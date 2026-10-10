@@ -6,18 +6,35 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// List model dengan prioritas fallback
 const CANDIDATE_MODELS = [
   "gemini-3.8-flash",
   "gemini-3.5-flash-lite",
   "gemini-2.5-flash"
 ];
 
+async function getEmbedding(text: string, apiKey: string): Promise<number[] | null> {
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "models/text-embedding-004",
+          content: { parts: [{ text }] }
+        }),
+      }
+    );
+    const data = await res.json();
+    return data.embedding?.values || null;
+  } catch {
+    return null;
+  }
+}
+
 async function generateContentWithFallback(apiKey: string, systemPrompt: string) {
   let lastError = "";
-
   for (const model of CANDIDATE_MODELS) {
-    console.log(`[GENERATE-POST] Trying model: ${model}`);
     try {
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -30,23 +47,16 @@ async function generateContentWithFallback(apiKey: string, systemPrompt: string)
           }),
         }
       );
-
       const data = await res.json();
-
       if (res.ok && !data.error) {
-        console.log(`[GENERATE-POST] Success using model: ${model}`);
         return { success: true, modelUsed: model, data };
       }
-
       lastError = data.error?.message || `Status HTTP ${res.status}`;
-      console.warn(`[GENERATE-POST] Model ${model} returned error: ${lastError}`);
     } catch (err: any) {
       lastError = err.message;
-      console.warn(`[GENERATE-POST] Exception calling model ${model}: ${lastError}`);
     }
   }
-
-  return { success: false, error: `Semua model Gemini gagal. Error terakhir: ${lastError}` };
+  return { success: false, error: lastError };
 }
 
 serve(async (req) => {
@@ -56,47 +66,21 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const geminiApiKey = Deno.env.get("GEMINI_API_KEY")!;
 
-    if (!supabaseUrl || !serviceRoleKey) {
+    const { topic, tone } = await req.json();
+    if (!topic) {
       return new Response(
-        JSON.stringify({ error: "Environment SUPABASE_URL / SERVICE_ROLE_KEY belum terpasang." }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (!geminiApiKey) {
-      return new Response(
-        JSON.stringify({ error: "GEMINI_API_KEY belum terpasang di Supabase Secrets." }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    let body;
-    try {
-      body = await req.json();
-    } catch {
-      return new Response(
-        JSON.stringify({ error: "Format JSON request tidak valid." }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const { topic, tone } = body || {};
-
-    if (!topic || typeof topic !== "string") {
-      return new Response(
-        JSON.stringify({ error: "Topik/ide postingan tidak boleh kosong." }),
+        JSON.stringify({ error: "Topik tidak boleh kosong." }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
     let userTonePrompt = "";
-    let userKnowledgeBase = "";
-    let ragDocs: string[] = [];
+    let ragContexts: string[] = [];
 
     if (authHeader) {
       const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
@@ -117,41 +101,40 @@ serve(async (req) => {
           const { data: settings } = await supabase
             .schema("threads")
             .from("auto_reply_settings")
-            .select("tone_prompt, knowledge_base")
+            .select("tone_prompt")
             .eq("account_id", account.id)
             .maybeSingle();
 
-          if (settings) {
-            userTonePrompt = settings.tone_prompt || "";
-            userKnowledgeBase = settings.knowledge_base || "";
-          }
+          if (settings) userTonePrompt = settings.tone_prompt || "";
 
-          const { data: docs } = await supabase
-            .schema("threads")
-            .from("brand_knowledge")
-            .select("category, title, content")
-            .eq("account_id", account.id)
-            .limit(10);
+          // SEMANTIC VECTOR SEARCH via pgvector
+          const topicVector = await getEmbedding(topic, geminiApiKey);
+          if (topicVector) {
+            const { data: matchedDocs } = await supabase.rpc("match_brand_knowledge", {
+              query_embedding: JSON.stringify(topicVector),
+              match_threshold: 0.3,
+              match_count: 5,
+              p_account_id: account.id
+            }, { schema: "threads" });
 
-          if (docs && docs.length > 0) {
-            ragDocs = docs.map(d => `[${d.category.toUpperCase()}] ${d.title}: ${d.content}`);
+            if (matchedDocs && matchedDocs.length > 0) {
+              ragContexts = matchedDocs.map((d: any) => `[FAKTA RELEVAN: ${d.title}] ${d.content}`);
+            }
           }
         }
       }
     }
 
     const systemPrompt = `Kamu adalah AI Assistant pembuat konten Threads (Meta).
-Tugasmu adalah merancang 3 variasi draf postingan Threads berdasarkan topik yang diberikan.
+Tugasmu merancang 3 variasi draf postingan Threads berdasarkan topik yang diberikan.
 
-KONTEKS RAG / BRAND KNOWLEDGE:
-${ragDocs.length > 0 ? ragDocs.join("\n") : (userKnowledgeBase || 'Tidak ada dokumen konteks khusus.')}
+FAKTA/KONTEKS RAG TERKAIT (Hasil Semantic Vector Search):
+${ragContexts.length > 0 ? ragContexts.join("\n") : "Tidak ada dokumen khusus yang cocok."}
 
 INSTRUKSI PERSONA & TONE:
-${userTonePrompt || 'Gunakan bahasa kasual, natural, tanpa emoji berlebihan, dan tidak kaku.'}
+${userTonePrompt || "Gunakan bahasa kasual, natural, tanpa emoji berlebihan, dan tidak kaku."}
 
-TOPIK UTAMA:
-"${topic}"
-
+TOPIK UTAMA: "${topic}"
 GAYA PILIHAN: "${tone || 'Edukasi & Insight'}"
 
 ATURAN OUTPUT:
@@ -159,7 +142,7 @@ ATURAN OUTPUT:
 2. Draf 1: Ringkas & Direct (100-200 karakter)
 3. Draf 2: Insight / Storytelling (300-450 karakter)
 4. Draf 3: Utasan / Thread Panjang (> 500 karakter)
-5. HANYA kembalikan JSON array valid tanpa penjelasan tambahan:
+5. HANYA kembalikan JSON array valid:
 [
   { "id": 1, "title": "Ringkas & Direct", "content": "isi draf 1..." },
   { "id": 2, "title": "Insight & Storytelling", "content": "isi draf 2..." },
@@ -167,7 +150,6 @@ ATURAN OUTPUT:
 ]`;
 
     const result = await generateContentWithFallback(geminiApiKey, systemPrompt);
-
     if (!result.success || !result.data) {
       return new Response(
         JSON.stringify({ error: result.error }),
@@ -186,13 +168,12 @@ ATURAN OUTPUT:
     }
 
     return new Response(
-      JSON.stringify({ success: true, modelUsed: result.modelUsed, options }),
+      JSON.stringify({ success: true, options }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-
-  } catch (globalErr: any) {
+  } catch (err: any) {
     return new Response(
-      JSON.stringify({ error: "Exception: " + globalErr.message }),
+      JSON.stringify({ error: err.message }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
