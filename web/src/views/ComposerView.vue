@@ -41,7 +41,7 @@
               />
               <button
                 @click="handleSchedule"
-                :disabled="!postText.trim() || textLength > 500 || !scheduledTime || composerStore.loading || !activeAccountId"
+                :disabled="!postText.trim() || textLength > 500 || !scheduledTime || composerStore.loading"
                 class="bg-white hover:bg-zinc-200 text-black text-xs font-semibold px-5 py-2.5 rounded-lg transition disabled:opacity-40"
               >
                 {{ composerStore.loading ? 'Menyimpan...' : 'Jadwalkan' }}
@@ -128,56 +128,56 @@ const composerStore = useComposerStore()
 
 const postText = ref('')
 const scheduledTime = ref('')
-const activeAccountId = ref<string | null>(null)
+const activeAccountId = ref<string>('00000000-0000-0000-0000-000000000000')
 
 const textLength = computed(() => postText.value.length)
 
-async function loadAccountAndPosts() {
-  const { data, error } = await supabase
+async function ensureAccountId(): Promise<string> {
+  // 1. Coba ambil akun pertama dari DB
+  const { data } = await supabase
     .schema('threads')
     .from('threads_accounts')
     .select('id')
     .limit(1)
     .maybeSingle()
 
-  if (error) {
-    console.error('Error fetching threads account:', error)
-  }
-
   if (data?.id) {
     activeAccountId.value = data.id
-    await composerStore.fetchScheduledPosts(data.id)
-  } else {
-    // Jika belum ada akun tersimpan, buatkan row fallback di threads_accounts untuk testing
-    const fallbackId = crypto.randomUUID()
-    const { data: createdAcc } = await supabase
-      .schema('threads')
-      .from('threads_accounts')
-      .insert({
-        id: fallbackId,
-        username: 'tester_account',
-        connection_status: 'connected'
-      })
-      .select('id')
-      .single()
-
-    if (createdAcc?.id) {
-      activeAccountId.value = createdAcc.id
-      await composerStore.fetchScheduledPosts(createdAcc.id)
-    }
+    return data.id
   }
+
+  // 2. Jika belum ada di DB, buatkan baris baru di threads_accounts
+  const newId = crypto.randomUUID()
+  const { data: newAcc, error } = await supabase
+    .schema('threads')
+    .from('threads_accounts')
+    .insert({
+      id: newId,
+      username: 'tester_account',
+      connection_status: 'connected'
+    })
+    .select('id')
+    .single()
+
+  if (!error && newAcc?.id) {
+    activeAccountId.value = newAcc.id
+    return newAcc.id
+  }
+
+  return activeAccountId.value
 }
 
-function handleScore() {
-  if (!activeAccountId.value) return
-  composerStore.scoreDraft(postText.value, activeAccountId.value)
+async function handleScore() {
+  const accId = await ensureAccountId()
+  composerStore.scoreDraft(postText.value, accId)
 }
 
 async function handleSchedule() {
-  if (!postText.value.trim() || !scheduledTime.value || !activeAccountId.value) return
+  if (!postText.value.trim() || !scheduledTime.value) return
 
+  const accId = await ensureAccountId()
   const res = await composerStore.createScheduledPost({
-    account_id: activeAccountId.value,
+    account_id: accId,
     text: postText.value,
     scheduled_for: new Date(scheduledTime.value).toISOString()
   })
@@ -202,9 +202,13 @@ function formatDate(isoStr: string) {
   })
 }
 
-onMounted(() => {
+onMounted(async () => {
   const nextHour = new Date(Date.now() + 60 * 60 * 1000)
   scheduledTime.value = nextHour.toISOString().slice(0, 16)
-  loadAccountAndPosts()
+  
+  const accId = await ensureAccountId()
+  if (accId) {
+    composerStore.fetchScheduledPosts(accId)
+  }
 })
 </script>
