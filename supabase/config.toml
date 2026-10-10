@@ -8,3 +8,15 @@ verify_jwt = false
 
 [functions.threads-webhook]
 verify_jwt = false
+
+[functions.score-draft]
+verify_jwt = false
+
+[functions.get-analytics]
+verify_jwt = false
+
+[functions.auto-reply-engine]
+verify_jwt = false
+
+[functions.admin-manage-queue]
+verify_jwt = false
