@@ -16,10 +16,10 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-    // Ambil user dari token Auth jika ada
     let userId: string | null = null;
-    const authHeader = req.headers.get("Authorization");
 
+    // 1. Coba ambil user dari token Auth jika dikirim oleh frontend
+    const authHeader = req.headers.get("Authorization");
     if (authHeader) {
       const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
         global: { headers: { Authorization: authHeader } }
@@ -28,15 +28,13 @@ serve(async (req) => {
       if (user) userId = user.id;
     }
 
-    // Jika belum login Auth, cari user pertama dari database sebagai fallback
+    // 2. Jika tidak ada session Auth di browser, ambil user_id ASLI dari auth.users via Admin API
     if (!userId) {
-      const { data: fallbackUser } = await supabaseAdmin
-        .from("profiles")
-        .select("id")
-        .limit(1)
-        .maybeSingle();
-
-      userId = fallbackUser?.id || "00000000-0000-0000-0000-000000000000";
+      const { data: { users }, error: listErr } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1 });
+      if (listErr || !users || users.length === 0) {
+        throw new Error("Tidak ada user terdaftar di auth.users Supabase.");
+      }
+      userId = users[0].id; // UUID sah yang pasti lolos foreign key constraint
     }
 
     const appId = Deno.env.get("THREADS_APP_ID")!;
@@ -44,7 +42,7 @@ serve(async (req) => {
     const state = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-    // Insert ke oauth_states dengan user_id yang terjamin NOT NULL
+    // 3. Insert ke oauth_states menggunakan user_id valid dari auth.users
     const { error: stateErr } = await supabaseAdmin
       .schema("threads")
       .from("oauth_states")
