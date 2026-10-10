@@ -1,24 +1,47 @@
 <template>
   <div class="space-y-8">
     <div>
-      <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Composer & Scheduler</h1>
-      <p class="text-slate-500 text-sm mt-1">Buat konten, cek skor AI, dan jadwalkan postingan Threads.</p>
+      <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Composer & Thread Builder</h1>
+      <p class="text-slate-500 text-sm mt-1">Tulis konten panjang, pecah otomatis jadi utasan (thread), dan kelola antrean postingan.</p>
     </div>
 
-    <!-- Form Post -->
+    <!-- Form Main Composer / Thread Builder -->
     <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
       <div class="flex justify-between items-center">
-        <span class="text-xs font-bold text-slate-700 tracking-wide uppercase">Teks Postingan</span>
-        <span class="text-xs font-medium" :class="postText.length > 450 ? 'text-amber-500' : 'text-slate-400'">{{ postText.length }} / 500</span>
+        <span class="text-xs font-bold text-slate-700 tracking-wide uppercase">Teks Utama</span>
+        <div class="flex items-center gap-2">
+          <span v-if="postText.length > 500" class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+            Auto-Split Ready ({{ threadParts.length }} Parts)
+          </span>
+          <span class="text-xs font-medium" :class="postText.length > 500 ? 'text-indigo-600 font-bold' : 'text-slate-400'">
+            {{ postText.length }} Chars
+          </span>
+        </div>
       </div>
 
       <textarea
         v-model="postText"
-        rows="5"
-        placeholder="Tulis draf postingan di sini..."
+        @input="handleTextChange"
+        rows="6"
+        placeholder="Tulis draf postingan di sini. Jika lebih dari 500 karakter, sistem akan memecahnya menjadi utasan otomatis..."
         class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none"
-        maxlength="500"
       ></textarea>
+
+      <!-- Multi-Part Preview / Manual Edit Parts -->
+      <div v-if="threadParts.length > 1" class="space-y-3 pt-2 border-t border-slate-100">
+        <span class="text-xs font-bold text-slate-700 uppercase tracking-wide">Pratinjau Utasan Thread ({{ threadParts.length }} Bagian)</span>
+        <div v-for="(part, idx) in threadParts" :key="idx" class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
+          <div class="flex justify-between items-center text-[11px] font-bold text-slate-500">
+            <span>Bagian {{ idx + 1 }} dari {{ threadParts.length }}</span>
+            <span :class="part.length > 500 ? 'text-rose-600 font-bold' : 'text-slate-400'">{{ part.length }} / 500</span>
+          </div>
+          <textarea
+            v-model="threadParts[idx]"
+            rows="3"
+            class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 transition resize-none"
+          ></textarea>
+        </div>
+      </div>
 
       <div class="flex flex-wrap items-center gap-3 pt-2">
         <button 
@@ -40,16 +63,17 @@
             :disabled="!postText || isSaving"
             class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-6 rounded-lg transition shadow-md disabled:opacity-50"
           >
-            {{ isSaving ? 'Memproses...' : 'Jadwalkan' }}
+            {{ isSaving ? 'Memproses...' : (threadParts.length > 1 ? `Jadwalkan ${threadParts.length} Utasan` : 'Jadwalkan') }}
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Antrean -->
+    <!-- Antrean Postingan & Management (Edit / Delete / Cancel) -->
     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-      <div class="p-5 border-b border-slate-100 bg-slate-50">
+      <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
         <span class="text-xs font-bold text-slate-700 tracking-wide uppercase">Antrean Terjadwal</span>
+        <button @click="loadPosts" class="text-xs font-bold text-indigo-600 hover:text-indigo-800">Refresh</button>
       </div>
 
       <div v-if="loading" class="p-8 text-center text-xs text-slate-400 font-medium animate-pulse">Memuat data...</div>
@@ -59,12 +83,11 @@
       </div>
 
       <div v-else class="divide-y divide-slate-100">
-        <div v-for="post in posts" :key="post.id" class="p-5 hover:bg-slate-50 transition">
-          <p class="text-sm font-medium text-slate-800 mb-3 whitespace-pre-wrap">{{ post.text }}</p>
-          <div class="flex items-center justify-between">
-            <span class="text-xs text-slate-500 font-medium">{{ formatDate(post.scheduled_for) }}</span>
+        <div v-for="post in posts" :key="post.id" class="p-5 hover:bg-slate-50/80 transition space-y-3">
+          <div class="flex items-start justify-between gap-4">
+            <p class="text-sm font-medium text-slate-800 whitespace-pre-wrap flex-1">{{ post.text }}</p>
             <span
-              class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md"
+              class="shrink-0 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md"
               :class="{
                 'bg-amber-50 text-amber-600 border border-amber-100': post.status === 'scheduled',
                 'bg-emerald-50 text-emerald-600 border border-emerald-100': post.status === 'published',
@@ -74,6 +97,47 @@
               {{ post.status }}
             </span>
           </div>
+
+          <div class="flex items-center justify-between pt-1 text-xs">
+            <span class="text-slate-500 font-medium">{{ formatDate(post.scheduled_for) }}</span>
+            <div v-if="post.status === 'scheduled'" class="flex items-center gap-2">
+              <button @click="openEditModal(post)" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-md transition">
+                Edit / Rewrite
+              </button>
+              <button @click="deletePost(post.id)" class="px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-md transition">
+                Batal / Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Edit / Rewrite -->
+    <div v-if="editingPost" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div class="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+        <h3 class="text-lg font-bold text-slate-900">Edit / Rewrite Postingan</h3>
+        <textarea
+          v-model="editForm.text"
+          rows="5"
+          class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none"
+          maxlength="500"
+        ></textarea>
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-700">Waktu Tayang Baru</label>
+          <input
+            v-model="editForm.scheduled_for"
+            type="datetime-local"
+            class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+          />
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button @click="editingPost = null" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition">
+            Batal
+          </button>
+          <button @click="saveEdit" :disabled="isUpdating" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition disabled:opacity-50">
+            {{ isUpdating ? 'Menyimpan...' : 'Simpan Perubahan' }}
+          </button>
         </div>
       </div>
     </div>
@@ -85,11 +149,50 @@ import { ref, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 
 const postText = ref('')
+const threadParts = ref<string[]>([])
 const scheduledDate = ref('')
 const isSaving = ref(false)
 const isChecking = ref(false)
+const isUpdating = ref(false)
 const loading = ref(true)
 const posts = ref<any[]>([])
+
+const editingPost = ref<any>(null)
+const editForm = ref({ text: '', scheduled_for: '' })
+
+function splitTextIntoParts(text: string, maxLen = 480): string[] {
+  if (text.length <= maxLen) return [text]
+  const paragraphs = text.split(/\n+/)
+  const parts: string[] = []
+  let current = ''
+
+  for (const p of paragraphs) {
+    if ((current + '\n\n' + p).trim().length <= maxLen) {
+      current = current ? current + '\n\n' + p : p
+    } else {
+      if (current) parts.push(current.trim())
+      if (p.length <= maxLen) {
+        current = p
+      } else {
+        const sentences = p.match(/[^.!?]+[.!?]+/g) || [p]
+        for (const s of sentences) {
+          if ((current + ' ' + s).trim().length <= maxLen) {
+            current = current ? current + ' ' + s : s
+          } else {
+            if (current) parts.push(current.trim())
+            current = s
+          }
+        }
+      }
+    }
+  }
+  if (current) parts.push(current.trim())
+  return parts
+}
+
+function handleTextChange() {
+  threadParts.value = splitTextIntoParts(postText.value)
+}
 
 function formatDate(isoString: string) {
   const d = new Date(isoString)
@@ -97,12 +200,13 @@ function formatDate(isoString: string) {
 }
 
 async function loadPosts() {
+  loading.value = true
   const { data } = await supabase
     .schema('threads')
     .from('scheduled_posts')
     .select('*')
     .order('created_at', { ascending: false })
-    .limit(10)
+    .limit(20)
   if (data) posts.value = data
   loading.value = false
 }
@@ -114,10 +218,8 @@ async function checkScore() {
       body: { text: postText.value }
     })
     if (error) throw error
-    
     const scoreVal = data?.score ?? data?.result?.score ?? 'N/A'
     const feedbackVal = data?.feedback ?? data?.result?.feedback ?? data?.message ?? 'Tidak ada catatan.'
-    
     alert(`Skor AI: ${scoreVal}/100\n\nCatatan:\n${feedbackVal}`)
   } catch (err: any) {
     alert('Gagal analisa AI: ' + err.message)
@@ -127,7 +229,7 @@ async function checkScore() {
 }
 
 async function schedulePost() {
-  if (!postText.value || !scheduledDate.value) return alert('Isi teks dan tanggal dulu.')
+  if (!postText.value || !scheduledDate.value) return alert('Isi teks dan tanggal terlebih dahulu.')
   isSaving.value = true
   
   try {
@@ -142,21 +244,35 @@ async function schedulePost() {
     if (!accounts) throw new Error('Akun Threads belum tersambung. Hubungkan di Settings.')
 
     const isoDate = new Date(scheduledDate.value).toISOString()
+    const partsToSave = threadParts.value.length > 0 ? threadParts.value : [postText.value]
 
-    // generate idempotency_key unik untuk memenuhi NOT NULL constraint
-    const { error } = await supabase
-      .schema('threads')
-      .from('scheduled_posts')
-      .insert({
-        account_id: accounts.id,
-        text: postText.value,
-        scheduled_for: isoDate,
-        status: 'scheduled',
-        idempotency_key: crypto.randomUUID()
-      })
+    let parentId: string | null = null
 
-    if (error) throw error
+    for (let i = 0; i < partsToSave.length; i++) {
+      const partText = partsToSave[i]
+      const { data: insertedPost, error } = await supabase
+        .schema('threads')
+        .from('scheduled_posts')
+        .insert({
+          account_id: accounts.id,
+          text: partText,
+          scheduled_for: isoDate,
+          status: 'scheduled',
+          idempotency_key: crypto.randomUUID(),
+          parent_id: parentId,
+          sequence_number: i + 1
+        })
+        .select('id')
+        .single()
+
+      if (error) throw error
+      if (i === 0 && insertedPost) {
+        parentId = insertedPost.id
+      }
+    }
+
     postText.value = ''
+    threadParts.value = []
     
     const d = new Date()
     d.setHours(d.getHours() + 1)
@@ -168,6 +284,54 @@ async function schedulePost() {
     alert('Gagal simpan: ' + err.message)
   } finally {
     isSaving.value = false
+  }
+}
+
+function openEditModal(post: any) {
+  editingPost.value = post
+  editForm.value.text = post.text
+  const d = new Date(post.scheduled_for)
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+  editForm.value.scheduled_for = d.toISOString().slice(0, 16)
+}
+
+async function saveEdit() {
+  if (!editingPost.value) return
+  isUpdating.value = true
+  try {
+    const isoDate = new Date(editForm.value.scheduled_for).toISOString()
+    const { error } = await supabase
+      .schema('threads')
+      .from('scheduled_posts')
+      .update({
+        text: editForm.value.text,
+        scheduled_for: isoDate
+      })
+      .eq('id', editingPost.value.id)
+
+    if (error) throw error
+    editingPost.value = null
+    await loadPosts()
+  } catch (err: any) {
+    alert('Gagal update: ' + err.message)
+  } font-medium {
+    isUpdating.value = false
+  }
+}
+
+async function deletePost(id: string) {
+  if (!confirm('Yakin ingin membatalkan/menghapus postingan ini?')) return
+  try {
+    const { error } = await supabase
+      .schema('threads')
+      .from('scheduled_posts')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+    await loadPosts()
+  } catch (err: any) {
+    alert('Gagal hapus: ' + err.message)
   }
 }
 
