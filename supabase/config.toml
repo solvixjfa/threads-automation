@@ -1,8 +1,10 @@
-[functions.threads-webhook]
-verify_jwt = false
+project_id = "xtarsaurwclktwhhryas"
 
 [functions.threads-oauth-start]
 verify_jwt = false
 
 [functions.threads-oauth-callback]
+verify_jwt = false
+
+[functions.threads-webhook]
 verify_jwt = false

@@ -21,6 +21,4 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
-          supabase functions deploy threads-oauth-start --no-verify-jwt --project-ref xtarsaurwclktwhhryas
-          supabase functions deploy threads-oauth-callback --no-verify-jwt --project-ref xtarsaurwclktwhhryas
-          supabase functions deploy threads-webhook --no-verify-jwt --project-ref xtarsaurwclktwhhryas
+          supabase functions deploy --project-ref xtarsaurwclktwhhryas
