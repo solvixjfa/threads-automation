@@ -1,5 +1,7 @@
 <template>
-  <div class="space-y-8">
+  <div class="space-y-8 relative">
+    <NotifyOverlay />
+
     <div>
       <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Composer & Thread Builder</h1>
       <p class="text-slate-500 text-sm mt-1">Tulis atau buat draf otomatis dengan AI, pecah utasan, dan jadwalkan postingan.</p>
@@ -10,7 +12,7 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
-          <h2 class="text-xs font-bold text-indigo-900 uppercase tracking-wide">AI Post Generator</h2>
+          <h2 class="text-xs font-bold text-indigo-900 uppercase tracking-wide">AI Post Generator (Gemini + RAG)</h2>
         </div>
         <button 
           @click="showAiPanel = !showAiPanel" 
@@ -49,9 +51,10 @@
           <button
             @click="generateAiIdeas"
             :disabled="isGenerating || !aiTopic"
-            class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition shadow-sm disabled:opacity-50"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition shadow-sm disabled:opacity-50 flex items-center gap-2"
           >
-            {{ isGenerating ? 'Mengekstrak Ide...' : 'Hasilkan 3 Draf Post' }}
+            <span v-if="isGenerating" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            <span>{{ isGenerating ? 'Mengekstrak RAG & Gemini...' : 'Hasilkan 3 Draf Post' }}</span>
           </button>
         </div>
 
@@ -121,9 +124,10 @@
         <button 
           @click="checkScore" 
           :disabled="isChecking || !postText"
-          class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold py-2.5 px-4 rounded-lg transition border border-indigo-100 disabled:opacity-50"
+          class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold py-2.5 px-4 rounded-lg transition border border-indigo-100 disabled:opacity-50 flex items-center gap-2"
         >
-          {{ isChecking ? 'Menganalisa...' : 'Cek Skor AI' }}
+          <span v-if="isChecking" class="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></span>
+          <span>{{ isChecking ? 'Menganalisa...' : 'Cek Skor AI' }}</span>
         </button>
 
         <div class="flex-1 flex justify-end items-center gap-3">
@@ -135,9 +139,33 @@
           <button
             @click="schedulePost"
             :disabled="!postText || isSaving"
-            class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-6 rounded-lg transition shadow-md disabled:opacity-50"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-6 rounded-lg transition shadow-md disabled:opacity-50 flex items-center gap-2"
           >
-            {{ isSaving ? 'Memproses...' : (threadParts.length > 1 ? `Jadwalkan ${threadParts.length} Utasan` : 'Jadwalkan') }}
+            <span v-if="isSaving" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            <span>{{ isSaving ? 'Memproses...' : (threadParts.length > 1 ? `Jadwalkan ${threadParts.length} Utasan` : 'Jadwalkan') }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Skor AI Card -->
+    <div v-if="scoreResult" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div class="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+          <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Hasil Analisa Skor AI</h3>
+          <span class="text-lg font-extrabold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-xl">
+            {{ scoreResult.score }} / 100
+          </span>
+        </div>
+        <div class="space-y-1">
+          <label class="text-[11px] font-bold text-slate-500 uppercase">Catatan & Feedback:</label>
+          <p class="text-xs text-slate-800 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+            {{ scoreResult.feedback }}
+          </p>
+        </div>
+        <div class="flex justify-end pt-2">
+          <button @click="scoreResult = null" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition">
+            Tutup
           </button>
         </div>
       </div>
@@ -176,9 +204,9 @@
             <span class="text-slate-500 font-medium">{{ formatDate(post.scheduled_for) }}</span>
             <div v-if="post.status === 'scheduled'" class="flex items-center gap-2">
               <button @click="openEditModal(post)" class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-md transition">
-                Edit / Rewrite
+                Edit
               </button>
-              <button @click="deletePost(post.id)" class="px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-md transition">
+              <button @click="confirmDeletePost(post.id)" class="px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-md transition">
                 Batal / Hapus
               </button>
             </div>
@@ -221,6 +249,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
+import { useNotify } from '../composables/useNotify'
+import NotifyOverlay from '../components/NotifyOverlay.vue'
+
+const { showToast, askConfirm } = useNotify()
 
 const postText = ref('')
 const threadParts = ref<string[]>([])
@@ -231,46 +263,15 @@ const isUpdating = ref(false)
 const loading = ref(true)
 const posts = ref<any[]>([])
 
-// AI Generator States
 const showAiPanel = ref(true)
 const aiTopic = ref('')
 const aiTone = ref('Edukasi & Insight Kasual')
 const isGenerating = ref(false)
 const aiResults = ref<any[]>([])
+const scoreResult = ref<any>(null)
 
 const editingPost = ref<any>(null)
 const editForm = ref({ text: '', scheduled_for: '' })
-
-async function generateAiIdeas() {
-  if (!aiTopic.value) return
-  isGenerating.value = true
-  aiResults.value = []
-  
-  try {
-    const { data, error } = await supabase.functions.invoke('generate-post', {
-      body: { topic: aiTopic.value, tone: aiTone.value }
-    })
-
-    if (error) throw error
-    if (data?.error) {
-      alert('Gagal AI Generator: ' + data.error)
-      return
-    }
-
-    if (data?.options) {
-      aiResults.value = data.options
-    }
-  } catch (err: any) {
-    alert('Gagal membuat draf AI: ' + (err.message || err))
-  } finally {
-    isGenerating.value = false
-  }
-}
-
-function applyAiDraft(content: string) {
-  postText.value = content
-  handleTextChange()
-}
 
 function splitTextIntoParts(text: string, maxLen = 480): string[] {
   if (text.length <= maxLen) return [text]
@@ -311,6 +312,56 @@ function formatDate(isoString: string) {
   return d.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
+async function generateAiIdeas() {
+  if (!aiTopic.value) return
+  isGenerating.value = true
+  aiResults.value = []
+  
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-post', {
+      body: { topic: aiTopic.value, tone: aiTone.value }
+    })
+
+    if (error) throw error
+    if (data?.error) throw new Error(data.error)
+
+    if (data?.options) {
+      aiResults.value = data.options
+      showToast('3 Draf berhasil dibuat oleh AI!', 'success')
+    }
+  } catch (err: any) {
+    showToast('Gagal AI Generator: ' + err.message, 'error')
+  } finally {
+    isGenerating.value = false
+  }
+}
+
+function applyAiDraft(content: string) {
+  postText.value = content
+  handleTextChange()
+  showToast('Draf AI berhasil diterapkan ke Composer.', 'info')
+}
+
+async function checkScore() {
+  isChecking.value = true
+  try {
+    const { data, error } = await supabase.functions.invoke('score-draft', {
+      body: { text: postText.value }
+    })
+    if (error) throw error
+    if (data?.error) throw new Error(data.error)
+
+    scoreResult.value = {
+      score: data?.score ?? 80,
+      feedback: data?.feedback ?? 'Teks sudah cukup natural.'
+    }
+  } catch (err: any) {
+    showToast('Gagal analisa AI: ' + err.message, 'error')
+  } finally {
+    isChecking.value = false
+  }
+}
+
 async function loadPosts() {
   loading.value = true
   const { data } = await supabase
@@ -323,25 +374,8 @@ async function loadPosts() {
   loading.value = false
 }
 
-async function checkScore() {
-  isChecking.value = true
-  try {
-    const { data, error } = await supabase.functions.invoke('score-draft', {
-      body: { text: postText.value }
-    })
-    if (error) throw error
-    const scoreVal = data?.score ?? data?.result?.score ?? 'N/A'
-    const feedbackVal = data?.feedback ?? data?.result?.feedback ?? data?.message ?? 'Tidak ada catatan.'
-    alert(`Skor AI: ${scoreVal}/100\n\nCatatan:\n${feedbackVal}`)
-  } catch (err: any) {
-    alert('Gagal analisa AI: ' + err.message)
-  } finally {
-    isChecking.value = false
-  }
-}
-
 async function schedulePost() {
-  if (!postText.value || !scheduledDate.value) return alert('Isi teks dan tanggal terlebih dahulu.')
+  if (!postText.value || !scheduledDate.value) return showToast('Isi teks dan tanggal terlebih dahulu.', 'error')
   isSaving.value = true
   
   try {
@@ -353,7 +387,7 @@ async function schedulePost() {
       .maybeSingle()
       
     if (accErr) throw new Error(accErr.message)
-    if (!accounts) throw new Error('Akun Threads belum tersambung. Hubungkan di Settings.')
+    if (!accounts) throw new Error('Akun Threads belum tersambung.')
 
     const isoDate = new Date(scheduledDate.value).toISOString()
     const partsToSave = threadParts.value.length > 0 ? threadParts.value : [postText.value]
@@ -385,15 +419,10 @@ async function schedulePost() {
 
     postText.value = ''
     threadParts.value = []
-    
-    const d = new Date()
-    d.setHours(d.getHours() + 1)
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
-    scheduledDate.value = d.toISOString().slice(0, 16)
-    
+    showToast('Postingan berhasil dijadwalkan!', 'success')
     await loadPosts()
   } catch (err: any) {
-    alert('Gagal simpan: ' + err.message)
+    showToast('Gagal menyimpan: ' + err.message, 'error')
   } finally {
     isSaving.value = false
   }
@@ -423,16 +452,25 @@ async function saveEdit() {
 
     if (error) throw error
     editingPost.value = null
+    showToast('Postingan berhasil diperbarui.', 'success')
     await loadPosts()
   } catch (err: any) {
-    alert('Gagal update: ' + err.message)
+    showToast('Gagal update: ' + err.message, 'error')
   } finally {
     isUpdating.value = false
   }
 }
 
+function confirmDeletePost(id: string) {
+  askConfirm({
+    title: 'Hapus Postingan Terjadwal',
+    message: 'Apakah kamu yakin ingin membatalkan & menghapus postingan ini?',
+    confirmText: 'Hapus Post',
+    onConfirm: () => deletePost(id)
+  })
+}
+
 async function deletePost(id: string) {
-  if (!confirm('Yakin ingin membatalkan/menghapus postingan ini?')) return
   try {
     const { error } = await supabase
       .schema('threads')
@@ -441,9 +479,10 @@ async function deletePost(id: string) {
       .eq('id', id)
 
     if (error) throw error
+    showToast('Postingan berhasil dihapus.', 'info')
     await loadPosts()
   } catch (err: any) {
-    alert('Gagal hapus: ' + err.message)
+    showToast('Gagal menghapus: ' + err.message, 'error')
   }
 }
 

@@ -1,5 +1,7 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center p-4">
+  <div class="min-h-screen flex items-center justify-center p-4 relative">
+    <NotifyOverlay />
+
     <div class="w-full max-w-sm bg-white border border-zinc-200 rounded-2xl p-8 space-y-6 shadow-xl">
       <div class="text-center space-y-2">
         <div class="inline-block bg-black text-white px-3 py-1.5 rounded-lg text-xs font-black tracking-widest uppercase mb-2">IXIERA</div>
@@ -37,9 +39,10 @@
         <button
           type="submit"
           :disabled="loading"
-          class="w-full bg-black hover:bg-zinc-800 text-white font-bold text-sm py-3.5 rounded-lg transition shadow-md disabled:opacity-50"
+          class="w-full bg-black hover:bg-zinc-800 text-white font-bold text-sm py-3.5 rounded-lg transition shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          {{ loading ? 'Bentar...' : (isSignUp ? 'Daftar' : 'Masuk') }}
+          <span v-if="loading" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+          <span>{{ loading ? 'Bentar...' : (isSignUp ? 'Daftar' : 'Masuk') }}</span>
         </button>
       </form>
 
@@ -59,8 +62,12 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
+import { useNotify } from '../composables/useNotify'
+import NotifyOverlay from '../components/NotifyOverlay.vue'
 
 const router = useRouter()
+const { showToast } = useNotify()
+
 const email = ref('')
 const password = ref('')
 const isSignUp = ref(false)
@@ -74,7 +81,7 @@ async function handleAuth() {
     if (isSignUp.value) {
       const { error } = await supabase.auth.signUp({ email: email.value, password: password.value })
       if (error) throw error
-      alert('Sip, akun udah dibikin! Langsung login aja.')
+      showToast('Akun berhasil dibuat! Silakan masuk.', 'success')
       isSignUp.value = false
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email: email.value, password: password.value })
