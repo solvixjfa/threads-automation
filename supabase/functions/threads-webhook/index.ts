@@ -3,26 +3,27 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 serve(async (req) => {
   const url = new URL(req.url)
 
-  // Handshake Verifikasi dari Meta Portal (GET)
+  // Webhook Verification Request from Meta (GET)
   if (req.method === 'GET') {
     const mode = url.searchParams.get('hub.mode')
     const token = url.searchParams.get('hub.verify_token')
     const challenge = url.searchParams.get('hub.challenge')
-    
-    const EXPECTED_TOKEN = 'IXIERA_WH_SEC_9f8a2b1c4e7d3056_2026_xT'
+    const expectedToken = Deno.env.get('THREADS_WEBHOOK_VERIFY_TOKEN')
 
-    if (mode === 'subscribe' && token === EXPECTED_TOKEN) {
+    if (mode === 'subscribe' && token === expectedToken) {
       return new Response(challenge, {
         status: 200,
         headers: { 'Content-Type': 'text/plain' }
       })
     }
-    
     return new Response('Forbidden', { status: 403 })
   }
 
-  // Event Ingestion dari Threads (POST)
+  // Webhook Event Ingestion (POST)
   if (req.method === 'POST') {
+    const body = await req.json()
+    console.log('Threads Webhook Event:', JSON.stringify(body, null, 2))
+
     return new Response(JSON.stringify({ status: 'ok' }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
