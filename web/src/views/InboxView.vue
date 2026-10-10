@@ -3,21 +3,22 @@
     <div class="flex flex-wrap justify-between items-center gap-4">
       <div>
         <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Auto Reply Inbox</h1>
-        <p class="text-slate-500 text-sm mt-1">Review dan kelola balasan komentar otomatis buatan AI sebelum terbit.</p>
+        <p class="text-slate-500 text-sm mt-1">Review dan kelola balasan komentar otomatis buatan AI sebelum terbit ke Threads.</p>
       </div>
       <div class="flex items-center gap-3">
         <button 
-          @click="simulateComment" 
-          :disabled="isSimulating"
+          @click="pollRealComments" 
+          :disabled="isPolling"
           class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition shadow-sm disabled:opacity-50"
         >
-          {{ isSimulating ? 'Memproses AI...' : '+ Simulasi Komentar' }}
+          {{ isPolling ? 'Mengecek Threads API...' : 'Sync Komentar Threads' }}
         </button>
         <button 
-          @click="fetchLogs" 
-          class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2.5 px-4 rounded-xl transition border border-slate-200"
+          @click="simulateComment" 
+          :disabled="isSimulating"
+          class="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs font-bold py-2.5 px-4 rounded-xl border border-indigo-100 transition disabled:opacity-50"
         >
-          Refresh Inbox
+          {{ isSimulating ? 'Memproses...' : '+ Tes Simulasi' }}
         </button>
       </div>
     </div>
@@ -50,12 +51,20 @@
     <div v-else-if="activeTab === 'pending'" class="space-y-4">
       <div v-if="pendingLogs.length === 0" class="bg-white border border-slate-200 rounded-2xl p-12 text-center text-xs text-slate-400 font-medium space-y-3">
         <p>Belum ada balasan komentar yang menunggu review.</p>
-        <button 
-          @click="simulateComment" 
-          class="inline-block bg-indigo-50 text-indigo-700 font-bold px-4 py-2 rounded-lg text-xs hover:bg-indigo-100 transition"
-        >
-          Klik di sini untuk uji coba komentar masuk
-        </button>
+        <div class="flex justify-center gap-3">
+          <button 
+            @click="pollRealComments" 
+            class="bg-indigo-600 text-white font-bold px-4 py-2 rounded-lg text-xs hover:bg-indigo-700 transition"
+          >
+            Sync Komentar Asli dari Threads
+          </button>
+          <button 
+            @click="simulateComment" 
+            class="bg-indigo-50 text-indigo-700 font-bold px-4 py-2 rounded-lg text-xs hover:bg-indigo-100 transition"
+          >
+            Uji Coba Komentar Simulasi
+          </button>
+        </div>
       </div>
 
       <div v-for="log in pendingLogs" :key="log.id" class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
@@ -95,10 +104,11 @@
             Abaikan / Skip
           </button>
           <button
-            @click="updateStatus(log.id, 'approved', log.final_text)"
-            class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition shadow-sm"
+            @click="approveAndPublish(log)"
+            :disabled="approvingId === log.id"
+            class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition shadow-sm disabled:opacity-50"
           >
-            Approve & Kirim
+            {{ approvingId === log.id ? 'Menerbitkan Balasan...' : 'Approve & Kirim ke Threads' }}
           </button>
         </div>
       </div>
@@ -142,7 +152,9 @@ import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 
 const loading = ref(true)
+const isPolling = ref(false)
 const isSimulating = ref(false)
+const approvingId = ref<string | null>(null)
 const activeTab = ref<'pending' | 'history'>('pending')
 const logs = ref<any[]>([])
 
@@ -167,6 +179,24 @@ async function fetchLogs() {
   loading.value = false
 }
 
+async function pollRealComments() {
+  isPolling.value = true
+  try {
+    const { data, error } = await supabase.functions.invoke('worker-replies', {
+      body: { action: 'poll' }
+    })
+    if (error) throw error
+    if (data?.error) throw new Error(data.error)
+
+    alert(`Sync selesai! Ditemukan ${data?.processedCount || 0} komentar baru.`)
+    await fetchLogs()
+  } catch (err: any) {
+    alert('Gagal sync komentar Threads: ' + err.message)
+  } finally {
+    isPolling.value = false
+  }
+}
+
 async function simulateComment() {
   const sampleComments = [
     "Project machine learning XGBoost churn ini akurasinya berapa persen bro?",
@@ -179,7 +209,7 @@ async function simulateComment() {
   isSimulating.value = true
   try {
     const { data, error } = await supabase.functions.invoke('worker-replies', {
-      body: { comment: randomComment }
+      body: { action: 'poll', comment: randomComment }
     })
 
     if (error) throw error
@@ -190,6 +220,31 @@ async function simulateComment() {
     alert('Gagal simulasi komentar: ' + err.message)
   } finally {
     isSimulating.value = false
+  }
+}
+
+async function approveAndPublish(log: any) {
+  approvingId.value = log.id
+  try {
+    if (log.llm_meta?.media_id === 'simulated_media') {
+      // Jika data simulasi, cukup update status tanpa hit Graph API
+      await updateStatus(log.id, 'approved', log.final_text)
+      alert('Balasan simulasi disetujui (status: approved).')
+    } else {
+      // Hit worker-replies untuk publish asli ke Threads Graph API
+      const { data, error } = await supabase.functions.invoke('worker-replies', {
+        body: { action: 'publish_reply', log_id: log.id, final_text: log.final_text }
+      })
+      if (error) throw error
+      if (data?.error) throw new Error(data.error)
+
+      alert('Balasan berhasil diterbitkan ke Threads!')
+      await fetchLogs()
+    }
+  } catch (err: any) {
+    alert('Gagal menerbitkan balasan: ' + err.message)
+  } finally {
+    approvingId.value = null
   }
 }
 
