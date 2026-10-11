@@ -3,7 +3,7 @@ from google import genai
 from app.services.rag import search_knowledge
 
 GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
 
 async def generate_rag_reply(account_id: str, user_comment: str, author_username: str = "") -> str:
     contexts = await search_knowledge(account_id, user_comment, limit=3)

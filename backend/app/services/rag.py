@@ -15,13 +15,17 @@ def generate_embedding(text: str) -> list[float]:
     candidates = [
         os.getenv("EMBEDDING_MODEL", "text-embedding-004"),
         "text-embedding-004",
-        "text-embedding-001",
-        "models/text-embedding-004"
+        "text-embedding-005",
+        "models/text-embedding-004",
+        "models/text-embedding-005",
+        "gemini-3.5-flash-lite"
     ]
     
-    seen = set()
-    models_to_try = [m for m in candidates if not (m in seen or seen.add(m))]
-    
+    models_to_try = []
+    for m in candidates:
+        if m and m not in models_to_try:
+            models_to_try.append(m)
+            
     last_exception = None
     for model_name in models_to_try:
         try:

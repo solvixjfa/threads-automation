@@ -3,7 +3,7 @@ import httpx
 from google import genai
 
 GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
 DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "")
 
 async def analyze_and_notify_lead(account_id: str, username: str, comment: str):
