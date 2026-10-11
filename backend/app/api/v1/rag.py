@@ -24,6 +24,7 @@ class GeneratePostRequest(BaseModel):
     account_id: str
     topic: str
     tone: Optional[str] = "Edukasi & Insight Kasual"
+    custom_prompt: Optional[str] = None
 
 @router.get("/list-models")
 async def list_embedding_models():
@@ -72,7 +73,8 @@ async def generate_post(payload: GeneratePostRequest):
         options = await generate_rag_post(
             account_id=payload.account_id,
             topic=payload.topic,
-            tone=payload.tone or "Edukasi & Insight Kasual"
+            tone=payload.tone or "Edukasi & Insight Kasual",
+            custom_prompt=payload.custom_prompt
         )
         return {"status": "success", "options": options}
     except Exception as e:

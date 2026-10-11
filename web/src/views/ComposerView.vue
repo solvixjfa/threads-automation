@@ -43,14 +43,26 @@
               <option value="Storytelling Pengalaman">Storytelling</option>
               <option value="Hot Take & Diskusi">Hot Take / Opini</option>
               <option value="Pertanyaan / Q&A">Q&A / Memancing Diskusi</option>
+              <option value="Custom Prompt">Custom / Instruksi Bebas</option>
             </select>
+          </div>
+          
+          <!-- Textarea muncul jika Custom Prompt dipilih -->
+          <div v-if="aiTone === 'Custom Prompt'" class="md:col-span-3 space-y-1 mt-1">
+            <label class="text-[11px] font-bold text-slate-700 uppercase">Instruksi Khusus (Custom Prompt)</label>
+            <textarea
+              v-model="customPrompt"
+              rows="3"
+              placeholder="Contoh: Tulis dalam bahasa gaul, sebutkan ixiera.id 2 kali, dan akhiri dengan pertanyaan memancing..."
+              class="w-full bg-white border border-indigo-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none"
+            ></textarea>
           </div>
         </div>
 
         <div class="flex justify-end">
           <button
             @click="generateAiIdeas"
-            :disabled="isGenerating || !aiTopic"
+            :disabled="isGenerating || !aiTopic || (aiTone === 'Custom Prompt' && !customPrompt)"
             class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition shadow-sm disabled:opacity-50 flex items-center gap-2"
           >
             <span v-if="isGenerating" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
@@ -266,6 +278,7 @@ const posts = ref<any[]>([])
 const showAiPanel = ref(true)
 const aiTopic = ref('')
 const aiTone = ref('Edukasi & Insight Kasual')
+const customPrompt = ref('') // Tambah state buat nyimpen prompt bebas
 const isGenerating = ref(false)
 const aiResults = ref<any[]>([])
 const scoreResult = ref<any>(null)
@@ -338,7 +351,8 @@ async function generateAiIdeas() {
       body: JSON.stringify({
         account_id: account.id,
         topic: aiTopic.value,
-        tone: aiTone.value
+        tone: aiTone.value,
+        custom_prompt: aiTone.value === 'Custom Prompt' ? customPrompt.value : undefined
       })
     })
 

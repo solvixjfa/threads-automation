@@ -112,21 +112,26 @@ async def search_knowledge(account_id: str, query: str, limit: int = 3):
     
     return res.data or []
 
-async def generate_rag_post(account_id: str, topic: str, tone: str = "Edukasi & Insight Kasual") -> list[dict]:
+async def generate_rag_post(account_id: str, topic: str, tone: str = "Edukasi & Insight Kasual", custom_prompt: str = None) -> list[dict]:
     knowledge = await search_knowledge(account_id, topic, limit=3)
     
     context_text = ""
     if knowledge:
         context_text = "\n".join([f"- [{k.get('category', 'Fakta')} - {k.get('title')}]: {k.get('content')}" for k in knowledge])
     
+    # Switch instruksi tone jika memilih Custom Prompt
+    if tone == "Custom Prompt" and custom_prompt:
+        tone_instruction = f"[INSTRUKSI KHUSUS DARI USER]\n{custom_prompt}"
+    else:
+        tone_instruction = f"[GAYA BAHASA / TONE]\n{tone}"
+        
     prompt = f"""Kamu adalah Content Strategist & Copywriter Threads profesional.
 Buat 3 variasi draf postingan Threads berbeda berdasarkan TOPIK dan KONTEKS BRAND di bawah ini.
 
 [TOPIK / IDE POSTINGAN]
 {topic}
 
-[GAYA BAHASA / TONE]
-{tone}
+{tone_instruction}
 
 [KONTEKS KHUSUS BRAND / RAG KNOWLEDGE BASE]
 {context_text if context_text else "Tidak ada dokumen RAG khusus. Gunakan fakta umum bisnis."}
