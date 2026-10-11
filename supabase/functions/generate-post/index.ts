@@ -68,6 +68,7 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || serviceRoleKey;
     const geminiApiKey = Deno.env.get("GEMINI_API_KEY")!;
 
     const { topic, tone } = await req.json();
@@ -83,7 +84,7 @@ serve(async (req) => {
     let ragContexts: string[] = [];
 
     if (authHeader) {
-      const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      const userClient = createClient(supabaseUrl, anonKey, {
         global: { headers: { Authorization: authHeader } }
       });
       const { data: { user } } = await userClient.auth.getUser();
@@ -107,12 +108,12 @@ serve(async (req) => {
 
           if (settings) userTonePrompt = settings.tone_prompt || "";
 
-          // SEMANTIC VECTOR SEARCH via pgvector
+          // SEMANTIC VECTOR SEARCH (Threshold diturunkan ke 0.15)
           const topicVector = await getEmbedding(topic, geminiApiKey);
           if (topicVector) {
             const { data: matchedDocs } = await supabase.rpc("match_brand_knowledge", {
               query_embedding: JSON.stringify(topicVector),
-              match_threshold: 0.3,
+              match_threshold: 0.15,
               match_count: 5,
               p_account_id: account.id
             }, { schema: "threads" });
@@ -126,9 +127,9 @@ serve(async (req) => {
     }
 
     const systemPrompt = `Kamu adalah AI Assistant pembuat konten Threads (Meta).
-Tugasmu merancang 3 variasi draf postingan Threads berdasarkan topik yang diberikan.
+Tugasmu merancang 3 variasi draf postingan Threads berdasarkan topik yang diberikan dan FAKTA RELEVAN dari Knowledge Base.
 
-FAKTA/KONTEKS RAG TERKAIT (Hasil Semantic Vector Search):
+FAKTA/KONTEKS RAG TERKAIT (Wajib digunakan jika ada):
 ${ragContexts.length > 0 ? ragContexts.join("\n") : "Tidak ada dokumen khusus yang cocok."}
 
 INSTRUKSI PERSONA & TONE:
