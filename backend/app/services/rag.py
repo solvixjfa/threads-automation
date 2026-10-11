@@ -11,17 +11,6 @@ GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
 def get_supabase() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
-def get_all_raw_models() -> list[str]:
-    client = genai.Client(api_key=GEMINI_KEY)
-    models = []
-    try:
-        for m in client.models.list():
-            name = getattr(m, 'name', str(m))
-            models.append(name)
-    except Exception as e:
-        logging.error(f"Failed to list models: {str(e)}")
-    return models
-
 def extract_vector(response) -> list[float]:
     if hasattr(response, 'embeddings') and response.embeddings:
         first = response.embeddings[0]
@@ -49,11 +38,9 @@ def generate_embedding(text: str) -> list[float]:
         "gemini-embedding-2",
         "gemini-embedding-001",
         "gemini-embedding-2-preview",
-        "models/gemini-embedding-2",
-        "models/gemini-embedding-001"
+        "models/gemini-embedding-2"
     ]
     
-    # Paksa output_dimensionality ke 768 agar sesuai schema DB
     embed_config = types.EmbedContentConfig(output_dimensionality=768)
     
     last_exception = None
@@ -86,6 +73,21 @@ async def store_knowledge(account_id: str, title: str, content: str, category: s
     
     res = db.schema("threads").from_("brand_knowledge").insert(data).execute()
     return res.data
+
+async def backfill_unembedded_knowledge(account_id: str):
+    db = get_supabase()
+    
+    # Ambil baris yang embedding-nya masih NULL
+    res = db.schema("threads").from_("brand_knowledge").select("id, content").eq("account_id", account_id).is_("embedding", "null").execute()
+    rows = res.data or []
+    
+    updated_count = 0
+    for row in rows:
+        vec = generate_embedding(row["content"])
+        db.schema("threads").from_("brand_knowledge").update({"embedding": vec}).eq("id", row["id"]).execute()
+        updated_count += 1
+        
+    return {"total_unembedded_found": len(rows), "successfully_updated": updated_count}
 
 async def search_knowledge(account_id: str, query: str, limit: int = 3):
     query_vector = generate_embedding(query)
