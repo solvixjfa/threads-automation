@@ -2,8 +2,10 @@ import os
 import asyncio
 import logging
 import httpx
+from datetime import datetime, timezone
 from supabase import create_client, Client
 from app.services.leads import analyze_and_notify_lead
+from app.services.auto_reply import generate_rag_reply
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
@@ -14,7 +16,6 @@ def get_supabase() -> Client:
 async def fetch_and_process_replies():
     db = get_supabase()
     
-    # 1. Ambil semua akun SaaS yang terhubung
     accounts_res = db.schema("threads").from_("threads_accounts").select("id, settings").eq("connection_status", "connected").execute()
     accounts = accounts_res.data or []
 
@@ -25,7 +26,12 @@ async def fetch_and_process_replies():
             if not token:
                 continue
 
-            # 2. Ambil 20 postingan terakhir dari akun tersebut untuk dicek balasannya
+            # Ambil Pengaturan Auto Reply
+            settings_res = db.schema("threads").from_("auto_reply_settings").select("*").eq("account_id", acc_id).maybeSingle().execute()
+            auto_settings = settings_res.data or {}
+            is_enabled = auto_settings.get("enabled", True)
+            reply_mode = auto_settings.get("mode", "review")
+
             posts_res = db.schema("threads").from_("posts").select("id, threads_media_id").eq("account_id", acc_id).order("created_at", desc=True).limit(20).execute()
             posts = posts_res.data or []
 
@@ -35,7 +41,6 @@ async def fetch_and_process_replies():
                 if not media_id:
                     continue
 
-                # 3. Panggil Meta API untuk mengambil daftar balasan
                 url = f"https://graph.threads.net/v1.0/{media_id}/replies?fields=id,text,username,timestamp&access_token={token}"
                 try:
                     res = await client.get(url, timeout=10.0)
@@ -47,40 +52,58 @@ async def fetch_and_process_replies():
                     for reply in data:
                         reply_id = reply.get("id")
                         text = reply.get("text", "")
-                        username = reply.get("username", "unknown")
+                        author_username = reply.get("username", "unknown")
                         timestamp = reply.get("timestamp")
 
-                        # 4. Cek apakah balasan ini sudah ada di tabel replies
                         exist_res = db.schema("threads").from_("replies").select("id").eq("threads_reply_id", reply_id).execute()
                         
                         if not exist_res.data:
-                            # JIKA BARU: Analisa apakah ini HOT LEAD (menggunakan script rule-based lu)
-                            analysis = await analyze_and_notify_lead(acc_id, username, text)
+                            # 1. Analisa Lead (Berjalan terpisah)
+                            analysis = await analyze_and_notify_lead(acc_id, author_username, text)
                             is_lead = analysis.get("is_lead", False)
 
-                            # Simpan ke tabel replies
+                            # 2. Simpan ke tabel replies utama
                             db.schema("threads").from_("replies").insert({
                                 "account_id": acc_id,
                                 "post_id": post_db_id,
                                 "threads_reply_id": reply_id,
-                                "username": username,
+                                "author_username": author_username,
                                 "text": text,
                                 "is_lead": is_lead,
-                                "published_at": timestamp
+                                "replied_at": timestamp,
+                                "raw": reply,
+                                "processed_at": datetime.now(timezone.utc).isoformat()
                             }).execute()
+
+                            # 3. Generate Draf AI & Masukkan ke Review Queue jika aktif
+                            if is_enabled:
+                                try:
+                                    draft_text = await generate_rag_reply(
+                                        account_id=acc_id, 
+                                        user_comment=text, 
+                                        author_username=author_username
+                                    )
+                                    
+                                    db.schema("threads").from_("auto_reply_logs").insert({
+                                        "account_id": acc_id,
+                                        "status": "unprocessed" if reply_mode == "review" else "approved",
+                                        "final_text": draft_text,
+                                        "llm_meta": {
+                                            "incoming_comment": text, 
+                                            "username": author_username, 
+                                            "reply_id": reply_id
+                                        }
+                                    }).execute()
+                                except Exception as ai_err:
+                                    logging.error(f"[AI Draft Error]: {str(ai_err)}")
                             
                 except Exception as e:
-                    logging.error(f"[Worker Replies] Gagal menarik data untuk media {media_id}: {str(e)}")
+                    logging.error(f"[Worker Replies] Error: {str(e)}")
 
 async def reply_worker_loop():
-    """Loop abadi yang berjalan di background FastAPI setiap 10 menit"""
     while True:
         try:
-            logging.info("[Worker Replies] Memulai siklus penarikan komentar Threads...")
             await fetch_and_process_replies()
-            logging.info("[Worker Replies] Siklus selesai. Menunggu 10 menit.")
         except Exception as e:
-            logging.error(f"[Worker Replies] Error pada siklus: {str(e)}")
-        
-        # Jeda 600 detik (10 menit) sebelum narik data lagi biar gak kena rate limit Meta API
+            logging.error(f"[Worker Replies Loop] Error: {str(e)}")
         await asyncio.sleep(600)
