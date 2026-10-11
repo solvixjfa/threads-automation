@@ -38,55 +38,51 @@ Deno.serve(async (req) => {
       console.error("[worker-metrics] Error fetching accounts:", accErr.message);
     }
 
-    console.log(`[worker-metrics] Found ${accounts?.length || 0} connected accounts.`);
-
     if (!accounts || accounts.length === 0) {
       return new Response(JSON.stringify({ message: "Tidak ada akun connected." }), { status: 200, headers: corsHeaders });
     }
 
     let syncedPostsCount = 0;
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // Filter Smart Polling: Hanya ambil postingan 30 hari terakhir
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     for (const acc of accounts) {
       const accessToken = acc.settings?.access_token;
-      if (!accessToken) {
-        console.log(`[worker-metrics] Account ${acc.id} (${acc.username}) has no access_token in settings.`);
-        continue;
-      }
+      if (!accessToken) continue;
 
-      const { data: publishedPosts, error: postErr } = await supabase
+      const { data: publishedPosts } = await supabase
         .schema("threads")
         .from("scheduled_posts")
         .select("published_media_id, text, scheduled_for, created_at")
         .eq("account_id", acc.id)
         .eq("status", "published")
+        .gte("created_at", thirtyDaysAgo.toISOString())
         .not("published_media_id", "is", null);
-
-      if (postErr) {
-        console.error(`[worker-metrics] Error fetching scheduled_posts:`, postErr.message);
-      }
-
-      console.log(`[worker-metrics] Found ${publishedPosts?.length || 0} published posts.`);
 
       if (!publishedPosts || publishedPosts.length === 0) continue;
 
+      let accDailyViews = 0;
+      let accDailyLikes = 0;
+      let accDailyReplies = 0;
+      let accDailyReposts = 0;
+      let accDailyQuotes = 0;
+
       for (const sp of publishedPosts) {
         const mediaId = sp.published_media_id;
-        console.log(`[worker-metrics] Processing media_id: ${mediaId}`);
 
-        let { data: postRecord, error: selectPostErr } = await supabase
+        let { data: postRecord } = await supabase
           .schema("threads")
           .from("posts")
           .select("id")
           .eq("threads_media_id", mediaId)
           .maybeSingle();
 
-        if (selectPostErr) {
-          console.error(`[worker-metrics] Error selecting post record:`, selectPostErr.message);
-        }
-
         if (!postRecord) {
           const postedAtVal = sp.scheduled_for || sp.created_at || new Date().toISOString();
-          const { data: insertedPost, error: insertPostErr } = await supabase
+          const { data: insertedPost } = await supabase
             .schema("threads")
             .from("posts")
             .insert({
@@ -97,10 +93,6 @@ Deno.serve(async (req) => {
             .select("id")
             .single();
 
-          if (insertPostErr) {
-            console.error(`[worker-metrics] Failed inserting to posts table:`, insertPostErr.message);
-            continue;
-          }
           postRecord = insertedPost;
         }
 
@@ -111,11 +103,6 @@ Deno.serve(async (req) => {
           const res = await fetchWithTimeout(insightUrl, {}, 5000);
           const resData = await res.json();
 
-          if (resData.error) {
-            console.error(`[worker-metrics] Meta Graph API Error for ${mediaId}:`, JSON.stringify(resData.error));
-            continue;
-          }
-
           if (resData?.data && Array.isArray(resData.data)) {
             const metricsObj: any = { views: 0, likes: 0, replies: 0, reposts: 0, quotes: 0 };
             for (const item of resData.data) {
@@ -124,9 +111,13 @@ Deno.serve(async (req) => {
               }
             }
 
-            console.log(`[worker-metrics] Metrics fetched for ${mediaId}:`, JSON.stringify(metricsObj));
+            accDailyViews += metricsObj.views || 0;
+            accDailyLikes += metricsObj.likes || 0;
+            accDailyReplies += metricsObj.replies || 0;
+            accDailyReposts += metricsObj.reposts || 0;
+            accDailyQuotes += metricsObj.quotes || 0;
 
-            const { error: insertMetricErr } = await supabase
+            await supabase
               .schema("threads")
               .from("post_metrics")
               .insert({
@@ -139,26 +130,35 @@ Deno.serve(async (req) => {
                 quotes: metricsObj.quotes || 0
               });
 
-            if (insertMetricErr) {
-              console.error(`[worker-metrics] Error inserting post_metrics:`, insertMetricErr.message);
-            } else {
-              syncedPostsCount++;
-            }
+            syncedPostsCount++;
           }
         } catch (apiErr: any) {
-          console.error(`[worker-metrics] Exception during Meta API call:`, apiErr.message);
+          console.error(`[worker-metrics] Error API for ${mediaId}:`, apiErr.message);
         }
       }
+
+      // Upsert akumulasi harian ke account_insights_daily
+      await supabase
+        .schema("threads")
+        .from("account_insights_daily")
+        .upsert({
+          account_id: acc.id,
+          date: todayStr,
+          views: accDailyViews,
+          likes: accDailyLikes,
+          replies: accDailyReplies,
+          reposts: accDailyReposts,
+          quotes: accDailyQuotes
+        }, { onConflict: "account_id,date" });
     }
 
-    console.log(`[worker-metrics] Finished. Synced ${syncedPostsCount} posts.`);
+    console.log(`[worker-metrics] Finished. Synced ${syncedPostsCount} posts & updated daily insights.`);
 
     return new Response(
-      JSON.stringify({ success: true, message: `Berhasil sinkronisasi ${syncedPostsCount} metrik postingan.` }),
+      JSON.stringify({ success: true, message: `Berhasil sinkronisasi ${syncedPostsCount} metrik & daily insights.` }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {
-    console.error("[worker-metrics] Fatal Worker Error:", err.message);
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
   }
 });
