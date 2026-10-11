@@ -23,7 +23,7 @@
       </div>
     </div>
 
-    <!-- Toast Notification untuk Cooldown -->
+    <!-- Toast Notification -->
     <div v-if="toastMessage" class="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs flex justify-between items-center">
       <span>{{ toastMessage }}</span>
       <button @click="toastMessage = ''" class="font-bold text-amber-900 hover:underline text-sm ml-2">✕</button>
@@ -74,7 +74,7 @@
         </div>
       </div>
 
-      <!-- CARD METRIK 2: Overview Performa Postingan Meta -->
+      <!-- CARD METRIK 2: Overview Performa Meta -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl space-y-1">
           <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-700">Total Views</span>
@@ -94,7 +94,7 @@
         </div>
       </div>
 
-      <!-- GRAFIK TREN HARIAN (Account Insights Daily) -->
+      <!-- GRAFIK TREN HARIAN -->
       <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
         <div class="flex justify-between items-center border-b border-slate-100 pb-3">
           <div>
@@ -112,19 +112,16 @@
         </div>
 
         <div v-else class="space-y-2 pt-2">
-          <!-- Area Chart dengan ruang atas (pt-12) -->
           <div class="h-48 flex items-end gap-2 sm:gap-4 pt-12 pb-2 px-2 border-b border-slate-100 overflow-x-auto">
             <div 
               v-for="day in dailyInsights" 
               :key="day.date" 
               class="flex-1 min-w-[40px] flex flex-col items-center gap-1.5 h-full justify-end group relative"
             >
-              <!-- Tooltip angka (Muncul rapi di atas bar saat di-hover/tap) -->
               <div class="absolute -top-9 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity bg-slate-800 text-white text-[9px] px-2 py-1 rounded-md shadow-md whitespace-nowrap pointer-events-none z-20">
                 {{ day.views }} views • {{ day.likes }} likes
               </div>
 
-              <!-- Bar Views & Likes -->
               <div class="w-full max-w-[20px] flex items-end gap-1 h-full justify-center">
                 <div 
                   class="w-full bg-indigo-600 rounded-t transition-all group-hover:bg-indigo-700"
@@ -140,6 +137,41 @@
                 {{ formatDayLabel(day.date) }}
               </span>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUEUE CONTROL: DAFTAR POSTINGAN GAGAL -->
+      <div v-if="failedPosts.length > 0" class="bg-rose-50/60 border border-rose-200 rounded-2xl p-6 shadow-sm space-y-4">
+        <div class="flex justify-between items-center border-b border-rose-100 pb-3">
+          <h2 class="text-xs font-bold text-rose-900 uppercase tracking-wide flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-rose-600 animate-ping"></span>
+            Postingan Gagal Terbit ({{ failedPosts.length }})
+          </h2>
+          <span class="text-[10px] font-bold text-rose-500">Butuh Perhatian</span>
+        </div>
+
+        <div class="space-y-3">
+          <div 
+            v-for="post in failedPosts" 
+            :key="post.id"
+            class="p-4 bg-white border border-rose-200 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs"
+          >
+            <div class="space-y-1 flex-1">
+              <p class="text-xs font-medium text-slate-800 line-clamp-2">"{{ post.text }}"</p>
+              <p class="text-[11px] text-rose-600 font-semibold">
+                Error: {{ post.error_message || 'Gagal terbit ke Threads' }}
+              </p>
+            </div>
+
+            <button 
+              @click="handleRetryPost(post.id)"
+              :disabled="retryingPostId === post.id"
+              class="shrink-0 text-xs font-bold bg-rose-600 text-white px-3.5 py-2 rounded-lg hover:bg-rose-700 transition disabled:opacity-50 flex items-center gap-1.5 shadow-sm"
+            >
+              <span v-if="retryingPostId === post.id" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span>{{ retryingPostId === post.id ? 'Memproses...' : 'Coba Lagi' }}</span>
+            </button>
           </div>
         </div>
       </div>
@@ -198,6 +230,7 @@ import { supabase } from '../lib/supabase'
 
 const loading = ref(true)
 const refreshing = ref(false)
+const retryingPostId = ref<string | null>(null)
 const toastMessage = ref('')
 const currentAccountId = ref<string | null>(null)
 const lastSyncedAt = ref<string | null>(null)
@@ -219,6 +252,7 @@ const overview = ref({
 
 const topPosts = ref<any[]>([])
 const dailyInsights = ref<any[]>([])
+const failedPosts = ref<any[]>([])
 const adminHealth = ref<any>(null)
 
 const maxDailyViews = computed(() => {
@@ -229,7 +263,6 @@ const maxDailyViews = computed(() => {
 
 function getBarHeight(val: number, max: number) {
   if (!val || !max) return '4px'
-  // Dibatasi maksimal 78% tinggi container agar tooltip muat sempurna di atasnya
   const pct = Math.round((val / max) * 78)
   return `${Math.max(pct, 6)}%`
 }
@@ -245,17 +278,19 @@ function formatDayLabel(dateStr: string) {
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'numeric' })
 }
 
-async function fetchQueueMetrics(accountId: string) {
+async function fetchQueueMetricsAndFailed(accountId: string) {
   const { data } = await supabase
     .schema('threads')
     .from('scheduled_posts')
-    .select('status')
+    .select('id, text, status, error_message, scheduled_for')
     .eq('account_id', accountId)
 
   if (data) {
     queueMetrics.value.scheduled = data.filter(p => p.status === 'scheduled').length
     queueMetrics.value.published = data.filter(p => p.status === 'published').length
     queueMetrics.value.failed = data.filter(p => ['error', 'failed', 'quota_exceeded'].includes(p.status)).length
+
+    failedPosts.value = data.filter(p => ['error', 'failed', 'quota_exceeded'].includes(p.status))
   }
 }
 
@@ -291,7 +326,7 @@ async function loadAllDashboardData() {
       currentAccountId.value = account.id
       lastSyncedAt.value = account.last_synced_at
       await Promise.all([
-        fetchQueueMetrics(account.id),
+        fetchQueueMetricsAndFailed(account.id),
         fetchDailyInsights(account.id)
       ])
     }
@@ -313,6 +348,28 @@ async function loadAllDashboardData() {
     console.error('Error loading dashboard:', err)
   } finally {
     loading.value = false
+  }
+}
+
+async function handleRetryPost(postId: string) {
+  retryingPostId.value = postId
+  try {
+    const { data, error } = await supabase.functions.invoke('admin-manage-queue', {
+      body: { action: 'retry', post_id: postId }
+    })
+
+    if (error) {
+      toastMessage.value = 'Gagal memicu retry: ' + error.message
+    } else {
+      toastMessage.value = 'Postingan berhasil dikirim ulang ke antrean terbit.'
+      if (currentAccountId.value) {
+        await fetchQueueMetricsAndFailed(currentAccountId.value)
+      }
+    }
+  } catch (err: any) {
+    toastMessage.value = 'Terjadi kesalahan: ' + err.message
+  } finally {
+    retryingPostId.value = null
   }
 }
 
