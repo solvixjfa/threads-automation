@@ -101,7 +101,7 @@
           <p class="text-xs text-slate-500 mt-0.5">Semakin detail dokumen ini, semakin akurat AI dalam memahami konteks bisnismu.</p>
         </div>
         <span class="text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 px-2.5 py-1 rounded-md uppercase">
-          pgvector + embedding-004
+          pgvector + embedding-2
         </span>
       </div>
 
@@ -334,24 +334,22 @@ async function saveKnowledge() {
 
   isSavingRag.value = true
   try {
-    const { data: inserted, error } = await supabase
-      .schema('threads')
-      .from('brand_knowledge')
-      .insert({
+    const response = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/rag/embed', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
         account_id: accountId.value,
-        category: ragForm.value.category,
         title: ragForm.value.title,
-        content: ragForm.value.content
+        content: ragForm.value.content,
+        category: ragForm.value.category
       })
-      .select('id')
-      .single()
+    })
 
-    if (error) throw error
-
-    if (inserted?.id) {
-      await supabase.functions.invoke('embed-knowledge', {
-        body: { id: inserted.id, content: ragForm.value.content }
-      })
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.detail || 'Gagal memproses embedding di server')
     }
 
     ragForm.value.title = ''
