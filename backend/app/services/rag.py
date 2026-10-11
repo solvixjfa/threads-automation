@@ -10,8 +10,18 @@ GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
 def get_supabase() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
+def get_all_raw_models() -> list[str]:
+    client = genai.Client(api_key=GEMINI_KEY)
+    models = []
+    try:
+        for m in client.models.list():
+            name = getattr(m, 'name', str(m))
+            models.append(name)
+    except Exception as e:
+        logging.error(f"Failed to list models: {str(e)}")
+    return models
+
 def extract_vector(response) -> list[float]:
-    # Extract vector dari SDK response (res.embeddings[0].values vs res.embedding.values)
     if hasattr(response, 'embeddings') and response.embeddings:
         first = response.embeddings[0]
         if hasattr(first, 'values'):
@@ -33,7 +43,6 @@ def extract_vector(response) -> list[float]:
 def generate_embedding(text: str) -> list[float]:
     client = genai.Client(api_key=GEMINI_KEY)
     
-    # Model spesifik yang sudah terkonfirmasi ada di API Key kamu
     models_to_try = [
         os.getenv("EMBEDDING_MODEL", "gemini-embedding-2"),
         "gemini-embedding-2",
