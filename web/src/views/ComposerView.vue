@@ -364,12 +364,34 @@ async function checkScore() {
 
 async function loadPosts() {
   loading.value = true
+  posts.value = [] // Reset state sebelum mengambil antrean
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    loading.value = false
+    return
+  }
+
+  const { data: account } = await supabase
+    .schema('threads')
+    .from('threads_accounts')
+    .select('id')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (!account) {
+    loading.value = false
+    return
+  }
+
   const { data } = await supabase
     .schema('threads')
     .from('scheduled_posts')
     .select('*')
+    .eq('account_id', account.id)
     .order('created_at', { ascending: false })
     .limit(20)
+    
   if (data) posts.value = data
   loading.value = false
 }

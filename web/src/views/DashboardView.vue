@@ -43,12 +43,28 @@ const metrics = ref({ scheduled: 0, published: 0, failed: 0 })
 
 async function fetchMetrics() {
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return
+  if (!user) {
+    loading.value = false
+    return
+  }
+
+  const { data: account } = await supabase
+    .schema('threads')
+    .from('threads_accounts')
+    .select('id')
+    .eq('user_id', user.id)
+    .maybeSingle()
+  
+  if (!account) {
+    loading.value = false
+    return
+  }
 
   const { data, error } = await supabase
     .schema('threads')
     .from('scheduled_posts')
     .select('status')
+    .eq('account_id', account.id)
   
   if (data && !error) {
     metrics.value.scheduled = data.filter(p => p.status === 'scheduled').length

@@ -238,7 +238,6 @@ async function initAccountAndSettings() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
 
-  // Filter khusus per user_id agar akun tidak saling nyangkut antar user!
   const { data: account } = await supabase
     .schema('threads')
     .from('threads_accounts')
@@ -271,13 +270,17 @@ async function initAccountAndSettings() {
   }
 }
 
-function connectThreads() {
-  const appId = 'YOUR_META_APP_ID' // Sesuaikan dengan Meta App ID
-  const redirectUri = encodeURIComponent(`${window.location.origin}/auth/threads/callback`)
-  const scope = encodeURIComponent('threads_basic,threads_content_publish,threads_read_replies,threads_manage_replies')
-  
-  const oauthUrl = `https://threads.net/oauth/authorize?client_id=${appId}&redirect_uri=${redirectUri}&scope=${scope}&response_type=code`
-  window.location.href = oauthUrl
+async function connectThreads() {
+  try {
+    const { data, error } = await supabase.functions.invoke('threads-oauth-start')
+    if (error) throw error
+    if (data?.error) throw new Error(data.error)
+    if (data?.url) {
+      window.location.href = data.url
+    }
+  } catch (err: any) {
+    showToast('Gagal memuat URL OAuth: ' + err.message, 'error')
+  }
 }
 
 async function saveAutoReplySettings() {

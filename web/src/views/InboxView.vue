@@ -187,10 +187,29 @@ function formatDate(isoString: string) {
 }
 
 async function fetchLogs() {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    loading.value = false
+    return
+  }
+
+  const { data: account } = await supabase
+    .schema('threads')
+    .from('threads_accounts')
+    .select('id')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (!account) {
+    loading.value = false
+    return
+  }
+
   const { data } = await supabase
     .schema('threads')
     .from('auto_reply_logs')
     .select('*')
+    .eq('account_id', account.id)
     .order('created_at', { ascending: false })
     .limit(30)
 
