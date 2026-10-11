@@ -2,7 +2,6 @@ import os
 import asyncio
 import logging
 import httpx
-from datetime import datetime, timezone
 from supabase import create_client, Client
 from app.services.leads import analyze_and_notify_lead
 
@@ -26,7 +25,7 @@ async def fetch_and_process_replies():
             if not token:
                 continue
 
-            # 2. Ambil 20 postingan terakhir dari akun tersebut
+            # 2. Ambil 20 postingan terakhir dari akun tersebut untuk dicek balasannya
             posts_res = db.schema("threads").from_("posts").select("id, threads_media_id").eq("account_id", acc_id).order("created_at", desc=True).limit(20).execute()
             posts = posts_res.data or []
 
@@ -48,35 +47,33 @@ async def fetch_and_process_replies():
                     for reply in data:
                         reply_id = reply.get("id")
                         text = reply.get("text", "")
-                        author_username = reply.get("username", "unknown")
+                        username = reply.get("username", "unknown")
                         timestamp = reply.get("timestamp")
 
-                        # 4. Cek apakah balasan ini sudah ada di database
+                        # 4. Cek apakah balasan ini sudah ada di tabel replies
                         exist_res = db.schema("threads").from_("replies").select("id").eq("threads_reply_id", reply_id).execute()
                         
                         if not exist_res.data:
-                            # JIKA BARU: Analisa buying intent
-                            analysis = await analyze_and_notify_lead(acc_id, author_username, text)
+                            # JIKA BARU: Analisa apakah ini HOT LEAD (menggunakan script rule-based lu)
+                            analysis = await analyze_and_notify_lead(acc_id, username, text)
                             is_lead = analysis.get("is_lead", False)
 
-                            # 5. Insert pakai nama kolom lu yang bener
+                            # Simpan ke tabel replies
                             db.schema("threads").from_("replies").insert({
                                 "account_id": acc_id,
                                 "post_id": post_db_id,
                                 "threads_reply_id": reply_id,
-                                "author_username": author_username,
+                                "username": username,
                                 "text": text,
                                 "is_lead": is_lead,
-                                "replied_at": timestamp,
-                                "raw": reply,
-                                "processed_at": datetime.now(timezone.utc).isoformat()
+                                "published_at": timestamp
                             }).execute()
                             
                 except Exception as e:
                     logging.error(f"[Worker Replies] Gagal menarik data untuk media {media_id}: {str(e)}")
 
 async def reply_worker_loop():
-    """Loop yang berjalan di background FastAPI setiap 10 menit"""
+    """Loop abadi yang berjalan di background FastAPI setiap 10 menit"""
     while True:
         try:
             logging.info("[Worker Replies] Memulai siklus penarikan komentar Threads...")
@@ -85,5 +82,5 @@ async def reply_worker_loop():
         except Exception as e:
             logging.error(f"[Worker Replies] Error pada siklus: {str(e)}")
         
-        # Jeda 600 detik (10 menit)
+        # Jeda 600 detik (10 menit) sebelum narik data lagi biar gak kena rate limit Meta API
         await asyncio.sleep(600)
