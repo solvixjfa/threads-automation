@@ -11,11 +11,32 @@ def get_supabase() -> Client:
 
 def generate_embedding(text: str) -> list[float]:
     client = genai.Client(api_key=GEMINI_KEY)
-    response = client.models.embed_content(
-        model="text-embedding-004",
-        contents=text
-    )
-    return response.embedding.values
+    
+    candidates = [
+        os.getenv("EMBEDDING_MODEL", "text-embedding-004"),
+        "text-embedding-004",
+        "text-embedding-001",
+        "models/text-embedding-004"
+    ]
+    
+    seen = set()
+    models_to_try = [m for m in candidates if not (m in seen or seen.add(m))]
+    
+    last_exception = None
+    for model_name in models_to_try:
+        try:
+            response = client.models.embed_content(
+                model=model_name,
+                contents=text
+            )
+            return response.embedding.values
+        except Exception as e:
+            last_exception = e
+            continue
+            
+    if last_exception:
+        raise last_exception
+    raise RuntimeError("Gagal menghasilkan embedding: tidak ada model yang merespons.")
 
 async def store_knowledge(account_id: str, title: str, content: str):
     embedding = generate_embedding(content)
@@ -35,7 +56,6 @@ async def search_knowledge(account_id: str, query: str, limit: int = 3):
     query_vector = generate_embedding(query)
     db = get_supabase()
     
-    # RPC match_brand_knowledge di Supabase pgvector
     res = db.rpc("match_brand_knowledge", {
         "query_embedding": query_vector,
         "match_threshold": 0.5,
