@@ -99,7 +99,7 @@
         <div class="flex justify-between items-center border-b border-slate-100 pb-3">
           <div>
             <h2 class="text-xs font-bold text-slate-900 uppercase tracking-wide">Tren Pertumbuhan Harian</h2>
-            <p class="text-[11px] text-slate-400 mt-0.5">Akumulasi akumulatif Views & Likes harian</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Akumulasi Views & Likes harian</p>
           </div>
           <div class="flex items-center gap-4 text-[10px] font-bold">
             <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span> Views</span>
@@ -112,30 +112,31 @@
         </div>
 
         <div v-else class="space-y-2 pt-2">
-          <div class="h-44 flex items-end gap-2 sm:gap-4 pt-6 pb-2 px-1 border-b border-slate-100 overflow-x-auto">
+          <!-- Area Chart dengan ruang atas (pt-12) -->
+          <div class="h-48 flex items-end gap-2 sm:gap-4 pt-12 pb-2 px-2 border-b border-slate-100 overflow-x-auto">
             <div 
               v-for="day in dailyInsights" 
               :key="day.date" 
-              class="flex-1 min-w-[36px] flex flex-col items-center gap-1.5 h-full justify-end group relative"
+              class="flex-1 min-w-[40px] flex flex-col items-center gap-1.5 h-full justify-end group relative"
             >
-              <!-- Tooltip Hover -->
-              <div class="absolute -top-10 opacity-0 group-hover:opacity-100 transition bg-slate-900 text-white text-[10px] px-2 py-1 rounded shadow-lg whitespace-nowrap pointer-events-none z-10">
-                <span class="font-bold">{{ formatShortDate(day.date) }}:</span> {{ day.views }} views • {{ day.likes }} likes
+              <!-- Tooltip angka (Muncul rapi di atas bar saat di-hover/tap) -->
+              <div class="absolute -top-9 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity bg-slate-800 text-white text-[9px] px-2 py-1 rounded-md shadow-md whitespace-nowrap pointer-events-none z-20">
+                {{ day.views }} views • {{ day.likes }} likes
               </div>
 
               <!-- Bar Views & Likes -->
-              <div class="w-full max-w-[18px] flex items-end gap-0.5 h-full justify-center">
+              <div class="w-full max-w-[20px] flex items-end gap-1 h-full justify-center">
                 <div 
-                  class="w-full bg-indigo-500 rounded-t transition-all group-hover:bg-indigo-600"
+                  class="w-full bg-indigo-600 rounded-t transition-all group-hover:bg-indigo-700"
                   :style="{ height: getBarHeight(day.views, maxDailyViews) }"
                 ></div>
                 <div 
-                  class="w-full bg-emerald-400 rounded-t transition-all group-hover:bg-emerald-500"
+                  class="w-full bg-emerald-500 rounded-t transition-all group-hover:bg-emerald-600"
                   :style="{ height: getBarHeight(day.likes, maxDailyViews) }"
                 ></div>
               </div>
 
-              <span class="text-[9px] font-medium text-slate-400 truncate w-full text-center">
+              <span class="text-[9px] font-bold text-slate-400 truncate w-full text-center">
                 {{ formatDayLabel(day.date) }}
               </span>
             </div>
@@ -228,19 +229,14 @@ const maxDailyViews = computed(() => {
 
 function getBarHeight(val: number, max: number) {
   if (!val || !max) return '4px'
-  const pct = Math.round((val / max) * 100)
+  // Dibatasi maksimal 78% tinggi container agar tooltip muat sempurna di atasnya
+  const pct = Math.round((val / max) * 78)
   return `${Math.max(pct, 6)}%`
 }
 
 function formatDate(isoString: string) {
   if (!isoString) return ''
   return new Date(isoString).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
-}
-
-function formatShortDate(dateStr: string) {
-  if (!dateStr) return ''
-  const d = new Date(dateStr)
-  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
 }
 
 function formatDayLabel(dateStr: string) {
