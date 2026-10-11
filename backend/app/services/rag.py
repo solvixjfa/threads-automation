@@ -1,6 +1,7 @@
 import os
 import logging
 from google import genai
+from google.genai import types
 from supabase import create_client, Client
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
@@ -52,12 +53,16 @@ def generate_embedding(text: str) -> list[float]:
         "models/gemini-embedding-001"
     ]
     
+    # Paksa output_dimensionality ke 768 agar sesuai schema DB
+    embed_config = types.EmbedContentConfig(output_dimensionality=768)
+    
     last_exception = None
     for model_name in models_to_try:
         try:
             res = client.models.embed_content(
                 model=model_name,
-                contents=text
+                contents=text,
+                config=embed_config
             )
             return extract_vector(res)
         except Exception as e:
