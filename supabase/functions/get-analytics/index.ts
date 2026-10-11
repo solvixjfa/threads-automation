@@ -20,7 +20,6 @@ serve(async (req) => {
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Client via Auth User
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -41,7 +40,7 @@ serve(async (req) => {
       .from("threads_accounts")
       .select("id")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (accErr || !account) {
       return new Response(JSON.stringify({ error: "Threads account not found" }), {
@@ -50,26 +49,39 @@ serve(async (req) => {
       });
     }
 
-    // 1. Overview & Post Performance Summary
-    const { data: posts, error: postsErr } = await supabase
+    // 1. Ambil postingan terbit dari scheduled_posts (tempat teks & tanggal terbit disimpan)
+    const { data: publishedScheduled } = await supabase
+      .schema("threads")
+      .from("scheduled_posts")
+      .select("id, text, published_media_id, scheduled_for, created_at")
+      .eq("account_id", account.id)
+      .eq("status", "published");
+
+    // 2. Ambil media_id & post_metrics (hanya kolom yang eksis di database)
+    const { data: postsWithMetrics } = await supabase
       .schema("threads")
       .from("posts")
       .select(`
-        id, threads_media_id, text, permalink, posted_at,
+        id, threads_media_id,
         post_metrics (views, likes, replies, reposts, quotes, snapshot_label)
       `)
-      .eq("account_id", account.id)
-      .order("posted_at", { ascending: false });
+      .eq("account_id", account.id);
 
-    if (postsErr) throw postsErr;
+    // Mapping scheduled_posts berdasarkan published_media_id
+    const scheduledMap = new Map();
+    (publishedScheduled || []).forEach((sp: any) => {
+      if (sp.published_media_id) {
+        scheduledMap.set(sp.published_media_id, sp);
+      }
+    });
 
     let totalViews = 0;
     let totalLikes = 0;
     let totalReplies = 0;
     let totalReposts = 0;
 
-    const formattedPosts = (posts || []).map((p: any) => {
-      // Ambil snapshot 'latest' atau paling relevan
+    const formattedPosts = (postsWithMetrics || []).map((p: any) => {
+      const sp = scheduledMap.get(p.threads_media_id);
       const latestMetrics = p.post_metrics?.find((m: any) => m.snapshot_label === 'latest') || p.post_metrics?.[0] || {
         views: 0, likes: 0, replies: 0, reposts: 0, quotes: 0
       };
@@ -86,18 +98,15 @@ serve(async (req) => {
       return {
         id: p.id,
         threads_media_id: p.threads_media_id,
-        text: p.text,
-        permalink: p.permalink,
-        posted_at: p.posted_at,
+        text: sp?.text || "Postingan Threads",
+        permalink: p.threads_media_id ? `https://www.threads.net/post/${p.threads_media_id}` : null,
+        posted_at: sp?.scheduled_for || sp?.created_at || null,
         metrics: latestMetrics,
         engagement_rate: parseFloat(engagement.toFixed(2))
       };
     });
 
-    // Sort Top Posts berdasarkan engagement rate
-    const topPosts = [...formattedPosts].sort((a, b) => b.engagement_rate - a.engagement_rate).slice(0, 5);
-
-    // 2. Daily Trends
+    // 3. Ambil ringkasan harian dari account_insights_daily
     const { data: dailyInsights } = await supabase
       .schema("threads")
       .from("account_insights_daily")
@@ -106,8 +115,20 @@ serve(async (req) => {
       .order("date", { ascending: true })
       .limit(30);
 
+    // Fallback akumulasi jika post_metrics individual belum sempat disinkronisasi
+    if (totalViews === 0 && totalLikes === 0 && dailyInsights && dailyInsights.length > 0) {
+      dailyInsights.forEach((d: any) => {
+        totalViews += d.views || 0;
+        totalLikes += d.likes || 0;
+        totalReplies += d.replies || 0;
+        totalReposts += d.reposts || 0;
+      });
+    }
+
+    const topPosts = [...formattedPosts].sort((a, b) => b.engagement_rate - a.engagement_rate).slice(0, 5);
+
     const overview = {
-      total_posts: posts?.length || 0,
+      total_posts: publishedScheduled?.length || formattedPosts.length || 0,
       total_views: totalViews,
       total_likes: totalLikes,
       total_replies: totalReplies,
