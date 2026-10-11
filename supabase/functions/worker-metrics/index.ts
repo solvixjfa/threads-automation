@@ -117,6 +117,15 @@ Deno.serve(async (req) => {
             accDailyReposts += metricsObj.reposts || 0;
             accDailyQuotes += metricsObj.quotes || 0;
 
+            // FIX: Hapus record "latest" yang duplikat lama biar gak ngebug di get-analytics
+            await supabase
+              .schema("threads")
+              .from("post_metrics")
+              .delete()
+              .eq("post_id", postRecord.id)
+              .eq("snapshot_label", "latest");
+
+            // Lalu masukkan data yang bener-bener fresh
             await supabase
               .schema("threads")
               .from("post_metrics")
@@ -127,7 +136,8 @@ Deno.serve(async (req) => {
                 likes: metricsObj.likes || 0,
                 replies: metricsObj.replies || 0,
                 reposts: metricsObj.reposts || 0,
-                quotes: metricsObj.quotes || 0
+                quotes: metricsObj.quotes || 0,
+                captured_at: new Date().toISOString()
               });
 
             syncedPostsCount++;
