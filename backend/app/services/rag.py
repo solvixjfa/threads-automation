@@ -10,38 +10,51 @@ GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
 def get_supabase() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
+def get_available_embedding_models() -> list[str]:
+    client = genai.Client(api_key=GEMINI_KEY)
+    found = []
+    try:
+        for m in client.models.list():
+            methods = getattr(m, 'supported_generation_methods', []) or []
+            if 'embedContent' in methods or 'embed_content' in methods:
+                name = m.name.replace("models/", "") if hasattr(m, 'name') else str(m)
+                found.append(name)
+    except Exception as e:
+        logging.error(f"Error listing models: {str(e)}")
+    return found
+
 def generate_embedding(text: str) -> list[float]:
     client = genai.Client(api_key=GEMINI_KEY)
     
-    # Hanya gunakan model khusus Embedding
-    candidates = [
-        os.getenv("EMBEDDING_MODEL", "text-embedding-004"),
-        "text-embedding-004",
-        "text-embedding-005",
-        "models/text-embedding-004"
-    ]
-    
-    models_to_try = []
-    for m in candidates:
-        if m and m not in models_to_try:
-            models_to_try.append(m)
-            
-    last_exception = None
-    for model_name in models_to_try:
+    # 1. Coba dari Environment Variable jika di-set di Railway
+    env_model = os.getenv("EMBEDDING_MODEL")
+    if env_model:
         try:
-            response = client.models.embed_content(
-                model=model_name,
-                contents=text
-            )
-            return response.embedding.values
+            res = client.models.embed_content(model=env_model, contents=text)
+            return res.embedding.values
         except Exception as e:
-            logging.error(f"Embedding failed with model {model_name}: {str(e)}")
-            last_exception = e
+            logging.warning(f"ENV EMBEDDING_MODEL ({env_model}) failed: {str(e)}")
+
+    # 2. Auto-discover model embedding yang diizinkan oleh API Key
+    discovered = get_available_embedding_models()
+    for m_name in discovered:
+        try:
+            res = client.models.embed_content(model=m_name, contents=text)
+            return res.embedding.values
+        except Exception as e:
+            logging.warning(f"Discovered embedding model {m_name} failed: {str(e)}")
             continue
-            
-    if last_exception:
-        raise last_exception
-    raise RuntimeError("Gagal menghasilkan embedding: tidak ada model embedding yang valid.")
+
+    # 3. Fallback manual jika discovery kosong
+    for fallback in ["text-embedding-004", "text-embedding-001"]:
+        try:
+            res = client.models.embed_content(model=fallback, contents=text)
+            return res.embedding.values
+        except Exception as e:
+            logging.warning(f"Fallback {fallback} failed: {str(e)}")
+            continue
+
+    raise RuntimeError(f"Gagal generate embedding. Model embedding terdeteksi di API Key: {discovered}")
 
 async def store_knowledge(account_id: str, title: str, content: str, category: str = "general"):
     embedding = generate_embedding(content)

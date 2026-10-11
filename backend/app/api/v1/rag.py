@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from app.services.rag import store_knowledge
+from app.services.rag import store_knowledge, get_available_embedding_models
 from app.services.auto_reply import generate_rag_reply
 
 router = APIRouter()
@@ -16,6 +16,14 @@ class AutoReplyRequest(BaseModel):
     account_id: str
     user_comment: str
     author_username: Optional[str] = ""
+
+@router.get("/list-models")
+async def list_embedding_models():
+    try:
+        models = get_available_embedding_models()
+        return {"status": "success", "embedding_models_found": models}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/embed")
 async def embed_knowledge(payload: KnowledgeRequest):
