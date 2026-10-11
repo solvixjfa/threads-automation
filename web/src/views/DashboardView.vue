@@ -159,9 +159,6 @@
           >
             <div class="space-y-1 flex-1">
               <p class="text-xs font-medium text-slate-800 line-clamp-2">"{{ post.text }}"</p>
-              <p class="text-[11px] text-rose-600 font-semibold">
-                Error: {{ post.error_message || 'Gagal terbit ke Threads' }}
-              </p>
             </div>
 
             <button 
@@ -282,7 +279,7 @@ async function fetchQueueMetricsAndFailed(accountId: string) {
   const { data } = await supabase
     .schema('threads')
     .from('scheduled_posts')
-    .select('id, text, status, error_message, scheduled_for')
+    .select('*')
     .eq('account_id', accountId)
 
   if (data) {
@@ -354,7 +351,7 @@ async function loadAllDashboardData() {
 async function handleRetryPost(postId: string) {
   retryingPostId.value = postId
   try {
-    const { data, error } = await supabase.functions.invoke('admin-manage-queue', {
+    const { error } = await supabase.functions.invoke('admin-manage-queue', {
       body: { action: 'retry', post_id: postId }
     })
 
