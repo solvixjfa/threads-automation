@@ -3,19 +3,33 @@
     <div class="flex flex-wrap justify-between items-center gap-4">
       <div>
         <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Dashboard & Analytics</h1>
-        <p class="text-slate-500 text-sm mt-1">Ringkasan performa postingan dan metrik otomatisasi Threads.</p>
+        <p class="text-slate-500 text-sm mt-1">
+          Ringkasan performa postingan dan metrik otomatisasi Threads.
+          <span v-if="lastSyncedAt" class="text-xs text-indigo-600 block mt-0.5">
+            Sync terakhir: {{ formatDate(lastSyncedAt) }}
+          </span>
+        </p>
       </div>
-      <button 
-        @click="loadAllDashboardData" 
-        :disabled="loading"
-        class="text-xs font-bold bg-indigo-50 text-indigo-700 px-4 py-2.5 rounded-xl hover:bg-indigo-100 transition border border-indigo-100 disabled:opacity-50 flex items-center gap-2"
-      >
-        <span v-if="loading" class="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></span>
-        <span>Refresh Data</span>
-      </button>
+
+      <div class="flex items-center gap-3">
+        <button 
+          @click="handleManualRefresh" 
+          :disabled="loading || refreshing"
+          class="text-xs font-bold bg-indigo-50 text-indigo-700 px-4 py-2.5 rounded-xl hover:bg-indigo-100 transition border border-indigo-100 disabled:opacity-50 flex items-center gap-2 shadow-sm"
+        >
+          <span v-if="refreshing || loading" class="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></span>
+          <span>{{ refreshing ? 'Sinkronisasi Meta...' : 'Refresh Data' }}</span>
+        </button>
+      </div>
     </div>
 
-    <!-- Admin System Health Banner (Hanya muncul jika user role Admin) -->
+    <!-- Toast Notification untuk Cooldown -->
+    <div v-if="toastMessage" class="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs flex justify-between items-center">
+      <span>{{ toastMessage }}</span>
+      <button @click="toastMessage = ''" class="font-bold text-amber-900 hover:underline text-sm ml-2">✕</button>
+    </div>
+
+    <!-- Admin System Health Banner -->
     <div v-if="adminHealth" class="bg-slate-900 text-white p-4 rounded-2xl flex flex-wrap justify-between items-center gap-3 text-xs shadow-md">
       <div class="flex items-center gap-3">
         <span class="w-2.5 h-2.5 rounded-full" :class="adminHealth.failed_posts > 0 || adminHealth.expiring_or_broken_tokens > 0 ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'"></span>
@@ -37,7 +51,7 @@
     </div>
 
     <template v-else>
-      <!-- CARD METRIK 1: Queue Status (Antrean DB) -->
+      <!-- CARD METRIK 1: Queue Status -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="p-5 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-1">
           <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Terjadwal</span>
@@ -80,7 +94,7 @@
         </div>
       </div>
 
-      <!-- TOP POSTS SECTION (Dari get-analytics) -->
+      <!-- TOP POSTS SECTION -->
       <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
         <div class="flex justify-between items-center border-b border-slate-100 pb-3">
           <h2 class="text-xs font-bold text-slate-900 uppercase tracking-wide">Top 5 Postingan Performa Terbaik</h2>
@@ -133,6 +147,10 @@ import { ref, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 
 const loading = ref(true)
+const refreshing = ref(false)
+const toastMessage = ref('')
+const currentAccountId = ref<string | null>(null)
+const lastSyncedAt = ref<string | null>(null)
 
 const queueMetrics = ref({
   scheduled: 0,
@@ -173,41 +191,80 @@ async function fetchQueueMetrics(accountId: string) {
 
 async function loadAllDashboardData() {
   loading.value = true
+  toastMessage.value = ''
   try {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // 1. Ambil akun Threads
     const { data: account } = await supabase
       .schema('threads')
       .from('threads_accounts')
-      .select('id')
+      .select('id, last_synced_at')
       .eq('user_id', user.id)
       .maybeSingle()
 
     if (account) {
+      currentAccountId.value = account.id
+      lastSyncedAt.value = account.last_synced_at
       await fetchQueueMetrics(account.id)
     }
 
-    // 2. Panggil Edge Function get-analytics (Otomatis ngirim Auth Header)
     const { data: analyticsData, error: analyticsErr } = await supabase.functions.invoke('get-analytics')
     if (!analyticsErr && analyticsData?.success) {
       if (analyticsData.overview) overview.value = analyticsData.overview
       if (analyticsData.top_posts) topPosts.value = analyticsData.top_posts
     }
 
-    // 3. Panggil Edge Function admin-health (Aman dari crash jika role BUKAN admin)
     const { data: healthData, error: healthErr } = await supabase.functions.invoke('admin-health')
     if (!healthErr && healthData?.success && healthData?.health) {
       adminHealth.value = healthData.health
     } else {
-      adminHealth.value = null // User biasa (non-admin) tidak melihat banner
+      adminHealth.value = null
     }
 
   } catch (err) {
     console.error('Error loading dashboard:', err)
   } finally {
     loading.value = false
+  }
+}
+
+async function handleManualRefresh() {
+  if (!currentAccountId.value) {
+    await loadAllDashboardData()
+    return
+  }
+
+  const COOLDOWN_MS = 15 * 60 * 1000
+  if (lastSyncedAt.value) {
+    const lastSyncTime = new Date(lastSyncedAt.value).getTime()
+    const now = new Date().getTime()
+    const diffMs = now - lastSyncTime
+
+    if (diffMs < COOLDOWN_MS) {
+      const remainingMinutes = Math.ceil((COOLDOWN_MS - diffMs) / (60 * 1000))
+      toastMessage.value = `Metrik baru disinkronkan. Harap tunggu ${remainingMinutes} menit lagi sebelum refresh.`
+      return
+    }
+  }
+
+  refreshing.value = true
+  toastMessage.value = ''
+
+  try {
+    const { error: syncErr } = await supabase.functions.invoke('worker-metrics', {
+      body: { account_id: currentAccountId.value }
+    })
+
+    if (syncErr) {
+      toastMessage.value = 'Gagal memicu sinkronisasi: ' + syncErr.message
+    } else {
+      await loadAllDashboardData()
+    }
+  } catch (err: any) {
+    toastMessage.value = 'Terjadi kesalahan saat refresh: ' + err.message
+  } finally {
+    refreshing.value = false
   }
 }
 
