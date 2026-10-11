@@ -193,7 +193,7 @@
             <div class="space-y-1 flex-1">
               <p class="text-xs font-medium text-slate-800 line-clamp-2">"{{ post.text }}"</p>
               <div class="flex items-center gap-3 text-[11px] text-slate-400">
-                <span>{{ formatDate(post.posted_at) }}</span>
+                <span>{{ formatDate(post.posted_at || post.created_at) }}</span>
                 <a v-if="post.permalink" :href="post.permalink" target="_blank" class="text-indigo-600 font-bold hover:underline">
                   Buka di Threads ↗
                 </a>
@@ -203,15 +203,15 @@
             <div class="flex items-center gap-4 text-xs shrink-0 bg-white p-2.5 rounded-lg border border-slate-200">
               <div class="text-center px-2">
                 <span class="block text-[9px] text-slate-400 uppercase font-bold">Views</span>
-                <span class="font-bold text-slate-800">{{ post.metrics?.views || 0 }}</span>
+                <span class="font-bold text-slate-800">{{ post.metrics?.views ?? post.views ?? 0 }}</span>
               </div>
               <div class="text-center px-2 border-l border-slate-100">
                 <span class="block text-[9px] text-slate-400 uppercase font-bold">Likes</span>
-                <span class="font-bold text-slate-800">{{ post.metrics?.likes || 0 }}</span>
+                <span class="font-bold text-slate-800">{{ post.metrics?.likes ?? post.likes ?? 0 }}</span>
               </div>
               <div class="text-center px-2 border-l border-slate-100">
                 <span class="block text-[9px] font-bold text-indigo-600 uppercase">ER</span>
-                <span class="font-black text-indigo-600">{{ post.engagement_rate }}%</span>
+                <span class="font-black text-indigo-600">{{ post.engagement_rate ?? 0 }}%</span>
               </div>
             </div>
           </div>
@@ -376,19 +376,6 @@ async function handleManualRefresh() {
     return
   }
 
-  const COOLDOWN_MS = 15 * 60 * 1000
-  if (lastSyncedAt.value) {
-    const lastSyncTime = new Date(lastSyncedAt.value).getTime()
-    const now = new Date().getTime()
-    const diffMs = now - lastSyncTime
-
-    if (diffMs < COOLDOWN_MS) {
-      const remainingMinutes = Math.ceil((COOLDOWN_MS - diffMs) / (60 * 1000))
-      toastMessage.value = `Metrik baru disinkronkan. Harap tunggu ${remainingMinutes} menit lagi sebelum refresh.`
-      return
-    }
-  }
-
   refreshing.value = true
   toastMessage.value = ''
 
@@ -400,6 +387,7 @@ async function handleManualRefresh() {
     if (syncErr) {
       toastMessage.value = 'Gagal memicu sinkronisasi: ' + syncErr.message
     } else {
+      toastMessage.value = 'Sinkronisasi metrik berhasil diperbarui dari Meta!'
       await loadAllDashboardData()
     }
   } catch (err: any) {

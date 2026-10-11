@@ -146,7 +146,7 @@ WAJIB kembalikan respon DALAM FORMAT JSON ARRAY murni tanpa teks pembuka/penutup
 
     client = genai.Client(api_key=GEMINI_KEY)
     response = client.models.generate_content(
-        model="gemini-2.5-flash",
+        model="gemini-3.8-flash",
         contents=prompt
     )
     
