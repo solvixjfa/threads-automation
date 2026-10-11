@@ -26,9 +26,10 @@ async def fetch_and_process_replies():
             if not token:
                 continue
 
-            # Ambil Pengaturan Auto Reply
-            settings_res = db.schema("threads").from_("auto_reply_settings").select("*").eq("account_id", acc_id).maybeSingle().execute()
-            auto_settings = settings_res.data or {}
+            # FIX: Ganti maybeSingle() dengan limit(1) yang didukung penuh oleh supabase-py
+            settings_res = db.schema("threads").from_("auto_reply_settings").select("*").eq("account_id", acc_id).limit(1).execute()
+            auto_settings = settings_res.data[0] if settings_res.data else {}
+            
             is_enabled = auto_settings.get("enabled", True)
             reply_mode = auto_settings.get("mode", "review")
 
@@ -58,7 +59,7 @@ async def fetch_and_process_replies():
                         exist_res = db.schema("threads").from_("replies").select("id").eq("threads_reply_id", reply_id).execute()
                         
                         if not exist_res.data:
-                            # 1. Analisa Lead (Berjalan terpisah)
+                            # 1. Analisa Lead
                             analysis = await analyze_and_notify_lead(acc_id, author_username, text)
                             is_lead = analysis.get("is_lead", False)
 
