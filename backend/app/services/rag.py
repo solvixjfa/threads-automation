@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 from google import genai
 from google.genai import types
@@ -10,6 +11,17 @@ GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
 
 def get_supabase() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_KEY)
+
+def get_all_raw_models() -> list[str]:
+    client = genai.Client(api_key=GEMINI_KEY)
+    models = []
+    try:
+        for m in client.models.list():
+            name = getattr(m, 'name', str(m))
+            models.append(name)
+    except Exception as e:
+        logging.error(f"Failed to list models: {str(e)}")
+    return models
 
 def extract_vector(response) -> list[float]:
     if hasattr(response, 'embeddings') and response.embeddings:
@@ -76,8 +88,6 @@ async def store_knowledge(account_id: str, title: str, content: str, category: s
 
 async def backfill_unembedded_knowledge(account_id: str):
     db = get_supabase()
-    
-    # Ambil baris yang embedding-nya masih NULL
     res = db.schema("threads").from_("brand_knowledge").select("id, content").eq("account_id", account_id).is_("embedding", "null").execute()
     rows = res.data or []
     
@@ -95,9 +105,60 @@ async def search_knowledge(account_id: str, query: str, limit: int = 3):
     
     res = db.rpc("match_brand_knowledge", {
         "query_embedding": query_vector,
-        "match_threshold": 0.5,
+        "match_threshold": 0.3,
         "match_count": limit,
         "p_account_id": account_id
     }).execute()
     
     return res.data or []
+
+async def generate_rag_post(account_id: str, topic: str, tone: str = "Edukasi & Insight Kasual") -> list[dict]:
+    knowledge = await search_knowledge(account_id, topic, limit=3)
+    
+    context_text = ""
+    if knowledge:
+        context_text = "\n".join([f"- [{k.get('category', 'Fakta')} - {k.get('title')}]: {k.get('content')}" for k in knowledge])
+    
+    prompt = f"""Kamu adalah Content Strategist & Copywriter Threads profesional.
+Buat 3 variasi draf postingan Threads berbeda berdasarkan TOPIK dan KONTEKS BRAND di bawah ini.
+
+[TOPIK / IDE POSTINGAN]
+{topic}
+
+[GAYA BAHASA / TONE]
+{tone}
+
+[KONTEKS KHUSUS BRAND / RAG KNOWLEDGE BASE]
+{context_text if context_text else "Tidak ada dokumen RAG khusus. Gunakan fakta umum bisnis."}
+
+[PETUNJUK PENULISAN]
+1. Tulis dalam bahasa Indonesia yang natural, menarik (hook kuat), dan berbobot khas Threads.
+2. Sisipkan fakta, angka, atau detail spesifik dari KONTEKS KHUSUS BRAND jika ada.
+3. Hasilkan tepat 3 variasi draf yang siap pakai.
+
+WAJIB kembalikan respon DALAM FORMAT JSON ARRAY murni tanpa teks pembuka/penutup markdown:
+[
+  {{"id": "1", "title": "Draf 1: Storytelling", "content": "isi teks draf 1..."}},
+  {{"id": "2", "title": "Draf 2: Insight / Edukasi", "content": "isi teks draf 2..."}},
+  {{"id": "3", "title": "Draf 3: Hook & Diskusi", "content": "isi teks draf 3..."}}
+]
+"""
+
+    client = genai.Client(api_key=GEMINI_KEY)
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt
+    )
+    
+    raw_text = response.text.strip()
+    if raw_text.startswith("```json"):
+        raw_text = raw_text.replace("```json", "", 1).rstrip("`").strip()
+    if raw_text.startswith("```"):
+        raw_text = raw_text.replace("```", "", 1).rstrip("`").strip()
+        
+    try:
+        return json.loads(raw_text)
+    except Exception:
+        return [
+            {"id": "1", "title": "Draf Utama", "content": response.text}
+        ]

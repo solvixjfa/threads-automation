@@ -29,7 +29,7 @@
             <input
               v-model="aiTopic"
               type="text"
-              placeholder="Masukan topik singkat (contoh: Eksperimen XGBoost buat prediksi churn)..."
+              placeholder="Masukan topik singkat (contoh: Pembuatan website di Ixiera)..."
               class="w-full bg-white border border-indigo-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
             />
           </div>
@@ -318,16 +318,40 @@ async function generateAiIdeas() {
   aiResults.value = []
   
   try {
-    const { data, error } = await supabase.functions.invoke('generate-post', {
-      body: { topic: aiTopic.value, tone: aiTone.value }
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Pengguna belum terautentikasi')
+
+    const { data: account } = await supabase
+      .schema('threads')
+      .from('threads_accounts')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (!account) throw new Error('Akun Threads belum tersambung')
+
+    const response = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/rag/generate-post', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        account_id: account.id,
+        topic: aiTopic.value,
+        tone: aiTone.value
+      })
     })
 
-    if (error) throw error
-    if (data?.error) throw new Error(data.error)
+    if (!response.ok) {
+      const errData = await response.json()
+      throw new Error(errData.detail || 'Gagal memproses draf di backend')
+    }
 
-    if (data?.options) {
-      aiResults.value = data.options
-      showToast('3 Draf berhasil dibuat oleh AI!', 'success')
+    const resData = await response.json()
+
+    if (resData?.options) {
+      aiResults.value = resData.options
+      showToast('3 Draf berbasis RAG berhasil dibuat oleh AI!', 'success')
     }
   } catch (err: any) {
     showToast('Gagal AI Generator: ' + err.message, 'error')
@@ -364,7 +388,7 @@ async function checkScore() {
 
 async function loadPosts() {
   loading.value = true
-  posts.value = [] // Reset state sebelum mengambil antrean
+  posts.value = []
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {

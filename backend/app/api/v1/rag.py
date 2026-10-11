@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from app.services.rag import store_knowledge, backfill_unembedded_knowledge
+from app.services.rag import store_knowledge, backfill_unembedded_knowledge, generate_rag_post, get_all_raw_models
 from app.services.auto_reply import generate_rag_reply
 
 router = APIRouter()
@@ -19,6 +19,19 @@ class AutoReplyRequest(BaseModel):
 
 class BackfillRequest(BaseModel):
     account_id: str
+
+class GeneratePostRequest(BaseModel):
+    account_id: str
+    topic: str
+    tone: Optional[str] = "Edukasi & Insight Kasual"
+
+@router.get("/list-models")
+async def list_embedding_models():
+    try:
+        models = get_all_raw_models()
+        return {"status": "success", "raw_models_in_api_key": models}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/embed")
 async def embed_knowledge(payload: KnowledgeRequest):
@@ -50,5 +63,17 @@ async def generate_reply(payload: AutoReplyRequest):
             author_username=payload.author_username or ""
         )
         return {"status": "success", "reply": reply}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/generate-post")
+async def generate_post(payload: GeneratePostRequest):
+    try:
+        options = await generate_rag_post(
+            account_id=payload.account_id,
+            topic=payload.topic,
+            tone=payload.tone or "Edukasi & Insight Kasual"
+        )
+        return {"status": "success", "options": options}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
