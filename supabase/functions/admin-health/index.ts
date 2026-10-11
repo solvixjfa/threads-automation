@@ -1,8 +1,7 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -48,7 +47,6 @@ serve(async (req) => {
       });
     }
 
-    // Single queries for counts to ensure speed and performance
     const { count: failedPostsCount } = await adminClient
       .schema("threads")
       .from("scheduled_posts")

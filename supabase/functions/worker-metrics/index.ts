@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -19,7 +18,7 @@ async function fetchWithTimeout(resource: string, options: any = {}, timeoutMs =
   }
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -85,7 +84,6 @@ serve(async (req) => {
           console.error(`[worker-metrics] Error selecting post record:`, selectPostErr.message);
         }
 
-        // Insert ke posts dengan mengisi posted_at agar tidak melanggar NOT-NULL constraint
         if (!postRecord) {
           const postedAtVal = sp.scheduled_for || sp.created_at || new Date().toISOString();
           const { data: insertedPost, error: insertPostErr } = await supabase
@@ -108,7 +106,6 @@ serve(async (req) => {
 
         if (!postRecord) continue;
 
-        // Tarik statistik /insights dari Meta Threads API
         try {
           const insightUrl = `https://graph.threads.net/v1.0/${mediaId}/insights?metric=views,likes,replies,reposts,quotes&access_token=${accessToken}`;
           const res = await fetchWithTimeout(insightUrl, {}, 5000);
