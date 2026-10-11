@@ -38,7 +38,7 @@ def generate_embedding(text: str) -> list[float]:
         raise last_exception
     raise RuntimeError("Gagal menghasilkan embedding: tidak ada model yang merespons.")
 
-async def store_knowledge(account_id: str, title: str, content: str):
+async def store_knowledge(account_id: str, title: str, content: str, category: str = "general"):
     embedding = generate_embedding(content)
     db = get_supabase()
     
@@ -46,6 +46,7 @@ async def store_knowledge(account_id: str, title: str, content: str):
         "account_id": account_id,
         "title": title,
         "content": content,
+        "category": category,
         "embedding": embedding
     }
     
