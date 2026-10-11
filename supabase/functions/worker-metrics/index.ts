@@ -29,7 +29,6 @@ serve(async (req) => {
 
     console.log("[worker-metrics] Starting metrics sync worker...");
 
-    // 1. Cari semua akun Threads yang connected
     const { data: accounts, error: accErr } = await supabase
       .schema("threads")
       .from("threads_accounts")
@@ -55,20 +54,19 @@ serve(async (req) => {
         continue;
       }
 
-      // 2. Ambil postingan terbit dari scheduled_posts yang punya published_media_id
       const { data: publishedPosts, error: postErr } = await supabase
         .schema("threads")
         .from("scheduled_posts")
-        .select("published_media_id, text")
+        .select("published_media_id, text, scheduled_for, created_at")
         .eq("account_id", acc.id)
         .eq("status", "published")
         .not("published_media_id", "is", null);
 
       if (postErr) {
-        console.error(`[worker-metrics] Error fetching scheduled_posts for account ${acc.id}:`, postErr.message);
+        console.error(`[worker-metrics] Error fetching scheduled_posts:`, postErr.message);
       }
 
-      console.log(`[worker-metrics] Found ${publishedPosts?.length || 0} published posts for account ${acc.username || acc.id}.`);
+      console.log(`[worker-metrics] Found ${publishedPosts?.length || 0} published posts.`);
 
       if (!publishedPosts || publishedPosts.length === 0) continue;
 
@@ -76,7 +74,6 @@ serve(async (req) => {
         const mediaId = sp.published_media_id;
         console.log(`[worker-metrics] Processing media_id: ${mediaId}`);
 
-        // A. Pastikan terdaftar di tabel threads.posts
         let { data: postRecord, error: selectPostErr } = await supabase
           .schema("threads")
           .from("posts")
@@ -85,14 +82,20 @@ serve(async (req) => {
           .maybeSingle();
 
         if (selectPostErr) {
-          console.error(`[worker-metrics] Error selecting post record for media_id ${mediaId}:`, selectPostErr.message);
+          console.error(`[worker-metrics] Error selecting post record:`, selectPostErr.message);
         }
 
+        // Insert ke posts dengan mengisi posted_at agar tidak melanggar NOT-NULL constraint
         if (!postRecord) {
+          const postedAtVal = sp.scheduled_for || sp.created_at || new Date().toISOString();
           const { data: insertedPost, error: insertPostErr } = await supabase
             .schema("threads")
             .from("posts")
-            .insert({ account_id: acc.id, threads_media_id: mediaId })
+            .insert({
+              account_id: acc.id,
+              threads_media_id: mediaId,
+              posted_at: postedAtVal
+            })
             .select("id")
             .single();
 
@@ -103,12 +106,9 @@ serve(async (req) => {
           postRecord = insertedPost;
         }
 
-        if (!postRecord) {
-          console.error(`[worker-metrics] Post record not available for media_id ${mediaId}`);
-          continue;
-        }
+        if (!postRecord) continue;
 
-        // B. Tarik statistik /insights dari Meta Threads API
+        // Tarik statistik /insights dari Meta Threads API
         try {
           const insightUrl = `https://graph.threads.net/v1.0/${mediaId}/insights?metric=views,likes,replies,reposts,quotes&access_token=${accessToken}`;
           const res = await fetchWithTimeout(insightUrl, {}, 5000);
@@ -129,7 +129,6 @@ serve(async (req) => {
 
             console.log(`[worker-metrics] Metrics fetched for ${mediaId}:`, JSON.stringify(metricsObj));
 
-            // C. Simpan snapshot metrik ke post_metrics
             const { error: insertMetricErr } = await supabase
               .schema("threads")
               .from("post_metrics")
@@ -144,15 +143,13 @@ serve(async (req) => {
               });
 
             if (insertMetricErr) {
-              console.error(`[worker-metrics] Error inserting post_metrics for ${mediaId}:`, insertMetricErr.message);
+              console.error(`[worker-metrics] Error inserting post_metrics:`, insertMetricErr.message);
             } else {
               syncedPostsCount++;
             }
-          } else {
-            console.log(`[worker-metrics] Unexpected response payload from Meta:`, JSON.stringify(resData));
           }
         } catch (apiErr: any) {
-          console.error(`[worker-metrics] Exception during Meta API call for ${mediaId}:`, apiErr.message);
+          console.error(`[worker-metrics] Exception during Meta API call:`, apiErr.message);
         }
       }
     }
