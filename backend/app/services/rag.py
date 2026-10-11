@@ -1,4 +1,5 @@
 import os
+import logging
 from google import genai
 from supabase import create_client, Client
 
@@ -12,13 +13,12 @@ def get_supabase() -> Client:
 def generate_embedding(text: str) -> list[float]:
     client = genai.Client(api_key=GEMINI_KEY)
     
+    # Hanya gunakan model khusus Embedding
     candidates = [
         os.getenv("EMBEDDING_MODEL", "text-embedding-004"),
         "text-embedding-004",
         "text-embedding-005",
-        "models/text-embedding-004",
-        "models/text-embedding-005",
-        "gemini-3.5-flash-lite"
+        "models/text-embedding-004"
     ]
     
     models_to_try = []
@@ -35,12 +35,13 @@ def generate_embedding(text: str) -> list[float]:
             )
             return response.embedding.values
         except Exception as e:
+            logging.error(f"Embedding failed with model {model_name}: {str(e)}")
             last_exception = e
             continue
             
     if last_exception:
         raise last_exception
-    raise RuntimeError("Gagal menghasilkan embedding: tidak ada model yang merespons.")
+    raise RuntimeError("Gagal menghasilkan embedding: tidak ada model embedding yang valid.")
 
 async def store_knowledge(account_id: str, title: str, content: str, category: str = "general"):
     embedding = generate_embedding(content)
