@@ -26,7 +26,6 @@ async def fetch_and_process_replies():
             if not token:
                 continue
 
-            # FIX: Ganti maybeSingle() dengan limit(1) yang didukung penuh oleh supabase-py
             settings_res = db.schema("threads").from_("auto_reply_settings").select("*").eq("account_id", acc_id).limit(1).execute()
             auto_settings = settings_res.data[0] if settings_res.data else {}
             
@@ -59,12 +58,11 @@ async def fetch_and_process_replies():
                         exist_res = db.schema("threads").from_("replies").select("id").eq("threads_reply_id", reply_id).execute()
                         
                         if not exist_res.data:
-                            # 1. Analisa Lead
                             analysis = await analyze_and_notify_lead(acc_id, author_username, text)
                             is_lead = analysis.get("is_lead", False)
 
-                            # 2. Simpan ke tabel replies utama
-                            db.schema("threads").from_("replies").insert({
+                            # Simpan ke tabel replies dan ambil ID-nya
+                            reply_insert = db.schema("threads").from_("replies").insert({
                                 "account_id": acc_id,
                                 "post_id": post_db_id,
                                 "threads_reply_id": reply_id,
@@ -75,8 +73,10 @@ async def fetch_and_process_replies():
                                 "raw": reply,
                                 "processed_at": datetime.now(timezone.utc).isoformat()
                             }).execute()
+                            
+                            reply_db_id = reply_insert.data[0]["id"]
 
-                            # 3. Generate Draf AI & Masukkan ke Review Queue jika aktif
+                            # Generate AI dan simpan ke log dengan Enum yang valid ("pending_review")
                             if is_enabled:
                                 try:
                                     draft_text = await generate_rag_reply(
@@ -87,12 +87,13 @@ async def fetch_and_process_replies():
                                     
                                     db.schema("threads").from_("auto_reply_logs").insert({
                                         "account_id": acc_id,
-                                        "status": "unprocessed" if reply_mode == "review" else "approved",
+                                        "reply_id": reply_db_id,
+                                        "status": "pending_review" if reply_mode == "review" else "approved",
+                                        "generated_text": draft_text,
                                         "final_text": draft_text,
                                         "llm_meta": {
                                             "incoming_comment": text, 
-                                            "username": author_username, 
-                                            "reply_id": reply_id
+                                            "username": author_username
                                         }
                                     }).execute()
                                 except Exception as ai_err:
