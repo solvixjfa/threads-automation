@@ -38,12 +38,11 @@
         </div>
         
         <div class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
-          <!-- Tombol On-Demand AI Generate -->
           <div class="flex justify-between items-center mb-2">
             <span class="text-[10px] font-bold text-indigo-900 uppercase">Draf Balasan AI</span>
             <button @click="generateAIDraft(item)" :disabled="generatingId === item.id" class="text-[10px] font-bold bg-purple-100 text-purple-700 hover:bg-purple-200 px-3 py-1.5 rounded-md transition flex items-center gap-1.5 disabled:opacity-50">
               <span v-if="generatingId === item.id" class="w-3 h-3 border-2 border-purple-700 border-t-transparent rounded-full animate-spin"></span>
-              <span>✨ {{ generatingId === item.id ? 'AI Sedang Meracik...' : 'Buat Draf AI' }}</span>
+              <span>✨ {{ generatingId === item.id ? 'Meracik...' : 'Buat Draf AI' }}</span>
             </button>
           </div>
           <textarea v-model="item.draftText" rows="3" placeholder="Tulis balasan manual atau klik tombol Buat Draf AI di atas..." class="w-full bg-white border border-indigo-200 rounded-lg p-3 text-xs focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
@@ -118,7 +117,7 @@ async function fetchReplies() {
         ...r,
         log_id: log ? log.id : null,
         draftText: log ? log.final_text : '',
-        log_status: log ? log.status : 'none'
+        log_status: log ? log.status : 'unprocessed'
       }
     })
   }
@@ -130,7 +129,6 @@ async function syncRepliesManual() {
   try {
     const res = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/leads/sync-replies', { method: 'GET' })
     if (!res.ok) throw new Error('Gagal terhubung ke backend Python.')
-
     showToast('Sinkronisasi selesai. Memuat data terbaru...', 'success')
     await fetchReplies()
   } catch (err: any) {
@@ -177,10 +175,11 @@ async function approveAndPublish(item: any) {
         log_id: item.log_id
       })
     })
+    
     const data = await res.json()
     if (!res.ok) throw new Error(data.detail || 'Gagal API Threads')
 
-    showToast('Berhasil diterbitkan langsung ke Threads!', 'success')
+    showToast('Berhasil diterbitkan ke Threads!', 'success')
     await fetchReplies()
   } catch (err: any) {
     showToast('Gagal memproses: ' + err.message, 'error')
