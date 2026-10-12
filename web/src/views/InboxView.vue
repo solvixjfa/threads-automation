@@ -157,23 +157,17 @@ async function generateAIDraft(item: any) {
     
     item.draftText = data.reply
 
-    if (item.log_id) {
-      const { error } = await supabase.schema('threads').from('auto_reply_logs').update({
-        final_text: data.reply,
-        status: 'pending_review'
-      }).eq('id', item.log_id)
-      if (error) throw error
-    } else {
-      const { data: insertData, error } = await supabase.schema('threads').from('auto_reply_logs').insert({
-        account_id: item.account_id,
-        reply_id: item.id,
-        status: 'pending_review',
-        final_text: data.reply,
-        llm_meta: { incoming_comment: item.text, username: item.author_username }
-      }).select().single()
-      if (error) throw error
-      if (insertData) item.log_id = insertData.id
-    }
+    // JURUS UPSERT: Bebas duplicate key error
+    const { data: upsertData, error } = await supabase.schema('threads').from('auto_reply_logs').upsert({
+      account_id: item.account_id,
+      reply_id: item.id,
+      status: 'pending_review',
+      final_text: data.reply,
+      llm_meta: { incoming_comment: item.text, username: item.author_username }
+    }, { onConflict: 'reply_id' }).select().single()
+    
+    if (error) throw error
+    if (upsertData) item.log_id = upsertData.id
 
     showToast('Draf AI diracik dan disimpan permanen!', 'success')
   } catch (err: any) {
@@ -185,30 +179,23 @@ async function generateAIDraft(item: any) {
 
 async function skipReply(item: any) {
   try {
-    // 1. Ubah state UI seketika biar elemen langsung hilang dari layar
     item.log_status = 'skipped'
     
-    // 2. Tembak database di background dengan pengecekan error yg bener
-    if (item.log_id) {
-      const { error } = await supabase.schema('threads').from('auto_reply_logs').update({ status: 'skipped' }).eq('id', item.log_id)
-      if (error) throw error
-    } else {
-      const { data: insertData, error } = await supabase.schema('threads').from('auto_reply_logs').insert({
-        account_id: item.account_id,
-        reply_id: item.id,
-        status: 'skipped',
-        final_text: 'Diabaikan manual'
-      }).select().single()
-      if (error) throw error
-      if (insertData) item.log_id = insertData.id
-    }
+    // JURUS UPSERT: Abaikan komentar langsung tanpa error duplicate
+    const { data: upsertData, error } = await supabase.schema('threads').from('auto_reply_logs').upsert({
+      account_id: item.account_id,
+      reply_id: item.id,
+      status: 'skipped',
+      final_text: item.draftText || 'Diabaikan manual'
+    }, { onConflict: 'reply_id' }).select().single()
+    
+    if (error) throw error
+    if (upsertData) item.log_id = upsertData.id
     
     showToast('Komentar berhasil diabaikan.', 'info')
-    // Nggak perlu fetch ulang, karena state UI udah kita update manual di atas
   } catch (err: any) {
-    // Kalau gagal simpan, balikin lagi status UI-nya
     item.log_status = 'unprocessed'
-    showToast('Gagal mengabaikan (error DB): ' + err.message, 'error')
+    showToast('Gagal mengabaikan: ' + err.message, 'error')
   }
 }
 
@@ -229,18 +216,16 @@ async function approveAndPublish(item: any) {
     const data = await res.json()
     if (!res.ok) throw new Error(data.detail || 'Gagal API Threads')
 
-    if (item.log_id) {
-      const { error } = await supabase.schema('threads').from('auto_reply_logs').update({ status: 'sent', final_text: item.draftText }).eq('id', item.log_id)
-      if (error) throw error
-    } else {
-      const { error } = await supabase.schema('threads').from('auto_reply_logs').insert({
-        account_id: item.account_id,
-        reply_id: item.id,
-        status: 'sent',
-        final_text: item.draftText
-      })
-      if (error) throw error
-    }
+    // JURUS UPSERT: Simpan history terkirim tanpa error
+    const { data: upsertData, error } = await supabase.schema('threads').from('auto_reply_logs').upsert({
+      account_id: item.account_id,
+      reply_id: item.id,
+      status: 'sent',
+      final_text: item.draftText
+    }, { onConflict: 'reply_id' }).select().single()
+    
+    if (error) throw error
+    if (upsertData) item.log_id = upsertData.id
 
     item.log_status = 'sent'
     showToast('Berhasil diterbitkan ke Threads!', 'success')
