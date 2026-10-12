@@ -547,6 +547,12 @@ async function deletePost(id: string) {
 }
 
 onMounted(() => {
+  const savedDraft = localStorage.getItem("draft_repurpose")
+  if(savedDraft) {
+    postText.value = savedDraft;
+    handleTextChange();
+    localStorage.removeItem("draft_repurpose");
+  }
   const d = new Date()
   d.setHours(d.getHours() + 1)
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset())

@@ -97,6 +97,7 @@ const navigation = [
   { name: 'Dashboard', path: '/', icon: LayoutDashboardIcon },
   { name: 'Composer', path: '/composer', icon: EditIcon },
   { name: 'Inbox & Auto-Reply', path: '/inbox', icon: InboxIcon },
+  { name: 'Repurpose AI', path: '/repurpose', icon: EditIcon },
   { name: 'Settings', path: '/settings', icon: SettingsIcon },
 ]
 </script>
