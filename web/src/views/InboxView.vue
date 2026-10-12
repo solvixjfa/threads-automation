@@ -106,16 +106,13 @@ function formatDate(isoString: string) {
   return new Date(isoString).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
-// FUNGSI INTI: Anti duplikat secara manual (Cek -> Update/Insert)
 async function safeSaveLog(payload: any) {
   const { id, ...dataToSave } = payload;
   
-  const { data: existing, error: checkErr } = await supabase.schema('threads').from('auto_reply_logs')
+  const { data: existing } = await supabase.schema('threads').from('auto_reply_logs')
     .select('id').eq('reply_id', dataToSave.reply_id).maybeSingle();
 
-  if (checkErr) throw checkErr;
-
-  if (existing) {
+  if (existing && existing.id) {
     const { data, error } = await supabase.schema('threads').from('auto_reply_logs')
       .update(dataToSave).eq('id', existing.id).select().single();
     if (error) throw error;
@@ -128,6 +125,7 @@ async function safeSaveLog(payload: any) {
   }
 }
 
+// FIX TOTAL: Fetch tabel secara terpisah dan gabung pakai JS (Anti buta relasi)
 async function fetchReplies() {
   loading.value = true
   const { data: { user } } = await supabase.auth.getUser()
@@ -135,17 +133,30 @@ async function fetchReplies() {
   const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id').eq('user_id', user.id).maybeSingle()
   if (!account) return
 
-  const { data } = await supabase
+  // 1. Ambil data replies
+  const { data: repliesRaw } = await supabase
     .schema('threads')
     .from('replies')
-    .select('*, auto_reply_logs(*)')
+    .select('*')
     .eq('account_id', account.id)
     .order('replied_at', { ascending: false })
     .limit(50)
 
-  if (data) {
-    repliesData.value = data.map(r => {
-      const log = r.auto_reply_logs && r.auto_reply_logs.length > 0 ? r.auto_reply_logs[0] : null
+  if (repliesRaw && repliesRaw.length > 0) {
+    const replyIds = repliesRaw.map(r => r.id)
+    
+    // 2. Ambil data logs secara terpisah berdasarkan ID replies
+    const { data: logsRaw } = await supabase
+      .schema('threads')
+      .from('auto_reply_logs')
+      .select('*')
+      .in('reply_id', replyIds)
+
+    const logsArray = logsRaw || []
+
+    // 3. Gabungkan murni menggunakan Javascript
+    repliesData.value = repliesRaw.map(r => {
+      const log = logsArray.find(l => l.reply_id === r.id)
       return {
         ...r,
         log_id: log ? log.id : null,
@@ -153,7 +164,10 @@ async function fetchReplies() {
         log_status: log ? log.status : 'unprocessed'
       }
     })
+  } else {
+    repliesData.value = []
   }
+  
   loading.value = false
 }
 
@@ -187,7 +201,7 @@ async function generateAIDraft(item: any) {
     if (!res.ok) throw new Error(data.detail || 'Gagal generate respon AI')
     
     item.draftText = data.reply
-
+    
     const savedData = await safeSaveLog({
       account_id: item.account_id,
       reply_id: item.id,
@@ -196,7 +210,10 @@ async function generateAIDraft(item: any) {
       llm_meta: { incoming_comment: item.text, username: item.author_username }
     });
     
-    if (savedData) item.log_id = savedData.id
+    if (savedData) {
+      item.log_id = savedData.id
+      item.log_status = savedData.status
+    }
     showToast('Draf AI diracik dan disimpan permanen!', 'success')
   } catch (err: any) {
     showToast('Gagal AI: ' + err.message, 'error')
@@ -206,6 +223,8 @@ async function generateAIDraft(item: any) {
 }
 
 async function skipReply(item: any) {
+  // Update UI instan
+  item.log_status = 'skipped'
   try {
     const savedData = await safeSaveLog({
       account_id: item.account_id,
@@ -213,9 +232,7 @@ async function skipReply(item: any) {
       status: 'skipped',
       final_text: item.draftText || 'Diabaikan manual'
     });
-    
     if (savedData) item.log_id = savedData.id
-    item.log_status = 'skipped'
     showToast('Komentar berhasil diabaikan.', 'info')
   } catch (err: any) {
     showToast('Gagal mengabaikan: ' + err.message, 'error')
@@ -233,7 +250,12 @@ async function skipAllPending() {
     onConfirm: async () => {
       isSkippingAll.value = true
       try {
-        for (const item of pendingReplies.value) {
+        // Hapus langsung dari UI detik itu juga
+        const itemsToProcess = [...pendingReplies.value]
+        itemsToProcess.forEach(i => i.log_status = 'skipped')
+
+        // Eksekusi update database di background
+        for (const item of itemsToProcess) {
           await safeSaveLog({
             account_id: item.account_id,
             reply_id: item.id,
@@ -242,7 +264,6 @@ async function skipAllPending() {
           });
         }
         showToast('Semua komentar berhasil dibersihkan dari antrean.', 'success')
-        await fetchReplies()
       } catch (err: any) {
         showToast('Gagal memproses masal: ' + err.message, 'error')
         await fetchReplies()
