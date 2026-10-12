@@ -4,12 +4,12 @@
     <div class="flex flex-wrap justify-between items-center gap-4">
       <div>
         <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Auto Reply Inbox</h1>
-        <p class="text-slate-500 text-sm mt-1">Review draf balasan AI atau balas manual komentar masuk.</p>
+        <p class="text-slate-500 text-sm mt-1">Buat draf balasan AI on-demand atau balas manual komentar masuk.</p>
       </div>
       <div class="flex items-center gap-3">
         <button @click="syncRepliesManual" :disabled="isSyncing" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl transition disabled:opacity-50 flex items-center gap-2">
           <span v-if="isSyncing" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-          <span>{{ isSyncing ? 'Menarik Data...' : 'Sync Komentar & Draf' }}</span>
+          <span>{{ isSyncing ? 'Menarik Komentar...' : 'Sync Komentar Baru' }}</span>
         </button>
       </div>
     </div>
@@ -38,8 +38,15 @@
         </div>
         
         <div class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
-          <span class="text-[10px] font-bold text-indigo-900 uppercase">Draf Balasan AI</span>
-          <textarea v-model="item.draftText" rows="3" placeholder="Tulis balasan di sini..." class="w-full mt-2 bg-white border border-indigo-200 rounded-lg p-3 text-xs focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+          <!-- Tombol On-Demand AI Generate -->
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-[10px] font-bold text-indigo-900 uppercase">Draf Balasan AI</span>
+            <button @click="generateAIDraft(item)" :disabled="generatingId === item.id" class="text-[10px] font-bold bg-purple-100 text-purple-700 hover:bg-purple-200 px-3 py-1.5 rounded-md transition flex items-center gap-1.5 disabled:opacity-50">
+              <span v-if="generatingId === item.id" class="w-3 h-3 border-2 border-purple-700 border-t-transparent rounded-full animate-spin"></span>
+              <span>✨ {{ generatingId === item.id ? 'AI Sedang Meracik...' : 'Buat Draf AI' }}</span>
+            </button>
+          </div>
+          <textarea v-model="item.draftText" rows="3" placeholder="Tulis balasan manual atau klik tombol Buat Draf AI di atas..." class="w-full bg-white border border-indigo-200 rounded-lg p-3 text-xs focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
         </div>
         
         <div class="flex justify-end items-center gap-3">
@@ -77,6 +84,7 @@ const { showToast } = useNotify()
 const loading = ref(true)
 const isSyncing = ref(false)
 const approvingId = ref<string | null>(null)
+const generatingId = ref<string | null>(null)
 const activeTab = ref<'pending' | 'history'>('pending')
 const repliesData = ref<any[]>([])
 
@@ -95,7 +103,6 @@ async function fetchReplies() {
   const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id').eq('user_id', user.id).maybeSingle()
   if (!account) return
 
-  // Fetch replies dan join dengan auto_reply_logs
   const { data } = await supabase
     .schema('threads')
     .from('replies')
@@ -133,13 +140,36 @@ async function syncRepliesManual() {
   }
 }
 
+async function generateAIDraft(item: any) {
+  generatingId.value = item.id
+  try {
+    const res = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/rag/generate-reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        account_id: item.account_id,
+        user_comment: item.text,
+        author_username: item.author_username
+      })
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.detail || 'Gagal generate respon AI')
+    
+    item.draftText = data.reply
+    showToast('Draf AI berhasil diracik!', 'success')
+  } catch (err: any) {
+    showToast('Gagal AI: ' + err.message, 'error')
+  } finally {
+    generatingId.value = null
+  }
+}
+
 async function approveAndPublish(item: any) {
   approvingId.value = item.id
   try {
     if (item.log_id) {
       await supabase.schema('threads').from('auto_reply_logs').update({ status: 'approved', final_text: item.draftText }).eq('id', item.log_id)
     } else {
-      // Jika membalas manual komentar yang belum di-generate AI
       await supabase.schema('threads').from('auto_reply_logs').insert({
         account_id: item.account_id,
         reply_id: item.id,
@@ -147,7 +177,7 @@ async function approveAndPublish(item: any) {
         final_text: item.draftText
       })
     }
-    showToast('Draf disetujui dan siap diterbitkan!', 'success')
+    showToast('Balasan disetujui dan siap diterbitkan!', 'success')
     await fetchReplies()
   } catch (err: any) {
     showToast('Gagal memproses: ' + err.message, 'error')
