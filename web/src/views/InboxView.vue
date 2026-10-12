@@ -154,7 +154,26 @@ async function generateAIDraft(item: any) {
     if (!res.ok) throw new Error(data.detail || 'Gagal generate respon AI')
     
     item.draftText = data.reply
-    showToast('Draf AI berhasil diracik!', 'success')
+
+    // FITUR BARU: Otomatis simpan draf ke database supaya gak hilang kalau di-refresh
+    if (item.log_id) {
+      await supabase.schema('threads').from('auto_reply_logs').update({
+        final_text: data.reply,
+        status: 'pending_review'
+      }).eq('id', item.log_id)
+    } else {
+      const insertReq = await supabase.schema('threads').from('auto_reply_logs').insert({
+        account_id: item.account_id,
+        reply_id: item.id,
+        status: 'pending_review',
+        final_text: data.reply,
+        llm_meta: { incoming_comment: item.text, username: item.author_username }
+      }).select().single()
+      
+      if (insertReq.data) item.log_id = insertReq.data.id
+    }
+
+    showToast('Draf AI diracik dan disimpan permanen!', 'success')
   } catch (err: any) {
     showToast('Gagal AI: ' + err.message, 'error')
   } finally {
@@ -178,6 +197,18 @@ async function approveAndPublish(item: any) {
     
     const data = await res.json()
     if (!res.ok) throw new Error(data.detail || 'Gagal API Threads')
+
+    // FITUR BARU: Paksa catat ke riwayat terkirim 
+    if (item.log_id) {
+      await supabase.schema('threads').from('auto_reply_logs').update({ status: 'sent', final_text: item.draftText }).eq('id', item.log_id)
+    } else {
+      await supabase.schema('threads').from('auto_reply_logs').insert({
+        account_id: item.account_id,
+        reply_id: item.id,
+        status: 'sent',
+        final_text: item.draftText
+      })
+    }
 
     showToast('Berhasil diterbitkan ke Threads!', 'success')
     await fetchReplies()
