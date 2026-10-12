@@ -14,9 +14,18 @@
       </div>
     </div>
 
-    <div class="flex border-b border-slate-200 text-xs font-bold gap-6">
-      <button @click="activeTab = 'pending'" class="pb-3 border-b-2 transition" :class="activeTab === 'pending' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400'">Antrean Review ({{ pendingReplies.length }})</button>
-      <button @click="activeTab = 'history'" class="pb-3 border-b-2 transition" :class="activeTab === 'history' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400'">Riwayat Terkirim ({{ historyReplies.length }})</button>
+    <div class="flex justify-between items-end border-b border-slate-200">
+      <div class="flex text-xs font-bold gap-6">
+        <button @click="activeTab = 'pending'" class="pb-3 border-b-2 transition" :class="activeTab === 'pending' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400'">Antrean Review ({{ pendingReplies.length }})</button>
+        <button @click="activeTab = 'history'" class="pb-3 border-b-2 transition" :class="activeTab === 'history' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400'">Riwayat Terkirim ({{ historyReplies.length }})</button>
+      </div>
+      
+      <!-- FITUR BARU: Tombol Abaikan Semua -->
+      <button v-if="activeTab === 'pending' && pendingReplies.length > 0" @click="skipAllPending" :disabled="isSkippingAll" class="pb-3 text-xs font-bold text-rose-500 hover:text-rose-700 transition flex items-center gap-1.5 disabled:opacity-50">
+        <span v-if="isSkippingAll" class="w-3 h-3 border-2 border-rose-500 border-t-transparent rounded-full animate-spin"></span>
+        <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        <span>{{ isSkippingAll ? 'Memproses...' : 'Abaikan Semua' }}</span>
+      </button>
     </div>
 
     <div v-if="loading" class="p-12 text-center text-xs text-slate-400 animate-pulse">Memuat komentar...</div>
@@ -81,9 +90,10 @@ import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
 import NotifyOverlay from '../components/NotifyOverlay.vue'
 
-const { showToast } = useNotify()
+const { showToast, askConfirm } = useNotify()
 const loading = ref(true)
 const isSyncing = ref(false)
+const isSkippingAll = ref(false)
 const approvingId = ref<string | null>(null)
 const generatingId = ref<string | null>(null)
 const activeTab = ref<'pending' | 'history'>('pending')
@@ -157,14 +167,18 @@ async function generateAIDraft(item: any) {
     
     item.draftText = data.reply
 
-    // JURUS UPSERT: Bebas duplicate key error
-    const { data: upsertData, error } = await supabase.schema('threads').from('auto_reply_logs').upsert({
+    // ANTI-GHOSTING UPSERT
+    const payload: any = {
       account_id: item.account_id,
       reply_id: item.id,
       status: 'pending_review',
       final_text: data.reply,
       llm_meta: { incoming_comment: item.text, username: item.author_username }
-    }, { onConflict: 'reply_id' }).select().single()
+    }
+    if (item.log_id) payload.id = item.log_id // Paksa bawa ID kalau ada
+
+    const { data: upsertData, error } = await supabase.schema('threads').from('auto_reply_logs')
+      .upsert(payload, { onConflict: 'reply_id' }).select().single()
     
     if (error) throw error
     if (upsertData) item.log_id = upsertData.id
@@ -179,24 +193,64 @@ async function generateAIDraft(item: any) {
 
 async function skipReply(item: any) {
   try {
-    item.log_status = 'skipped'
-    
-    // JURUS UPSERT: Abaikan komentar langsung tanpa error duplicate
-    const { data: upsertData, error } = await supabase.schema('threads').from('auto_reply_logs').upsert({
+    // ANTI-GHOSTING UPSERT
+    const payload: any = {
       account_id: item.account_id,
       reply_id: item.id,
       status: 'skipped',
       final_text: item.draftText || 'Diabaikan manual'
-    }, { onConflict: 'reply_id' }).select().single()
+    }
+    if (item.log_id) payload.id = item.log_id // Paksa bawa ID kalau ada
+
+    const { data: upsertData, error } = await supabase.schema('threads').from('auto_reply_logs')
+      .upsert(payload, { onConflict: 'reply_id' }).select().single()
     
     if (error) throw error
     if (upsertData) item.log_id = upsertData.id
     
+    item.log_status = 'skipped'
     showToast('Komentar berhasil diabaikan.', 'info')
   } catch (err: any) {
-    item.log_status = 'unprocessed'
     showToast('Gagal mengabaikan: ' + err.message, 'error')
+    await fetchReplies() // Refresh jika gagal biar sinkron
   }
+}
+
+async function skipAllPending() {
+  if (pendingReplies.value.length === 0) return
+  
+  askConfirm({
+    title: 'Abaikan Semua Komentar',
+    message: `Kamu yakin ingin memindahkan ${pendingReplies.value.length} komentar ke riwayat?`,
+    confirmText: 'Ya, Abaikan Semua',
+    onConfirm: async () => {
+      isSkippingAll.value = true
+      try {
+        const payloads = pendingReplies.value.map(item => {
+          const p: any = {
+            account_id: item.account_id,
+            reply_id: item.id,
+            status: 'skipped',
+            final_text: item.draftText || 'Diabaikan manual (massal)'
+          }
+          if (item.log_id) p.id = item.log_id
+          return p
+        })
+
+        const { error } = await supabase.schema('threads').from('auto_reply_logs')
+          .upsert(payloads, { onConflict: 'reply_id' })
+
+        if (error) throw error
+
+        showToast('Semua komentar berhasil dibersihkan dari antrean.', 'success')
+        await fetchReplies()
+      } catch (err: any) {
+        showToast('Gagal memproses masal: ' + err.message, 'error')
+      } finally {
+        isSkippingAll.value = false
+      }
+    }
+  })
 }
 
 async function approveAndPublish(item: any) {
@@ -216,13 +270,17 @@ async function approveAndPublish(item: any) {
     const data = await res.json()
     if (!res.ok) throw new Error(data.detail || 'Gagal API Threads')
 
-    // JURUS UPSERT: Simpan history terkirim tanpa error
-    const { data: upsertData, error } = await supabase.schema('threads').from('auto_reply_logs').upsert({
+    // ANTI-GHOSTING UPSERT
+    const payload: any = {
       account_id: item.account_id,
       reply_id: item.id,
       status: 'sent',
       final_text: item.draftText
-    }, { onConflict: 'reply_id' }).select().single()
+    }
+    if (item.log_id) payload.id = item.log_id // Paksa bawa ID kalau ada
+
+    const { data: upsertData, error } = await supabase.schema('threads').from('auto_reply_logs')
+      .upsert(payload, { onConflict: 'reply_id' }).select().single()
     
     if (error) throw error
     if (upsertData) item.log_id = upsertData.id
