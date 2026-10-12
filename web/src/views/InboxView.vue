@@ -49,7 +49,8 @@
         </div>
         
         <div class="flex justify-end items-center gap-3">
-          <button v-if="item.log_id" @click="updateStatus(item.log_id, 'skipped')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition">Abaikan</button>
+          <!-- FIX: Hilangkan v-if log_id agar tombol Abaikan selalu muncul -->
+          <button @click="skipReply(item)" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition">Abaikan</button>
           <button @click="approveAndPublish(item)" :disabled="approvingId === item.id || !item.draftText" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg disabled:opacity-50 transition">
             {{ approvingId === item.id ? 'Menerbitkan...' : 'Kirim ke Threads' }}
           </button>
@@ -89,9 +90,7 @@ const generatingId = ref<string | null>(null)
 const activeTab = ref<'pending' | 'history'>('pending')
 const repliesData = ref<any[]>([])
 
-// FIX: Filter is_own secara ketat dari antrean review
 const pendingReplies = computed(() => repliesData.value.filter(r => r.log_status !== 'sent' && r.log_status !== 'skipped' && !r.is_own))
-// Tampilkan yang sudah dikirim atau balasan milik sendiri (is_own) di tab history
 const historyReplies = computed(() => repliesData.value.filter(r => r.log_status === 'sent' || r.log_status === 'skipped' || r.is_own))
 
 function formatDate(isoString: string) {
@@ -184,6 +183,26 @@ async function generateAIDraft(item: any) {
   }
 }
 
+// FIX: Fungsi baru untuk memproses tombol Abaikan secara mandiri
+async function skipReply(item: any) {
+  try {
+    if (item.log_id) {
+      await supabase.schema('threads').from('auto_reply_logs').update({ status: 'skipped' }).eq('id', item.log_id)
+    } else {
+      await supabase.schema('threads').from('auto_reply_logs').insert({
+        account_id: item.account_id,
+        reply_id: item.id,
+        status: 'skipped',
+        final_text: 'Diabaikan manual'
+      })
+    }
+    showToast('Komentar berhasil diabaikan.', 'info')
+    await fetchReplies()
+  } catch (err: any) {
+    showToast('Gagal mengabaikan: ' + err.message, 'error')
+  }
+}
+
 async function approveAndPublish(item: any) {
   approvingId.value = item.id
   try {
@@ -219,11 +238,6 @@ async function approveAndPublish(item: any) {
   } finally {
     approvingId.value = null
   }
-}
-
-async function updateStatus(logId: string, newStatus: string) {
-  await supabase.schema('threads').from('auto_reply_logs').update({ status: newStatus }).eq('id', logId)
-  await fetchReplies()
 }
 
 onMounted(() => fetchReplies())
