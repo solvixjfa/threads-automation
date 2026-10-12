@@ -1,5 +1,6 @@
 <template>
   <div class="space-y-6 max-w-4xl">
+    <NotifyOverlay />
     <div>
       <h1 class="text-2xl font-bold tracking-tight text-white">Content Repurpose AI</h1>
       <p class="text-zinc-400 text-sm mt-1">Daur ulang postingan lama atau teks panjang jadi 3 variasi angle Threads yang fresh.</p>
@@ -44,7 +45,7 @@
 
     <!-- Hasil Repurpose -->
     <div v-if="results.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div v-for="(item, idx) in results" :key="idx" class="bg-black border border-white/10 p-5 rounded-xl space-y-3 relative group">
+      <div v-for="(item, idx) in results" :key="idx" class="bg-black border border-white/10 p-5 rounded-xl space-y-3 relative group overflow-hidden">
         <div class="flex justify-between items-center border-b border-white/10 pb-2">
           <span class="text-xs font-bold text-zinc-400">Variasi {{ idx + 1 }}</span>
           <button @click="copyText(item.content)" class="text-xs text-zinc-500 hover:text-white transition flex items-center gap-1">
@@ -52,7 +53,8 @@
           </button>
         </div>
         <p class="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">{{ item.content }}</p>
-        <div class="absolute inset-0 bg-black/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition backdrop-blur-sm rounded-xl">
+        
+        <div class="absolute inset-0 bg-black/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
            <button @click="sendToComposer(item.content)" class="bg-white text-black px-4 py-2 rounded-lg font-bold text-sm hover:scale-105 transition transform">
              Kirim ke Composer
            </button>
@@ -66,8 +68,11 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
+import { useNotify } from '../composables/useNotify'
+import NotifyOverlay from '../components/NotifyOverlay.vue'
 
 const router = useRouter()
+const { showToast } = useNotify()
 const sourceText = ref('')
 const repurposeAngle = ref('Format Listicle (Poin-poin praktis)')
 const isGenerating = ref(false)
@@ -80,12 +85,11 @@ async function generateRepurpose() {
 
   try {
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error("Not auth")
+    if (!user) throw new Error("Not authenticated")
 
     const { data: acc } = await supabase.schema('threads').from('threads_accounts').select('id').eq('user_id', user.id).maybeSingle()
-    if (!acc) throw new Error("No account")
+    if (!acc) throw new Error("No account linked")
 
-    // Kita pakai endpoint generate-post yang udah ada, cuma prompt-nya kita modif sedikit via payload
     const res = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/rag/generate-post', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -101,8 +105,9 @@ async function generateRepurpose() {
     if (!res.ok) throw new Error(data.detail)
     
     results.value = data.options || []
+    showToast('Berhasil mendaur ulang konten!', 'success')
   } catch (err: any) {
-    alert("Gagal: " + err.message)
+    showToast("Gagal: " + err.message, 'error')
   } finally {
     isGenerating.value = false
   }
@@ -110,11 +115,10 @@ async function generateRepurpose() {
 
 function copyText(text: string) {
   navigator.clipboard.writeText(text)
-  alert('Tersalin ke clipboard!')
+  showToast('Tersalin ke clipboard!', 'info')
 }
 
 function sendToComposer(text: string) {
-  // Simpan ke local storage buat diambil composer
   localStorage.setItem('draft_repurpose', text)
   router.push('/composer')
 }

@@ -47,7 +47,6 @@
             </select>
           </div>
           
-          <!-- Textarea muncul jika Custom Prompt dipilih -->
           <div v-if="aiTone === 'Custom Prompt'" class="md:col-span-3 space-y-1 mt-1">
             <label class="text-[11px] font-bold text-slate-700 uppercase">Instruksi Khusus (Custom Prompt)</label>
             <textarea
@@ -70,7 +69,6 @@
           </button>
         </div>
 
-        <!-- Render Hasil Opsi AI -->
         <div v-if="aiResults.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3 border-t border-indigo-100">
           <div
             v-for="item in aiResults"
@@ -278,7 +276,7 @@ const posts = ref<any[]>([])
 const showAiPanel = ref(true)
 const aiTopic = ref('')
 const aiTone = ref('Edukasi & Insight Kasual')
-const customPrompt = ref('') // Tambah state buat nyimpen prompt bebas
+const customPrompt = ref('') 
 const isGenerating = ref(false)
 const aiResults = ref<any[]>([])
 const scoreResult = ref<any>(null)
@@ -547,16 +545,18 @@ async function deletePost(id: string) {
 }
 
 onMounted(() => {
-  const savedDraft = localStorage.getItem("draft_repurpose")
-  if(savedDraft) {
-    postText.value = savedDraft;
-    handleTextChange();
-    localStorage.removeItem("draft_repurpose");
-  }
   const d = new Date()
   d.setHours(d.getHours() + 1)
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
   scheduledDate.value = d.toISOString().slice(0, 16)
   loadPosts()
+
+  // Tangkap draft Repurpose kalau ada
+  const savedDraft = localStorage.getItem("draft_repurpose")
+  if (savedDraft) {
+    postText.value = savedDraft
+    handleTextChange()
+    localStorage.removeItem("draft_repurpose")
+  }
 })
 </script>

@@ -1,27 +1,23 @@
 <template>
   <div class="min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black flex">
     
-    <!-- Mobile Sidebar Overlay -->
     <div 
       v-if="isSidebarOpen" 
       @click="isSidebarOpen = false"
       class="fixed inset-0 bg-black/70 backdrop-blur-md z-40 md:hidden"
     ></div>
 
-    <!-- Sidebar (Glossy Black/White Minimalist) -->
     <aside 
       :class="[
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full',
         'fixed inset-y-0 left-0 z-50 w-64 bg-black/80 backdrop-blur-xl border-r border-white/10 transition-transform duration-300 ease-in-out md:relative md:translate-x-0 flex flex-col'
       ]"
     >
-      <!-- Brand Logo Area -->
       <div class="flex items-center h-20 px-6 border-b border-white/10">
         <div class="w-8 h-8 bg-white text-black font-extrabold flex items-center justify-center rounded text-sm tracking-wider mr-3">IX</div>
         <span class="font-bold tracking-tight text-lg text-white">ixiera.id</span>
       </div>
 
-      <!-- Navigation Links -->
       <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
         <RouterLink 
           v-for="item in navigation" 
@@ -38,15 +34,12 @@
         </RouterLink>
       </nav>
 
-      <!-- Footer Info -->
       <div class="p-4 border-t border-white/10 text-xs text-zinc-500">
         <span>Threads System v1.0</span>
       </div>
     </aside>
 
-    <!-- Main Content Area -->
     <main class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-      <!-- Mobile Top Header -->
       <header class="md:hidden flex items-center justify-between h-16 px-4 bg-black/80 backdrop-blur-md border-b border-white/10 z-30">
         <div class="flex items-center gap-2">
           <div class="w-6 h-6 bg-white text-black font-extrabold flex items-center justify-center rounded text-xs">IX</div>
@@ -59,7 +52,6 @@
         </button>
       </header>
 
-      <!-- View Router Container -->
       <div class="flex-1 overflow-y-auto p-6 md:p-10 bg-black">
         <RouterView />
       </div>
@@ -75,7 +67,6 @@ import { RouterView, RouterLink, useRoute } from 'vue-router'
 const route = useRoute()
 const isSidebarOpen = ref(false)
 
-// SVG Icons (Tanpa Emoticon)
 const LayoutDashboardIcon = () => h('svg', { class: 'w-4 h-4', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }, [
   h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' })
 ])
@@ -96,8 +87,8 @@ const SettingsIcon = () => h('svg', { class: 'w-4 h-4', fill: 'none', stroke: 'c
 const navigation = [
   { name: 'Dashboard', path: '/', icon: LayoutDashboardIcon },
   { name: 'Composer', path: '/composer', icon: EditIcon },
-  { name: 'Inbox & Auto-Reply', path: '/inbox', icon: InboxIcon },
   { name: 'Repurpose AI', path: '/repurpose', icon: EditIcon },
+  { name: 'Inbox', path: '/inbox', icon: InboxIcon },
   { name: 'Settings', path: '/settings', icon: SettingsIcon },
 ]
 </script>
