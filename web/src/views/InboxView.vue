@@ -20,7 +20,6 @@
         <button @click="activeTab = 'history'" class="pb-3 border-b-2 transition" :class="activeTab === 'history' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-400'">Riwayat Terkirim ({{ historyReplies.length }})</button>
       </div>
       
-      <!-- FITUR BARU: Tombol Abaikan Semua -->
       <button v-if="activeTab === 'pending' && pendingReplies.length > 0" @click="skipAllPending" :disabled="isSkippingAll" class="pb-3 text-xs font-bold text-rose-500 hover:text-rose-700 transition flex items-center gap-1.5 disabled:opacity-50">
         <span v-if="isSkippingAll" class="w-3 h-3 border-2 border-rose-500 border-t-transparent rounded-full animate-spin"></span>
         <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
@@ -107,6 +106,28 @@ function formatDate(isoString: string) {
   return new Date(isoString).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
+// FUNGSI INTI: Anti duplikat secara manual (Cek -> Update/Insert)
+async function safeSaveLog(payload: any) {
+  const { id, ...dataToSave } = payload;
+  
+  const { data: existing, error: checkErr } = await supabase.schema('threads').from('auto_reply_logs')
+    .select('id').eq('reply_id', dataToSave.reply_id).maybeSingle();
+
+  if (checkErr) throw checkErr;
+
+  if (existing) {
+    const { data, error } = await supabase.schema('threads').from('auto_reply_logs')
+      .update(dataToSave).eq('id', existing.id).select().single();
+    if (error) throw error;
+    return data;
+  } else {
+    const { data, error } = await supabase.schema('threads').from('auto_reply_logs')
+      .insert(dataToSave).select().single();
+    if (error) throw error;
+    return data;
+  }
+}
+
 async function fetchReplies() {
   loading.value = true
   const { data: { user } } = await supabase.auth.getUser()
@@ -167,22 +188,15 @@ async function generateAIDraft(item: any) {
     
     item.draftText = data.reply
 
-    // ANTI-GHOSTING UPSERT
-    const payload: any = {
+    const savedData = await safeSaveLog({
       account_id: item.account_id,
       reply_id: item.id,
       status: 'pending_review',
       final_text: data.reply,
       llm_meta: { incoming_comment: item.text, username: item.author_username }
-    }
-    if (item.log_id) payload.id = item.log_id // Paksa bawa ID kalau ada
-
-    const { data: upsertData, error } = await supabase.schema('threads').from('auto_reply_logs')
-      .upsert(payload, { onConflict: 'reply_id' }).select().single()
+    });
     
-    if (error) throw error
-    if (upsertData) item.log_id = upsertData.id
-
+    if (savedData) item.log_id = savedData.id
     showToast('Draf AI diracik dan disimpan permanen!', 'success')
   } catch (err: any) {
     showToast('Gagal AI: ' + err.message, 'error')
@@ -193,26 +207,19 @@ async function generateAIDraft(item: any) {
 
 async function skipReply(item: any) {
   try {
-    // ANTI-GHOSTING UPSERT
-    const payload: any = {
+    const savedData = await safeSaveLog({
       account_id: item.account_id,
       reply_id: item.id,
       status: 'skipped',
       final_text: item.draftText || 'Diabaikan manual'
-    }
-    if (item.log_id) payload.id = item.log_id // Paksa bawa ID kalau ada
-
-    const { data: upsertData, error } = await supabase.schema('threads').from('auto_reply_logs')
-      .upsert(payload, { onConflict: 'reply_id' }).select().single()
+    });
     
-    if (error) throw error
-    if (upsertData) item.log_id = upsertData.id
-    
+    if (savedData) item.log_id = savedData.id
     item.log_status = 'skipped'
     showToast('Komentar berhasil diabaikan.', 'info')
   } catch (err: any) {
     showToast('Gagal mengabaikan: ' + err.message, 'error')
-    await fetchReplies() // Refresh jika gagal biar sinkron
+    await fetchReplies() 
   }
 }
 
@@ -226,26 +233,19 @@ async function skipAllPending() {
     onConfirm: async () => {
       isSkippingAll.value = true
       try {
-        const payloads = pendingReplies.value.map(item => {
-          const p: any = {
+        for (const item of pendingReplies.value) {
+          await safeSaveLog({
             account_id: item.account_id,
             reply_id: item.id,
             status: 'skipped',
             final_text: item.draftText || 'Diabaikan manual (massal)'
-          }
-          if (item.log_id) p.id = item.log_id
-          return p
-        })
-
-        const { error } = await supabase.schema('threads').from('auto_reply_logs')
-          .upsert(payloads, { onConflict: 'reply_id' })
-
-        if (error) throw error
-
+          });
+        }
         showToast('Semua komentar berhasil dibersihkan dari antrean.', 'success')
         await fetchReplies()
       } catch (err: any) {
         showToast('Gagal memproses masal: ' + err.message, 'error')
+        await fetchReplies()
       } finally {
         isSkippingAll.value = false
       }
@@ -270,21 +270,14 @@ async function approveAndPublish(item: any) {
     const data = await res.json()
     if (!res.ok) throw new Error(data.detail || 'Gagal API Threads')
 
-    // ANTI-GHOSTING UPSERT
-    const payload: any = {
+    const savedData = await safeSaveLog({
       account_id: item.account_id,
       reply_id: item.id,
       status: 'sent',
       final_text: item.draftText
-    }
-    if (item.log_id) payload.id = item.log_id // Paksa bawa ID kalau ada
-
-    const { data: upsertData, error } = await supabase.schema('threads').from('auto_reply_logs')
-      .upsert(payload, { onConflict: 'reply_id' }).select().single()
+    });
     
-    if (error) throw error
-    if (upsertData) item.log_id = upsertData.id
-
+    if (savedData) item.log_id = savedData.id
     item.log_status = 'sent'
     showToast('Berhasil diterbitkan ke Threads!', 'success')
   } catch (err: any) {
