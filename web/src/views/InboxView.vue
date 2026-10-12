@@ -167,17 +167,20 @@ async function generateAIDraft(item: any) {
 async function approveAndPublish(item: any) {
   approvingId.value = item.id
   try {
-    if (item.log_id) {
-      await supabase.schema('threads').from('auto_reply_logs').update({ status: 'approved', final_text: item.draftText }).eq('id', item.log_id)
-    } else {
-      await supabase.schema('threads').from('auto_reply_logs').insert({
+    const res = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/leads/publish-reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         account_id: item.account_id,
-        reply_id: item.id,
-        status: 'approved',
-        final_text: item.draftText
+        threads_reply_id: item.threads_reply_id,
+        text: item.draftText,
+        log_id: item.log_id
       })
-    }
-    showToast('Balasan disetujui dan siap diterbitkan!', 'success')
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.detail || 'Gagal API Threads')
+
+    showToast('Berhasil diterbitkan langsung ke Threads!', 'success')
     await fetchReplies()
   } catch (err: any) {
     showToast('Gagal memproses: ' + err.message, 'error')
