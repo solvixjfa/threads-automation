@@ -9,7 +9,6 @@
 
   <div v-else class="flex h-screen bg-slate-50 font-sans text-slate-900 selection:bg-indigo-600 selection:text-white overflow-hidden">
     
-    <!-- Mobile Header -->
     <header class="md:hidden absolute top-0 left-0 right-0 h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 z-20">
       <div class="flex items-center gap-3">
         <button @click="sidebarOpen = true" class="text-slate-600 hover:text-indigo-600 focus:outline-none p-1">
@@ -24,10 +23,8 @@
       </div>
     </header>
 
-    <!-- Overlay Mobile Sidebar -->
     <div v-if="sidebarOpen" @click="sidebarOpen = false" class="md:hidden fixed inset-0 bg-slate-900/40 z-30 transition-opacity"></div>
 
-    <!-- Sidebar (Desktop & Mobile) -->
     <aside 
       :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
       class="md:translate-x-0 fixed md:static inset-y-0 left-0 z-40 w-64 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 ease-in-out shadow-2xl md:shadow-none"
@@ -48,6 +45,8 @@
       <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
         <router-link @click="sidebarOpen = false" to="/dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition" active-class="bg-indigo-50 text-indigo-700 font-bold">Dashboard</router-link>
         <router-link @click="sidebarOpen = false" to="/composer" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition" active-class="bg-indigo-50 text-indigo-700 font-bold">Composer</router-link>
+        <!-- INI MENU BARUNYA -->
+        <router-link @click="sidebarOpen = false" to="/repurpose" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition" active-class="bg-indigo-50 text-indigo-700 font-bold">Repurpose AI</router-link>
         <router-link @click="sidebarOpen = false" to="/inbox" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition" active-class="bg-indigo-50 text-indigo-700 font-bold">Inbox</router-link>
         <router-link @click="sidebarOpen = false" to="/settings" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition" active-class="bg-indigo-50 text-indigo-700 font-bold">Settings</router-link>
       </nav>
@@ -58,7 +57,6 @@
       </div>
     </aside>
 
-    <!-- Main Content Area -->
     <main class="flex-1 overflow-y-auto pt-16 md:pt-0 p-4 md:p-8 bg-slate-50/50 relative">
       <div class="max-w-4xl mx-auto">
         <router-view />
