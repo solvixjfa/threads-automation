@@ -1,6 +1,7 @@
 import os
 import logging
 import httpx
+import asyncio
 from google import genai
 from app.services.rag import search_knowledge
 from supabase import create_client
@@ -12,7 +13,6 @@ SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 def get_supabase():
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Urutan Fallback Model (Sesuai request lu, dari yg paling pintar sampai paling ringan)
 FALLBACK_MODELS = [
     "gemini-3.8-flash",
     "gemini-3.6-flash",
@@ -45,7 +45,6 @@ async def generate_rag_reply(account_id: str, user_comment: str, author_username
     client = genai.Client(api_key=GEMINI_KEY)
     
     last_error = None
-    # Looping Fallback Model
     for model_name in FALLBACK_MODELS:
         try:
             response = client.models.generate_content(
@@ -58,11 +57,9 @@ async def generate_rag_reply(account_id: str, user_comment: str, author_username
             last_error = str(e)
             continue
             
-    # Kalau semua model di daftar gagal, baru lempar error 500
     raise Exception(f"Semua model Gemini sibuk/gagal. Error terakhir: {last_error}")
 
 async def publish_reply_to_threads(account_id: str, threads_reply_to_id: str, text: str) -> str:
-    """Fungsi untuk benar-benar mengirim balasan ke Threads API"""
     db = get_supabase()
     res = db.schema("threads").from_("threads_accounts").select("settings").eq("id", account_id).limit(1).execute()
     
@@ -73,13 +70,14 @@ async def publish_reply_to_threads(account_id: str, threads_reply_to_id: str, te
     if not token:
         raise Exception("Access token tidak ditemukan, user harus hubungkan ulang akun.")
         
-    async with httpx.AsyncClient() as client:
+    # FIX 1: Perpanjang batas timeout jadi 30 detik untuk mengantisipasi Meta API yang lemot
+    async with httpx.AsyncClient(timeout=30.0) as client:
         # Step 1: Bikin Container Balasan
         url_create = "https://graph.threads.net/v1.0/me/threads"
         params_create = {
             "media_type": "TEXT",
             "text": text,
-            "reply_to_id": threads_reply_to_id, # ID komentar audiens yang mau dibalas
+            "reply_to_id": threads_reply_to_id,
             "access_token": token
         }
         res_create = await client.post(url_create, params=params_create)
@@ -88,6 +86,10 @@ async def publish_reply_to_threads(account_id: str, threads_reply_to_id: str, te
             raise Exception(f"Gagal membuat container Meta: {res_create.text}")
             
         container_id = res_create.json().get("id")
+        
+        # FIX 2: Kasih jeda waktu 3 detik agar server Meta selesai memproses container ID
+        logging.info(f"Container ID {container_id} terbentuk. Menunggu 3 detik agar server Meta siap...")
+        await asyncio.sleep(3)
         
         # Step 2: Publish Container tersebut ke Publik
         url_publish = "https://graph.threads.net/v1.0/me/threads_publish"
@@ -100,4 +102,4 @@ async def publish_reply_to_threads(account_id: str, threads_reply_to_id: str, te
         if res_publish.status_code != 200:
             raise Exception(f"Gagal mem-publish ke Threads: {res_publish.text}")
             
-        return res_publish.json().get("id") # Mengembalikan ID postingan balasan
+        return res_publish.json().get("id")
