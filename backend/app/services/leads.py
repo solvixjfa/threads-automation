@@ -38,10 +38,10 @@ async def analyze_and_notify_lead(account_id: str, username: str, comment: str) 
     if not is_lead:
         return result
 
-    # Jika Lead, ambil setting user untuk nembak webhook (Make.com / Discord)
+    # FIX: Ganti maybeSingle() dengan limit(1) yang aman di Supabase Python
     db = get_supabase()
-    res = db.schema("threads").from_("threads_accounts").select("username, settings").eq("id", account_id).maybeSingle().execute()
-    account = res.data
+    res = db.schema("threads").from_("threads_accounts").select("username, settings").eq("id", account_id).limit(1).execute()
+    account = res.data[0] if res.data else None
 
     if account:
         settings = account.get("settings") or {}
