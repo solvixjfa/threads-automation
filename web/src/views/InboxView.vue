@@ -49,7 +49,6 @@
         </div>
         
         <div class="flex justify-end items-center gap-3">
-          <!-- FIX: Hilangkan v-if log_id agar tombol Abaikan selalu muncul -->
           <button @click="skipReply(item)" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition">Abaikan</button>
           <button @click="approveAndPublish(item)" :disabled="approvingId === item.id || !item.draftText" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg disabled:opacity-50 transition">
             {{ approvingId === item.id ? 'Menerbitkan...' : 'Kirim ke Threads' }}
@@ -159,20 +158,21 @@ async function generateAIDraft(item: any) {
     item.draftText = data.reply
 
     if (item.log_id) {
-      await supabase.schema('threads').from('auto_reply_logs').update({
+      const { error } = await supabase.schema('threads').from('auto_reply_logs').update({
         final_text: data.reply,
         status: 'pending_review'
       }).eq('id', item.log_id)
+      if (error) throw error
     } else {
-      const insertReq = await supabase.schema('threads').from('auto_reply_logs').insert({
+      const { data: insertData, error } = await supabase.schema('threads').from('auto_reply_logs').insert({
         account_id: item.account_id,
         reply_id: item.id,
         status: 'pending_review',
         final_text: data.reply,
         llm_meta: { incoming_comment: item.text, username: item.author_username }
       }).select().single()
-      
-      if (insertReq.data) item.log_id = insertReq.data.id
+      if (error) throw error
+      if (insertData) item.log_id = insertData.id
     }
 
     showToast('Draf AI diracik dan disimpan permanen!', 'success')
@@ -183,23 +183,32 @@ async function generateAIDraft(item: any) {
   }
 }
 
-// FIX: Fungsi baru untuk memproses tombol Abaikan secara mandiri
 async function skipReply(item: any) {
   try {
+    // 1. Ubah state UI seketika biar elemen langsung hilang dari layar
+    item.log_status = 'skipped'
+    
+    // 2. Tembak database di background dengan pengecekan error yg bener
     if (item.log_id) {
-      await supabase.schema('threads').from('auto_reply_logs').update({ status: 'skipped' }).eq('id', item.log_id)
+      const { error } = await supabase.schema('threads').from('auto_reply_logs').update({ status: 'skipped' }).eq('id', item.log_id)
+      if (error) throw error
     } else {
-      await supabase.schema('threads').from('auto_reply_logs').insert({
+      const { data: insertData, error } = await supabase.schema('threads').from('auto_reply_logs').insert({
         account_id: item.account_id,
         reply_id: item.id,
         status: 'skipped',
         final_text: 'Diabaikan manual'
-      })
+      }).select().single()
+      if (error) throw error
+      if (insertData) item.log_id = insertData.id
     }
+    
     showToast('Komentar berhasil diabaikan.', 'info')
-    await fetchReplies()
+    // Nggak perlu fetch ulang, karena state UI udah kita update manual di atas
   } catch (err: any) {
-    showToast('Gagal mengabaikan: ' + err.message, 'error')
+    // Kalau gagal simpan, balikin lagi status UI-nya
+    item.log_status = 'unprocessed'
+    showToast('Gagal mengabaikan (error DB): ' + err.message, 'error')
   }
 }
 
@@ -221,18 +230,20 @@ async function approveAndPublish(item: any) {
     if (!res.ok) throw new Error(data.detail || 'Gagal API Threads')
 
     if (item.log_id) {
-      await supabase.schema('threads').from('auto_reply_logs').update({ status: 'sent', final_text: item.draftText }).eq('id', item.log_id)
+      const { error } = await supabase.schema('threads').from('auto_reply_logs').update({ status: 'sent', final_text: item.draftText }).eq('id', item.log_id)
+      if (error) throw error
     } else {
-      await supabase.schema('threads').from('auto_reply_logs').insert({
+      const { error } = await supabase.schema('threads').from('auto_reply_logs').insert({
         account_id: item.account_id,
         reply_id: item.id,
         status: 'sent',
         final_text: item.draftText
       })
+      if (error) throw error
     }
 
-    showToast('Berhasil diterbitkan ke Threads & tercatat di riwayat!', 'success')
-    await fetchReplies()
+    item.log_status = 'sent'
+    showToast('Berhasil diterbitkan ke Threads!', 'success')
   } catch (err: any) {
     showToast('Gagal memproses: ' + err.message, 'error')
   } finally {
