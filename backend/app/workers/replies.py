@@ -16,12 +16,14 @@ def get_supabase() -> Client:
 async def fetch_and_process_replies():
     db = get_supabase()
     
-    accounts_res = db.schema("threads").from_("threads_accounts").select("id, settings").eq("connection_status", "connected").execute()
+    # FIX: Ambil username akun untuk mencocokkan is_own
+    accounts_res = db.schema("threads").from_("threads_accounts").select("id, settings, username").eq("connection_status", "connected").execute()
     accounts = accounts_res.data or []
 
     async with httpx.AsyncClient() as client:
         for acc in accounts:
             acc_id = acc["id"]
+            acc_username = acc.get("username", "")
             token = acc.get("settings", {}).get("access_token")
             if not token:
                 continue
@@ -58,10 +60,14 @@ async def fetch_and_process_replies():
                         exist_res = db.schema("threads").from_("replies").select("id").eq("threads_reply_id", reply_id).execute()
                         
                         if not exist_res.data:
-                            analysis = await analyze_and_notify_lead(acc_id, author_username, text)
-                            is_lead = analysis.get("is_lead", False)
+                            # FIX: Deteksi apakah ini balasan lu sendiri
+                            is_own_comment = (author_username == acc_username)
+                            
+                            is_lead = False
+                            if not is_own_comment:
+                                analysis = await analyze_and_notify_lead(acc_id, author_username, text)
+                                is_lead = analysis.get("is_lead", False)
 
-                            # Simpan ke tabel replies dan ambil ID-nya
                             reply_insert = db.schema("threads").from_("replies").insert({
                                 "account_id": acc_id,
                                 "post_id": post_db_id,
@@ -69,6 +75,7 @@ async def fetch_and_process_replies():
                                 "author_username": author_username,
                                 "text": text,
                                 "is_lead": is_lead,
+                                "is_own": is_own_comment,
                                 "replied_at": timestamp,
                                 "raw": reply,
                                 "processed_at": datetime.now(timezone.utc).isoformat()
@@ -76,8 +83,8 @@ async def fetch_and_process_replies():
                             
                             reply_db_id = reply_insert.data[0]["id"]
 
-                            # Generate AI dan simpan ke log dengan Enum yang valid ("pending_review")
-                            if is_enabled:
+                            # Jangan generate AI untuk balasan lu sendiri
+                            if is_enabled and not is_own_comment:
                                 try:
                                     draft_text = await generate_rag_reply(
                                         account_id=acc_id, 

@@ -62,11 +62,13 @@
       <div v-else class="divide-y divide-slate-100">
         <div v-for="item in historyReplies" :key="item.id" class="p-5 hover:bg-slate-50 transition space-y-2">
           <div class="flex justify-between items-center">
-            <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md bg-emerald-50 text-emerald-600 border border-emerald-100">{{ item.log_status }}</span>
+            <span class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md" :class="item.is_own ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'">
+              {{ item.is_own ? 'own_reply' : item.log_status }}
+            </span>
             <span class="text-xs text-slate-400">{{ formatDate(item.replied_at) }}</span>
           </div>
           <p class="text-xs text-slate-500 italic">"{{ item.text }}"</p>
-          <p class="text-xs text-slate-800 font-medium bg-slate-50 p-3 rounded-lg border border-slate-100">{{ item.draftText }}</p>
+          <p v-if="item.draftText" class="text-xs text-slate-800 font-medium bg-slate-50 p-3 rounded-lg border border-slate-100 mt-2">Balasan: {{ item.draftText }}</p>
         </div>
       </div>
     </div>
@@ -87,8 +89,10 @@ const generatingId = ref<string | null>(null)
 const activeTab = ref<'pending' | 'history'>('pending')
 const repliesData = ref<any[]>([])
 
-const pendingReplies = computed(() => repliesData.value.filter(r => r.log_status !== 'sent' && r.log_status !== 'skipped'))
-const historyReplies = computed(() => repliesData.value.filter(r => r.log_status === 'sent' || r.log_status === 'skipped'))
+// FIX: Filter is_own secara ketat dari antrean review
+const pendingReplies = computed(() => repliesData.value.filter(r => r.log_status !== 'sent' && r.log_status !== 'skipped' && !r.is_own))
+// Tampilkan yang sudah dikirim atau balasan milik sendiri (is_own) di tab history
+const historyReplies = computed(() => repliesData.value.filter(r => r.log_status === 'sent' || r.log_status === 'skipped' || r.is_own))
 
 function formatDate(isoString: string) {
   if (!isoString) return ''
@@ -155,7 +159,6 @@ async function generateAIDraft(item: any) {
     
     item.draftText = data.reply
 
-    // FITUR BARU: Otomatis simpan draf ke database supaya gak hilang kalau di-refresh
     if (item.log_id) {
       await supabase.schema('threads').from('auto_reply_logs').update({
         final_text: data.reply,
@@ -198,7 +201,6 @@ async function approveAndPublish(item: any) {
     const data = await res.json()
     if (!res.ok) throw new Error(data.detail || 'Gagal API Threads')
 
-    // FITUR BARU: Paksa catat ke riwayat terkirim 
     if (item.log_id) {
       await supabase.schema('threads').from('auto_reply_logs').update({ status: 'sent', final_text: item.draftText }).eq('id', item.log_id)
     } else {
@@ -210,7 +212,7 @@ async function approveAndPublish(item: any) {
       })
     }
 
-    showToast('Berhasil diterbitkan ke Threads!', 'success')
+    showToast('Berhasil diterbitkan ke Threads & tercatat di riwayat!', 'success')
     await fetchReplies()
   } catch (err: any) {
     showToast('Gagal memproses: ' + err.message, 'error')
