@@ -9,6 +9,16 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
 
+# Daftar 6 Model Fallback (Sesuai request)
+FALLBACK_MODELS = [
+    "gemini-3.8-flash",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-3.1-pro-preview",
+    "gemini-3-flash-preview"
+]
+
 def get_supabase() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -119,7 +129,6 @@ async def generate_rag_post(account_id: str, topic: str, tone: str = "Edukasi & 
     if knowledge:
         context_text = "\n".join([f"- [{k.get('category', 'Fakta')} - {k.get('title')}]: {k.get('content')}" for k in knowledge])
     
-    # Switch instruksi tone jika memilih Custom Prompt
     if tone == "Custom Prompt" and custom_prompt:
         tone_instruction = f"[INSTRUKSI KHUSUS DARI USER]\n{custom_prompt}"
     else:
@@ -150,12 +159,33 @@ WAJIB kembalikan respon DALAM FORMAT JSON ARRAY murni tanpa teks pembuka/penutup
 """
 
     client = genai.Client(api_key=GEMINI_KEY)
-    response = client.models.generate_content(
-        model="gemini-3.8-flash",
-        contents=prompt
-    )
+    
+    # Paksa Gemini merespon dalam format JSON yang valid agar tidak rusak di parsing
+    gen_config = types.GenerateContentConfig(response_mime_type="application/json")
+    
+    last_error = None
+    response = None
+    
+    # Looping Fallback Model
+    for model_name in FALLBACK_MODELS:
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=gen_config
+            )
+            break # Berhenti mencari jika sudah berhasil
+        except Exception as e:
+            logging.warning(f"[AI Fallback POST] Model {model_name} gagal: {str(e)}. Mencoba model selanjutnya...")
+            last_error = str(e)
+            continue
+            
+    if not response:
+        raise Exception(f"Semua model Gemini sibuk/gagal untuk buat draf post. Error terakhir: {last_error}")
     
     raw_text = response.text.strip()
+    
+    # Pembersihan string JSON cadangan jika config mime-type terlewat oleh model tertentu
     if raw_text.startswith("```json"):
         raw_text = raw_text.replace("```json", "", 1).rstrip("`").strip()
     if raw_text.startswith("```"):
@@ -164,6 +194,7 @@ WAJIB kembalikan respon DALAM FORMAT JSON ARRAY murni tanpa teks pembuka/penutup
     try:
         return json.loads(raw_text)
     except Exception:
+        # Fallback terakhir jika JSON benar-benar hancur
         return [
             {"id": "1", "title": "Draf Utama", "content": response.text}
         ]
