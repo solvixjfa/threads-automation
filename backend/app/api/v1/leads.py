@@ -1,9 +1,11 @@
+import logging
+import traceback
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from app.services.leads import analyze_and_notify_lead
 from app.workers.replies import fetch_and_process_replies
-from app.services.auto_reply import publish_reply_to_threads
+from app.services.auto_reply import publish_reply_to_threads, get_supabase
 
 router = APIRouter()
 
@@ -37,6 +39,8 @@ async def sync_existing_replies():
 @router.post("/publish-reply")
 async def publish_reply_endpoint(payload: PublishReplyRequest):
     try:
+        logging.info(f"Mencoba publish balasan untuk threads_reply_id: {payload.threads_reply_id}")
+        
         # 1. Kirim beneran ke Threads
         published_media_id = await publish_reply_to_threads(
             account_id=payload.account_id,
@@ -44,9 +48,10 @@ async def publish_reply_endpoint(payload: PublishReplyRequest):
             text=payload.text
         )
         
-        # 2. Jika sukses, ubah status antrean di database lu jadi 'sent'
+        logging.info(f"Berhasil publish ke Meta dengan ID Post: {published_media_id}")
+
+        # 2. Catat ke database
         if payload.log_id:
-            from app.services.auto_reply import get_supabase
             db = get_supabase()
             db.schema("threads").from_("auto_reply_logs").update({
                 "status": "sent",
@@ -56,4 +61,9 @@ async def publish_reply_endpoint(payload: PublishReplyRequest):
             
         return {"status": "success", "published_id": published_media_id}
     except Exception as e:
+        # Menangkap error spesifik dan mengirimkannya langsung ke log & UI
+        error_details = traceback.format_exc()
+        logging.error(f"[Publish Reply Error Detail]: {error_details}")
+        
+        # Pesan str(e) ini akan langsung muncul di toast error warna merah di Vue lu
         raise HTTPException(status_code=500, detail=str(e))
