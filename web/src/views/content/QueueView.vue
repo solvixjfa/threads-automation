@@ -1,5 +1,7 @@
 <template>
-  <div class="space-y-4">
+  <div class="space-y-4 relative">
+    <NotifyOverlay />
+
     <Card padding="false">
       <div class="p-5 divider flex justify-between items-center theme-bg-sec">
         <div class="flex items-center gap-2">
@@ -88,6 +90,7 @@ import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
 import { useNotify } from '../../composables/useNotify'
 import { Card, Button, Textarea, Badge } from '../../components/ui'
+import NotifyOverlay from '../../components/NotifyOverlay.vue'
 
 const { showToast, askConfirm } = useNotify()
 

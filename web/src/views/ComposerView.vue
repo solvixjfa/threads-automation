@@ -145,35 +145,6 @@
       </div>
     </Card>
 
-    <Card padding="false">
-      <div class="p-5 divider flex justify-between items-center theme-bg-sec">
-        <span class="text-xs font-bold uppercase tracking-wide">Antrean Terjadwal</span>
-        <button @click="loadPosts" class="text-xs font-bold hover:underline">Refresh</button>
-      </div>
-
-      <div v-if="loading" class="p-8 text-center text-xs theme-text-muted font-medium animate-pulse">Memuat data...</div>
-
-      <div v-else-if="posts.length === 0" class="p-8 text-center text-xs theme-text-muted font-medium">
-        Belum ada postingan dalam antrean.
-      </div>
-
-      <div v-else class="list-divided">
-        <div v-for="post in posts" :key="post.id" class="p-5 space-y-3">
-          <div class="flex items-start justify-between gap-4">
-            <p class="text-sm font-medium whitespace-pre-wrap flex-1">{{ post.text }}</p>
-            <Badge :variant="statusVariant(post.status)">{{ post.status }}</Badge>
-          </div>
-          <div class="flex items-center justify-between pt-1 text-xs">
-            <span class="theme-text-muted font-medium">{{ formatDate(post.scheduled_for) }}</span>
-            <div v-if="post.status === 'scheduled'" class="flex items-center gap-2">
-              <Button variant="secondary" size="sm" @click="openEditModal(post)">Edit</Button>
-              <Button variant="danger" size="sm" @click="confirmDeletePost(post.id)">Hapus</Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Card>
-
     <Teleport to="body">
       <div v-if="scoreResult" class="fixed inset-0 backdrop-blur-sm z-[100] flex items-center justify-center p-4" style="background: rgba(0,0,0,0.6);">
         <div class="card max-w-md w-full p-6 space-y-4">
@@ -194,24 +165,7 @@
       </div>
     </Teleport>
 
-    <Teleport to="body">
-      <div v-if="editingPost" class="fixed inset-0 backdrop-blur-sm z-[100] flex items-center justify-center p-4" style="background: rgba(0,0,0,0.6);">
-        <div class="card max-w-lg w-full p-6 space-y-4">
-          <h3 class="text-base font-bold">Edit / Rewrite Postingan</h3>
-          <Textarea v-model="editForm.text" :rows="5" :max-length="500" />
-          <div class="space-y-1">
-            <label class="label">Waktu Tayang Baru</label>
-            <input v-model="editForm.scheduled_for" type="datetime-local" class="input" />
-          </div>
-          <div class="flex justify-end gap-3 pt-2">
-            <Button variant="secondary" @click="editingPost = null">Batal</Button>
-            <Button @click="saveEdit" :disabled="isUpdating" :loading="isUpdating">
-              {{ isUpdating ? 'Menyimpan...' : 'Simpan Perubahan' }}
-            </Button>
-          </div>
-        </div>
-      </div>
-    </Teleport>
+
   </div>
 </template>
 
@@ -230,8 +184,6 @@ const scheduledDate = ref('')
 const isSaving = ref(false)
 const isChecking = ref(false)
 const isUpdating = ref(false)
-const loading = ref(true)
-const posts = ref<any[]>([])
 
 const showAiPanel = ref(true)
 const aiTopic = ref('')
@@ -241,8 +193,6 @@ const isGenerating = ref(false)
 const aiResults = ref<any[]>([])
 const scoreResult = ref<any>(null)
 
-const editingPost = ref<any>(null)
-const editForm = ref({ text: '', scheduled_for: '' })
 
 function splitTextIntoParts(text: string, maxLen = 480): string[] {
   if (text.length <= maxLen) return [text]
@@ -363,163 +313,11 @@ async function checkScore() {
   }
 }
 
-async function loadPosts() {
-  loading.value = true
-  posts.value = []
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    loading.value = false
-    return
-  }
-
-  const { data: account } = await supabase
-    .schema('threads')
-    .from('threads_accounts')
-    .select('id')
-    .eq('user_id', user.id)
-    .maybeSingle()
-
-  if (!account) {
-    loading.value = false
-    return
-  }
-
-  const { data } = await supabase
-    .schema('threads')
-    .from('scheduled_posts')
-    .select('*')
-    .eq('account_id', account.id)
-    .order('created_at', { ascending: false })
-    .limit(20)
-
-  if (data) posts.value = data
-  loading.value = false
-}
-
-async function schedulePost() {
-  if (!postText.value || !scheduledDate.value) {
-    return showToast('Isi teks dan tanggal terlebih dahulu.', 'error')
-  }
-  isSaving.value = true
-
-  try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Pengguna belum terautentikasi')
-
-    const { data: account, error: accErr } = await supabase
-      .schema('threads')
-      .from('threads_accounts')
-      .select('id')
-      .eq('user_id', user.id)
-      .maybeSingle()
-
-    if (accErr) throw new Error(accErr.message)
-    if (!account) throw new Error('Akun Threads belum tersambung.')
-
-    const isoDate = new Date(scheduledDate.value).toISOString()
-    const partsToSave = threadParts.value.length > 0 ? threadParts.value : [postText.value]
-
-    let parentId: string | null = null
-
-    for (let i = 0; i < partsToSave.length; i++) {
-      const partText = partsToSave[i]
-      const { data: insertedPost, error } = await supabase
-        .schema('threads')
-        .from('scheduled_posts')
-        .insert({
-          account_id: account.id,
-          text: partText,
-          scheduled_for: isoDate,
-          status: 'scheduled',
-          idempotency_key: crypto.randomUUID(),
-          parent_id: parentId,
-          sequence_number: i + 1
-        })
-        .select('id')
-        .single()
-
-      if (error) throw error
-      if (i === 0 && insertedPost) {
-        parentId = insertedPost.id
-      }
-    }
-
-    postText.value = ''
-    threadParts.value = []
-    showToast('Postingan berhasil dijadwalkan!', 'success')
-    await loadPosts()
-  } catch (err: any) {
-    showToast('Gagal menyimpan: ' + err.message, 'error')
-  } finally {
-    isSaving.value = false
-  }
-}
-
-function openEditModal(post: any) {
-  editingPost.value = post
-  editForm.value.text = post.text
-  const d = new Date(post.scheduled_for)
-  d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
-  editForm.value.scheduled_for = d.toISOString().slice(0, 16)
-}
-
-async function saveEdit() {
-  if (!editingPost.value) return
-  isUpdating.value = true
-  try {
-    const isoDate = new Date(editForm.value.scheduled_for).toISOString()
-    const { error } = await supabase
-      .schema('threads')
-      .from('scheduled_posts')
-      .update({
-        text: editForm.value.text,
-        scheduled_for: isoDate
-      })
-      .eq('id', editingPost.value.id)
-
-    if (error) throw error
-    editingPost.value = null
-    showToast('Postingan berhasil diperbarui.', 'success')
-    await loadPosts()
-  } catch (err: any) {
-    showToast('Gagal update: ' + err.message, 'error')
-  } finally {
-    isUpdating.value = false
-  }
-}
-
-function confirmDeletePost(id: string) {
-  askConfirm({
-    title: 'Hapus Postingan Terjadwal',
-    message: 'Apakah kamu yakin ingin membatalkan dan menghapus postingan ini?',
-    confirmText: 'Hapus Post',
-    onConfirm: () => deletePost(id)
-  })
-}
-
-async function deletePost(id: string) {
-  try {
-    const { error } = await supabase
-      .schema('threads')
-      .from('scheduled_posts')
-      .delete()
-      .eq('id', id)
-
-    if (error) throw error
-    showToast('Postingan berhasil dihapus.', 'info')
-    await loadPosts()
-  } catch (err: any) {
-    showToast('Gagal menghapus: ' + err.message, 'error')
-  }
-}
-
 onMounted(() => {
   const d = new Date()
   d.setHours(d.getHours() + 1)
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
   scheduledDate.value = d.toISOString().slice(0, 16)
-  loadPosts()
 
   const savedDraft = localStorage.getItem('draft_repurpose')
   if (savedDraft) {
