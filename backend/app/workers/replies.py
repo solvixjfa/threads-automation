@@ -130,7 +130,7 @@ async def sync_replies_for_post(db, client, acc_id: str, post_db_id: str, media_
         if exist_res.data:
             continue
 
-        stats["new"] += 1
+        stats["new_replies"] += 1
         is_own_comment = author_username == acc_username
 
         classification = classify_comment(text)
