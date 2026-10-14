@@ -3,140 +3,119 @@
     <NotifyOverlay />
 
     <div>
-      <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Settings & RAG Knowledge Base</h1>
-      <p class="text-slate-500 text-sm mt-1">Konfigurasi akun, aturan auto-reply, dan manajemen vector RAG per tenant.</p>
+      <h1 class="text-2xl font-bold tracking-tight">Settings</h1>
+      <p class="text-sm theme-text-muted mt-1">Konfigurasi akun, aturan auto-reply, dan manajemen vector RAG per tenant.</p>
     </div>
 
-    <!-- CARD 1: Connection Status -->
-    <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+    <div class="card p-6 space-y-4">
+      <div class="flex items-center justify-between pb-4 divider">
         <div>
-          <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Koneksi Akun Threads</h2>
-          <p class="text-xs text-slate-500 mt-0.5">Status tautan OAuth Meta Threads API.</p>
+          <h2 class="text-sm font-bold uppercase tracking-wide">Koneksi Akun Threads</h2>
+          <p class="text-xs theme-text-muted mt-0.5">Status tautan OAuth Meta Threads API.</p>
         </div>
-        <span 
-          class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md"
-          :class="accountConnected ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'"
+        <span
+          class="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md border"
+          :class="accountConnected ? 'border theme-text' : 'border theme-text-muted'"
         >
+          <span class="inline-block w-1.5 h-1.5 rounded-full mr-1.5" :style="{ background: accountConnected ? 'var(--success)' : 'var(--text-muted)' }"></span>
           {{ accountConnected ? 'Tersambung' : 'Belum Terhubung' }}
         </span>
       </div>
 
-      <div class="flex items-center justify-between text-xs pt-1">
+      <div class="flex items-center justify-between text-xs pt-1 gap-4">
         <div>
-          <p class="font-bold text-slate-800">{{ accountUsername ? `@${accountUsername}` : 'Tidak Ada Akun Aktif' }}</p>
-          <p class="text-slate-500 text-[11px] mt-0.5">{{ accountConnected ? 'Sistem siap mempublikasikan postingan dan membaca interaksi.' : 'Hubungkan akun Threads kamu untuk mulai automasi.' }}</p>
+          <p class="font-bold">{{ accountUsername ? '@' + accountUsername : 'Tidak Ada Akun Aktif' }}</p>
+          <p class="theme-text-muted text-[11px] mt-0.5">{{ accountConnected ? 'Sistem siap mempublikasikan postingan dan membaca interaksi.' : 'Hubungkan akun Threads kamu untuk mulai automasi.' }}</p>
         </div>
-        <button 
-          @click="connectThreads" 
-          class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-sm text-xs"
-        >
+        <button @click="connectThreads" class="btn btn-primary btn-sm shrink-0">
           {{ accountConnected ? 'Hubungkan Ulang' : 'Hubungkan Threads' }}
         </button>
       </div>
     </div>
 
-    <!-- CARD 2: Auto Reply Operational Settings -->
-    <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+    <div class="card p-6 space-y-4">
+      <div class="flex items-center justify-between pb-4 divider">
         <div>
-          <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Pengaturan Gemini AI Auto-Reply</h2>
-          <p class="text-xs text-slate-500 mt-0.5">Atur aturan operasional dan gaya bahasa balasan komentar.</p>
+          <h2 class="text-sm font-bold uppercase tracking-wide">Pengaturan Gemini AI Auto-Reply</h2>
+          <p class="text-xs theme-text-muted mt-0.5">Atur aturan operasional dan gaya bahasa balasan komentar.</p>
         </div>
         <label class="relative inline-flex items-center cursor-pointer">
           <input type="checkbox" v-model="autoReply.enabled" class="sr-only peer">
-          <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+          <div class="w-11 h-6 rounded-full transition theme-bg-hover peer-checked:theme-accent after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:rounded-full after:h-5 after:w-5 after:transition-all after:theme-bg peer-checked:after:translate-x-full"></div>
         </label>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
         <div class="space-y-1">
-          <label class="text-[11px] font-bold text-slate-700 uppercase">Mode Operasi</label>
-          <select
-            v-model="autoReply.mode"
-            class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-          >
+          <label class="label">Mode Operasi</label>
+          <select v-model="autoReply.mode" class="input">
             <option value="review">Review Queue (Setujui manual dulu)</option>
             <option value="auto">Fully Automatic (Langsung respon)</option>
           </select>
         </div>
 
         <div class="space-y-1">
-          <label class="text-[11px] font-bold text-slate-700 uppercase">Batas Maksimal / Jam</label>
-          <input
-            v-model.number="autoReply.max_per_hour"
-            type="number"
-            class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-          />
+          <label class="label">Batas Maksimal / Jam</label>
+          <input v-model.number="autoReply.max_per_hour" type="number" class="input" />
         </div>
       </div>
 
       <div class="space-y-1">
-        <label class="text-[11px] font-bold text-slate-700 uppercase">Tone & Instruksi AI (Prompt)</label>
+        <label class="label">Tone dan Instruksi AI (Prompt)</label>
         <textarea
           v-model="autoReply.tone_prompt"
           rows="3"
           placeholder="Contoh: Balas dengan ramah, profesional, ringkas, dan tanpa menggurui..."
-          class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none"
+          class="textarea"
         ></textarea>
       </div>
 
       <div class="flex justify-end pt-2">
-        <button
-          @click="saveAutoReplySettings"
-          :disabled="isSavingSettings"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition shadow-md disabled:opacity-50 flex items-center gap-2"
-        >
-          <span v-if="isSavingSettings" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+        <button @click="saveAutoReplySettings" :disabled="isSavingSettings" class="btn btn-primary btn-sm">
+          <span v-if="isSavingSettings" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
           <span>{{ isSavingSettings ? 'Menyimpan...' : 'Simpan Pengaturan' }}</span>
         </button>
       </div>
     </div>
 
-    <!-- CARD 3: Dedicated RAG Knowledge Base Management -->
-    <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+    <div class="card p-6 space-y-4">
+      <div class="flex items-center justify-between pb-4 divider">
         <div>
-          <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Vector RAG Knowledge Base</h2>
-          <p class="text-xs text-slate-500 mt-0.5">Semakin detail dokumen ini, semakin akurat AI dalam memahami konteks bisnismu.</p>
+          <h2 class="text-sm font-bold uppercase tracking-wide">Vector RAG Knowledge Base</h2>
+          <p class="text-xs theme-text-muted mt-0.5">Semakin detail dokumen ini, semakin akurat AI memahami konteks bisnismu.</p>
         </div>
-        <span class="text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 px-2.5 py-1 rounded-md uppercase">
-          pgvector + embedding-2
-        </span>
+        <span class="badge badge-default">pgvector / 768d</span>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="space-y-1">
-          <label class="text-[11px] font-bold text-slate-700 uppercase">Kategori</label>
-          <select
-            v-model="ragForm.category"
-            class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-          >
+          <label class="label">Kategori</label>
+          <select v-model="ragForm.category" class="input">
             <option value="portfolio">Portfolio / Project</option>
-            <option value="persona">Persona & Tone Rules</option>
+            <option value="persona">Persona dan Tone Rules</option>
             <option value="rules">Aturan Konten</option>
             <option value="faq">FAQ / Informasi Umum</option>
           </select>
         </div>
 
         <div class="md:col-span-2 space-y-1">
-          <label class="text-[11px] font-bold text-slate-700 uppercase">Judul Dokumen</label>
+          <label class="label">Judul Dokumen</label>
           <input
             v-model="ragForm.title"
             type="text"
             placeholder="Contoh: Customer Churn Prediction / Aturan Personal Branding"
-            class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+            class="input"
           />
         </div>
       </div>
 
       <div class="space-y-1">
-        <label class="text-[11px] font-bold text-slate-700 uppercase">Isi Teks Dokumen (Fakta Bisnis / Detail Teknis)</label>
+        <label class="label">Isi Teks Dokumen (Fakta Bisnis / Detail Teknis)</label>
         <textarea
           v-model="ragForm.content"
           rows="5"
           placeholder="Tuliskan fakta spesifik, angka eksperimen, rincian produk, atau aturan yang wajib diingat AI..."
-          class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none"
+          class="textarea"
         ></textarea>
       </div>
 
@@ -144,58 +123,45 @@
         <button
           @click="saveKnowledge"
           :disabled="isSavingRag || !ragForm.title || !ragForm.content"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-6 rounded-xl transition shadow-md disabled:opacity-50 flex items-center gap-2"
+          class="btn btn-primary btn-sm"
         >
-          <span v-if="isSavingRag" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+          <span v-if="isSavingRag" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
           <span>{{ isSavingRag ? 'Memproses Vector...' : 'Tambah ke Vector Database' }}</span>
         </button>
       </div>
     </div>
 
-    <!-- CARD 4: Index List Dokumen RAG -->
-    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-      <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+    <div class="card overflow-hidden">
+      <div class="p-5 divider flex justify-between items-center theme-bg-sec">
         <div class="flex items-center gap-2">
-          <span class="text-xs font-bold text-slate-700 uppercase tracking-wide">Indeks Dokumen Knowledge Base</span>
-          <span class="text-xs font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">{{ ragItems.length }} Item</span>
+          <span class="text-xs font-bold uppercase tracking-wide">Indeks Dokumen Knowledge Base</span>
+          <span class="badge badge-default">{{ ragItems.length }} Item</span>
         </div>
-        <button @click="fetchKnowledge" class="text-xs font-bold text-indigo-600 hover:text-indigo-800">Refresh</button>
+        <button @click="fetchKnowledge" class="text-xs font-bold theme-text hover:underline">Refresh</button>
       </div>
 
-      <div v-if="loadingRag" class="p-8 text-center text-xs text-slate-400 font-medium animate-pulse">Memuat indeks RAG...</div>
+      <div v-if="loadingRag" class="p-8 text-center text-xs theme-text-muted font-medium animate-pulse">Memuat indeks RAG...</div>
 
-      <div v-else-if="ragItems.length === 0" class="p-8 text-center text-xs text-slate-400 font-medium">
-        Belum ada dokumen RAG tersimpan. Tambahkan fakta/persona pertama kamu di atas.
+      <div v-else-if="ragItems.length === 0" class="p-8 text-center text-xs theme-text-muted font-medium">
+        Belum ada dokumen RAG tersimpan. Tambahkan fakta atau persona pertama kamu di atas.
       </div>
 
-      <div v-else class="divide-y divide-slate-100">
-        <div v-for="item in ragItems" :key="item.id" class="p-5 hover:bg-slate-50/80 transition space-y-2">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span
-                class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded"
-                :class="{
-                  'bg-purple-50 text-purple-700 border border-purple-100': item.category === 'portfolio',
-                  'bg-indigo-50 text-indigo-700 border border-indigo-100': item.category === 'persona',
-                  'bg-amber-50 text-amber-700 border border-amber-100': item.category === 'rules',
-                  'bg-emerald-50 text-emerald-700 border border-emerald-100': item.category === 'faq'
-                }"
-              >
-                {{ item.category }}
-              </span>
-              <h3 class="text-xs font-bold text-slate-900">{{ item.title }}</h3>
-              <span v-if="item.embedding" class="text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded">
-                Indexed (768d)
-              </span>
+      <div v-else class="divide-y" style="border-color: var(--border);">
+        <div v-for="item in ragItems" :key="item.id" class="p-5 transition space-y-2 theme-bg-hover" style="background: transparent;">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="badge badge-default">{{ item.category }}</span>
+              <h3 class="text-xs font-bold">{{ item.title }}</h3>
+              <span v-if="item.embedding" class="badge badge-default">Indexed</span>
             </div>
             <button
               @click="confirmDeleteKnowledge(item.id, item.title)"
-              class="text-xs font-bold text-rose-600 hover:text-rose-800 transition"
+              class="text-xs font-bold theme-text-muted hover:theme-text transition shrink-0"
             >
               Hapus
             </button>
           </div>
-          <p class="text-xs text-slate-600 whitespace-pre-wrap leading-relaxed bg-slate-50/50 p-3 rounded-xl border border-slate-100">
+          <p class="text-xs theme-text-sec whitespace-pre-wrap leading-relaxed p-3 rounded-xl theme-bg-sec border theme-border">
             {{ item.content }}
           </p>
         </div>
@@ -354,7 +320,7 @@ async function saveKnowledge() {
 
     ragForm.value.title = ''
     ragForm.value.content = ''
-    showToast('Dokumen berhasil ditambahkan & di-indexing ke Vector DB!', 'success')
+    showToast('Dokumen berhasil ditambahkan dan di-indexing ke Vector DB!', 'success')
     await fetchKnowledge()
   } catch (err: any) {
     showToast('Gagal menyimpan RAG: ' + err.message, 'error')
