@@ -76,12 +76,18 @@ async def sync_posts_from_meta(db, client, acc_id: str, token: str) -> int:
         if not media_id or media_id in existing_ids:
             continue
 
+        ts = p.get("timestamp")
+        if not ts:
+            continue
+
         try:
             db.schema("threads").from_("posts").insert({
                 "account_id": acc_id,
                 "threads_media_id": media_id,
                 "text": p.get("text", "") or "",
-                "created_at": p.get("timestamp"),
+                "permalink": p.get("permalink"),
+                "posted_at": ts,
+                "source": "meta_sync",
             }).execute()
             new_count += 1
         except Exception as e:
