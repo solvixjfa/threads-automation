@@ -5,7 +5,7 @@
     <div class="flex flex-wrap justify-between items-center gap-4">
       <div>
         <h1 class="text-2xl font-bold tracking-tight">Auto Reply Inbox</h1>
-        <p class="text-sm theme-text-muted mt-1">Buat draf balasan AI on-demand atau balas manual komentar masuk.</p>
+        <p class="text-sm theme-text-muted mt-1">Kelola komentar masuk dengan draf AI atau balasan template.</p>
       </div>
       <div class="flex items-center gap-3">
         <button @click="syncRepliesManual" :disabled="isSyncing" class="btn btn-primary btn-sm">
@@ -16,28 +16,42 @@
     </div>
 
     <div class="flex justify-between items-end divider">
-      <div class="flex text-xs font-bold gap-6">
+      <div class="flex text-xs font-bold gap-5 overflow-x-auto">
         <button
-          @click="activeTab = 'pending'"
-          class="pb-3 border-b-2 transition -mb-px"
-          :class="activeTab === 'pending' ? 'border-current theme-text' : 'border-transparent theme-text-muted hover:theme-text'"
+          @click="activeTab = 'review'"
+          class="pb-3 border-b-2 transition -mb-px whitespace-nowrap"
+          :class="tabClass('review')"
         >
-          Antrean Review ({{ pendingReplies.length }})
+          Review ({{ reviewCount }})
+        </button>
+        <button
+          @click="activeTab = 'lead'"
+          class="pb-3 border-b-2 transition -mb-px whitespace-nowrap"
+          :class="tabClass('lead')"
+        >
+          Hot Lead ({{ leadCount }})
+        </button>
+        <button
+          @click="activeTab = 'all'"
+          class="pb-3 border-b-2 transition -mb-px whitespace-nowrap"
+          :class="tabClass('all')"
+        >
+          Semua ({{ allCount }})
         </button>
         <button
           @click="activeTab = 'history'"
-          class="pb-3 border-b-2 transition -mb-px"
-          :class="activeTab === 'history' ? 'border-current theme-text' : 'border-transparent theme-text-muted hover:theme-text'"
+          class="pb-3 border-b-2 transition -mb-px whitespace-nowrap"
+          :class="tabClass('history')"
         >
-          Riwayat Terkirim ({{ historyReplies.length }})
+          Riwayat ({{ historyCount }})
         </button>
       </div>
 
       <button
-        v-if="activeTab === 'pending' && pendingReplies.length > 0"
+        v-if="activeTab === 'review' && reviewReplies.length > 0"
         @click="skipAllPending"
         :disabled="isSkippingAll"
-        class="pb-3 text-xs font-bold theme-text-muted hover:theme-text transition flex items-center gap-1.5 disabled:opacity-50"
+        class="pb-3 text-xs font-bold theme-text-muted hover:theme-text transition flex items-center gap-1.5 disabled:opacity-50 shrink-0"
       >
         <span v-if="isSkippingAll" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
         <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -49,37 +63,42 @@
 
     <div v-if="loading" class="p-12 text-center text-xs theme-text-muted animate-pulse">Memuat komentar...</div>
 
-    <div v-else-if="activeTab === 'pending'" class="space-y-4">
-      <div v-if="pendingReplies.length === 0" class="card p-12 text-center text-xs theme-text-muted">
-        Semua komentar sudah dibalas.
+    <div v-else-if="activeTab !== 'history'" class="space-y-4">
+      <div v-if="currentReplies.length === 0" class="card p-12 text-center text-xs theme-text-muted">
+        {{ emptyMessage }}
       </div>
 
-      <div v-for="item in pendingReplies" :key="item.id" class="card p-6 space-y-4">
-        <div class="flex justify-between items-start">
-          <div class="space-y-1">
-            <span class="text-[10px] font-bold uppercase tracking-wide theme-text">@{{ item.author_username }}</span>
+      <div v-for="item in currentReplies" :key="item.id" class="card p-6 space-y-4">
+        <div class="flex justify-between items-start gap-3">
+          <div class="space-y-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-[10px] font-bold uppercase tracking-wide theme-text">@{{ item.author_username }}</span>
+              <Badge>{{ categoryLabel(item.classification) }}</Badge>
+              <span v-if="item.is_lead" class="badge badge-accent">
+                <span class="w-1.5 h-1.5 rounded-full animate-pulse" style="background: currentColor;"></span>
+                Hot Lead
+              </span>
+            </div>
             <p class="text-xs theme-text-muted">{{ formatDate(item.replied_at) }}</p>
           </div>
-          <span v-if="item.is_lead" class="badge badge-accent">
-            <span class="w-1.5 h-1.5 rounded-full animate-pulse" style="background: currentColor;"></span>
-            Hot Lead
-          </span>
         </div>
 
         <div class="p-3.5 rounded-xl theme-bg-sec border theme-border">
-          <p class="text-xs font-semibold">{{ item.text }}</p>
+          <p class="text-xs font-semibold whitespace-pre-wrap">{{ item.text }}</p>
         </div>
 
-        <div class="p-4 rounded-xl theme-bg-sec border theme-border">
+        <div v-if="item.auto_reply_eligible" class="p-4 rounded-xl theme-bg-sec border theme-border">
           <div class="flex justify-between items-center mb-2">
-            <span class="text-[10px] font-bold uppercase theme-text-sec">Draf Balasan AI</span>
+            <span class="text-[10px] font-bold uppercase theme-text-sec">
+              {{ item.log_status === 'pending_review' || item.log_status === 'approved' ? 'Draf Balasan' : 'Draf Balasan AI' }}
+            </span>
             <button
               @click="generateAIDraft(item)"
               :disabled="generatingId === item.id"
               class="btn btn-secondary btn-sm"
             >
               <span v-if="generatingId === item.id" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
-              <span>{{ generatingId === item.id ? 'Meracik...' : 'Buat Draf AI' }}</span>
+              <span>{{ generatingId === item.id ? 'Meracik...' : (item.draftText ? 'Regenerate' : 'Buat Draf AI') }}</span>
             </button>
           </div>
           <textarea
@@ -88,6 +107,15 @@
             placeholder="Tulis balasan manual atau klik tombol Buat Draf AI di atas..."
             class="textarea"
           ></textarea>
+        </div>
+
+        <div v-else class="p-3 rounded-xl theme-bg-sec border theme-border">
+          <p class="text-[11px] theme-text-muted">
+            <span v-if="item.classification === 'spam'">Komentar dikategorikan sebagai spam. Tidak dibuatkan draf.</span>
+            <span v-else-if="item.classification === 'toxic'">Komentar dikategorikan toxic. Tidak dibuatkan draf.</span>
+            <span v-else-if="item.classification === 'unclassified'">Belum diklasifikasi otomatis. Kamu bisa buat draf manual.</span>
+            <span v-else>Komentar ini belum masuk antrean balasan otomatis.</span>
+          </p>
         </div>
 
         <div class="flex justify-end items-center gap-3">
@@ -110,15 +138,17 @@
       </div>
       <div v-else class="list-divided">
         <div v-for="item in historyReplies" :key="item.id" class="p-5 space-y-2">
-          <div class="flex justify-between items-center">
-            <span class="badge" :class="historyBadgeClass(item)">
-              {{ historyBadgeLabel(item) }}
-            </span>
-            <span class="text-xs theme-text-muted">{{ formatDate(item.replied_at) }}</span>
+          <div class="flex justify-between items-center gap-3">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-[10px] font-bold uppercase tracking-wide theme-text">@{{ item.author_username }}</span>
+              <Badge :variant="historyBadgeVariant(item)">{{ historyBadgeLabel(item) }}</Badge>
+              <Badge>{{ categoryLabel(item.classification) }}</Badge>
+            </div>
+            <span class="text-xs theme-text-muted shrink-0">{{ formatDate(item.replied_at) }}</span>
           </div>
-          <p class="text-xs theme-text-muted italic">{{ item.text }}</p>
-          <p v-if="item.draftText" class="text-xs font-medium p-3 rounded-lg theme-bg-sec border theme-border mt-2">
-            Balasan: {{ item.draftText }}
+          <p class="text-xs theme-text-muted italic whitespace-pre-wrap">{{ item.text }}</p>
+          <p v-if="item.draftText" class="text-xs font-medium p-3 rounded-lg theme-bg-sec border theme-border mt-2 whitespace-pre-wrap">
+            {{ item.draftText }}
           </p>
         </div>
       </div>
@@ -131,6 +161,7 @@ import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
 import NotifyOverlay from '../components/NotifyOverlay.vue'
+import { Badge } from '../components/ui'
 
 const { showToast, askConfirm } = useNotify()
 const loading = ref(true)
@@ -138,26 +169,72 @@ const isSyncing = ref(false)
 const isSkippingAll = ref(false)
 const approvingId = ref<string | null>(null)
 const generatingId = ref<string | null>(null)
-const activeTab = ref<'pending' | 'history'>('pending')
+const activeTab = ref<'review' | 'lead' | 'all' | 'history'>('review')
 const repliesData = ref<any[]>([])
 
-const pendingReplies = computed(() =>
-  repliesData.value.filter(r => r.log_status !== 'sent' && r.log_status !== 'skipped' && !r.is_own)
+const AUTO_REPLY_CATEGORIES = ['praise', 'neutral', 'question']
+
+const allReplies = computed(() =>
+  repliesData.value.filter(r => !r.is_own)
+)
+
+const reviewReplies = computed(() =>
+  allReplies.value.filter(r =>
+    r.log_status === 'pending_review' || r.log_status === 'approved'
+  )
+)
+
+const leadReplies = computed(() =>
+  allReplies.value
+    .filter(r => r.is_lead && r.log_status !== 'sent' && r.log_status !== 'skipped')
+    .sort((a, b) => new Date(b.replied_at).getTime() - new Date(a.replied_at).getTime())
 )
 
 const historyReplies = computed(() =>
-  repliesData.value.filter(r => r.log_status === 'sent' || r.log_status === 'skipped' || r.is_own)
+  repliesData.value.filter(r =>
+    r.log_status === 'sent' || r.log_status === 'skipped' || r.is_own
+  )
 )
+
+const reviewCount = computed(() => reviewReplies.value.length)
+const leadCount = computed(() => leadReplies.value.length)
+const allCount = computed(() => allReplies.value.length)
+const historyCount = computed(() => historyReplies.value.length)
+
+const currentReplies = computed(() => {
+  if (activeTab.value === 'review') return reviewReplies.value
+  if (activeTab.value === 'lead') return leadReplies.value
+  if (activeTab.value === 'all') return allReplies.value
+  return []
+})
+
+const emptyMessage = computed(() => {
+  if (activeTab.value === 'review') return 'Tidak ada draf yang menunggu review.'
+  if (activeTab.value === 'lead') return 'Belum ada hot lead terdeteksi.'
+  if (activeTab.value === 'all') return 'Belum ada komentar tersinkron.'
+  return 'Tidak ada data.'
+})
+
+function tabClass(tab: string) {
+  return activeTab.value === tab
+    ? 'border-current theme-text'
+    : 'border-transparent theme-text-muted hover:theme-text'
+}
 
 function formatDate(isoString: string) {
   if (!isoString) return ''
   return new Date(isoString).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
-function historyBadgeClass(item: any) {
-  if (item.is_own) return 'badge-default'
-  if (item.log_status === 'sent') return 'badge-accent'
-  return 'badge-default'
+function categoryLabel(cat: string | null | undefined) {
+  if (!cat) return 'unclassified'
+  return cat
+}
+
+function historyBadgeVariant(item: any) {
+  if (item.is_own) return 'default'
+  if (item.log_status === 'sent') return 'accent'
+  return 'default'
 }
 
 function historyBadgeLabel(item: any) {
@@ -219,7 +296,7 @@ async function fetchReplies() {
     .select('*')
     .eq('account_id', account.id)
     .order('replied_at', { ascending: false })
-    .limit(50)
+    .limit(100)
 
   if (repliesRaw && repliesRaw.length > 0) {
     const replyIds = repliesRaw.map(r => r.id)
@@ -234,11 +311,13 @@ async function fetchReplies() {
 
     repliesData.value = repliesRaw.map(r => {
       const log = logsArray.find(l => l.reply_id === r.id)
+      const eligible = AUTO_REPLY_CATEGORIES.includes(r.classification)
       return {
         ...r,
         log_id: log ? log.id : null,
         draftText: log ? log.final_text : '',
-        log_status: log ? log.status : 'unprocessed'
+        log_status: log ? log.status : 'unprocessed',
+        auto_reply_eligible: eligible,
       }
     })
   } else {
@@ -317,16 +396,16 @@ async function skipReply(item: any) {
 }
 
 async function skipAllPending() {
-  if (pendingReplies.value.length === 0) return
+  if (reviewReplies.value.length === 0) return
 
   askConfirm({
     title: 'Abaikan Semua Komentar',
-    message: 'Kamu yakin ingin memindahkan ' + pendingReplies.value.length + ' komentar ke riwayat?',
+    message: 'Kamu yakin ingin memindahkan ' + reviewReplies.value.length + ' komentar ke riwayat?',
     confirmText: 'Ya, Abaikan Semua',
     onConfirm: async () => {
       isSkippingAll.value = true
       try {
-        const itemsToProcess = [...pendingReplies.value]
+        const itemsToProcess = [...reviewReplies.value]
         itemsToProcess.forEach(i => i.log_status = 'skipped')
 
         for (const item of itemsToProcess) {
