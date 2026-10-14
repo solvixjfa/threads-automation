@@ -28,7 +28,8 @@ CATEGORY_ACTION = {
     "unclassified": "skip",
 }
 
-MAX_POSTS_TO_FETCH = 30
+MAX_POSTS_TO_FETCH = 15
+MAX_POST_AGE_DAYS = 7
 MAX_REPLIES_PER_POST = 50
 SYNC_CONCURRENCY = 8
 
@@ -343,11 +344,15 @@ async def process_account(db, client, acc: dict) -> dict:
     is_enabled = auto_settings.get("enabled", True)
     reply_mode = auto_settings.get("mode", "review")
 
+    from datetime import datetime, timezone, timedelta
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=MAX_POST_AGE_DAYS)).isoformat()
+
     posts_res = (
         db.schema("threads")
         .from_("posts")
         .select("id, threads_media_id")
         .eq("account_id", acc_id)
+        .gte("posted_at", cutoff)
         .order("posted_at", desc=True)
         .limit(MAX_POSTS_TO_FETCH)
         .execute()
