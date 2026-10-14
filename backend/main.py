@@ -23,6 +23,6 @@ async def startup_event():
     # Menjalankan script penarik inbox (replies) di background saat server menyala
     asyncio.create_task(reply_worker_loop())
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def root():
     return {"status": "ok", "service": "Ixiera Threads AI Engine"}
