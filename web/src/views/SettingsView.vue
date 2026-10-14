@@ -146,7 +146,7 @@
         Belum ada dokumen RAG tersimpan. Tambahkan fakta atau persona pertama kamu di atas.
       </div>
 
-      <div v-else class="divide-y" style="border-color: var(--border);">
+      <div v-else class="list-divided">
         <div v-for="item in ragItems" :key="item.id" class="p-5 transition space-y-2 theme-bg-hover" style="background: transparent;">
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 flex-wrap">
