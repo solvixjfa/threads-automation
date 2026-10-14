@@ -1,6 +1,7 @@
 import os
 import asyncio
 import logging
+import time
 import httpx
 from datetime import datetime, timezone
 from supabase import create_client, Client
@@ -29,6 +30,26 @@ CATEGORY_ACTION = {
 
 MAX_POSTS_TO_FETCH = 30
 MAX_REPLIES_PER_POST = 50
+SYNC_CONCURRENCY = 5
+
+
+def empty_stats() -> dict:
+    return {
+        "new_replies": 0,
+        "template": 0,
+        "llm": 0,
+        "skipped": 0,
+        "by_category": {},
+    }
+
+
+def merge_stats(target: dict, source: dict):
+    target["new_replies"] += source.get("new_replies", 0)
+    target["template"] += source.get("template", 0)
+    target["llm"] += source.get("llm", 0)
+    target["skipped"] += source.get("skipped", 0)
+    for cat, n in (source.get("by_category") or {}).items():
+        target["by_category"][cat] = target["by_category"].get(cat, 0) + n
 
 
 async def sync_posts_from_meta(db, client, acc_id: str, token: str) -> int:
@@ -91,7 +112,16 @@ async def sync_posts_from_meta(db, client, acc_id: str, token: str) -> int:
     return new_count
 
 
-async def sync_replies_for_post(db, client, acc_id: str, post_db_id: str, media_id: str, token: str, acc_username: str, is_enabled: bool, reply_mode: str, stats: dict):
+async def sync_replies_for_post(
+    db, client, acc_id: str, post_db_id: str, media_id: str,
+    token: str, acc_username: str, is_enabled: bool, reply_mode: str
+) -> dict:
+    """
+    Fetch and process replies untuk satu post.
+    Return stats dict untuk post ini (biar tidak ada race condition).
+    """
+    stats = empty_stats()
+
     url = (
         f"https://graph.threads.net/v1.0/{media_id}/replies"
         f"?fields=id,text,username,timestamp&limit={MAX_REPLIES_PER_POST}"
@@ -101,10 +131,10 @@ async def sync_replies_for_post(db, client, acc_id: str, post_db_id: str, media_
     try:
         res = await client.get(url, timeout=15.0)
         if res.status_code != 200:
-            return
+            return stats
         data = res.json().get("data", [])
     except Exception:
-        return
+        return stats
 
     for reply in data:
         reply_id = reply.get("id")
@@ -159,7 +189,6 @@ async def sync_replies_for_post(db, client, acc_id: str, post_db_id: str, media_
             stats["skipped"] += 1
             continue
 
-        # Webhook untuk lead (independent dari category)
         if is_lead:
             await analyze_and_notify_lead(acc_id, author_username, text)
 
@@ -216,8 +245,87 @@ async def sync_replies_for_post(db, client, acc_id: str, post_db_id: str, media_
         except Exception as log_err:
             logging.error(f"[Log Insert Error]: {str(log_err)}")
 
+    return stats
+
+
+async def sync_post_with_semaphore(
+    sem: asyncio.Semaphore,
+    db, client, acc_id: str, post_db_id: str, media_id: str,
+    token: str, acc_username: str, is_enabled: bool, reply_mode: str
+) -> dict:
+    async with sem:
+        try:
+            return await sync_replies_for_post(
+                db, client, acc_id, post_db_id, media_id,
+                token, acc_username, is_enabled, reply_mode
+            )
+        except Exception as e:
+            logging.error(f"[Parallel Sync] Post {media_id} error: {str(e)}")
+            return empty_stats()
+
+
+async def process_account(db, client, acc: dict) -> dict:
+    account_stats = {
+        "new_posts": 0,
+        **empty_stats(),
+    }
+
+    acc_id = acc["id"]
+    acc_username = acc.get("username", "")
+    token = acc.get("settings", {}).get("access_token")
+    if not token:
+        return account_stats
+
+    new_posts = await sync_posts_from_meta(db, client, acc_id, token)
+    account_stats["new_posts"] = new_posts
+
+    settings_res = (
+        db.schema("threads")
+        .from_("auto_reply_settings")
+        .select("*")
+        .eq("account_id", acc_id)
+        .limit(1)
+        .execute()
+    )
+    auto_settings = settings_res.data[0] if settings_res.data else {}
+    is_enabled = auto_settings.get("enabled", True)
+    reply_mode = auto_settings.get("mode", "review")
+
+    posts_res = (
+        db.schema("threads")
+        .from_("posts")
+        .select("id, threads_media_id")
+        .eq("account_id", acc_id)
+        .order("posted_at", desc=True)
+        .limit(MAX_POSTS_TO_FETCH)
+        .execute()
+    )
+    posts = posts_res.data or []
+
+    valid_posts = [p for p in posts if p.get("threads_media_id")]
+    if not valid_posts:
+        return account_stats
+
+    sem = asyncio.Semaphore(SYNC_CONCURRENCY)
+    tasks = [
+        sync_post_with_semaphore(
+            sem, db, client, acc_id, p["id"], p["threads_media_id"],
+            token, acc_username, is_enabled, reply_mode
+        )
+        for p in valid_posts
+    ]
+
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    for r in results:
+        if isinstance(r, dict):
+            merge_stats(account_stats, r)
+
+    return account_stats
+
 
 async def fetch_and_process_replies():
+    started = time.time()
     db = get_supabase()
 
     accounts_res = (
@@ -229,68 +337,28 @@ async def fetch_and_process_replies():
     )
     accounts = accounts_res.data or []
 
-    stats = {
+    total = {
         "new_posts": 0,
-        "new_replies": 0,
-        "template": 0,
-        "llm": 0,
-        "skipped": 0,
-        "by_category": {},
+        **empty_stats(),
     }
 
     async with httpx.AsyncClient() as client:
         for acc in accounts:
-            acc_id = acc["id"]
-            acc_username = acc.get("username", "")
-            token = acc.get("settings", {}).get("access_token")
-            if not token:
-                continue
+            acc_stats = await process_account(db, client, acc)
+            total["new_posts"] += acc_stats.get("new_posts", 0)
+            merge_stats(total, acc_stats)
 
-            new_posts = await sync_posts_from_meta(db, client, acc_id, token)
-            stats["new_posts"] += new_posts
-
-            settings_res = (
-                db.schema("threads")
-                .from_("auto_reply_settings")
-                .select("*")
-                .eq("account_id", acc_id)
-                .limit(1)
-                .execute()
-            )
-            auto_settings = settings_res.data[0] if settings_res.data else {}
-            is_enabled = auto_settings.get("enabled", True)
-            reply_mode = auto_settings.get("mode", "review")
-
-            posts_res = (
-                db.schema("threads")
-                .from_("posts")
-                .select("id, threads_media_id")
-                .eq("account_id", acc_id)
-                .order("posted_at", desc=True)
-                .limit(MAX_POSTS_TO_FETCH)
-                .execute()
-            )
-            posts = posts_res.data or []
-
-            for post in posts:
-                media_id = post["threads_media_id"]
-                post_db_id = post["id"]
-                if not media_id:
-                    continue
-
-                await sync_replies_for_post(
-                    db, client, acc_id, post_db_id, media_id,
-                    token, acc_username, is_enabled, reply_mode, stats
-                )
+    elapsed = round(time.time() - started, 2)
 
     logging.info(
         f"[Worker Replies Summary] "
-        f"new_posts={stats['new_posts']} "
-        f"new_replies={stats['new_replies']} "
-        f"template={stats['template']} "
-        f"llm={stats['llm']} "
-        f"skipped={stats['skipped']} "
-        f"by_category={stats['by_category']}"
+        f"new_posts={total['new_posts']} "
+        f"new_replies={total['new_replies']} "
+        f"template={total['template']} "
+        f"llm={total['llm']} "
+        f"skipped={total['skipped']} "
+        f"by_category={total['by_category']} "
+        f"elapsed={elapsed}s"
     )
 
 
