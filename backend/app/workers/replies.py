@@ -5,20 +5,52 @@ import httpx
 from datetime import datetime, timezone
 from supabase import create_client, Client
 from app.services.leads import analyze_and_notify_lead
+from app.services.comment_classifier import classify_comment
+from app.services.comment_templates import pick_template, has_template
 from app.services.auto_reply import generate_rag_reply
+
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 
+
 def get_supabase() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
+
+# Mapping kategori ke aksi
+# llm = panggil Gemini + RAG
+# template = pakai template statis
+# skip = tidak balas
+CATEGORY_ACTION = {
+    "lead": "llm",
+    "question": "llm",
+    "praise": "template",
+    "greeting": "template",
+    "other": "template",
+    "spam": "skip",
+}
+
+
 async def fetch_and_process_replies():
     db = get_supabase()
-    
-    # FIX: Ambil username akun untuk mencocokkan is_own
-    accounts_res = db.schema("threads").from_("threads_accounts").select("id, settings, username").eq("connection_status", "connected").execute()
+
+    accounts_res = (
+        db.schema("threads")
+        .from_("threads_accounts")
+        .select("id, settings, username")
+        .eq("connection_status", "connected")
+        .execute()
+    )
     accounts = accounts_res.data or []
+
+    stats = {
+        "new": 0,
+        "template": 0,
+        "llm": 0,
+        "skipped": 0,
+        "by_category": {},
+    }
 
     async with httpx.AsyncClient() as client:
         for acc in accounts:
@@ -28,13 +60,27 @@ async def fetch_and_process_replies():
             if not token:
                 continue
 
-            settings_res = db.schema("threads").from_("auto_reply_settings").select("*").eq("account_id", acc_id).limit(1).execute()
+            settings_res = (
+                db.schema("threads")
+                .from_("auto_reply_settings")
+                .select("*")
+                .eq("account_id", acc_id)
+                .limit(1)
+                .execute()
+            )
             auto_settings = settings_res.data[0] if settings_res.data else {}
-            
             is_enabled = auto_settings.get("enabled", True)
             reply_mode = auto_settings.get("mode", "review")
 
-            posts_res = db.schema("threads").from_("posts").select("id, threads_media_id").eq("account_id", acc_id).order("created_at", desc=True).limit(20).execute()
+            posts_res = (
+                db.schema("threads")
+                .from_("posts")
+                .select("id, threads_media_id")
+                .eq("account_id", acc_id)
+                .order("created_at", desc=True)
+                .limit(20)
+                .execute()
+            )
             posts = posts_res.data or []
 
             for post in posts:
@@ -43,71 +89,140 @@ async def fetch_and_process_replies():
                 if not media_id:
                     continue
 
-                url = f"https://graph.threads.net/v1.0/{media_id}/replies?fields=id,text,username,timestamp&access_token={token}"
+                url = (
+                    f"https://graph.threads.net/v1.0/{media_id}/replies"
+                    f"?fields=id,text,username,timestamp&access_token={token}"
+                )
                 try:
                     res = await client.get(url, timeout=10.0)
                     if res.status_code != 200:
                         continue
-                    
+
                     data = res.json().get("data", [])
 
                     for reply in data:
                         reply_id = reply.get("id")
-                        text = reply.get("text", "")
+                        text = reply.get("text", "") or ""
                         author_username = reply.get("username", "unknown")
                         timestamp = reply.get("timestamp")
 
-                        exist_res = db.schema("threads").from_("replies").select("id").eq("threads_reply_id", reply_id).execute()
-                        
-                        if not exist_res.data:
-                            # FIX: Deteksi apakah ini balasan lu sendiri
-                            is_own_comment = (author_username == acc_username)
-                            
-                            is_lead = False
-                            if not is_own_comment:
-                                analysis = await analyze_and_notify_lead(acc_id, author_username, text)
-                                is_lead = analysis.get("is_lead", False)
+                        exist_res = (
+                            db.schema("threads")
+                            .from_("replies")
+                            .select("id")
+                            .eq("threads_reply_id", reply_id)
+                            .execute()
+                        )
+                        if exist_res.data:
+                            continue
 
-                            reply_insert = db.schema("threads").from_("replies").insert({
+                        stats["new"] += 1
+                        is_own_comment = author_username == acc_username
+
+                        classification = classify_comment(text)
+                        category = classification["category"]
+                        stats["by_category"][category] = stats["by_category"].get(category, 0) + 1
+
+                        # Simpan reply ke DB dulu
+                        reply_insert = (
+                            db.schema("threads")
+                            .from_("replies")
+                            .insert({
                                 "account_id": acc_id,
                                 "post_id": post_db_id,
                                 "threads_reply_id": reply_id,
                                 "author_username": author_username,
                                 "text": text,
-                                "is_lead": is_lead,
+                                "is_lead": category == "lead",
+                                "classification": category,
                                 "is_own": is_own_comment,
                                 "replied_at": timestamp,
                                 "raw": reply,
-                                "processed_at": datetime.now(timezone.utc).isoformat()
-                            }).execute()
-                            
-                            reply_db_id = reply_insert.data[0]["id"]
+                                "processed_at": datetime.now(timezone.utc).isoformat(),
+                            })
+                            .execute()
+                        )
+                        reply_db_id = reply_insert.data[0]["id"]
 
-                            # Jangan generate AI untuk balasan lu sendiri
-                            if is_enabled and not is_own_comment:
-                                try:
-                                    draft_text = await generate_rag_reply(
-                                        account_id=acc_id, 
-                                        user_comment=text, 
-                                        author_username=author_username
-                                    )
-                                    
-                                    db.schema("threads").from_("auto_reply_logs").insert({
-                                        "account_id": acc_id,
-                                        "reply_id": reply_db_id,
-                                        "status": "pending_review" if reply_mode == "review" else "approved",
-                                        "generated_text": draft_text,
-                                        "final_text": draft_text,
-                                        "llm_meta": {
-                                            "incoming_comment": text, 
-                                            "username": author_username
-                                        }
-                                    }).execute()
-                                except Exception as ai_err:
-                                    logging.error(f"[AI Draft Error]: {str(ai_err)}")
-                            
+                        # Kalau balasan akun sendiri, skip semuanya
+                        if is_own_comment:
+                            stats["skipped"] += 1
+                            continue
+
+                        # Kalau auto-reply dimatikan user, skip
+                        if not is_enabled:
+                            stats["skipped"] += 1
+                            continue
+
+                        # Webhook untuk lead, apapun mode reply-nya
+                        if category == "lead":
+                            await analyze_and_notify_lead(acc_id, author_username, text)
+
+                        action = CATEGORY_ACTION.get(category, "skip")
+                        if action == "skip":
+                            stats["skipped"] += 1
+                            continue
+
+                        draft_text = None
+                        llm_meta = {
+                            "category": category,
+                            "matched_signals": classification["matched_signals"],
+                            "confidence": classification["confidence"],
+                            "incoming_comment": text,
+                            "username": author_username,
+                        }
+
+                        if action == "template":
+                            if not has_template(category):
+                                stats["skipped"] += 1
+                                continue
+                            draft_text = pick_template(category)
+                            llm_meta["mode"] = "template"
+                            stats["template"] += 1
+
+                        elif action == "llm":
+                            try:
+                                draft_text = await generate_rag_reply(
+                                    account_id=acc_id,
+                                    user_comment=text,
+                                    author_username=author_username,
+                                )
+                                llm_meta["mode"] = "llm"
+                                stats["llm"] += 1
+                            except Exception as ai_err:
+                                logging.error(f"[AI Draft Error]: {str(ai_err)}")
+                                stats["skipped"] += 1
+                                continue
+
+                        if not draft_text:
+                            stats["skipped"] += 1
+                            continue
+
+                        # Simpan log
+                        try:
+                            db.schema("threads").from_("auto_reply_logs").insert({
+                                "account_id": acc_id,
+                                "reply_id": reply_db_id,
+                                "status": "pending_review" if reply_mode == "review" else "approved",
+                                "generated_text": draft_text,
+                                "final_text": draft_text,
+                                "llm_meta": llm_meta,
+                            }).execute()
+                        except Exception as log_err:
+                            logging.error(f"[Log Insert Error]: {str(log_err)}")
+
                 except Exception as e:
                     logging.error(f"[Worker Replies] Error: {str(e)}")
+
+    logging.info(
+        f"[Worker Replies Summary] "
+        f"new={stats['new']} "
+        f"template={stats['template']} "
+        f"llm={stats['llm']} "
+        f"skipped={stats['skipped']} "
+        f"by_category={stats['by_category']}"
+    )
+
 
 async def reply_worker_loop():
     while True:
