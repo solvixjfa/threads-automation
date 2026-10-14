@@ -25,18 +25,18 @@
           Review ({{ reviewCount }})
         </button>
         <button
-          @click="activeTab = 'lead'"
+          @click="activeTab = 'discussion'"
           class="pb-3 border-b-2 transition -mb-px whitespace-nowrap"
-          :class="tabClass('lead')"
+          :class="tabClass('discussion')"
         >
-          Hot Lead ({{ leadCount }})
+          Percakapan ({{ discussionCount }})
         </button>
         <button
-          @click="activeTab = 'all'"
+          @click="activeTab = 'inbox'"
           class="pb-3 border-b-2 transition -mb-px whitespace-nowrap"
-          :class="tabClass('all')"
+          :class="tabClass('inbox')"
         >
-          Semua ({{ allCount }})
+          Inbox ({{ inboxCount }})
         </button>
         <button
           @click="activeTab = 'history'"
@@ -76,7 +76,7 @@
               <Badge>{{ categoryLabel(item.classification) }}</Badge>
               <span v-if="item.is_lead" class="badge badge-accent">
                 <span class="w-1.5 h-1.5 rounded-full animate-pulse" style="background: currentColor;"></span>
-                Hot Lead
+                Percakapan
               </span>
             </div>
             <p class="text-xs theme-text-muted">{{ formatDate(item.replied_at) }}</p>
@@ -169,49 +169,53 @@ const isSyncing = ref(false)
 const isSkippingAll = ref(false)
 const approvingId = ref<string | null>(null)
 const generatingId = ref<string | null>(null)
-const activeTab = ref<'review' | 'lead' | 'all' | 'history'>('review')
+const activeTab = ref<'review' | 'discussion' | 'inbox' | 'history'>('review')
 const repliesData = ref<any[]>([])
 
 const AUTO_REPLY_CATEGORIES = ['praise', 'neutral', 'question']
 
-const allReplies = computed(() =>
-  repliesData.value.filter(r => !r.is_own)
+function isProcessed(r: any) {
+  return r.log_status === 'sent' || r.log_status === 'skipped'
+}
+
+const inboxReplies = computed(() =>
+  repliesData.value.filter(r => !r.is_own && !isProcessed(r))
 )
 
 const reviewReplies = computed(() =>
-  allReplies.value.filter(r =>
-    r.log_status === 'pending_review' || r.log_status === 'approved'
+  repliesData.value.filter(r =>
+    !r.is_own && (r.log_status === 'pending_review' || r.log_status === 'approved')
   )
 )
 
-const leadReplies = computed(() =>
-  allReplies.value
-    .filter(r => r.is_lead && r.log_status !== 'sent' && r.log_status !== 'skipped')
+const discussionReplies = computed(() =>
+  repliesData.value
+    .filter(r => !r.is_own && r.is_lead && !isProcessed(r))
     .sort((a, b) => new Date(b.replied_at).getTime() - new Date(a.replied_at).getTime())
 )
 
 const historyReplies = computed(() =>
   repliesData.value.filter(r =>
-    r.log_status === 'sent' || r.log_status === 'skipped' || r.is_own
+    r.is_own || r.log_status === 'sent' || r.log_status === 'skipped'
   )
 )
 
 const reviewCount = computed(() => reviewReplies.value.length)
-const leadCount = computed(() => leadReplies.value.length)
-const allCount = computed(() => allReplies.value.length)
+const discussionCount = computed(() => discussionReplies.value.length)
+const inboxCount = computed(() => inboxReplies.value.length)
 const historyCount = computed(() => historyReplies.value.length)
 
 const currentReplies = computed(() => {
   if (activeTab.value === 'review') return reviewReplies.value
-  if (activeTab.value === 'lead') return leadReplies.value
-  if (activeTab.value === 'all') return allReplies.value
+  if (activeTab.value === 'discussion') return discussionReplies.value
+  if (activeTab.value === 'inbox') return inboxReplies.value
   return []
 })
 
 const emptyMessage = computed(() => {
   if (activeTab.value === 'review') return 'Tidak ada draf yang menunggu review.'
-  if (activeTab.value === 'lead') return 'Belum ada hot lead terdeteksi.'
-  if (activeTab.value === 'all') return 'Belum ada komentar tersinkron.'
+  if (activeTab.value === 'discussion') return 'Belum ada percakapan yang butuh perhatian.'
+  if (activeTab.value === 'inbox') return 'Inbox bersih. Semua komentar sudah diproses.'
   return 'Tidak ada data.'
 })
 
@@ -388,7 +392,7 @@ async function skipReply(item: any) {
       final_text: item.draftText || 'Diabaikan manual'
     })
     if (savedData) item.log_id = savedData.id
-    showToast('Komentar berhasil diabaikan.', 'info')
+    showToast('Komentar dipindahkan ke Riwayat.', 'info')
   } catch (err: any) {
     showToast('Gagal mengabaikan: ' + err.message, 'error')
     await fetchReplies()
@@ -416,7 +420,7 @@ async function skipAllPending() {
             final_text: item.draftText || 'Diabaikan manual (massal)'
           })
         }
-        showToast('Semua komentar berhasil dibersihkan dari antrean.', 'success')
+        showToast('Semua komentar dipindahkan ke Riwayat.', 'success')
       } catch (err: any) {
         showToast('Gagal memproses masal: ' + err.message, 'error')
         await fetchReplies()
