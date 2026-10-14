@@ -1,8 +1,7 @@
 import random
 
 
-# Template default untuk sistem. Tidak ada emoticon, em dash, atau tanda kutip.
-# User bisa override lewat settings nanti, tapi MVP pakai system default dulu.
+# Template per kategori. Tidak ada emoticon, em dash, atau tanda kutip.
 
 SYSTEM_TEMPLATES = {
     "praise": [
@@ -15,7 +14,7 @@ SYSTEM_TEMPLATES = {
         "Mantap, terima kasih",
         "Thank you so much",
     ],
-    "greeting": [
+    "neutral": [
         "Halo juga",
         "Hai, apa kabar",
         "Hi there",
@@ -23,28 +22,19 @@ SYSTEM_TEMPLATES = {
         "Welcome",
         "Selamat datang",
         "Halo, ada yang bisa dibantu",
-        "Hi, nice to see you",
-    ],
-    "other": [
         "Terima kasih atas komentarnya",
         "Thanks for stopping by",
         "Noted, terima kasih",
         "Thank you for the comment",
-        "Makasih ya",
         "Appreciate the comment",
-        "Terima kasih",
-        "Thanks",
     ],
-    # Question dan lead sengaja kosong
-    # Dua kategori ini butuh LLM karena harus baca konteks brand_knowledge
+    # question dan unclassified sengaja tidak ada template
+    # question butuh LLM karena harus baca konteks brand_knowledge
+    # unclassified dibiarkan tanpa balasan
 }
 
 
 def pick_template(category: str, custom_templates: list = None) -> str:
-    """
-    Ambil satu template random untuk kategori tertentu.
-    Prioritas: custom templates user, kalau kosong baru pakai system default.
-    """
     pool = []
     if custom_templates:
         pool = [t for t in custom_templates if t and t.strip()]

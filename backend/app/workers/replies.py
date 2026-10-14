@@ -19,12 +19,12 @@ def get_supabase() -> Client:
 
 
 CATEGORY_ACTION = {
-    "lead": "llm",
     "question": "llm",
     "praise": "template",
-    "greeting": "template",
-    "other": "template",
+    "neutral": "template",
     "spam": "skip",
+    "toxic": "skip",
+    "unclassified": "skip",
 }
 
 MAX_POSTS_TO_FETCH = 30
@@ -32,10 +32,6 @@ MAX_REPLIES_PER_POST = 50
 
 
 async def sync_posts_from_meta(db, client, acc_id: str, token: str) -> int:
-    """
-    Fetch list post dari /me/threads dan upsert ke tabel posts.
-    Return: jumlah post baru yang masuk.
-    """
     url = (
         "https://graph.threads.net/v1.0/me/threads"
         f"?fields=id,text,timestamp,permalink&limit={MAX_POSTS_TO_FETCH}"
@@ -47,7 +43,6 @@ async def sync_posts_from_meta(db, client, acc_id: str, token: str) -> int:
         if res.status_code != 200:
             logging.warning(f"[Sync Posts] Meta API status {res.status_code}: {res.text[:200]}")
             return 0
-
         data = res.json().get("data", [])
     except Exception as e:
         logging.error(f"[Sync Posts] Error fetching posts: {str(e)}")
@@ -97,9 +92,6 @@ async def sync_posts_from_meta(db, client, acc_id: str, token: str) -> int:
 
 
 async def sync_replies_for_post(db, client, acc_id: str, post_db_id: str, media_id: str, token: str, acc_username: str, is_enabled: bool, reply_mode: str, stats: dict):
-    """
-    Fetch replies untuk satu post dan proses.
-    """
     url = (
         f"https://graph.threads.net/v1.0/{media_id}/replies"
         f"?fields=id,text,username,timestamp&limit={MAX_REPLIES_PER_POST}"
@@ -135,6 +127,8 @@ async def sync_replies_for_post(db, client, acc_id: str, post_db_id: str, media_
 
         classification = classify_comment(text)
         category = classification["category"]
+        is_lead = classification.get("is_lead", False)
+
         stats["by_category"][category] = stats["by_category"].get(category, 0) + 1
 
         reply_insert = (
@@ -146,7 +140,7 @@ async def sync_replies_for_post(db, client, acc_id: str, post_db_id: str, media_
                 "threads_reply_id": reply_id,
                 "author_username": author_username,
                 "text": text,
-                "is_lead": category == "lead",
+                "is_lead": is_lead,
                 "classification": category,
                 "is_own": is_own_comment,
                 "replied_at": timestamp,
@@ -165,7 +159,8 @@ async def sync_replies_for_post(db, client, acc_id: str, post_db_id: str, media_
             stats["skipped"] += 1
             continue
 
-        if category == "lead":
+        # Webhook untuk lead (independent dari category)
+        if is_lead:
             await analyze_and_notify_lead(acc_id, author_username, text)
 
         action = CATEGORY_ACTION.get(category, "skip")
@@ -176,6 +171,7 @@ async def sync_replies_for_post(db, client, acc_id: str, post_db_id: str, media_
         draft_text = None
         llm_meta = {
             "category": category,
+            "is_lead": is_lead,
             "matched_signals": classification["matched_signals"],
             "confidence": classification["confidence"],
             "incoming_comment": text,
@@ -250,11 +246,9 @@ async def fetch_and_process_replies():
             if not token:
                 continue
 
-            # Step 1: Sync post dari Meta dulu
             new_posts = await sync_posts_from_meta(db, client, acc_id, token)
             stats["new_posts"] += new_posts
 
-            # Step 2: Ambil post dari DB untuk fetch komen
             settings_res = (
                 db.schema("threads")
                 .from_("auto_reply_settings")
@@ -272,7 +266,7 @@ async def fetch_and_process_replies():
                 .from_("posts")
                 .select("id, threads_media_id")
                 .eq("account_id", acc_id)
-                .order("created_at", desc=True)
+                .order("posted_at", desc=True)
                 .limit(MAX_POSTS_TO_FETCH)
                 .execute()
             )

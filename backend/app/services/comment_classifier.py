@@ -1,16 +1,23 @@
 import re
 
 
-# Urutan check penting: spam dulu, baru lead, baru sisanya
-# Spam sering mengandung kata lead (promo, dm, link) jadi harus dicek duluan
+# Constraint di DB: hanya boleh
+# unclassified, question, praise, spam, toxic, neutral
 
 SPAM_PATTERNS = [
     r"\bslot\b", r"\bjudi\b", r"\btogel\b", r"\bcasino\b",
     r"\bgacor\b", r"\bjackpot\b", r"\bmaxwin\b",
     r"\bpromo\b.*\bklik\b", r"\bklik link\b", r"\bcek bio\b",
     r"\bobat kuat\b", r"\bjamu\b", r"\bviagra\b",
-    r"\bfree money\b", r"\beasy money\b", r"\bkerja dari rumah\b.*\bgaji\b",
+    r"\bfree money\b", r"\beasy money\b",
     r"\binvestasi\b.*\bprofit\b.*\bpersen\b",
+]
+
+TOXIC_PATTERNS = [
+    r"\bbodoh\b", r"\bgoblok\b", r"\bidiot\b", r"\bstupid\b",
+    r"\bbego\b", r"\bbangsat\b", r"\bkampret\b",
+    r"\bbajingan\b", r"\bkontol\b", r"\bmemek\b",
+    r"\bfuck\b", r"\bshit\b", r"\bbitch\b",
 ]
 
 LEAD_PATTERNS = [
@@ -25,7 +32,7 @@ LEAD_PATTERNS = [
 QUESTION_PATTERNS = [
     r"\bapa\b", r"\bapakah\b", r"\bkenapa\b", r"\bmengapa\b",
     r"\bgimana\b", r"\bbagaimana\b", r"\bkok\b", r"\bkapan\b",
-    r"\bdimana\b", r"\bsiapa\b", r"\bberapa\b",
+    r"\bdimana\b", r"\bsiapa\b",
     r"\bboleh tanya\b", r"\bboleh minta\b", r"\bmau nanya\b",
     r"\bshare dong\b", r"\bjelasin\b", r"\bjelaskan\b",
 ]
@@ -33,7 +40,7 @@ QUESTION_PATTERNS = [
 PRAISE_PATTERNS = [
     r"\bkeren\b", r"\bmantap\b", r"\bbagus\b", r"\brelate\b",
     r"\bsetuju\b", r"\bsuka\b", r"\bhebat\b", r"\bluar biasa\b",
-    r"\bterbaik\b", r"\btop\b", r"\bjoss\b", r"\bgokil\b",
+    r"\bterbaik\b", r"\bjoss\b", r"\bgokil\b",
     r"\bsip\b", r"\bnice\b", r"\bgreat\b", r"\bawesome\b",
     r"\blove\b", r"\bmakasih\b", r"\bterima kasih\b",
     r"\bthanks\b", r"\bthank you\b", r"\bappreciate\b",
@@ -48,9 +55,6 @@ GREETING_PATTERNS = [
 ]
 
 
-CATEGORIES = ["spam", "lead", "question", "praise", "greeting", "other"]
-
-
 def _match_any(text: str, patterns: list) -> list:
     matched = []
     for p in patterns:
@@ -61,11 +65,17 @@ def _match_any(text: str, patterns: list) -> list:
 
 def classify_comment(comment: str) -> dict:
     """
-    Klasifikasi komentar ke salah satu kategori.
-    Return: { category, matched_signals, confidence }
+    Return: { category, is_lead, matched_signals, confidence }
+    Category harus salah satu dari:
+    unclassified, question, praise, spam, toxic, neutral
     """
     if not comment or not comment.strip():
-        return {"category": "other", "matched_signals": [], "confidence": "low"}
+        return {
+            "category": "unclassified",
+            "is_lead": False,
+            "matched_signals": [],
+            "confidence": "low",
+        }
 
     text = comment.lower()
 
@@ -74,45 +84,65 @@ def classify_comment(comment: str) -> dict:
     if spam_hits:
         return {
             "category": "spam",
+            "is_lead": False,
             "matched_signals": spam_hits,
             "confidence": "high" if len(spam_hits) >= 2 else "medium",
         }
 
-    # 2. Lead
+    # 2. Toxic
+    toxic_hits = _match_any(text, TOXIC_PATTERNS)
+    if toxic_hits:
+        return {
+            "category": "toxic",
+            "is_lead": False,
+            "matched_signals": toxic_hits,
+            "confidence": "high",
+        }
+
+    # 3. Lead (is_lead flag TRUE, category tetap question)
     lead_hits = _match_any(text, LEAD_PATTERNS)
     if lead_hits:
         return {
-            "category": "lead",
+            "category": "question",
+            "is_lead": True,
             "matched_signals": lead_hits,
             "confidence": "high" if len(lead_hits) >= 2 else "medium",
         }
 
-    # 3. Question
+    # 4. Question biasa
     question_hits = _match_any(text, QUESTION_PATTERNS)
     if question_hits:
         return {
             "category": "question",
+            "is_lead": False,
             "matched_signals": question_hits,
             "confidence": "high" if len(question_hits) >= 2 else "medium",
         }
 
-    # 4. Praise
+    # 5. Praise
     praise_hits = _match_any(text, PRAISE_PATTERNS)
     if praise_hits:
         return {
             "category": "praise",
+            "is_lead": False,
             "matched_signals": praise_hits,
             "confidence": "high" if len(praise_hits) >= 2 else "medium",
         }
 
-    # 5. Greeting
+    # 6. Greeting
     greeting_hits = _match_any(text, GREETING_PATTERNS)
     if greeting_hits:
         return {
-            "category": "greeting",
+            "category": "neutral",
+            "is_lead": False,
             "matched_signals": greeting_hits,
             "confidence": "medium",
         }
 
-    # 6. Fallback
-    return {"category": "other", "matched_signals": [], "confidence": "low"}
+    # 7. Fallback
+    return {
+        "category": "neutral",
+        "is_lead": False,
+        "matched_signals": [],
+        "confidence": "low",
+    }
