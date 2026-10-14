@@ -46,30 +46,33 @@
                 <div
                   v-for="h in 24"
                   :key="h"
-                  class="w-7 h-7 rounded-sm border transition cursor-pointer relative group"
+                  class="heatmap-cell w-7 h-7 rounded-sm border transition cursor-pointer"
                   :style="cellStyle(getLevel(d, h - 1))"
-                  @click="showTooltip(d, h - 1, $event)"
-                >
-                  <div
-                    v-if="activeTooltip && activeTooltip.day === d && activeTooltip.hour === h - 1"
-                    class="absolute z-30 bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-md text-[10px] whitespace-nowrap pointer-events-none theme-accent shadow-lg"
-                  >
-                    <div class="font-bold">{{ wd }}, {{ (h - 1).toString().padStart(2, '0') }}:00</div>
-                    <div v-if="matrix[d][h - 1] > 0">ER {{ matrix[d][h - 1].toFixed(2) }}%</div>
-                    <div v-else class="opacity-70">Belum ada data</div>
-                  </div>
-                </div>
+                  @click="openTooltip(d, h - 1, $event)"
+                ></div>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="tooltip.visible"
+        class="fixed z-[999] px-2.5 py-1.5 rounded-md text-[10px] whitespace-nowrap pointer-events-none theme-accent shadow-lg"
+        :style="{ top: tooltip.y + 'px', left: tooltip.x + 'px', transform: 'translate(-50%, -120%)' }"
+      >
+        <div class="font-bold">{{ tooltip.weekday }}, {{ tooltip.hour }}:00</div>
+        <div v-if="tooltip.er > 0">ER {{ tooltip.er.toFixed(2) }}%</div>
+        <div v-else class="opacity-70">Belum ada data</div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps<{
   matrix: number[][]
@@ -77,7 +80,16 @@ const props = defineProps<{
 
 const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-const activeTooltip = ref<{ day: number; hour: number } | null>(null)
+const tooltip = reactive({
+  visible: false,
+  x: 0,
+  y: 0,
+  weekday: '',
+  hour: 0,
+  er: 0,
+})
+
+let hideTimer: number | null = null
 
 function getLevel(day: number, hour: number): number {
   if (!props.matrix || !props.matrix[day]) return 0
@@ -112,21 +124,32 @@ function cellStyle(level: number) {
   }
 }
 
-function showTooltip(day: number, hour: number, _event: MouseEvent) {
-  if (activeTooltip.value && activeTooltip.value.day === day && activeTooltip.value.hour === hour) {
-    activeTooltip.value = null
-  } else {
-    activeTooltip.value = { day, hour }
-  }
+function openTooltip(day: number, hour: number, event: MouseEvent) {
+  const target = event.currentTarget as HTMLElement
+  const rect = target.getBoundingClientRect()
+  tooltip.x = rect.left + rect.width / 2
+  tooltip.y = rect.top
+  tooltip.weekday = weekdayLabels[day]
+  tooltip.hour = hour
+  tooltip.er = props.matrix[day]?.[hour] || 0
+  tooltip.visible = true
+
+  if (hideTimer) window.clearTimeout(hideTimer)
+  hideTimer = window.setTimeout(() => {
+    tooltip.visible = false
+  }, 2500)
 }
 
 function handleGlobalClick(e: MouseEvent) {
   const target = e.target as HTMLElement
-  if (!target.closest('.w-7.h-7')) {
-    activeTooltip.value = null
+  if (!target.classList.contains('heatmap-cell')) {
+    tooltip.visible = false
   }
 }
 
 onMounted(() => document.addEventListener('click', handleGlobalClick))
-onUnmounted(() => document.removeEventListener('click', handleGlobalClick))
+onUnmounted(() => {
+  document.removeEventListener('click', handleGlobalClick)
+  if (hideTimer) window.clearTimeout(hideTimer)
+})
 </script>
