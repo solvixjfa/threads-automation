@@ -30,7 +30,7 @@ CATEGORY_ACTION = {
 
 MAX_POSTS_TO_FETCH = 30
 MAX_REPLIES_PER_POST = 50
-SYNC_CONCURRENCY = 5
+SYNC_CONCURRENCY = 8
 
 
 def empty_stats() -> dict:
@@ -117,8 +117,8 @@ async def sync_replies_for_post(
     token: str, acc_username: str, is_enabled: bool, reply_mode: str
 ) -> dict:
     """
-    Fetch and process replies untuk satu post.
-    Return stats dict untuk post ini (biar tidak ada race condition).
+    Fetch replies dari Meta untuk satu post.
+    Pakai batch check dan bulk insert untuk minimize round trip ke Supabase.
     """
     stats = empty_stats()
 
@@ -136,50 +136,102 @@ async def sync_replies_for_post(
     except Exception:
         return stats
 
+    if not data:
+        return stats
+
+    meta_ids = [r.get("id") for r in data if r.get("id")]
+    if not meta_ids:
+        return stats
+
+    # Batch check existing replies (1 query instead of N)
+    try:
+        exist_res = (
+            db.schema("threads")
+            .from_("replies")
+            .select("threads_reply_id")
+            .in_("threads_reply_id", meta_ids)
+            .execute()
+        )
+        existing_set = {r["threads_reply_id"] for r in (exist_res.data or [])}
+    except Exception as e:
+        logging.error(f"[Batch Check Error] {str(e)}")
+        return stats
+
+    # Filter hanya reply baru dan siapkan payload bulk insert
+    new_replies_payload = []
+    new_replies_meta = []
+
     for reply in data:
         reply_id = reply.get("id")
+        if not reply_id or reply_id in existing_set:
+            continue
+
         text = reply.get("text", "") or ""
         author_username = reply.get("username", "unknown")
         timestamp = reply.get("timestamp")
 
-        exist_res = (
-            db.schema("threads")
-            .from_("replies")
-            .select("id")
-            .eq("threads_reply_id", reply_id)
-            .execute()
-        )
-        if exist_res.data:
-            continue
-
-        stats["new_replies"] += 1
-        is_own_comment = author_username == acc_username
-
         classification = classify_comment(text)
         category = classification["category"]
         is_lead = classification.get("is_lead", False)
+        is_own_comment = author_username == acc_username
 
+        stats["new_replies"] += 1
         stats["by_category"][category] = stats["by_category"].get(category, 0) + 1
 
-        reply_insert = (
+        new_replies_payload.append({
+            "account_id": acc_id,
+            "post_id": post_db_id,
+            "threads_reply_id": reply_id,
+            "author_username": author_username,
+            "text": text,
+            "is_lead": is_lead,
+            "classification": category,
+            "is_own": is_own_comment,
+            "replied_at": timestamp,
+            "raw": reply,
+            "processed_at": datetime.now(timezone.utc).isoformat(),
+        })
+        new_replies_meta.append({
+            "reply_id": reply_id,
+            "classification": classification,
+            "text": text,
+            "author_username": author_username,
+            "is_own": is_own_comment,
+            "is_lead": is_lead,
+        })
+
+    if not new_replies_payload:
+        return stats
+
+    # Bulk insert (1 query instead of N)
+    try:
+        insert_res = (
             db.schema("threads")
             .from_("replies")
-            .insert({
-                "account_id": acc_id,
-                "post_id": post_db_id,
-                "threads_reply_id": reply_id,
-                "author_username": author_username,
-                "text": text,
-                "is_lead": is_lead,
-                "classification": category,
-                "is_own": is_own_comment,
-                "replied_at": timestamp,
-                "raw": reply,
-                "processed_at": datetime.now(timezone.utc).isoformat(),
-            })
+            .insert(new_replies_payload)
             .execute()
         )
-        reply_db_id = reply_insert.data[0]["id"]
+        inserted_by_meta_id = {
+            row["threads_reply_id"]: row
+            for row in (insert_res.data or [])
+        }
+    except Exception as e:
+        logging.error(f"[Bulk Insert Error] {str(e)}")
+        return stats
+
+    # Proses AI draft per reply baru
+    for meta_item in new_replies_meta:
+        reply_db = inserted_by_meta_id.get(meta_item["reply_id"])
+        if not reply_db:
+            continue
+
+        reply_db_id = reply_db["id"]
+        classification = meta_item["classification"]
+        text = meta_item["text"]
+        author_username = meta_item["author_username"]
+        is_own_comment = meta_item["is_own"]
+        is_lead = meta_item["is_lead"]
+        category = classification["category"]
 
         if is_own_comment:
             stats["skipped"] += 1
