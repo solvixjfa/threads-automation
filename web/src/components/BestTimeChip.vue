@@ -80,21 +80,25 @@ onMounted(async () => {
         )
         
         if (todaySlots.length > 0) {
-          todaySlots.sort((a: any, b: any) => (b.er_pct || 0) - (a.er_pct || 0))
-          const foundHour = todaySlots[0].hour
+          // Filter slot yang masih belum lewat hari ini
+          const nowMs = Date.now()
+          const futureSlots = todaySlots.filter((slot: any) => {
+            const foundHour = slot.hour
+            const parts = foundHour.split(':')
+            if (parts.length < 2) return false
+            const slotTime = new Date()
+            slotTime.setHours(parseInt(parts[0]), parseInt(parts[1]) || 0, 0, 0)
+            return slotTime.getTime() > nowMs
+          })
+
+          const pool = futureSlots.length > 0 ? futureSlots : todaySlots
+          pool.sort((a: any, b: any) => (b.er_pct || 0) - (a.er_pct || 0))
+
+          const foundHour = pool[0].hour
           const parts = foundHour.split(':')
           if (parts.length >= 2) {
             bestTimeToday.value = `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`
-            // Cek apakah jam sudah lewat hari ini
-            const now = new Date()
-            const [hh, mm] = bestTimeToday.value.split(':')
-            const slotTime = new Date()
-            slotTime.setHours(parseInt(hh), parseInt(mm) || 0, 0, 0)
-            if (slotTime.getTime() <= now.getTime()) {
-              dayLabel.value = 'besok'
-            } else {
-              dayLabel.value = 'hari ini'
-            }
+            dayLabel.value = futureSlots.length > 0 ? 'hari ini' : 'besok'
           }
         } else {
           list.sort((a: any, b: any) => (b.er_pct || 0) - (a.er_pct || 0))
