@@ -79,6 +79,19 @@ onMounted(async () => {
           (item.weekday && item.weekday.toLowerCase() === todayName)
         )
         
+        // Fallback ke matrix lengkap kalau top_slots tidak punya data hari ini
+        if (todaySlots.length === 0 && data?.matrix) {
+          const todayIdx = new Date().getDay()
+          const todayRow = data.matrix[todayIdx] || []
+          todaySlots = todayRow
+            .map((er: number, hour: number) => ({
+              weekday: days[todayIdx],
+              hour: `${String(hour).padStart(2, '0')}:00`,
+              er_pct: er,
+            }))
+            .filter((sl: any) => sl.er_pct > 0)
+        }
+
         if (todaySlots.length > 0) {
           // Filter slot yang masih belum lewat hari ini
           const nowMs = Date.now()
