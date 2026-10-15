@@ -1,55 +1,70 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center p-4 relative">
+  <div class="min-h-screen flex items-center justify-center p-4 theme-bg relative">
     <NotifyOverlay />
 
-    <div class="w-full max-w-sm bg-white border border-zinc-200 rounded-2xl p-8 space-y-6 shadow-xl">
+    <div class="w-full max-w-sm card p-8 space-y-6" style="box-shadow: 0 20px 40px -12px rgba(0,0,0,0.15);">
       <div class="text-center space-y-2">
-        <div class="inline-block bg-black text-white px-3 py-1.5 rounded-lg text-xs font-black tracking-widest uppercase mb-2">IXIERA</div>
-        <h1 class="text-2xl font-bold text-zinc-900 tracking-tight">Halo!</h1>
-        <p class="text-xs text-zinc-500">Masuk untuk ngatur otomatisasi Threads lu.</p>
+        <div class="inline-flex w-10 h-10 items-center justify-center rounded-lg text-sm font-black tracking-widest theme-accent mb-2">IX</div>
+        <h1 class="text-2xl font-bold tracking-tight">Halo!</h1>
+        <p class="text-xs theme-text-muted">Masuk untuk ngatur otomatisasi Threads lu.</p>
       </div>
 
       <form @submit.prevent="handleAuth" class="space-y-4">
-        <div class="space-y-1.5">
-          <label class="text-xs font-bold text-zinc-700">Email</label>
-          <input
-            v-model="email"
-            type="email"
-            required
-            placeholder="nama@email.com"
-            class="w-full bg-zinc-50 border border-zinc-300 rounded-lg p-3 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-black transition"
-          />
-        </div>
+        <Input
+          v-model="email"
+          label="Email"
+          type="email"
+          placeholder="nama@email.com"
+        />
 
-        <div class="space-y-1.5">
-          <label class="text-xs font-bold text-zinc-700">Password</label>
-          <input
-            v-model="password"
-            type="password"
-            required
-            placeholder="••••••••"
-            class="w-full bg-zinc-50 border border-zinc-300 rounded-lg p-3 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-black transition"
-          />
-        </div>
+        <Input
+          v-model="password"
+          label="Password"
+          type="password"
+          placeholder="Minimal 6 karakter"
+        />
 
-        <div v-if="errorMsg" class="p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-xs text-center font-medium">
+        <div v-if="errorMsg" class="p-3 rounded-lg text-xs text-center font-medium border" :style="{ background: 'rgba(220,38,38,0.08)', borderColor: 'rgba(220,38,38,0.3)', color: 'var(--danger)' }">
           {{ errorMsg }}
         </div>
 
-        <button
+        <Button
           type="submit"
           :disabled="loading"
-          class="w-full bg-black hover:bg-zinc-800 text-white font-bold text-sm py-3.5 rounded-lg transition shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
+          :loading="loading"
+          class="w-full"
         >
-          <span v-if="loading" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-          <span>{{ loading ? 'Bentar...' : (isSignUp ? 'Daftar' : 'Masuk') }}</span>
-        </button>
+          {{ loading ? 'Bentar...' : (isSignUp ? 'Daftar' : 'Masuk') }}
+        </Button>
       </form>
+
+      <div class="flex items-center gap-3">
+        <div class="flex-1 divider"></div>
+        <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">Atau</span>
+        <div class="flex-1 divider"></div>
+      </div>
+
+      <button
+        type="button"
+        @click="handleGoogleLogin"
+        :disabled="loading || googleLoading"
+        class="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-lg font-bold text-sm transition theme-bg-sec border theme-border hover:theme-bg-hover disabled:opacity-50"
+      >
+        <span v-if="googleLoading" class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+        <svg v-else width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        <span>{{ googleLoading ? 'Menghubungkan...' : 'Lanjut dengan Google' }}</span>
+      </button>
 
       <div class="text-center pt-2">
         <button
+          type="button"
           @click="isSignUp = !isSignUp; errorMsg = ''"
-          class="text-xs text-zinc-500 hover:text-black font-medium underline transition"
+          class="text-xs theme-text-muted hover:theme-text font-medium underline transition"
         >
           {{ isSignUp ? 'Udah punya akun? Masuk aja' : 'Belum punya akun? Daftar dulu' }}
         </button>
@@ -64,6 +79,7 @@ import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
 import NotifyOverlay from '../components/NotifyOverlay.vue'
+import { Input, Button } from '../components/ui'
 
 const router = useRouter()
 const { showToast } = useNotify()
@@ -72,19 +88,30 @@ const email = ref('')
 const password = ref('')
 const isSignUp = ref(false)
 const loading = ref(false)
+const googleLoading = ref(false)
 const errorMsg = ref('')
 
 async function handleAuth() {
   loading.value = true
   errorMsg.value = ''
+
   try {
     if (isSignUp.value) {
-      const { error } = await supabase.auth.signUp({ email: email.value, password: password.value })
+      if (password.value.length < 6) {
+        throw new Error('Password minimal 6 karakter')
+      }
+      const { error } = await supabase.auth.signUp({
+        email: email.value,
+        password: password.value
+      })
       if (error) throw error
       showToast('Akun berhasil dibuat! Silakan masuk.', 'success')
       isSignUp.value = false
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email: email.value, password: password.value })
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.value,
+        password: password.value
+      })
       if (error) throw error
       router.push('/dashboard')
     }
@@ -92,6 +119,25 @@ async function handleAuth() {
     errorMsg.value = err.message || 'Gagal login, cek lagi yak.'
   } finally {
     loading.value = false
+  }
+}
+
+async function handleGoogleLogin() {
+  googleLoading.value = true
+  errorMsg.value = ''
+
+  try {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/dashboard',
+      },
+    })
+    if (error) throw error
+    // Supabase akan redirect ke Google, gak perlu push router manual
+  } catch (err: any) {
+    errorMsg.value = err.message || 'Gagal login dengan Google.'
+    googleLoading.value = false
   }
 }
 </script>
