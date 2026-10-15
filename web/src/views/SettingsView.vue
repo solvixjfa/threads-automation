@@ -166,13 +166,17 @@
         </div>
       </div>
     </div>
+    <WorkerStatusCard />
+
   </div>
+
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
+import WorkerStatusCard from '../components/WorkerStatusCard.vue'
 
 const { showToast, askConfirm } = useNotify()
 
