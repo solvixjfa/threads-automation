@@ -7,7 +7,12 @@ from datetime import datetime, timezone
 from supabase import create_client, Client
 from app.services.leads import analyze_and_notify_lead
 from app.services.comment_classifier import classify_comment
-from app.services.comment_templates import pick_template, has_template
+from app.services.comment_templates import (
+    pick_template,
+    has_template,
+    is_category_enabled,
+    get_custom_templates,
+)
 from app.services.auto_reply import generate_rag_reply
 
 
@@ -115,7 +120,8 @@ async def sync_posts_from_meta(db, client, acc_id: str, token: str) -> int:
 
 async def sync_replies_for_post(
     db, client, acc_id: str, post_db_id: str, media_id: str,
-    token: str, acc_username: str, is_enabled: bool, reply_mode: str
+    token: str, acc_username: str, is_enabled: bool, reply_mode: str,
+    category_rules: dict = None
 ) -> dict:
     """
     Fetch replies dari Meta untuk satu post.
@@ -242,6 +248,11 @@ async def sync_replies_for_post(
             stats["skipped"] += 1
             continue
 
+        # Cek apakah user matikan kategori ini
+        if category_rules and not is_category_enabled(category_rules, category):
+            stats["skipped"] += 1
+            continue
+
         if is_lead:
             await analyze_and_notify_lead(acc_id, author_username, text)
 
@@ -261,11 +272,13 @@ async def sync_replies_for_post(
         }
 
         if action == "template":
-            if not has_template(category):
+            custom_tpls = get_custom_templates(category_rules or {}, category)
+            if not has_template(category, custom_tpls):
                 stats["skipped"] += 1
                 continue
-            draft_text = pick_template(category)
+            draft_text = pick_template(category, custom_tpls)
             llm_meta["mode"] = "template"
+            llm_meta["custom_templates_used"] = len(custom_tpls) > 0
             stats["template"] += 1
 
         elif action == "llm":
@@ -304,13 +317,14 @@ async def sync_replies_for_post(
 async def sync_post_with_semaphore(
     sem: asyncio.Semaphore,
     db, client, acc_id: str, post_db_id: str, media_id: str,
-    token: str, acc_username: str, is_enabled: bool, reply_mode: str
+    token: str, acc_username: str, is_enabled: bool, reply_mode: str,
+    category_rules: dict = None
 ) -> dict:
     async with sem:
         try:
             return await sync_replies_for_post(
                 db, client, acc_id, post_db_id, media_id,
-                token, acc_username, is_enabled, reply_mode
+                token, acc_username, is_enabled, reply_mode, category_rules
             )
         except Exception as e:
             logging.error(f"[Parallel Sync] Post {media_id} error: {str(e)}")
@@ -343,6 +357,7 @@ async def process_account(db, client, acc: dict) -> dict:
     auto_settings = settings_res.data[0] if settings_res.data else {}
     is_enabled = auto_settings.get("enabled", True)
     reply_mode = auto_settings.get("mode", "review")
+    category_rules = auto_settings.get("rules") or {}
 
     from datetime import datetime, timezone, timedelta
     cutoff = (datetime.now(timezone.utc) - timedelta(days=MAX_POST_AGE_DAYS)).isoformat()
@@ -367,7 +382,7 @@ async def process_account(db, client, acc: dict) -> dict:
     tasks = [
         sync_post_with_semaphore(
             sem, db, client, acc_id, p["id"], p["threads_media_id"],
-            token, acc_username, is_enabled, reply_mode
+            token, acc_username, is_enabled, reply_mode, category_rules
         )
         for p in valid_posts
     ]
