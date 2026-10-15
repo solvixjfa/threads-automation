@@ -1,14 +1,11 @@
 <template>
   <div v-if="loading" class="animate-pulse h-8 w-48 rounded-full theme-bg-sec border theme-border"></div>
   
-  <!-- UI CHIP PREMIUM -->
   <div v-else-if="bestTimeToday" class="inline-flex items-center gap-2.5 p-1 pr-3 theme-bg-sec border theme-border rounded-full text-[11px] md:text-xs shadow-sm transition-all hover:border-[var(--accent)]">
-    <!-- Icon Lingkaran Accent -->
     <div class="flex items-center justify-center w-6 h-6 rounded-full" style="background: var(--accent); color: white;">
       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
     </div>
     
-    <!-- Teks Utama -->
     <div class="flex items-center gap-1">
       <span class="theme-text-muted font-medium">Best time <span class="font-bold theme-text">{{ dayLabel }}</span>:</span>
       <span class="font-extrabold" style="color: var(--accent);">{{ bestTimeToday }}</span>
@@ -16,19 +13,17 @@
     
     <div class="h-3 w-px bg-gray-500/30"></div>
     
-    <!-- Tombol Pakai -->
-    <button @click="applyTime" class="font-bold theme-text hover:underline focus:outline-none flex items-center gap-1">
+    <!-- Tambah type="button" agar stabil -->
+    <button type="button" @click="applyTime" class="font-bold theme-text hover:underline focus:outline-none flex items-center gap-1">
       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
       Pakai
     </button>
     
     <div class="h-3 w-px bg-gray-500/30 hidden sm:block"></div>
     
-    <!-- Link Insight (Sembunyi di HP kecil biar tidak menumpuk) -->
     <router-link to="/analytics" class="hover:underline theme-text-muted hidden sm:inline-block">Insight</router-link>
   </div>
 
-  <!-- UI FALLBACK JIKA DATA BENAR-BENAR KOSONG -->
   <div v-else class="inline-flex items-center gap-2 px-3 py-1.5 theme-bg-sec border theme-border rounded-full text-[11px] md:text-xs opacity-80">
     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theme-text-muted"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
     <span class="theme-text-muted">Data insight belum cukup</span>
@@ -40,8 +35,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
+import { useNotify } from '../composables/useNotify'
 
 const emit = defineEmits(['apply'])
+const { showToast } = useNotify() // Import composable Toast
 const loading = ref(true)
 const bestTimeToday = ref<string | null>(null)
 const dayLabel = ref('hari ini')
@@ -77,7 +74,6 @@ onMounted(async () => {
       else if (data?.heatmap) list = data.heatmap
       
       if (list.length > 0) {
-        // Filter tahan banting (Case-Insensitive)
         let todaySlots = list.filter((item: any) => 
           (item.day && item.day.toLowerCase() === todayName) || 
           (item.weekday && item.weekday.toLowerCase() === todayName)
@@ -92,7 +88,6 @@ onMounted(async () => {
             dayLabel.value = 'hari ini'
           }
         } else {
-          // Cari slot terbaik global (contoh: lompat ke hari Jumat)
           list.sort((a: any, b: any) => (b.er_pct || 0) - (a.er_pct || 0))
           const globalBest = list[0]
           const targetDayRaw = globalBest.day || globalBest.weekday
@@ -102,7 +97,7 @@ onMounted(async () => {
             const targetIdx = days.indexOf(targetDay)
             
             let diff = targetIdx - todayIdx
-            if (diff <= 0) diff += 7 // Maju ke hari tersebut di minggu depan
+            if (diff <= 0) diff += 7 
             fallbackDayOffset.value = diff
             
             const dayMap: Record<string, string> = { Sunday: 'Minggu', Monday: 'Senin', Tuesday: 'Selasa', Wednesday: 'Rabu', Thursday: 'Kamis', Friday: 'Jumat', Saturday: 'Sabtu' }
@@ -144,5 +139,6 @@ function applyTime() {
   const localISOTime = new Date(d.getTime() - tzOffset).toISOString().slice(0, 16)
   
   emit('apply', localISOTime)
+  showToast('Waktu terbaik berhasil diterapkan!', 'success') // <--- INI FEEDBACKNYA
 }
 </script>
