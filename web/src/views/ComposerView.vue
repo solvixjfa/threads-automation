@@ -224,7 +224,6 @@ function handleTextChange() {
   threadParts.value = splitTextIntoParts(postText.value)
 }
 
-// AUTO-SAVE: Simpan draft ke localStorage secara reaktif
 watch(postText, (newVal) => {
   handleTextChange()
   localStorage.setItem('ixiera_draft_text', newVal)
@@ -317,11 +316,9 @@ async function checkScore() {
   }
 }
 
-// FUNGSI RESTORED: Logika penyimpanan utasan ke Supabase
 async function schedulePost() {
   if (!postText.value || !scheduledDate.value) return
   
-  // Validasi Waktu Penjadwalan
   const scheduleTime = new Date(scheduledDate.value).getTime()
   if (scheduleTime <= Date.now()) {
     showToast('Waktu penjadwalan harus di masa depan.', 'error')
@@ -343,7 +340,6 @@ async function schedulePost() {
     if (!account) throw new Error('Akun Threads belum tersambung')
 
     let parentId = null
-    // Insert array utasan secara berurutan sesuai skema threads.scheduled_posts
     for (let i = 0; i < threadParts.value.length; i++) {
       const { data: insertedPart, error: insertError } = await supabase
         .schema('threads')
@@ -354,20 +350,20 @@ async function schedulePost() {
           scheduled_for: new Date(scheduledDate.value).toISOString(),
           status: 'scheduled',
           parent_id: parentId,
-          sequence_number: i + 1
+          sequence_number: i + 1,
+          idempotency_key: crypto.randomUUID() // Fix: Explicitly pass UUID from frontend
         })
         .select()
         .single()
 
       if (insertError) throw insertError
       if (i === 0) {
-        parentId = insertedPart.id // Assign head thread sebagai parent_id
+        parentId = insertedPart.id 
       }
     }
 
     showToast(`Berhasil menjadwalkan ${threadParts.value.length} utasan!`, 'success')
     
-    // Clear draft setelah sukses
     postText.value = ''
     localStorage.removeItem('ixiera_draft_text')
     
@@ -385,20 +381,17 @@ async function schedulePost() {
 }
 
 onMounted(() => {
-  // 1. Prioritas Repurpose Draft (kalau dari halaman lain)
   const savedRepurpose = localStorage.getItem('draft_repurpose')
   if (savedRepurpose) {
     postText.value = savedRepurpose
     localStorage.removeItem('draft_repurpose')
   } else {
-    // 2. Restore Auto-Save Draft
     const localDraftText = localStorage.getItem('ixiera_draft_text')
     if (localDraftText) {
       postText.value = localDraftText
     }
   }
 
-  // Restore Waktu Jadwal
   const localDraftTime = localStorage.getItem('ixiera_draft_time')
   if (localDraftTime) {
     scheduledDate.value = localDraftTime
