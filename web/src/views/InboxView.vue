@@ -3,8 +3,8 @@
 
     <div class="flex flex-wrap justify-between items-center gap-4">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight">Auto Reply Inbox</h1>
-        <p class="text-sm theme-text-muted mt-1">Kelola komentar masuk dengan draf AI atau balasan template.</p>
+        <h1 class="text-2xl font-bold tracking-tight">Komentar</h1>
+        <p class="text-sm theme-text-muted mt-1">Balas komentar di postingan kamu dengan draf AI atau template.</p>
       </div>
       <div class="flex items-center gap-3">
         <button @click="syncRepliesManual" :disabled="isSyncing" class="btn btn-primary btn-sm">
@@ -35,7 +35,7 @@
           class="pb-3 border-b-2 transition -mb-px whitespace-nowrap"
           :class="tabClass('inbox')"
         >
-          Inbox ({{ inboxCount }})
+          Semua ({{ inboxCount }})
         </button>
         <button
           @click="activeTab = 'history'"
