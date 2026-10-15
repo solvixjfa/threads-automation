@@ -65,14 +65,14 @@
               {{ idx + 1 }}
             </div>
             <div>
-              <div class="text-sm font-bold">{{ slot.weekday }}, {{ String(slot.hour).padStart(2, '0') }}:00</div>
+              <div class="text-sm font-bold">{{ slot.weekday }}, {{ slot.hour }}</div>
               <div class="text-[11px] theme-text-muted">
                 Sample: {{ slot.sample_size }} post
               </div>
             </div>
           </div>
           <div class="text-right">
-            <div class="text-lg font-black">{{ slot.avg_er.toFixed(2) }}%</div>
+            <div class="text-lg font-black">{{ (slot.er_pct || 0).toFixed(2) }}%</div>
             <div class="text-[10px] theme-text-muted uppercase font-bold">Avg ER</div>
           </div>
         </div>

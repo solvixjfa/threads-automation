@@ -78,7 +78,7 @@ const props = defineProps<{
   matrix: number[][]
 }>()
 
-const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 const tooltip = reactive({
   visible: false,
