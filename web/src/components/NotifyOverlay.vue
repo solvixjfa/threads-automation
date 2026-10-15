@@ -1,49 +1,34 @@
 <template>
   <Teleport to="body">
-    <!-- Toast Notification -->
     <Transition name="fade">
-      <div 
-        v-if="toast.show" 
+      <div
+        v-if="toast.show"
         class="fixed bottom-6 right-6 z-[999] px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-3 border text-xs font-bold transition-all"
-        :class="{
-          'bg-rose-900 text-rose-100 border-rose-700': toast.type === 'error',
-          'bg-emerald-900 text-emerald-100 border-emerald-700': toast.type === 'success',
-          'bg-slate-900 text-slate-100 border-slate-700': toast.type === 'info'
-        }"
+        :style="toastStyle"
       >
-        <span 
-          class="w-2.5 h-2.5 rounded-full shrink-0" 
-          :class="{
-            'bg-rose-400 animate-pulse': toast.type === 'error',
-            'bg-emerald-400': toast.type === 'success',
-            'bg-indigo-400': toast.type === 'info'
-          }"
+        <span
+          class="w-2.5 h-2.5 rounded-full shrink-0"
+          :style="{ background: toastDotColor }"
+          :class="{ 'animate-pulse': toast.type === 'error' }"
         ></span>
         <span>{{ toast.message }}</span>
       </div>
     </Transition>
 
-    <!-- Confirm Modal Overlay -->
     <Transition name="fade">
-      <div v-if="confirmModal.show" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[999] flex items-center justify-center p-4">
-        <div class="bg-white border border-slate-200 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+      <div v-if="confirmModal.show" class="fixed inset-0 backdrop-blur-sm z-[999] flex items-center justify-center p-4" style="background: rgba(0,0,0,0.6);">
+        <div class="card max-w-sm w-full p-6 space-y-4" style="box-shadow: 0 20px 40px -12px rgba(0,0,0,0.2);">
           <div class="space-y-1">
-            <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide">{{ confirmModal.title }}</h3>
-            <p class="text-xs text-slate-600 leading-relaxed">{{ confirmModal.message }}</p>
+            <h3 class="text-sm font-bold uppercase tracking-wide">{{ confirmModal.title }}</h3>
+            <p class="text-xs theme-text-sec leading-relaxed">{{ confirmModal.message }}</p>
           </div>
           <div class="flex justify-end gap-3 pt-2">
-            <button 
-              @click="closeConfirm" 
-              class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition"
-            >
+            <Button variant="secondary" @click="closeConfirm">
               {{ confirmModal.cancelText }}
-            </button>
-            <button 
-              @click="handleConfirm" 
-              class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition shadow-sm"
-            >
+            </Button>
+            <Button variant="danger" @click="handleConfirm">
               {{ confirmModal.confirmText }}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -52,8 +37,39 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useNotify } from '../composables/useNotify'
+import { Button } from './ui'
+
 const { toast, confirmModal, closeConfirm, handleConfirm } = useNotify()
+
+const toastStyle = computed(() => {
+  if (toast.value.type === 'error') {
+    return {
+      background: 'color-mix(in srgb, var(--danger) 15%, var(--bg-elevated))',
+      borderColor: 'color-mix(in srgb, var(--danger) 40%, transparent)',
+      color: 'var(--text-primary)',
+    }
+  }
+  if (toast.value.type === 'success') {
+    return {
+      background: 'color-mix(in srgb, var(--success) 15%, var(--bg-elevated))',
+      borderColor: 'color-mix(in srgb, var(--success) 40%, transparent)',
+      color: 'var(--text-primary)',
+    }
+  }
+  return {
+    background: 'var(--bg-elevated)',
+    borderColor: 'var(--border-strong)',
+    color: 'var(--text-primary)',
+  }
+})
+
+const toastDotColor = computed(() => {
+  if (toast.value.type === 'error') return 'var(--danger)'
+  if (toast.value.type === 'success') return 'var(--success)'
+  return 'var(--accent)'
+})
 </script>
 
 <style scoped>
