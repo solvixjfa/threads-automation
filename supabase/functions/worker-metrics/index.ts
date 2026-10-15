@@ -39,13 +39,16 @@ Deno.serve(async (req) => {
     }
 
     if (!accounts || accounts.length === 0) {
-      return new Response(JSON.stringify({ message: "Tidak ada akun connected." }), { status: 200, headers: corsHeaders });
+      return new Response(JSON.stringify({ message: "Tidak ada akun connected." }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     let syncedPostsCount = 0;
-    const todayStr = new Date().toISOString().split('T')[0];
+    let skippedPostsCount = 0;
+    const todayStr = new Date().toISOString().split("T")[0];
 
-    // Filter Smart Polling: Hanya ambil postingan 30 hari terakhir
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -53,16 +56,17 @@ Deno.serve(async (req) => {
       const accessToken = acc.settings?.access_token;
       if (!accessToken) continue;
 
-      const { data: publishedPosts } = await supabase
+      // Ambil semua post dari tabel posts (30 hari terakhir)
+      // Sumber ini diisi oleh worker-replies yang sync dari /me/threads
+      const { data: allPosts } = await supabase
         .schema("threads")
-        .from("scheduled_posts")
-        .select("published_media_id, text, scheduled_for, created_at")
+        .from("posts")
+        .select("id, threads_media_id, posted_at, created_at")
         .eq("account_id", acc.id)
-        .eq("status", "published")
-        .gte("created_at", thirtyDaysAgo.toISOString())
-        .not("published_media_id", "is", null);
+        .gte("posted_at", thirtyDaysAgo.toISOString())
+        .not("threads_media_id", "is", null);
 
-      if (!publishedPosts || publishedPosts.length === 0) continue;
+      if (!allPosts || allPosts.length === 0) continue;
 
       let accDailyViews = 0;
       let accDailyLikes = 0;
@@ -70,33 +74,9 @@ Deno.serve(async (req) => {
       let accDailyReposts = 0;
       let accDailyQuotes = 0;
 
-      for (const sp of publishedPosts) {
-        const mediaId = sp.published_media_id;
-
-        let { data: postRecord } = await supabase
-          .schema("threads")
-          .from("posts")
-          .select("id")
-          .eq("threads_media_id", mediaId)
-          .maybeSingle();
-
-        if (!postRecord) {
-          const postedAtVal = sp.scheduled_for || sp.created_at || new Date().toISOString();
-          const { data: insertedPost } = await supabase
-            .schema("threads")
-            .from("posts")
-            .insert({
-              account_id: acc.id,
-              threads_media_id: mediaId,
-              posted_at: postedAtVal
-            })
-            .select("id")
-            .single();
-
-          postRecord = insertedPost;
-        }
-
-        if (!postRecord) continue;
+      for (const post of allPosts) {
+        const mediaId = post.threads_media_id;
+        if (!mediaId) continue;
 
         try {
           const insightUrl = `https://graph.threads.net/v1.0/${mediaId}/insights?metric=views,likes,replies,reposts,quotes&access_token=${accessToken}`;
@@ -117,37 +97,39 @@ Deno.serve(async (req) => {
             accDailyReposts += metricsObj.reposts || 0;
             accDailyQuotes += metricsObj.quotes || 0;
 
-            // FIX: Hapus record "latest" yang duplikat lama biar gak ngebug di get-analytics
+            // Hapus snapshot latest lama, insert yang baru
             await supabase
               .schema("threads")
               .from("post_metrics")
               .delete()
-              .eq("post_id", postRecord.id)
+              .eq("post_id", post.id)
               .eq("snapshot_label", "latest");
 
-            // Lalu masukkan data yang bener-bener fresh
             await supabase
               .schema("threads")
               .from("post_metrics")
               .insert({
-                post_id: postRecord.id,
+                post_id: post.id,
                 snapshot_label: "latest",
                 views: metricsObj.views || 0,
                 likes: metricsObj.likes || 0,
                 replies: metricsObj.replies || 0,
                 reposts: metricsObj.reposts || 0,
                 quotes: metricsObj.quotes || 0,
-                captured_at: new Date().toISOString()
+                captured_at: new Date().toISOString(),
               });
 
             syncedPostsCount++;
+          } else {
+            // Meta return error atau data kosong
+            skippedPostsCount++;
           }
         } catch (apiErr: any) {
           console.error(`[worker-metrics] Error API for ${mediaId}:`, apiErr.message);
+          skippedPostsCount++;
         }
       }
 
-      // Upsert akumulasi harian ke account_insights_daily
       await supabase
         .schema("threads")
         .from("account_insights_daily")
@@ -158,17 +140,25 @@ Deno.serve(async (req) => {
           likes: accDailyLikes,
           replies: accDailyReplies,
           reposts: accDailyReposts,
-          quotes: accDailyQuotes
+          quotes: accDailyQuotes,
         }, { onConflict: "account_id,date" });
     }
 
-    console.log(`[worker-metrics] Finished. Synced ${syncedPostsCount} posts & updated daily insights.`);
+    console.log(`[worker-metrics] Finished. Synced ${syncedPostsCount} posts, skipped ${skippedPostsCount}.`);
 
     return new Response(
-      JSON.stringify({ success: true, message: `Berhasil sinkronisasi ${syncedPostsCount} metrik & daily insights.` }),
+      JSON.stringify({
+        success: true,
+        message: `Synced ${syncedPostsCount} metrics, skipped ${skippedPostsCount}.`,
+        synced: syncedPostsCount,
+        skipped: skippedPostsCount,
+      }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
