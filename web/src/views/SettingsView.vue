@@ -166,6 +166,8 @@
         </div>
       </div>
     </div>
+    <TemplateSettingsCard />
+
     <WorkerStatusCard />
 
   </div>
@@ -177,6 +179,7 @@ import { ref, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
 import WorkerStatusCard from '../components/WorkerStatusCard.vue'
+import TemplateSettingsCard from '../components/TemplateSettingsCard.vue'
 
 const { showToast, askConfirm } = useNotify()
 
