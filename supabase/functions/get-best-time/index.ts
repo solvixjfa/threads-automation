@@ -5,8 +5,8 @@ import { corsHeaders } from "../_shared/cors.ts";
 const WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 function jsDayToIndex(jsDay: number): number {
-  // JS: 0=Sunday, 1=Monday, ..., 6=Saturday
-  // Kita mau: 0=Monday, ..., 6=Sunday
+  // JS: 0=Sunday, 1=Sunday, ..., 6=Saturday
+  // Kita mau: 0=Sunday, ..., 6=Sunday
   return jsDay === 0 ? 6 : jsDay - 1;
 }
 
