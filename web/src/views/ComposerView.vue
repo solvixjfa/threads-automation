@@ -1,6 +1,5 @@
 <template>
   <div class="space-y-8 relative">
-    <NotifyOverlay />
 
     <div>
       <h1 class="text-2xl font-bold tracking-tight">Composer</h1>
@@ -174,7 +173,6 @@
 import { ref, watch, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
-import NotifyOverlay from '../components/NotifyOverlay.vue'
 import BestTimeChip from '../components/BestTimeChip.vue'
 import { Card, Button, Input, Textarea, Badge } from '../components/ui'
 

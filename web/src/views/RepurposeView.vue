@@ -1,6 +1,5 @@
 <template>
   <div class="space-y-8 relative">
-    <NotifyOverlay />
 
     <div>
       <h1 class="text-2xl font-bold tracking-tight">Repurpose</h1>
@@ -68,7 +67,6 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
-import NotifyOverlay from '../components/NotifyOverlay.vue'
 import { Card, Button, Textarea, Badge } from '../components/ui'
 
 const router = useRouter()

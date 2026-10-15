@@ -35,6 +35,7 @@
       </main>
     </div>
   </div>
+  <NotifyOverlay />
 </template>
 
 <script setup lang="ts">
@@ -42,6 +43,7 @@ import { ref, onMounted } from 'vue'
 import { RouterView, useRouter } from 'vue-router'
 import { supabase } from './lib/supabase'
 import AppSidebar from './components/AppSidebar.vue'
+import NotifyOverlay from './components/NotifyOverlay.vue'
 import { useTheme } from './composables/useTheme'
 
 const router = useRouter()

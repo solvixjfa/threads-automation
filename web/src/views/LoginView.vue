@@ -1,6 +1,5 @@
 <template>
   <div class="min-h-screen flex items-center justify-center p-4 theme-bg relative">
-    <NotifyOverlay />
 
     <div class="w-full max-w-sm card p-8 space-y-6" style="box-shadow: 0 20px 40px -12px rgba(0,0,0,0.15);">
       <div class="text-center space-y-2">
@@ -78,7 +77,6 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
-import NotifyOverlay from '../components/NotifyOverlay.vue'
 import { Input, Button } from '../components/ui'
 
 const router = useRouter()

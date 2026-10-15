@@ -1,6 +1,5 @@
 <template>
   <div class="space-y-8 max-w-5xl relative">
-    <NotifyOverlay />
 
     <div>
       <h1 class="text-2xl font-bold tracking-tight">Settings</h1>
@@ -174,7 +173,6 @@
 import { ref, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
-import NotifyOverlay from '../components/NotifyOverlay.vue'
 
 const { showToast, askConfirm } = useNotify()
 

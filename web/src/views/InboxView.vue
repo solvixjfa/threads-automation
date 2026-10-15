@@ -1,6 +1,5 @@
 <template>
   <div class="space-y-8 relative">
-    <NotifyOverlay />
 
     <div class="flex flex-wrap justify-between items-center gap-4">
       <div>
@@ -160,7 +159,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
-import NotifyOverlay from '../components/NotifyOverlay.vue'
 import { Badge } from '../components/ui'
 
 const { showToast, askConfirm } = useNotify()
