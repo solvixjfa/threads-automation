@@ -2,12 +2,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 
-const WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const WEEKDAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 function jsDayToIndex(jsDay: number): number {
-  // JS: 0=Sunday, 1=Sunday, ..., 6=Saturday
-  // Kita mau: 0=Sunday, ..., 6=Sunday
-  return jsDay === 0 ? 6 : jsDay - 1;
+  return jsDay === 0 ? 0 : jsDay;
 }
 
 serve(async (req) => {
@@ -63,11 +61,12 @@ serve(async (req) => {
       .eq("account_id", account.id)
       .eq("status", "published");
 
+    // FIX 1: Ambil juga 'posted_at' dan 'created_at' untuk post organik
     const { data: postsWithMetrics } = await supabase
       .schema("threads")
       .from("posts")
       .select(`
-        id, threads_media_id,
+        id, threads_media_id, posted_at, created_at,
         post_metrics (views, likes, replies, reposts, snapshot_label)
       `)
       .eq("account_id", account.id);
@@ -82,16 +81,19 @@ serve(async (req) => {
     const dataPoints: { day: number; hour: number; er: number }[] = [];
 
     (postsWithMetrics || []).forEach((p: any) => {
-      const sp: any = scheduledMap.get(p.threads_media_id);
-      if (!sp || !sp.scheduled_for) return;
-
       const metricsArr = p.post_metrics || [];
       const latest = metricsArr.find((m: any) => m.snapshot_label === "latest") || metricsArr[0];
       if (!latest || !latest.views || latest.views <= 0) return;
 
       const engagement = ((latest.likes || 0) + (latest.replies || 0) + (latest.reposts || 0)) / latest.views * 100;
 
-      const d = new Date(sp.scheduled_for);
+      const sp: any = scheduledMap.get(p.threads_media_id);
+      
+      // FIX 2: Jangan skip post organik. Gunakan waktu Meta (posted_at) sebagai prioritas utama
+      const timestampToUse = (sp && sp.scheduled_for) ? sp.scheduled_for : (p.posted_at || p.created_at);
+      if (!timestampToUse) return;
+
+      const d = new Date(timestampToUse);
       const dayIndex = jsDayToIndex(d.getDay());
       const hour = d.getHours();
 
@@ -130,11 +132,12 @@ serve(async (req) => {
     }
     slots.sort((a, b) => b.avg_er - a.avg_er);
 
+    // FIX 3: Sesuaikan key dan format dengan yang diharapkan UI Vue (BestTimeChip)
     const top_slots = slots.slice(0, 5).map(s => ({
       weekday: WEEKDAY_NAMES[s.day],
       weekday_index: s.day,
-      hour: s.hour,
-      avg_er: s.avg_er,
+      hour: `${s.hour.toString().padStart(2, '0')}:00`, // Format jam ke "HH:00"
+      er_pct: s.avg_er, // Gunakan er_pct
       sample_size: s.sample_size,
     }));
 
@@ -147,7 +150,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         matrix,
-        top_slots,
+        top_slots, // Termasuk perbaikan format
         total_posts: totalPosts,
         confidence,
       }),
