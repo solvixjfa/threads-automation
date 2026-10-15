@@ -1,7 +1,10 @@
 <template>
   <div class="space-y-3">
     <div class="flex items-center justify-between">
-      <div class="text-xs theme-text-muted">Jam (24h)</div>
+      <div class="text-xs theme-text-muted">
+        <span class="font-bold">Baris = Hari, Kolom = Jam</span>
+        <span class="ml-2">(jam dalam WIB)</span>
+      </div>
       <div class="flex items-center gap-2 text-[10px] theme-text-muted">
         <span>Rendah</span>
         <span class="flex gap-0.5">
@@ -15,7 +18,7 @@
       <div class="inline-block min-w-full">
         <div class="flex">
           <div class="flex flex-col gap-1 pr-2 shrink-0">
-            <div class="h-6"></div>
+            <div class="h-6 flex items-center text-[9px] font-bold theme-text-muted" style="width: 36px;">Hari</div>
             <div
               v-for="(wd, i) in weekdayLabels"
               :key="i"
@@ -63,7 +66,7 @@
         class="fixed z-[999] px-2.5 py-1.5 rounded-md text-[10px] whitespace-nowrap pointer-events-none theme-accent shadow-lg"
         :style="{ top: tooltip.y + 'px', left: tooltip.x + 'px', transform: 'translate(-50%, -120%)' }"
       >
-        <div class="font-bold">{{ tooltip.weekday }}, {{ tooltip.hour }}:00</div>
+        <div class="font-bold">{{ tooltip.weekday }}, jam {{ String(tooltip.hour).padStart(2, '0') }}:00 WIB</div>
         <div v-if="tooltip.er > 0">ER {{ tooltip.er.toFixed(2) }}%</div>
         <div v-else class="opacity-70">Belum ada data</div>
       </div>
@@ -78,7 +81,7 @@ const props = defineProps<{
   matrix: number[][]
 }>()
 
-const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const weekdayLabels = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
 
 const tooltip = reactive({
   visible: false,
