@@ -128,6 +128,9 @@
         </Button>
 
         <div class="flex-1 flex justify-end items-center gap-3 flex-wrap">
+          <!-- BEST TIME CHIP DI SINI -->
+          <BestTimeChip @apply="(val) => scheduledDate = val" />
+          
           <input
             v-model="scheduledDate"
             type="datetime-local"
@@ -172,6 +175,7 @@ import { ref, watch, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
 import NotifyOverlay from '../components/NotifyOverlay.vue'
+import BestTimeChip from '../components/BestTimeChip.vue'
 import { Card, Button, Input, Textarea, Badge } from '../components/ui'
 
 const { showToast, askConfirm } = useNotify()
@@ -351,7 +355,7 @@ async function schedulePost() {
           status: 'scheduled',
           parent_id: parentId,
           sequence_number: i + 1,
-          idempotency_key: crypto.randomUUID() // Fix: Explicitly pass UUID from frontend
+          idempotency_key: crypto.randomUUID()
         })
         .select()
         .single()
