@@ -79,17 +79,24 @@ onMounted(async () => {
           (item.weekday && item.weekday.toLowerCase() === todayName)
         )
         
-        // Fallback ke matrix lengkap kalau top_slots tidak punya data hari ini
-        if (todaySlots.length === 0 && data?.matrix) {
+        // Merge dengan matrix lengkap untuk hari ini (matrix punya semua jam)
+        if (data?.matrix) {
           const todayIdx = new Date().getDay()
           const todayRow = data.matrix[todayIdx] || []
-          todaySlots = todayRow
+          const matrixSlots = todayRow
             .map((er: number, hour: number) => ({
               weekday: days[todayIdx],
               hour: `${String(hour).padStart(2, '0')}:00`,
               er_pct: er,
             }))
             .filter((sl: any) => sl.er_pct > 0)
+          const seen = new Set(todaySlots.map((s: any) => s.hour))
+          for (const ms of matrixSlots) {
+            if (!seen.has(ms.hour)) {
+              todaySlots.push(ms)
+              seen.add(ms.hour)
+            }
+          }
         }
 
         if (todaySlots.length > 0) {
