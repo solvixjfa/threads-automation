@@ -2,7 +2,7 @@
   <div v-if="loading" class="animate-pulse h-8 w-48 rounded-full theme-bg-sec border theme-border"></div>
   
   <div v-else-if="bestTimeToday" class="inline-flex items-center gap-2.5 p-1 pr-3 theme-bg-sec border theme-border rounded-full text-[11px] md:text-xs shadow-sm transition-all hover:border-[var(--accent)]">
-    <div class="flex items-center justify-center w-6 h-6 rounded-full" style="background: var(--accent); color: white;">
+    <div class="flex items-center justify-center w-6 h-6 rounded-full" style="background: var(--accent); color: var(--accent-text);">
       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
     </div>
     
@@ -85,7 +85,16 @@ onMounted(async () => {
           const parts = foundHour.split(':')
           if (parts.length >= 2) {
             bestTimeToday.value = `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`
-            dayLabel.value = 'hari ini'
+            // Cek apakah jam sudah lewat hari ini
+            const now = new Date()
+            const [hh, mm] = bestTimeToday.value.split(':')
+            const slotTime = new Date()
+            slotTime.setHours(parseInt(hh), parseInt(mm) || 0, 0, 0)
+            if (slotTime.getTime() <= now.getTime()) {
+              dayLabel.value = 'besok'
+            } else {
+              dayLabel.value = 'hari ini'
+            }
           }
         } else {
           list.sort((a: any, b: any) => (b.er_pct || 0) - (a.er_pct || 0))
