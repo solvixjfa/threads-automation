@@ -4,10 +4,6 @@ import { corsHeaders } from "../_shared/cors.ts";
 
 const WEEKDAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-function jsDayToIndex(jsDay: number): number {
-  return jsDay === 0 ? 0 : jsDay;
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -32,7 +28,10 @@ serve(async (req) => {
 
     const { data: { user } } = await userClient.auth.getUser();
     if (!user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
@@ -45,7 +44,10 @@ serve(async (req) => {
       .maybeSingle();
 
     if (!account) {
-      return new Response(JSON.stringify({ error: "Threads account not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Threads account not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const { data: publishedScheduled } = await supabase
@@ -55,12 +57,16 @@ serve(async (req) => {
       .eq("account_id", account.id)
       .eq("status", "published");
 
-    // OPTIMASI KRITIS: Jangan tarik data dari post_metrics. Langsung tarik count dari tabel posts!
-    // Ini mengubah waktu eksekusi dari ~60ms (rawan drop) menjadi < 5ms.
     const { data: posts } = await supabase
       .schema("threads")
       .from("posts")
-      .select("id, threads_media_id, posted_at, created_at, views, like_count, responses_count, reposts_count")
+      .select(`
+        id,
+        threads_media_id,
+        posted_at,
+        created_at,
+        post_metrics (views, likes, replies, reposts, snapshot_label)
+      `)
       .eq("account_id", account.id);
 
     const scheduledMap = new Map();
@@ -73,17 +79,18 @@ serve(async (req) => {
     const dataPoints: { day: number; hour: number; er: number }[] = [];
 
     (posts || []).forEach((p: any) => {
-      if (!p.views || p.views <= 0) return;
+      const metricsArr = p.post_metrics || [];
+      const latest = metricsArr.find((m: any) => m.snapshot_label === "latest") || metricsArr[0];
+      if (!latest || !latest.views || latest.views <= 0) return;
 
-      // Hitung ER dari level post langsung
-      const engagement = ((p.like_count || 0) + (p.responses_count || 0) + (p.reposts_count || 0)) / p.views * 100;
+      const engagement = ((latest.likes || 0) + (latest.replies || 0) + (latest.reposts || 0)) / latest.views * 100;
 
       const sp: any = scheduledMap.get(p.threads_media_id);
       const timestampToUse = (sp && sp.scheduled_for) ? sp.scheduled_for : (p.posted_at || p.created_at);
       if (!timestampToUse) return;
 
       const d = new Date(timestampToUse);
-      const dayIndex = jsDayToIndex(d.getDay());
+      const dayIndex = d.getDay();
       const hour = d.getHours();
 
       dataPoints.push({ day: dayIndex, hour, er: engagement });
@@ -124,7 +131,7 @@ serve(async (req) => {
     const top_slots = slots.slice(0, 5).map(s => ({
       weekday: WEEKDAY_NAMES[s.day],
       weekday_index: s.day,
-      hour: `${s.hour.toString().padStart(2, '0')}:00`,
+      hour: `${s.hour.toString().padStart(2, "0")}:00`,
       er_pct: s.avg_er,
       sample_size: s.sample_size,
     }));
@@ -139,6 +146,9 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
