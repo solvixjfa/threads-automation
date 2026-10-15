@@ -89,9 +89,12 @@ serve(async (req) => {
       const timestampToUse = (sp && sp.scheduled_for) ? sp.scheduled_for : (p.posted_at || p.created_at);
       if (!timestampToUse) return;
 
+      // Convert ke WIB (UTC+7) supaya hari & jam sesuai timezone user
       const d = new Date(timestampToUse);
-      const dayIndex = d.getDay();
-      const hour = d.getHours();
+      const wibMs = d.getTime() + 7 * 60 * 60 * 1000;
+      const wib = new Date(wibMs);
+      const dayIndex = wib.getUTCDay();
+      const hour = wib.getUTCHours();
 
       dataPoints.push({ day: dayIndex, hour, er: engagement });
     });
