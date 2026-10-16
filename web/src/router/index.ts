@@ -2,7 +2,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { supabase } from '../lib/supabase'
 
 import DashboardView from '../views/DashboardView.vue'
-import SettingsView from '../views/SettingsView.vue'
+import SettingsLayout from '../views/settings/SettingsLayout.vue'
+import AccountView from '../views/settings/AccountView.vue'
+import TemplateView from '../views/settings/TemplateView.vue'
+import KnowledgeView from '../views/settings/KnowledgeView.vue'
+import WorkerView from '../views/settings/WorkerView.vue'
 import LoginView from '../views/LoginView.vue'
 import ComposerView from '../views/ComposerView.vue'
 import RepurposeView from '../views/RepurposeView.vue'
@@ -52,7 +56,18 @@ const router = createRouter({
       ],
     },
 
-    { path: '/settings', name: 'settings', component: SettingsView, meta: { requiresAuth: true } },
+    {
+      path: '/settings',
+      component: SettingsLayout,
+      meta: { requiresAuth: true },
+      children: [
+        { path: '', redirect: '/settings/account' },
+        { path: 'account', name: 'settings-account', component: AccountView },
+        { path: 'templates', name: 'settings-templates', component: TemplateView },
+        { path: 'knowledge', name: 'settings-knowledge', component: KnowledgeView },
+        { path: 'workers', name: 'settings-workers', component: WorkerView },
+      ],
+    },
 
     // Legacy redirects
     { path: '/composer', redirect: '/content/create' },
