@@ -23,6 +23,12 @@
       </div>
     </template>
 
+    <div v-if="loading" class="space-y-3">
+      <div class="h-10 skeleton"></div>
+      <div class="h-20 skeleton"></div>
+    </div>
+
+    <template v-else>
     <div v-if="!autoReply.enabled" class="p-4 rounded-lg theme-bg-sec border theme-border text-xs theme-text-muted">
       Auto reply is disabled. Enable the toggle above to start generating replies.
     </div>
@@ -54,6 +60,8 @@
       </div>
     </div>
 
+    </template>
+
     <template #footer>
       <div class="flex justify-end">
         <Button @click="save" :disabled="saving || !accountId" :loading="saving">
@@ -71,6 +79,7 @@ import { useNotify } from '../../composables/useNotify'
 import { Card, Button } from '../../components/ui'
 
 const { showToast } = useNotify()
+const loading = ref(true)
 const accountId = ref<string | null>(null)
 const saving = ref(false)
 
@@ -82,6 +91,15 @@ const autoReply = ref({
 })
 
 async function load() {
+  loading.value = true
+  try {
+    await loadInternal()
+  } finally {
+    loading.value = false
+  }
+}
+
+async function loadInternal() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
   const { data: account } = await supabase
