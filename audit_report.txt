@@ -1,0 +1,240 @@
+########################################################
+# AUDIT REPORT — Sat Oct 24 19:53:48 WIB 2026
+########################################################
+
+===== 1. ENVIRONMENT =====
+PWD: /data/data/com.termux/files/home/threads-automation
+OS : Linux localhost 4.19.191-perf-g3e5cdb36e3e4 #1 SMP PREEMPT Tue Aug 27 13:20:19 UTC 2024 aarch64 Android
+
+===== 2. STRUKTUR FOLDER (depth 3) =====
+.
+./backend
+./backend/app
+./backend/app/api
+./backend/app/core
+./backend/app/models
+./backend/app/services
+./backend/app/workers
+./docs
+./supabase
+./supabase/functions
+./supabase/functions/_shared
+./supabase/functions/admin-health
+./supabase/functions/admin-manage-queue
+./supabase/functions/auto-reply-engine
+./supabase/functions/generate-post
+./supabase/functions/get-analytics
+./supabase/functions/get-best-time
+./supabase/functions/get-worker-status
+./supabase/functions/score-draft
+./supabase/functions/threads-data-deletion
+./supabase/functions/threads-oauth-callback
+./supabase/functions/threads-oauth-start
+./supabase/functions/threads-webhook
+./supabase/functions/worker-metrics
+./supabase/functions/worker-publish
+./supabase/functions/worker-token-refresh
+./supabase/migrations
+./web
+./web/public
+./web/src
+./web/src/assets
+./web/src/components
+./web/src/composables
+./web/src/lib
+./web/src/router
+./web/src/stores
+./web/src/styles
+./web/src/views
+
+===== 3. DAFTAR FILE + UKURAN =====
+     561 B  ./.github/workflows/deploy-functions.yml
+    2862 B  ./audit.sh
+    1469 B  ./audit_report.txt
+     236 B  ./backend/.env
+      53 B  ./backend/.gitignore
+     196 B  ./backend/Dockerfile
+     176 B  ./backend/app/core/config.py
+    3970 B  ./backend/app/services/auto_reply.py
+    4552 B  ./backend/app/services/comment_classifier.py
+    2269 B  ./backend/app/services/comment_templates.py
+    1997 B  ./backend/app/services/importer.py
+    2425 B  ./backend/app/services/leads.py
+    7106 B  ./backend/app/services/rag.py
+   13268 B  ./backend/app/workers/replies.py
+    1007 B  ./backend/main.py
+     233 B  ./backend/railway.json
+      67 B  ./backend/requirements.txt
+       0 B  ./docs/DECISIONS.md
+     382 B  ./supabase/config.toml
+     158 B  ./supabase/functions/_shared/cors.ts
+    1506 B  ./supabase/functions/_shared/llm.ts
+    1170 B  ./supabase/functions/_shared/quota.ts
+    2849 B  ./supabase/functions/admin-health/index.ts
+    2887 B  ./supabase/functions/admin-manage-queue/index.ts
+     328 B  ./supabase/functions/auto-reply-engine/index.ts
+    6176 B  ./supabase/functions/generate-post/index.ts
+    5555 B  ./supabase/functions/get-analytics/index.ts
+    5301 B  ./supabase/functions/get-best-time/index.ts
+    4184 B  ./supabase/functions/get-worker-status/index.ts
+    2682 B  ./supabase/functions/score-draft/index.ts
+    1197 B  ./supabase/functions/threads-data-deletion/index.ts
+    4623 B  ./supabase/functions/threads-oauth-callback/index.ts
+    2759 B  ./supabase/functions/threads-oauth-start/index.ts
+    1073 B  ./supabase/functions/threads-webhook/index.ts
+    5669 B  ./supabase/functions/worker-metrics/index.ts
+    5153 B  ./supabase/functions/worker-publish/index.ts
+    3216 B  ./supabase/functions/worker-token-refresh/index.ts
+    5420 B  ./supabase/migrations/20261009000000_p0_initial_schema.sql
+    1877 B  ./supabase/migrations/20261009000001_p2_metrics_and_import.sql
+     869 B  ./supabase/migrations/20261009000002_p3_quota_tracker.sql
+    1411 B  ./supabase/migrations/20261009000003_p4_replies_and_inbox.sql
+    2010 B  ./supabase/migrations/20261009000004_p5_auto_reply.sql
+     972 B  ./supabase/migrations/20261009000005_p6_content_scoring.sql
+    1661 B  ./supabase/migrations/20261009000006_p8_keyword_watch.sql
+    1433 B  ./supabase/migrations/20261009000007_p9_notifications_and_health.sql
+     112 B  ./vercel.json
+     281 B  ./web/.env
+      57 B  ./web/.gitignore
+     437 B  ./web/index.html
+     592 B  ./web/package.json
+      80 B  ./web/postcss.config.js
+    2288 B  ./web/src/App.vue
+    4990 B  ./web/src/assets/main.css
+    6463 B  ./web/src/components/AppSidebar.vue
+    7514 B  ./web/src/components/BestTimeChip.vue
+    6196 B  ./web/src/components/BestTimeChip.vue.bak
+    5020 B  ./web/src/components/BestTimeHeatmap.vue
+    2722 B  ./web/src/components/NotifyOverlay.vue
+    6348 B  ./web/src/components/TemplateSettingsCard.vue
+    3836 B  ./web/src/components/WorkerStatusCard.vue
+    1537 B  ./web/src/composables/useNotify.ts
+     861 B  ./web/src/composables/useTheme.ts
+     499 B  ./web/src/lib/supabase.ts
+     266 B  ./web/src/main.ts
+    3464 B  ./web/src/router/index.ts
+    2881 B  ./web/src/stores/composer.ts
+    2771 B  ./web/src/stores/inbox.ts
+    3439 B  ./web/src/stores/settings.ts
+    1115 B  ./web/src/styles/theme.css
+   13768 B  ./web/src/views/ComposerView.vue
+   15686 B  ./web/src/views/DashboardView.vue
+   16560 B  ./web/src/views/InboxView.vue
+    5118 B  ./web/src/views/LoginView.vue
+    4641 B  ./web/src/views/RepurposeView.vue
+     345 B  ./web/tailwind.config.js
+     620 B  ./web/tsconfig.json
+     112 B  ./web/vercel.json
+     231 B  ./web/vite.config.ts
+
+===== 4. LINE COUNT per FILE =====
+0 ./docs/DECISIONS.md
+2 ./web/.env
+4 ./supabase/functions/_shared/cors.ts
+5 ./backend/.env
+5 ./backend/app/core/config.py
+6 ./web/postcss.config.js
+6 ./web/src/lib/supabase.ts
+7 ./backend/requirements.txt
+7 ./web/src/components/ui/index.ts
+9 ./supabase/functions/auto-reply-engine/index.ts
+9 ./vercel.json
+9 ./web/vercel.json
+11 ./backend/railway.json
+11 ./web/src/main.ts
+12 ./web/vite.config.ts
+18 ./backend/app/api/v1/history.py
+20 ./web/tailwind.config.js
+22 ./supabase/config.toml
+24 ./web/tsconfig.json
+26 ./.github/workflows/deploy-functions.yml
+27 ./web/package.json
+32 ./web/src/composables/useTheme.ts
+34 ./supabase/functions/threads-data-deletion/index.ts
+34 ./supabase/functions/threads-webhook/index.ts
+38 ./backend/main.py
+40 ./supabase/functions/_shared/quota.ts
+48 ./supabase/functions/_shared/llm.ts
+51 ./backend/app/services/importer.py
+69 ./backend/app/api/v1/leads.py
+69 ./backend/app/services/leads.py
+69 ./web/src/composables/useNotify.ts
+73 ./supabase/functions/threads-oauth-start/index.ts
+78 ./backend/app/services/comment_templates.py
+81 ./backend/app/api/v1/rag.py
+81 ./supabase/functions/score-draft/index.ts
+82 ./supabase/functions/worker-token-refresh/index.ts
+86 ./supabase/functions/admin-health/index.ts
+87 ./audit.sh
+87 ./supabase/functions/admin-manage-queue/index.ts
+93 ./web/src/router/index.ts
+105 ./backend/app/services/auto_reply.py
+109 ./supabase/functions/threads-oauth-callback/index.ts
+109 ./web/src/stores/inbox.ts
+112 ./web/src/stores/composer.ts
+130 ./audit_report.txt
+131 ./web/src/stores/settings.ts
+135 ./supabase/functions/get-worker-status/index.ts
+148 ./backend/app/services/comment_classifier.py
+154 ./supabase/functions/worker-publish/index.ts
+157 ./supabase/functions/get-analytics/index.ts
+157 ./supabase/functions/get-best-time/index.ts
+164 ./supabase/functions/worker-metrics/index.ts
+181 ./supabase/functions/generate-post/index.ts
+200 ./backend/app/services/rag.py
+443 ./backend/app/workers/replies.py
+
+===== 5. ROOT LISTING (termasuk hidden) =====
+total 44
+drwx------.  8 u0_a303 u0_a303 3452 Oct 24 19:53 .
+drwx------. 25 u0_a303 u0_a303 3452 Oct 20 17:46 ..
+drwx------.  7 u0_a303 u0_a303 3452 Oct 16 10:04 .git
+drwx------.  3 u0_a303 u0_a303 3452 Oct 10 00:34 .github
+-rwx------.  1 u0_a303 u0_a303 2862 Oct 24 19:53 audit.sh
+-rw-------.  1 u0_a303 u0_a303 7123 Oct 24 19:53 audit_report.txt
+drwx------.  3 u0_a303 u0_a303 3452 Oct 16 09:16 backend
+drwx------.  2 u0_a303 u0_a303 3452 Oct  9 23:25 docs
+drwx------.  4 u0_a303 u0_a303 3452 Oct 10 06:56 supabase
+-rw-------.  1 u0_a303 u0_a303  112 Oct 10 11:02 vercel.json
+drwx------.  4 u0_a303 u0_a303 3452 Oct 10 11:02 web
+
+===== 6. PACKAGE / DEPENDENCY FILES =====
+
+===== 7. README / DOCS =====
+--- docs/ ---
+total 7
+drwx------. 2 u0_a303 u0_a303 3452 Oct  9 23:25 .
+drwx------. 8 u0_a303 u0_a303 3452 Oct 24 19:53 ..
+-rw-------. 1 u0_a303 u0_a303    0 Oct  9 23:25 DECISIONS.md
+
+===== 8. GIT INFO =====
+--- branch ---
+  backup-2026-10-15
+* main
+  remotes/origin/backup-2026-10-15
+  remotes/origin/main
+--- recent commits ---
+6145da4 fix: loading skeleton in Account and AutoReply to prevent state flicker
+fc37bf6 refactor(5.3): english copy, separate auto-reply tab, fix toggles, read-more knowledge, remove workers tab
+7a8c394 refactor: split Settings into 4 tabs (Account, Templates, Knowledge, Workers)
+3f2ae38 feat(5.3): user custom template UI in Settings
+92ce0f3 feat(5.3): backend support custom templates and category toggle
+dc10709 fix(2.4): merge top_slots with matrix for complete today slots
+2ecc472 fix(2.4): chip fallback to full matrix when top_slots empty for today
+500e5b5 fix(2.4): pick next available slot today, fallback to tomorrow only if all passed
+d93fcaa fix(2.4): chip icon color and label when time already passed
+eb5c64e fix: add stub auto-reply-engine + track WorkerStatusCard for CI
+5fe8156 chore: clearer copy for comment page title and tab label
+98a89b4 feat(4.1): worker status card in Settings
+e308809 feat(4.1): add get-worker-status edge function
+1b5bab6 chore(1.6): refactor NotifyOverlay to theme, remove compat.css
+6008ddb refactor(1.2): global NotifyOverlay + cleanup .bak files
+--- status ---
+?? audit.sh
+?? audit_report.txt
+
+===== 9. TOTAL =====
+Total file (exclude vendor): 101
+Total baris kode (source): 3548
+
+===== SELESAI =====
