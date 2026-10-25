@@ -7,7 +7,9 @@
             <h2 class="text-sm font-bold">AI & Billing</h2>
             <p class="text-xs theme-text-muted mt-0.5">Manage your AI credits and personal API keys.</p>
           </div>
-          <Badge :variant="credits > 0 ? 'success' : 'danger'">
+          <!-- BADGE DINAMIS -->
+          <Badge v-if="hasCustomKey" variant="success">Unlimited (Own Key)</Badge>
+          <Badge v-else :variant="credits > 0 ? 'success' : 'danger'">
             {{ credits }} Credits Left
           </Badge>
         </div>
@@ -19,8 +21,8 @@
       </div>
 
       <template v-else>
-        <!-- SaaS Credits -->
-        <div class="p-4 rounded-lg theme-bg-sec border theme-border space-y-2 mb-6">
+        <!-- SaaS Credits (Sembunyiin kalau pake custom key) -->
+        <div v-if="!hasCustomKey" class="p-4 rounded-lg theme-bg-sec border theme-border space-y-2 mb-6">
           <h3 class="text-sm font-bold">SaaS AI Credits</h3>
           <p class="text-xs theme-text-muted">
             You have <strong>{{ credits }}</strong> credits left. 1 credit is used every time you generate a Content Plan.
@@ -52,7 +54,8 @@
       </template>
 
       <template #footer>
-        <div class="flex justify-end">
+        <div class="flex justify-end items-center gap-3">
+          <button v-if="hasCustomKey" @click="removeKey" class="text-xs font-bold theme-text-muted hover:theme-text">Remove API Key</button>
           <Button @click="saveKey" :disabled="saving || !accountId" :loading="saving">
             {{ saving ? 'Saving...' : 'Save API Key' }}
           </Button>
@@ -75,6 +78,7 @@ const accountId = ref<string | null>(null)
 
 const credits = ref(0)
 const customKey = ref('')
+const hasCustomKey = ref(false)
 
 async function load() {
   loading.value = true
@@ -82,18 +86,23 @@ async function load() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const { data: account } = await supabase
+    const { data: account, error } = await supabase
       .schema('threads')
       .from('threads_accounts')
       .select('id, ai_credits, custom_gemini_key')
       .eq('user_id', user.id)
       .maybeSingle()
 
+    if (error) throw error
+
     if (account) {
       accountId.value = account.id
       credits.value = account.ai_credits ?? 20
       customKey.value = account.custom_gemini_key || ''
+      hasCustomKey.value = !!account.custom_gemini_key
     }
+  } catch (err: any) {
+    showToast('Failed to load settings: ' + err.message, 'error')
   } finally {
     loading.value = false
   }
@@ -103,19 +112,27 @@ async function saveKey() {
   if (!accountId.value) return
   saving.value = true
   try {
+    const keyToSave = customKey.value.trim() || null
     const { error } = await supabase
       .schema('threads')
       .from('threads_accounts')
-      .update({ custom_gemini_key: customKey.value.trim() || null })
+      .update({ custom_gemini_key: keyToSave })
       .eq('id', accountId.value)
 
     if (error) throw error
+    
+    hasCustomKey.value = !!keyToSave
     showToast('API Key saved successfully.', 'success')
   } catch (err: any) {
     showToast('Failed to save API Key: ' + err.message, 'error')
   } finally {
     saving.value = false
   }
+}
+
+async function removeKey() {
+  customKey.value = ''
+  await saveKey()
 }
 
 onMounted(load)

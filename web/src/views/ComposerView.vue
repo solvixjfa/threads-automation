@@ -49,21 +49,23 @@
         </div>
 
         <div class="flex justify-end items-center gap-4 mt-2">
-          <!-- CREDIT BADGE (PURE CSS) -->
+          <!-- CREDIT BADGE DINAMIS -->
           <div 
             class="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold transition-colors"
-            :style="aiCredits > 0 ? 'border-color: var(--accent); color: var(--accent);' : 'border-color: var(--danger); color: var(--danger);'"
+            :style="hasCustomKey ? 'border-color: var(--success); color: var(--success);' : (aiCredits > 0 ? 'border-color: var(--accent); color: var(--accent);' : 'border-color: var(--danger); color: var(--danger);')"
           >
             <span 
               class="w-2 h-2 rounded-full" 
-              :style="aiCredits > 0 ? 'background: var(--accent);' : 'background: var(--danger);'"
+              :style="hasCustomKey ? 'background: var(--success);' : (aiCredits > 0 ? 'background: var(--accent);' : 'background: var(--danger);')"
             ></span>
-            <span>{{ aiCredits > 0 ? aiCredits + ' Credits Left' : 'Out of Credits' }}</span>
+            <span v-if="hasCustomKey">Unlimited (Own Key)</span>
+            <span v-else-if="aiCredits > 0">{{ aiCredits }} Credits Left</span>
+            <span v-else>Out of Credits</span>
           </div>
 
           <Button
             @click="generateAiIdeas"
-            :disabled="isGenerating || !aiTopic || (aiTone === 'Custom Prompt' && !customPrompt) || aiCredits <= 0"
+            :disabled="isGenerating || !aiTopic || (aiTone === 'Custom Prompt' && !customPrompt) || (!hasCustomKey && aiCredits <= 0)"
             :loading="isGenerating"
           >
             {{ isGenerating ? 'Planning Content...' : 'Generate 3-Day Plan' }}
@@ -159,7 +161,7 @@ import { useNotify } from '../composables/useNotify'
 import BestTimeChip from '../components/BestTimeChip.vue'
 import { Card, Button, Input, Textarea, Badge } from '../components/ui'
                                                                   
-const { showToast, askConfirm } = useNotify()
+const { showToast } = useNotify()
                                                                   
 const postText = ref('')
 const threadParts = ref<string[]>([])
@@ -174,7 +176,8 @@ const customPrompt = ref('')
 const isGenerating = ref(false)
 const aiResults = ref<any[]>([])
 const scoreResult = ref<any>(null)                                 
-const aiCredits = ref(20) // Nanti di-load dari database saat onMounted
+const aiCredits = ref(20)
+const hasCustomKey = ref(false)
 
 function splitTextIntoParts(text: string, maxLen = 480): string[] {  
   if (text.length <= maxLen) return [text]
@@ -254,7 +257,7 @@ async function generateAiIdeas() {
     const resData = await response.json()
     if (resData?.options) {                                              
       aiResults.value = resData.options
-      aiCredits.value = Math.max(0, aiCredits.value - 1) // Potong kredit di UI
+      if (!hasCustomKey.value) aiCredits.value = Math.max(0, aiCredits.value - 1)
       showToast('3-Day Content Plan generated successfully!', 'success')
     }                                                                
   } catch (err: any) {
@@ -351,11 +354,20 @@ async function schedulePost() {
 }
 
 onMounted(async () => {
-  // Load Kredit dari DB
+  // Load Kredit dan Custom Key dari DB
   const { data: { user } } = await supabase.auth.getUser()
   if (user) {
-    const { data: acc } = await supabase.schema('threads').from('threads_accounts').select('ai_credits').eq('user_id', user.id).maybeSingle()
-    if (acc) aiCredits.value = acc.ai_credits ?? 20
+    const { data: acc } = await supabase
+      .schema('threads')
+      .from('threads_accounts')
+      .select('ai_credits, custom_gemini_key')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      
+    if (acc) {
+      aiCredits.value = acc.ai_credits ?? 20
+      hasCustomKey.value = !!acc.custom_gemini_key
+    }
   }
 
   const savedRepurpose = localStorage.getItem('draft_repurpose')
