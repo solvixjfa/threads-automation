@@ -19,33 +19,50 @@
       </template>
 
       <div v-if="showAiPanel" class="space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <div class="md:col-span-2">
-            <Input v-model="aiTopic" label="Topic / Short Idea" placeholder="Enter a short topic..." />
-          </div>
-          <div class="space-y-1">
-            <label class="label">Tone / Style</label>
-            <select v-model="aiTone" class="input">
-              <option value="Educational & Casual Insight">Educational & Insight</option>
-              <option value="Personal Storytelling">Storytelling</option>
-              <option value="Hot Take & Discussion">Hot Take / Opinion</option>
-              <option value="Question / Q&A">Q&A / Spark Discussion</option>
-              <option value="Custom Prompt">Custom / Free Instruction</option>
-            </select>
-          </div>
-          <div class="space-y-1">
-            <label class="label">AI Provider</label>
-            <select v-model="aiProvider" class="input">
-              <option value="groq">Groq (Llama 3.3) - Fast</option>
-              <option value="gemini">Gemini (Google) - Smart</option>
-            </select>
-          </div>
+        <!-- ROW 1: TOPIC & TONE -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <Input v-model="aiTopic" label="Topic / Short Idea" placeholder="Enter a short topic..." />
+          <Select 
+            v-model="aiTone" 
+            label="Tone / Style" 
+            :options="[
+              { label: 'Educational & Insight', value: 'Educational & Casual Insight' },
+              { label: 'Storytelling', value: 'Personal Storytelling' },
+              { label: 'Hot Take / Opinion', value: 'Hot Take & Discussion' },
+              { label: 'Q&A / Spark Discussion', value: 'Question / Q&A' },
+              { label: 'Custom / Free Instruction', value: 'Custom Prompt' }
+            ]" 
+          />
+        </div>
 
-          <div v-if="aiTone === 'Custom Prompt'" class="md:col-span-4">
-            <Textarea v-model="customPrompt" label="Custom Instruction" :rows="3" placeholder="Example: Write in casual English..." />
+        <!-- ROW 2: PROVIDER & MODEL (DROPDOWN DINAMIS) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-lg border theme-border" style="background: var(--bg-sec);">
+          <Select 
+            v-model="aiProvider" 
+            label="AI Provider" 
+            :options="[
+              { label: 'Groq (Llama) - Fast', value: 'groq' },
+              { label: 'Gemini (Google) - Smart', value: 'gemini' }
+            ]" 
+            @update:model-value="handleProviderChange"
+          />
+          <div class="space-y-1">
+            <label class="label flex justify-between items-center">
+              <span>Specific Model</span>
+              <span v-if="isLoadingModels" class="text-[10px] animate-pulse">Loading...</span>
+            </label>
+            <select v-model="aiModel" class="input w-full" :disabled="isLoadingModels || availableModels.length === 0">
+              <option v-for="m in availableModels" :key="m.id" :value="m.id">{{ m.name }}</option>
+            </select>
           </div>
         </div>
 
+        <!-- CUSTOM PROMPT -->
+        <div v-if="aiTone === 'Custom Prompt'">
+          <Textarea v-model="customPrompt" label="Custom Instruction" :rows="3" placeholder="Example: Write in casual English..." />
+        </div>
+
+        <!-- ACTION BUTTONS -->
         <div class="flex justify-end items-center gap-4 mt-2">
           <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold transition-colors"
             :style="hasCustomKey ? 'border-color: var(--success); color: var(--success);' : (aiCredits > 0 ? 'border-color: var(--accent); color: var(--accent);' : 'border-color: var(--danger); color: var(--danger);')">
@@ -55,7 +72,7 @@
             <span v-else>Out of Credits</span>
           </div>
 
-          <Button @click="generateAiIdeas" :disabled="isGenerating || !aiTopic || (aiTone === 'Custom Prompt' && !customPrompt) || (!hasCustomKey && aiCredits <= 0)" :loading="isGenerating">
+          <Button @click="generateAiIdeas" :disabled="isGenerating || !aiTopic || (aiTone === 'Custom Prompt' && !customPrompt) || (!hasCustomKey && aiCredits <= 0) || !aiModel" :loading="isGenerating">
             {{ isGenerating ? 'Planning Content...' : 'Generate 3-Day Plan' }}
           </Button>
         </div>
@@ -72,7 +89,6 @@
       </div>
     </Card>
 
-    <!-- ... SISA KODE MAIN POST TEXT DAN BAWAHNYA SAMA SEPERTI SEBELUMNYA ... -->
     <Card>
       <div class="flex justify-between items-center mb-4">
         <span class="text-xs font-bold uppercase tracking-wide">Main Post Text</span>
@@ -132,7 +148,7 @@ import { ref, watch, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'                         
 import { useNotify } from '../composables/useNotify'
 import BestTimeChip from '../components/BestTimeChip.vue'
-import { Card, Button, Input, Textarea, Badge } from '../components/ui'
+import { Card, Button, Input, Textarea, Badge, Select } from '../components/ui'
                                                                   
 const { showToast } = useNotify()
                                                                   
@@ -144,18 +160,84 @@ const isChecking = ref(false)
 const showAiPanel = ref(true)
 const aiTopic = ref('')
 const aiTone = ref('Educational & Casual Insight')
-const aiProvider = ref('groq')
 const customPrompt = ref('')
 const isGenerating = ref(false)
 const aiResults = ref<any[]>([])
 const scoreResult = ref<any>(null)                                 
 const aiCredits = ref(20)
 const hasCustomKey = ref(false)
+const currentAccountId = ref<string | null>(null)
 
-// ... (Fungsi splitTextIntoParts, handleTextChange, watch dibiarkan sama) ...
+// STATE BARU UNTUK PROVIDER & MODEL
+const aiProvider = ref('groq')
+const aiModel = ref('')
+const availableModels = ref<{id: string, name: string}[]>([])
+const isLoadingModels = ref(false)
+
+function splitTextIntoParts(text: string, maxLen = 480): string[] {  
+  if (text.length <= maxLen) return [text]
+  const paragraphs = text.split(/\n+/)
+  const parts: string[] = []
+  let current = ''                                                   
+  for (const p of paragraphs) {
+    if ((current + '\n\n' + p).trim().length <= maxLen) {                
+      current = current ? current + '\n\n' + p : p
+    } else {
+      if (current) parts.push(current.trim())
+      if (p.length <= maxLen) { current = p } 
+      else {                                                             
+        const sentences = p.match(/[^.!?]+[.!?]+/g) || [p]
+        for (const s of sentences) {
+          if ((current + ' ' + s).trim().length <= maxLen) { current = current ? current + ' ' + s : s } 
+          else {
+            if (current) parts.push(current.trim())                            
+            current = s
+          }
+        }
+      }
+    }
+  }                                                                  
+  if (current) parts.push(current.trim())
+  return parts
+}                                                                  
+
+function handleTextChange() { threadParts.value = splitTextIntoParts(postText.value) }
+                                                                   
+watch(postText, (newVal) => {
+  handleTextChange()
+  localStorage.setItem('ixiera_draft_text', newVal)                
+})
+
+watch(scheduledDate, (newVal) => { localStorage.setItem('ixiera_draft_time', newVal) })                                                                 
+
+// FETCH MODEL DARI BACKEND
+async function fetchModels() {
+  if (!currentAccountId.value) return
+  isLoadingModels.value = true
+  try {
+    const res = await fetch(`https://threads-automation-production-53ad.up.railway.app/api/v1/rag/models/${aiProvider.value}?account_id=${currentAccountId.value}`)
+    const data = await res.json()
+    if (data.models && data.models.length > 0) {
+      availableModels.value = data.models
+      aiModel.value = data.models[0].id // Set default ke model pertama
+    } else {
+      availableModels.value = []
+      aiModel.value = ''
+    }
+  } catch (err) {
+    console.error('Failed to load models', err)
+    showToast('Failed to load models for this provider.', 'error')
+  } finally {
+    isLoadingModels.value = false
+  }
+}
+
+function handleProviderChange() {
+  fetchModels()
+}
 
 async function generateAiIdeas() {
-  if (!aiTopic.value) return
+  if (!aiTopic.value || !aiModel.value) return
   isGenerating.value = true
   aiResults.value = []                                             
   
@@ -163,20 +245,16 @@ async function generateAiIdeas() {
   const timeoutId = setTimeout(() => controller.abort(), 45000)
 
   try {
-    const { data: { user } } = await supabase.auth.getUser()           
-    if (!user) throw new Error('User not authenticated')                                                                           
-    const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id').eq('user_id', user.id).maybeSingle()
-    if (!account) throw new Error('Threads account not connected')
-                                                                       
     const response = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/rag/generate-post', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
       body: JSON.stringify({ 
-        account_id: account.id, 
+        account_id: currentAccountId.value, 
         topic: aiTopic.value, 
         tone: aiTone.value, 
-        provider: aiProvider.value, // KIRIM PROVIDER KE BACKEND
+        provider: aiProvider.value,
+        model_name: aiModel.value, // KIRIM MODEL SPESIFIK
         custom_prompt: aiTone.value === 'Custom Prompt' ? customPrompt.value : undefined 
       })
     })
@@ -205,5 +283,82 @@ async function generateAiIdeas() {
   }
 }
 
-// ... (SISA FUNGSI applyAiDraft, checkScore, schedulePost, onMounted dibiarkan sama) ...
+function applyAiDraft(content: string) {
+  postText.value = content
+  showToast('AI Draft applied to Composer.', 'info')
+}
+                                                                   
+async function checkScore() {
+  isChecking.value = true
+  try {
+    const { data, error } = await supabase.functions.invoke('score-draft', { body: { text: postText.value } })
+    if (error) throw error
+    if (data?.error) throw new Error(data.error)
+    scoreResult.value = { score: data?.score ?? 80, feedback: data?.feedback ?? 'Text looks good.' }
+  } catch (err: any) {
+    showToast('AI Analysis failed: ' + err.message, 'error')           
+  } finally { isChecking.value = false }
+}
+
+async function schedulePost() {
+  if (!postText.value || !scheduledDate.value) return
+  const scheduleTime = new Date(scheduledDate.value).getTime()
+  if (scheduleTime <= Date.now()) { showToast('Schedule time must be in the future.', 'error'); return }
+  isSaving.value = true
+  try {                                                                
+    let parentId = null
+    for (let i = 0; i < threadParts.value.length; i++) {                 
+      const { data: insertedPart, error: insertError } = await supabase.schema('threads').from('scheduled_posts').insert({
+        account_id: currentAccountId.value, text: threadParts.value[i], scheduled_for: new Date(scheduledDate.value).toISOString(),
+        status: 'scheduled', parent_id: parentId, sequence_number: i + 1, idempotency_key: crypto.randomUUID()                             
+      }).select().single()                                                  
+      if (insertError) throw insertError                                 
+      if (i === 0) { parentId = insertedPart.id }
+    }                                                              
+    showToast(`Successfully scheduled ${threadParts.value.length} thread(s)!`, 'success')
+    postText.value = ''
+    localStorage.removeItem('ixiera_draft_text')                   
+    const d = new Date()                                               
+    d.setHours(d.getHours() + 1); d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+    scheduledDate.value = d.toISOString().slice(0, 16)
+    localStorage.setItem('ixiera_draft_time', scheduledDate.value)
+  } catch (err: any) {
+    showToast('Failed to schedule: ' + err.message, 'error')
+  } finally { isSaving.value = false }
+}
+
+onMounted(async () => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    const { data: acc } = await supabase.schema('threads').from('threads_accounts').select('id, ai_credits, custom_gemini_key, custom_groq_key, ai_provider').eq('user_id', user.id).maybeSingle()
+    if (acc) {
+      currentAccountId.value = acc.id
+      aiCredits.value = acc.ai_credits ?? 20
+      hasCustomKey.value = !!(acc.custom_gemini_key || acc.custom_groq_key)
+      if (acc.ai_provider) aiProvider.value = acc.ai_provider
+      
+      // Load daftar model pas halaman pertama dibuka
+      await fetchModels()
+    }
+  }
+
+  const savedRepurpose = localStorage.getItem('draft_repurpose')
+  if (savedRepurpose) {
+    postText.value = savedRepurpose
+    localStorage.removeItem('draft_repurpose')
+  } else {
+    const localDraftText = localStorage.getItem('ixiera_draft_text')
+    if (localDraftText) { postText.value = localDraftText }
+  }
+
+  const localDraftTime = localStorage.getItem('ixiera_draft_time')
+  if (localDraftTime) {
+    scheduledDate.value = localDraftTime
+  } else {
+    const d = new Date()
+    d.setHours(d.getHours() + 1)
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+    scheduledDate.value = d.toISOString().slice(0, 16)
+  }
+})
 </script>
