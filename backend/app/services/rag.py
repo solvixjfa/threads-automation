@@ -59,8 +59,12 @@ def generate_embedding(text: str, api_key: str) -> list[float]:
 
 async def store_knowledge(account_id: str, title: str, content: str, category: str = "general"):
     db = get_supabase()
-    acc = db.schema("threads").from_("threads_accounts").select("custom_gemini_key").eq("id", account_id).maybeSingle().execute()
-    api_key = acc.data.get("custom_gemini_key") if acc.data and acc.data.get("custom_gemini_key") else GEMINI_KEY
+    acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key").eq("id", account_id).limit(1).execute()
+    
+    api_key = GEMINI_KEY
+    if acc_res.data and acc_res.data[0].get("custom_gemini_key"):
+        api_key = acc_res.data[0].get("custom_gemini_key")
+
     embedding = generate_embedding(content, api_key)
     data = {"account_id": account_id, "title": title, "content": content, "category": category, "embedding": embedding}
     res = db.schema("threads").from_("brand_knowledge").insert(data).execute()
@@ -68,8 +72,12 @@ async def store_knowledge(account_id: str, title: str, content: str, category: s
 
 async def backfill_unembedded_knowledge(account_id: str):
     db = get_supabase()
-    acc = db.schema("threads").from_("threads_accounts").select("custom_gemini_key").eq("id", account_id).maybeSingle().execute()
-    api_key = acc.data.get("custom_gemini_key") if acc.data and acc.data.get("custom_gemini_key") else GEMINI_KEY
+    acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key").eq("id", account_id).limit(1).execute()
+    
+    api_key = GEMINI_KEY
+    if acc_res.data and acc_res.data[0].get("custom_gemini_key"):
+        api_key = acc_res.data[0].get("custom_gemini_key")
+        
     res = db.schema("threads").from_("brand_knowledge").select("id, content").eq("account_id", account_id).is_("embedding", "null").execute()
     updated_count = 0
     for row in (res.data or []):
@@ -89,10 +97,13 @@ async def search_knowledge(account_id: str, query: str, limit: int = 3, api_key:
 
 async def generate_rag_post(account_id: str, topic: str, tone: str = "Edukasi & Insight Kasual", custom_prompt: str = None) -> list[dict]:
     db = get_supabase()
-    acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, ai_credits").eq("id", account_id).maybeSingle().execute()
-    acc = acc_res.data
-    if not acc: raise Exception("Account not found")
-
+    # FIX SINTAKS PYTHON: Ganti .maybeSingle() jadi .limit(1).execute()
+    acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, ai_credits").eq("id", account_id).limit(1).execute()
+    
+    if not acc_res.data:
+        raise Exception("Account not found")
+        
+    acc = acc_res.data[0]
     custom_key = acc.get("custom_gemini_key")
     credits = acc.get("ai_credits", 0)
     
