@@ -21,6 +21,17 @@ FALLBACK_MODELS = [
 def get_supabase() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
+def get_all_raw_models() -> list[str]:
+    client = genai.Client(api_key=GEMINI_KEY)
+    models = []
+    try:
+        for m in client.models.list():
+            name = getattr(m, 'name', str(m))
+            models.append(name)
+    except Exception as e:
+        logging.error(f"Failed to list models: {str(e)}")
+    return models
+
 def extract_vector(response) -> list[float]:
     if hasattr(response, 'embeddings') and response.embeddings:
         first = response.embeddings[0]
@@ -34,15 +45,23 @@ def extract_vector(response) -> list[float]:
 
 def generate_embedding(text: str) -> list[float]:
     client = genai.Client(api_key=GEMINI_KEY)
-    models_to_try = ["gemini-embedding-2", "gemini-embedding-001", "gemini-embedding-2-preview", "models/gemini-embedding-2"]
+    models_to_try = [
+        os.getenv("EMBEDDING_MODEL", "gemini-embedding-2"),
+        "gemini-embedding-2",
+        "gemini-embedding-001",
+        "gemini-embedding-2-preview",
+        "models/gemini-embedding-2"
+    ]
     embed_config = types.EmbedContentConfig(output_dimensionality=768)
+    last_exception = None
     for model_name in models_to_try:
         try:
             res = client.models.embed_content(model=model_name, contents=text, config=embed_config)
             return extract_vector(res)
         except Exception as e:
+            last_exception = e
             logging.warning(f"Embedding failed with {model_name}: {str(e)}")
-    raise RuntimeError("Gagal generate embedding")
+    raise RuntimeError(f"Gagal generate embedding: {str(last_exception)}")
 
 async def store_knowledge(account_id: str, title: str, content: str, category: str = "general"):
     embedding = generate_embedding(content)
@@ -50,6 +69,17 @@ async def store_knowledge(account_id: str, title: str, content: str, category: s
     data = {"account_id": account_id, "title": title, "content": content, "category": category, "embedding": embedding}
     res = db.schema("threads").from_("brand_knowledge").insert(data).execute()
     return res.data
+
+async def backfill_unembedded_knowledge(account_id: str):
+    db = get_supabase()
+    res = db.schema("threads").from_("brand_knowledge").select("id, content").eq("account_id", account_id).is_("embedding", "null").execute()
+    rows = res.data or []
+    updated_count = 0
+    for row in rows:
+        vec = generate_embedding(row["content"])
+        db.schema("threads").from_("brand_knowledge").update({"embedding": vec}).eq("id", row["id"]).execute()
+        updated_count += 1
+    return {"total_unembedded_found": len(rows), "successfully_updated": updated_count}
 
 async def search_knowledge(account_id: str, query: str, limit: int = 3):
     query_vector = generate_embedding(query)
@@ -63,11 +93,11 @@ async def search_knowledge(account_id: str, query: str, limit: int = 3):
     return res.data or []
 
 async def generate_rag_post(account_id: str, topic: str, tone: str = "Edukasi & Insight Kasual", custom_prompt: str = None) -> list[dict]:
-    # 1. Ambil RAG
+    # 1. Ambil RAG (PUNYA LU ASLI)
     knowledge = await search_knowledge(account_id, topic, limit=3)
     context_text = "\n".join([f"- [{k.get('category', 'Fakta')} - {k.get('title')}]: {k.get('content')}" for k in knowledge])
 
-    # 2. AMBIL RIWAYAT POSTINGAN (CONTEXT PLANNING)
+    # 2. AMBIL RIWAYAT POSTINGAN (TAMBAHAN BUAT PLANNING)
     db = get_supabase()
     recent_res = db.schema("threads").from_("scheduled_posts").select("text, status, scheduled_for").eq("account_id", account_id).order("scheduled_for", desc=True).limit(5).execute()
     recent_history = "\n".join([f"- [{p['status'].upper()}] {p['text'][:150]}..." for p in recent_res.data]) if recent_res.data else "No recent posts."
