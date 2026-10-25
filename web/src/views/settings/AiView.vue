@@ -5,10 +5,9 @@
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-sm font-bold">AI & Billing</h2>
-            <p class="text-xs theme-text-muted mt-0.5">Manage your AI credits and personal API keys.</p>
+            <p class="text-xs theme-text-muted mt-0.5">Manage your AI providers and keys.</p>
           </div>
-          <!-- BADGE DINAMIS -->
-          <Badge v-if="hasCustomKey" variant="success">Own API Key</Badge>
+          <Badge v-if="hasCustomKey || hasGroqKey" variant="success">BYOK Active</Badge>
           <Badge v-else :variant="credits > 0 ? 'success' : 'danger'">
             {{ credits }} SaaS Credits
           </Badge>
@@ -21,44 +20,46 @@
       </div>
 
       <template v-else>
-        <!-- STATUS BAR: Nunjukin lu lagi pake yang mana -->
-        <div 
-          class="p-4 rounded-lg border theme-border space-y-2 mb-6"
-          :style="hasCustomKey ? 'background: var(--bg-sec);' : 'background: var(--bg-sec);'"
-        >
-          <div class="flex items-center gap-2">
-            <span 
-              class="w-2.5 h-2.5 rounded-full" 
-              :style="hasCustomKey ? 'background: var(--success);' : 'background: var(--accent);'"
-            ></span>
-            <h3 class="text-sm font-bold">
-              {{ hasCustomKey ? 'Using Your Own Gemini API Key' : 'Using SaaS AI Credits' }}
-            </h3>
+        <!-- DEFAULT PROVIDER -->
+        <div class="p-4 rounded-lg border theme-border space-y-3 mb-6" style="background: var(--bg-sec);">
+          <h3 class="text-sm font-bold">Default AI Provider</h3>
+          <div class="flex gap-4">
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="radio" v-model="aiProvider" value="groq" class="w-4 h-4" />
+              <span class="font-bold">Groq (Llama 3.3) - Fast</span>
+            </label>
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input type="radio" v-model="aiProvider" value="gemini" class="w-4 h-4" />
+              <span class="font-bold">Gemini (Google) - Smart</span>
+            </label>
           </div>
-          <p v-if="!hasCustomKey" class="text-xs theme-text-muted">
-            You have <strong>{{ credits }}</strong> credits left. 1 credit is used per Content Plan generation.
-          </p>
-          <p v-else class="text-xs theme-text-muted">
-            Unlimited generation. Your SaaS credits ({{ credits }}) will NOT be deducted.
+        </div>
+
+        <!-- CREDITS -->
+        <div v-if="!hasCustomKey && !hasGroqKey" class="p-4 rounded-lg theme-bg-sec border theme-border space-y-2 mb-6">
+          <p class="text-xs theme-text-muted">
+            You have <strong>{{ credits }}</strong> SaaS credits left. 1 credit is used per generation.
           </p>
         </div>
 
-        <!-- BYOK INPUT -->
-        <div class="space-y-3">
-          <h3 class="text-sm font-bold">Bring Your Own Key (BYOK)</h3>
-          <p class="text-xs theme-text-muted">
-            Use your own Google Gemini API Key to generate unlimited content for free.
-          </p>
+        <!-- BYOK GROQ -->
+        <div class="space-y-3 mb-6">
+          <h3 class="text-sm font-bold">Groq API Key</h3>
           <div class="space-y-1">
-            <label class="label">Gemini API Key</label>
-            <input 
-              v-model="customKey" 
-              type="password" 
-              placeholder="AIzaSy..." 
-              class="input" 
-            />
+            <input v-model="groqKey" type="password" placeholder="gsk_..." class="input" />
             <p class="text-[11px] theme-text-muted mt-1">
-              Get your free API key at <a href="https://aistudio.google.com/app/apikey" target="_blank" class="font-bold theme-text hover:underline">Google AI Studio</a>.
+              Get your free key at <a href="https://console.groq.com/keys" target="_blank" class="font-bold theme-text hover:underline">Groq Console</a>.
+            </p>
+          </div>
+        </div>
+
+        <!-- BYOK GEMINI -->
+        <div class="space-y-3">
+          <h3 class="text-sm font-bold">Gemini API Key <span class="text-xs font-normal theme-text-muted">(Wajib untuk RAG Embedding)</span></h3>
+          <div class="space-y-1">
+            <input v-model="geminiKey" type="password" placeholder="AIzaSy..." class="input" />
+            <p class="text-[11px] theme-text-muted mt-1">
+              Get your free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" class="font-bold theme-text hover:underline">Google AI Studio</a>.
             </p>
           </div>
         </div>
@@ -66,19 +67,12 @@
 
       <template #footer>
         <div class="flex justify-between items-center gap-3">
-          <!-- TOMBOL REMOVE (KIRI) -->
-          <button 
-            v-if="hasCustomKey" 
-            @click="confirmRemove" 
-            class="text-xs font-bold px-3 py-2 rounded-lg border theme-border theme-text-muted hover:theme-text transition-colors"
-          >
-            Remove API Key
+          <button v-if="hasCustomKey || hasGroqKey" @click="confirmRemove" class="text-xs font-bold px-3 py-2 rounded-lg border theme-border theme-text-muted hover:theme-text transition-colors">
+            Remove All Keys
           </button>
           <div v-else></div>
-
-          <!-- TOMBOL SAVE (KANAN) -->
-          <Button @click="saveKey" :disabled="saving || !accountId || !customKey.trim()" :loading="saving">
-            {{ saving ? 'Saving...' : 'Save API Key' }}
+          <Button @click="saveSettings" :disabled="saving || !accountId" :loading="saving">
+            {{ saving ? 'Saving...' : 'Save Settings' }}
           </Button>
         </div>
       </template>
@@ -98,54 +92,68 @@ const saving = ref(false)
 const accountId = ref<string | null>(null)
 
 const credits = ref(0)
-const customKey = ref('')
+const aiProvider = ref('groq')
+const geminiKey = ref('')
+const groqKey = ref('')
 const hasCustomKey = ref(false)
+const hasGroqKey = ref(false)
 
 async function load() {
   loading.value = true
   try {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-
     const { data: account, error } = await supabase
-      .schema('threads')
-      .from('threads_accounts')
-      .select('id, ai_credits, custom_gemini_key')
-      .eq('user_id', user.id)
-      .maybeSingle()
-
+      .schema('threads').from('threads_accounts')
+      .select('id, ai_credits, custom_gemini_key, custom_groq_key, ai_provider')
+      .eq('user_id', user.id).maybeSingle()
     if (error) throw error
-
     if (account) {
       accountId.value = account.id
       credits.value = account.ai_credits ?? 20
-      customKey.value = account.custom_gemini_key || ''
+      geminiKey.value = account.custom_gemini_key || ''
+      groqKey.value = account.custom_groq_key || ''
+      aiProvider.value = account.ai_provider || 'groq'
       hasCustomKey.value = !!account.custom_gemini_key
+      hasGroqKey.value = !!account.custom_groq_key
     }
   } catch (err: any) {
-    showToast('Failed to load settings: ' + err.message, 'error')
+    showToast('Failed to load: ' + err.message, 'error')
   } finally {
     loading.value = false
   }
 }
 
-async function saveKey() {
-  if (!accountId.value || !customKey.value.trim()) return
+async function saveSettings() {
+  if (!accountId.value) return
   saving.value = true
   try {
-    const keyToSave = customKey.value.trim()
-    const { error } = await supabase
-      .schema('threads')
-      .from('threads_accounts')
-      .update({ custom_gemini_key: keyToSave })
-      .eq('id', accountId.value)
+    // Validasi Groq Key kalau diisi
+    if (groqKey.value.trim()) {
+      const res = await fetch('https://api.groq.com/openai/v1/models', {
+        headers: { 'Authorization': `Bearer ${groqKey.value.trim()}` }
+      })
+      if (!res.ok) throw new Error('Invalid Groq API Key.')
+    }
+    
+    // Validasi Gemini Key kalau diisi
+    if (geminiKey.value.trim()) {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${geminiKey.value.trim()}`)
+      if (!res.ok) throw new Error('Invalid Gemini API Key.')
+    }
+
+    const { error } = await supabase.schema('threads').from('threads_accounts').update({
+      custom_gemini_key: geminiKey.value.trim() || null,
+      custom_groq_key: groqKey.value.trim() || null,
+      ai_provider: aiProvider.value
+    }).eq('id', accountId.value)
 
     if (error) throw error
-    
-    hasCustomKey.value = true
-    showToast('API Key saved. You are now on Unlimited mode.', 'success')
+    hasCustomKey.value = !!geminiKey.value.trim()
+    hasGroqKey.value = !!groqKey.value.trim()
+    showToast('AI settings saved.', 'success')
   } catch (err: any) {
-    showToast('Failed to save API Key: ' + err.message, 'error')
+    showToast(err.message, 'error')
   } finally {
     saving.value = false
   }
@@ -153,30 +161,25 @@ async function saveKey() {
 
 function confirmRemove() {
   askConfirm({
-    title: 'Remove API Key',
-    message: 'Are you sure? Your account will switch back to using SaaS Credits.',
+    title: 'Remove Keys',
+    message: 'Remove all custom API keys and revert to SaaS Credits?',
     confirmText: 'Remove',
-    onConfirm: () => removeKey()
+    onConfirm: () => removeKeys()
   })
 }
 
-async function removeKey() {
+async function removeKeys() {
   if (!accountId.value) return
   saving.value = true
   try {
-    const { error } = await supabase
-      .schema('threads')
-      .from('threads_accounts')
-      .update({ custom_gemini_key: null })
-      .eq('id', accountId.value)
-
-    if (error) throw error
-    
-    customKey.value = ''
-    hasCustomKey.value = false
-    showToast('API Key removed. Switched back to SaaS Credits.', 'info')
+    await supabase.schema('threads').from('threads_accounts').update({
+      custom_gemini_key: null, custom_groq_key: null
+    }).eq('id', accountId.value)
+    geminiKey.value = ''; groqKey.value = ''
+    hasCustomKey.value = false; hasGroqKey.value = false
+    showToast('Keys removed.', 'info')
   } catch (err: any) {
-    showToast('Failed to remove API Key: ' + err.message, 'error')
+    showToast('Failed: ' + err.message, 'error')
   } finally {
     saving.value = false
   }
