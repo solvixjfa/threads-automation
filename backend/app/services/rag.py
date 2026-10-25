@@ -9,7 +9,6 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 GEMINI_KEY = os.getenv("GEMINI_API_KEY", "")
 
-# Daftar 6 Model Fallback (Sesuai request)
 FALLBACK_MODELS = [
     "gemini-3.8-flash",
     "gemini-3.6-flash",
@@ -22,179 +21,109 @@ FALLBACK_MODELS = [
 def get_supabase() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
-def get_all_raw_models() -> list[str]:
-    client = genai.Client(api_key=GEMINI_KEY)
-    models = []
-    try:
-        for m in client.models.list():
-            name = getattr(m, 'name', str(m))
-            models.append(name)
-    except Exception as e:
-        logging.error(f"Failed to list models: {str(e)}")
-    return models
-
 def extract_vector(response) -> list[float]:
     if hasattr(response, 'embeddings') and response.embeddings:
         first = response.embeddings[0]
-        if hasattr(first, 'values'):
-            return list(first.values)
-        if isinstance(first, (list, tuple)):
-            return list(first)
-            
+        if hasattr(first, 'values'): return list(first.values)
+        if isinstance(first, (list, tuple)): return list(first)
     if hasattr(response, 'embedding') and response.embedding:
-        if hasattr(response.embedding, 'values'):
-            return list(response.embedding.values)
-        if isinstance(response.embedding, (list, tuple)):
-            return list(response.embedding)
-            
-    if hasattr(response, 'values'):
-        return list(response.values)
-        
-    raise ValueError("Gagal mengurai atribut embedding dari objek EmbedContentResponse")
+        if hasattr(response.embedding, 'values'): return list(response.embedding.values)
+        if isinstance(response.embedding, (list, tuple)): return list(response.embedding)
+    if hasattr(response, 'values'): return list(response.values)
+    raise ValueError("Failed to parse embedding")
 
 def generate_embedding(text: str) -> list[float]:
     client = genai.Client(api_key=GEMINI_KEY)
-    
-    models_to_try = [
-        os.getenv("EMBEDDING_MODEL", "gemini-embedding-2"),
-        "gemini-embedding-2",
-        "gemini-embedding-001",
-        "gemini-embedding-2-preview",
-        "models/gemini-embedding-2"
-    ]
-    
+    models_to_try = ["gemini-embedding-2", "gemini-embedding-001", "gemini-embedding-2-preview", "models/gemini-embedding-2"]
     embed_config = types.EmbedContentConfig(output_dimensionality=768)
-    
-    last_exception = None
     for model_name in models_to_try:
         try:
-            res = client.models.embed_content(
-                model=model_name,
-                contents=text,
-                config=embed_config
-            )
+            res = client.models.embed_content(model=model_name, contents=text, config=embed_config)
             return extract_vector(res)
         except Exception as e:
-            last_exception = e
             logging.warning(f"Embedding failed with {model_name}: {str(e)}")
-            continue
-            
-    raise RuntimeError(f"Gagal generate embedding: {str(last_exception)}")
+    raise RuntimeError("Gagal generate embedding")
 
 async def store_knowledge(account_id: str, title: str, content: str, category: str = "general"):
     embedding = generate_embedding(content)
     db = get_supabase()
-    
-    data = {
-        "account_id": account_id,
-        "title": title,
-        "content": content,
-        "category": category,
-        "embedding": embedding
-    }
-    
+    data = {"account_id": account_id, "title": title, "content": content, "category": category, "embedding": embedding}
     res = db.schema("threads").from_("brand_knowledge").insert(data).execute()
     return res.data
-
-async def backfill_unembedded_knowledge(account_id: str):
-    db = get_supabase()
-    res = db.schema("threads").from_("brand_knowledge").select("id, content").eq("account_id", account_id).is_("embedding", "null").execute()
-    rows = res.data or []
-    
-    updated_count = 0
-    for row in rows:
-        vec = generate_embedding(row["content"])
-        db.schema("threads").from_("brand_knowledge").update({"embedding": vec}).eq("id", row["id"]).execute()
-        updated_count += 1
-        
-    return {"total_unembedded_found": len(rows), "successfully_updated": updated_count}
 
 async def search_knowledge(account_id: str, query: str, limit: int = 3):
     query_vector = generate_embedding(query)
     db = get_supabase()
-    
     res = db.rpc("match_brand_knowledge", {
         "query_embedding": query_vector,
         "match_threshold": 0.3,
         "match_count": limit,
         "p_account_id": account_id
     }).execute()
-    
     return res.data or []
 
 async def generate_rag_post(account_id: str, topic: str, tone: str = "Edukasi & Insight Kasual", custom_prompt: str = None) -> list[dict]:
+    # 1. Ambil RAG
     knowledge = await search_knowledge(account_id, topic, limit=3)
-    
-    context_text = ""
-    if knowledge:
-        context_text = "\n".join([f"- [{k.get('category', 'Fakta')} - {k.get('title')}]: {k.get('content')}" for k in knowledge])
-    
-    if tone == "Custom Prompt" and custom_prompt:
-        tone_instruction = f"[INSTRUKSI KHUSUS DARI USER]\n{custom_prompt}"
-    else:
-        tone_instruction = f"[GAYA BAHASA / TONE]\n{tone}"
-        
-    prompt = f"""Kamu adalah Content Strategist & Copywriter Threads profesional.
-Buat 3 variasi draf postingan Threads berbeda berdasarkan TOPIK dan KONTEKS BRAND di bawah ini.
+    context_text = "\n".join([f"- [{k.get('category', 'Fakta')} - {k.get('title')}]: {k.get('content')}" for k in knowledge])
 
-[TOPIK / IDE POSTINGAN]
+    # 2. AMBIL RIWAYAT POSTINGAN (CONTEXT PLANNING)
+    db = get_supabase()
+    recent_res = db.schema("threads").from_("scheduled_posts").select("text, status, scheduled_for").eq("account_id", account_id).order("scheduled_for", desc=True).limit(5).execute()
+    recent_history = "\n".join([f"- [{p['status'].upper()}] {p['text'][:150]}..." for p in recent_res.data]) if recent_res.data else "No recent posts."
+
+    if tone == "Custom Prompt" and custom_prompt:
+        tone_instruction = f"[CUSTOM INSTRUCTION]\n{custom_prompt}"
+    else:
+        tone_instruction = f"[TONE / STYLE]\n{tone}"
+
+    prompt = f"""You are a professional Threads Content Strategist.
+Your task is to create a 3-DAY CONTENT PLAN based on the TOPIC below. Avoid repeating what the user has already posted recently.
+
+[RECENT & UPCOMING POSTS (DO NOT DUPLICATE THESE)]
+{recent_history}
+
+[RAG KNOWLEDGE BASE]
+{context_text if context_text else "No specific RAG document. Use general facts."}
+
+[TOPIC]
 {topic}
 
 {tone_instruction}
 
-[KONTEKS KHUSUS BRAND / RAG KNOWLEDGE BASE]
-{context_text if context_text else "Tidak ada dokumen RAG khusus. Gunakan fakta umum bisnis."}
-
-[PETUNJUK PENULISAN]
-1. Tulis dalam bahasa Indonesia yang natural, menarik (hook kuat), dan berbobot khas Threads.
-2. Sisipkan fakta, angka, atau detail spesifik dari KONTEKS KHUSUS BRAND jika ada.
-3. Hasilkan tepat 3 variasi draf yang siap pakai.
-
-WAJIB kembalikan respon DALAM FORMAT JSON ARRAY murni tanpa teks pembuka/penutup markdown:
+[OUTPUT INSTRUCTIONS]
+1. Create 3 different posts for Day 1, Day 2, and Day 3.
+2. Ensure they form a logical sequence (e.g., Day 1: Hook/Teaser, Day 2: Deep Dive/Insight, Day 3: Q&A/Call to Action).
+3. Use natural English or Indonesian (match the tone).
+4. MUST return a pure JSON array, NO markdown formatting:
 [
-  {{"id": "1", "title": "Draf 1: Storytelling", "content": "isi teks draf 1..."}},
-  {{"id": "2", "title": "Draf 2: Insight / Edukasi", "content": "isi teks draf 2..."}},
-  {{"id": "3", "title": "Draf 3: Hook & Diskusi", "content": "isi teks draf 3..."}}
+  {{"id": "1", "title": "Day 1: [Title]", "content": "..."}},
+  {{"id": "2", "title": "Day 2: [Title]", "content": "..."}},
+  {{"id": "3", "title": "Day 3: [Title]", "content": "..."}}
 ]
 """
 
     client = genai.Client(api_key=GEMINI_KEY)
-    
-    # Paksa Gemini merespon dalam format JSON yang valid agar tidak rusak di parsing
     gen_config = types.GenerateContentConfig(response_mime_type="application/json")
-    
     last_error = None
     response = None
-    
-    # Looping Fallback Model
+
     for model_name in FALLBACK_MODELS:
         try:
-            response = client.models.generate_content(
-                model=model_name,
-                contents=prompt,
-                config=gen_config
-            )
-            break # Berhenti mencari jika sudah berhasil
+            response = client.models.generate_content(model=model_name, contents=prompt, config=gen_config)
+            break
         except Exception as e:
-            logging.warning(f"[AI Fallback POST] Model {model_name} gagal: {str(e)}. Mencoba model selanjutnya...")
+            logging.warning(f"[AI Fallback POST] Model {model_name} failed: {str(e)}")
             last_error = str(e)
-            continue
-            
+
     if not response:
-        raise Exception(f"Semua model Gemini sibuk/gagal untuk buat draf post. Error terakhir: {last_error}")
-    
+        raise Exception(f"All Gemini models busy/failed. Last error: {last_error}")
+
     raw_text = response.text.strip()
-    
-    # Pembersihan string JSON cadangan jika config mime-type terlewat oleh model tertentu
-    if raw_text.startswith("```json"):
-        raw_text = raw_text.replace("```json", "", 1).rstrip("`").strip()
-    if raw_text.startswith("```"):
-        raw_text = raw_text.replace("```", "", 1).rstrip("`").strip()
-        
+    if raw_text.startswith("```json"): raw_text = raw_text.replace("```json", "", 1).rstrip("`").strip()
+    if raw_text.startswith("```"): raw_text = raw_text.replace("```", "", 1).rstrip("`").strip()
+
     try:
         return json.loads(raw_text)
     except Exception:
-        # Fallback terakhir jika JSON benar-benar hancur
-        return [
-            {"id": "1", "title": "Draf Utama", "content": response.text}
-        ]
+        return [{"id": "1", "title": "Draft", "content": response.text}]
