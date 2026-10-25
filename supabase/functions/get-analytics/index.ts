@@ -37,7 +37,7 @@ serve(async (req) => {
     const { data: account, error: accErr } = await supabase
       .schema("threads")
       .from("threads_accounts")
-      .select("id, username") // Ambil username kalau ada, buat bikin URL
+      .select("id")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -48,14 +48,13 @@ serve(async (req) => {
       });
     }
 
-    // Ambil SEMUA postingan terbit (berapapun jumlahnya, biar bisa diproses sorting-nya)
     const { data: publishedScheduled } = await supabase
       .schema("threads")
       .from("scheduled_posts")
       .select("id, text, published_media_id, scheduled_for, created_at")
       .eq("account_id", account.id)
       .eq("status", "published")
-      .order("scheduled_for", { ascending: false }); // Urutkan dari yang terbaru
+      .order("scheduled_for", { ascending: false });
 
     const { data: postsWithMetrics } = await supabase
       .schema("threads")
@@ -66,9 +65,6 @@ serve(async (req) => {
       `)
       .eq("account_id", account.id);
 
-    // Mapping yang lebih pintar:
-    // 1. Coba cocokin via published_media_id (Paling akurat)
-    // 2. Kalau gagal, coba cocokin via Index urutan tanggal (Fallback)
     const scheduledMap = new Map();
     (publishedScheduled || []).forEach((sp: any) => {
       if (sp.published_media_id) {
@@ -82,12 +78,9 @@ serve(async (req) => {
     let totalReposts = 0;
 
     const formattedPosts = (postsWithMetrics || []).map((p: any, index: number) => {
-      // Coba cari via Media ID
       let sp = scheduledMap.get(p.threads_media_id);
       
-      // FALLBACK: Kalau gak ketemu (misal ID kosong), ambil dari urutan tanggal terdekat
       if (!sp && publishedScheduled && publishedScheduled[index]) {
-         // Cek selisih waktu, kalau deket (di bawah 10 menit), anggap itu pasangannya
          const timeDiff = Math.abs(new Date(p.created_at).getTime() - new Date(publishedScheduled[index].created_at).getTime());
          if (timeDiff < 600000) { 
              sp = publishedScheduled[index];
@@ -107,10 +100,9 @@ serve(async (req) => {
         ? ((latestMetrics.likes + latestMetrics.replies + latestMetrics.reposts) / latestMetrics.views) * 100
         : 0;
 
-      // FORMAT URL YANG BENAR (Threads format)
-      const username = account.username ? `@${account.username}` : 'post';
+      // FIX LINK: Pakai shortlink resmi Threads (paling stabil, gak butuh username)
       const permalink = p.threads_media_id 
-        ? `https://www.threads.net/${username}/post/${p.threads_media_id}` 
+        ? `https://www.threads.net/t/${p.threads_media_id}` 
         : null;
 
       return {
