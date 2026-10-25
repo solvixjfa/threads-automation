@@ -21,11 +21,7 @@
       <div v-if="showAiPanel" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div class="md:col-span-2">
-            <Input
-              v-model="aiTopic"
-              label="Topic / Short Idea"
-              placeholder="Enter a short topic (e.g., Website Development at Ixiera)..."
-            />
+            <Input v-model="aiTopic" label="Topic / Short Idea" placeholder="Enter a short topic..." />
           </div>
           <div class="space-y-1">
             <label class="label">Tone / Style</label>
@@ -39,35 +35,20 @@
           </div>
 
           <div v-if="aiTone === 'Custom Prompt'" class="md:col-span-3">
-            <Textarea
-              v-model="customPrompt"
-              label="Custom Instruction"
-              :rows="3"
-              placeholder="Example: Write in casual English, mention ixiera.id twice, and end with a hook question..."
-            />
+            <Textarea v-model="customPrompt" label="Custom Instruction" :rows="3" placeholder="Example: Write in casual English..." />
           </div>
         </div>
 
         <div class="flex justify-end items-center gap-4 mt-2">
-          <!-- CREDIT BADGE DINAMIS -->
-          <div 
-            class="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold transition-colors"
-            :style="hasCustomKey ? 'border-color: var(--success); color: var(--success);' : (aiCredits > 0 ? 'border-color: var(--accent); color: var(--accent);' : 'border-color: var(--danger); color: var(--danger);')"
-          >
-            <span 
-              class="w-2 h-2 rounded-full" 
-              :style="hasCustomKey ? 'background: var(--success);' : (aiCredits > 0 ? 'background: var(--accent);' : 'background: var(--danger);')"
-            ></span>
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold transition-colors"
+            :style="hasCustomKey ? 'border-color: var(--success); color: var(--success);' : (aiCredits > 0 ? 'border-color: var(--accent); color: var(--accent);' : 'border-color: var(--danger); color: var(--danger);')">
+            <span class="w-2 h-2 rounded-full" :style="hasCustomKey ? 'background: var(--success);' : (aiCredits > 0 ? 'background: var(--accent);' : 'background: var(--danger);')"></span>
             <span v-if="hasCustomKey">Unlimited (Own Key)</span>
             <span v-else-if="aiCredits > 0">{{ aiCredits }} Credits Left</span>
             <span v-else>Out of Credits</span>
           </div>
 
-          <Button
-            @click="generateAiIdeas"
-            :disabled="isGenerating || !aiTopic || (aiTone === 'Custom Prompt' && !customPrompt) || (!hasCustomKey && aiCredits <= 0)"
-            :loading="isGenerating"
-          >
+          <Button @click="generateAiIdeas" :disabled="isGenerating || !aiTopic || (aiTone === 'Custom Prompt' && !customPrompt) || (!hasCustomKey && aiCredits <= 0)" :loading="isGenerating">
             {{ isGenerating ? 'Planning Content...' : 'Generate 3-Day Plan' }}
           </Button>
         </div>
@@ -78,9 +59,7 @@
               <Badge variant="accent">{{ item.title }}</Badge>
               <p class="text-xs whitespace-pre-wrap leading-relaxed">{{ item.content }}</p>
             </div>
-            <Button variant="secondary" size="sm" @click="applyAiDraft(item.content)">
-              Use This Draft
-            </Button>
+            <Button variant="secondary" size="sm" @click="applyAiDraft(item.content)">Use This Draft</Button>
           </div>
         </div>
       </div>
@@ -90,29 +69,19 @@
       <div class="flex justify-between items-center mb-4">
         <span class="text-xs font-bold uppercase tracking-wide">Main Post Text</span>
         <div class="flex items-center gap-2">
-          <Badge v-if="postText.length > 500" variant="accent">
-            Auto-Split ({{ threadParts.length }} Parts)
-          </Badge>
-          <span class="text-xs font-medium" :class="postText.length > 500 ? 'theme-text font-bold' : 'theme-text-muted'">
-            {{ postText.length }} Chars
-          </span>
+          <Badge v-if="postText.length > 500" variant="accent">Auto-Split ({{ threadParts.length }} Parts)</Badge>
+          <span class="text-xs font-medium" :class="postText.length > 500 ? 'theme-text font-bold' : 'theme-text-muted'">{{ postText.length }} Chars</span>
         </div>
       </div>
 
-      <Textarea
-        v-model="postText"
-        :rows="6"
-        placeholder="Write your draft here. If it exceeds 500 characters, the system will automatically split it into a thread..."
-      />
+      <Textarea v-model="postText" :rows="6" placeholder="Write your draft here..." />
 
       <div v-if="threadParts.length > 1" class="space-y-3 pt-3 divider mt-4">
         <span class="text-xs font-bold uppercase tracking-wide">Thread Preview ({{ threadParts.length }} Parts)</span>
         <div v-for="(part, idx) in threadParts" :key="idx" class="p-3 rounded-xl theme-bg-sec border theme-border space-y-1.5">
           <div class="flex justify-between items-center text-[11px] font-bold theme-text-muted">
             <span>Part {{ idx + 1 }} of {{ threadParts.length }}</span>
-            <span :class="part.length > 500 ? 'font-bold' : ''" :style="part.length > 500 ? 'color: var(--danger);' : ''">
-              {{ part.length }} / 500
-            </span>
+            <span :class="part.length > 500 ? 'font-bold' : ''" :style="part.length > 500 ? 'color: var(--danger);' : ''">{{ part.length }} / 500</span>
           </div>
           <textarea v-model="threadParts[idx]" rows="3" class="textarea text-xs"></textarea>
         </div>
@@ -141,13 +110,9 @@
           </div>
           <div class="space-y-1">
             <label class="label">Feedback Notes</label>
-            <p class="text-xs leading-relaxed theme-bg-sec p-3.5 rounded-xl border theme-border">
-              {{ scoreResult.feedback }}
-            </p>
+            <p class="text-xs leading-relaxed theme-bg-sec p-3.5 rounded-xl border theme-border">{{ scoreResult.feedback }}</p>
           </div>
-          <div class="flex justify-end pt-2">
-            <Button @click="scoreResult = null">Close</Button>
-          </div>                                                           
+          <div class="flex justify-end pt-2"><Button @click="scoreResult = null">Close</Button></div>                                                           
         </div>
       </div>                                                           
     </Teleport>
@@ -168,7 +133,6 @@ const threadParts = ref<string[]>([])
 const scheduledDate = ref('')
 const isSaving = ref(false)
 const isChecking = ref(false)                                      
-                                                                  
 const showAiPanel = ref(true)
 const aiTopic = ref('')
 const aiTone = ref('Educational & Casual Insight')
@@ -184,20 +148,17 @@ function splitTextIntoParts(text: string, maxLen = 480): string[] {
   const paragraphs = text.split(/\n+/)
   const parts: string[] = []
   let current = ''                                                   
-  
   for (const p of paragraphs) {
     if ((current + '\n\n' + p).trim().length <= maxLen) {                
       current = current ? current + '\n\n' + p : p
     } else {
       if (current) parts.push(current.trim())
-      if (p.length <= maxLen) {                                            
-        current = p
-      } else {                                                             
+      if (p.length <= maxLen) { current = p } 
+      else {                                                             
         const sentences = p.match(/[^.!?]+[.!?]+/g) || [p]
         for (const s of sentences) {
-          if ((current + ' ' + s).trim().length <= maxLen) {
-            current = current ? current + ' ' + s : s                        
-          } else {
+          if ((current + ' ' + s).trim().length <= maxLen) { current = current ? current + ' ' + s : s } 
+          else {
             if (current) parts.push(current.trim())                            
             current = s
           }
@@ -209,45 +170,38 @@ function splitTextIntoParts(text: string, maxLen = 480): string[] {
   return parts
 }                                                                  
 
-function handleTextChange() {                                        
-  threadParts.value = splitTextIntoParts(postText.value)
-}
+function handleTextChange() { threadParts.value = splitTextIntoParts(postText.value) }
                                                                    
 watch(postText, (newVal) => {
   handleTextChange()
   localStorage.setItem('ixiera_draft_text', newVal)                
 })
 
-watch(scheduledDate, (newVal) => {
-  localStorage.setItem('ixiera_draft_time', newVal)
-})                                                                 
+watch(scheduledDate, (newVal) => { localStorage.setItem('ixiera_draft_time', newVal) })                                                                 
 
 async function generateAiIdeas() {
   if (!aiTopic.value) return
   isGenerating.value = true
   aiResults.value = []                                             
+  
+  // Abort Controller untuk batas waktu 45 detik
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 45000)
+
   try {
     const { data: { user } } = await supabase.auth.getUser()           
     if (!user) throw new Error('User not authenticated')                                                                           
-    const { data: account } = await supabase
-      .schema('threads')
-      .from('threads_accounts')
-      .select('id')
-      .eq('user_id', user.id)                                            
-      .maybeSingle()
-
+    const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id').eq('user_id', user.id).maybeSingle()
     if (!account) throw new Error('Threads account not connected')
                                                                        
     const response = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/rag/generate-post', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({                                               
-        account_id: account.id,
-        topic: aiTopic.value,
-        tone: aiTone.value,
-        custom_prompt: aiTone.value === 'Custom Prompt' ? customPrompt.value : undefined                                                    
-      })
+      signal: controller.signal,
+      body: JSON.stringify({ account_id: account.id, topic: aiTopic.value, tone: aiTone.value, custom_prompt: aiTone.value === 'Custom Prompt' ? customPrompt.value : undefined })
     })
+
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       const errData = await response.json()
@@ -261,7 +215,11 @@ async function generateAiIdeas() {
       showToast('3-Day Content Plan generated successfully!', 'success')
     }                                                                
   } catch (err: any) {
-    showToast('AI Generator failed: ' + err.message, 'error')
+    if (err.name === 'AbortError') {
+      showToast('Request timed out. Server is taking too long. Please try again.', 'error')
+    } else {
+      showToast('AI Generator failed: ' + err.message, 'error')
+    }
   } finally {
     isGenerating.value = false                                       
   }
@@ -275,95 +233,51 @@ function applyAiDraft(content: string) {
 async function checkScore() {
   isChecking.value = true
   try {
-    const { data, error } = await supabase.functions.invoke('score-draft', {
-      body: { text: postText.value }
-    })
+    const { data, error } = await supabase.functions.invoke('score-draft', { body: { text: postText.value } })
     if (error) throw error
     if (data?.error) throw new Error(data.error)
-
-    scoreResult.value = {
-      score: data?.score ?? 80,
-      feedback: data?.feedback ?? 'Text looks good.'          
-    }                                                                
+    scoreResult.value = { score: data?.score ?? 80, feedback: data?.feedback ?? 'Text looks good.' }
   } catch (err: any) {
     showToast('AI Analysis failed: ' + err.message, 'error')           
-  } finally {
-    isChecking.value = false
-  }
+  } finally { isChecking.value = false }
 }
 
 async function schedulePost() {
   if (!postText.value || !scheduledDate.value) return
-                                                                     
   const scheduleTime = new Date(scheduledDate.value).getTime()
-  if (scheduleTime <= Date.now()) {                                    
-    showToast('Schedule time must be in the future.', 'error')
-    return                                                           
-  }
-
+  if (scheduleTime <= Date.now()) { showToast('Schedule time must be in the future.', 'error'); return }
   isSaving.value = true
   try {                                                                
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('User not authenticated')    
-    
-    const { data: account } = await supabase
-      .schema('threads')
-      .from('threads_accounts')
-      .select('id')
-      .eq('user_id', user.id)
-      .maybeSingle()
-                                                                       
+    const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id').eq('user_id', user.id).maybeSingle()
     if (!account) throw new Error('Threads account not connected')
 
     let parentId = null
     for (let i = 0; i < threadParts.value.length; i++) {                 
-      const { data: insertedPart, error: insertError } = await supabase                                                                       
-        .schema('threads')
-        .from('scheduled_posts')                                           
-        .insert({
-          account_id: account.id,                                            
-          text: threadParts.value[i],
-          scheduled_for: new Date(scheduledDate.value).toISOString(),
-          status: 'scheduled',
-          parent_id: parentId,
-          sequence_number: i + 1,
-          idempotency_key: crypto.randomUUID()                             
-        })
-        .select()
-        .single()                                                  
+      const { data: insertedPart, error: insertError } = await supabase.schema('threads').from('scheduled_posts').insert({
+        account_id: account.id, text: threadParts.value[i], scheduled_for: new Date(scheduledDate.value).toISOString(),
+        status: 'scheduled', parent_id: parentId, sequence_number: i + 1, idempotency_key: crypto.randomUUID()                             
+      }).select().single()                                                  
       if (insertError) throw insertError                                 
-      if (i === 0) {
-        parentId = insertedPart.id
-      }
+      if (i === 0) { parentId = insertedPart.id }
     }                                                              
     showToast(`Successfully scheduled ${threadParts.value.length} thread(s)!`, 'success')
-
     postText.value = ''
     localStorage.removeItem('ixiera_draft_text')                   
     const d = new Date()                                               
-    d.setHours(d.getHours() + 1)
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+    d.setHours(d.getHours() + 1); d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
     scheduledDate.value = d.toISOString().slice(0, 16)
     localStorage.setItem('ixiera_draft_time', scheduledDate.value)
-
   } catch (err: any) {
     showToast('Failed to schedule: ' + err.message, 'error')
-  } finally {
-    isSaving.value = false
-  }
+  } finally { isSaving.value = false }
 }
 
 onMounted(async () => {
-  // Load Kredit dan Custom Key dari DB
   const { data: { user } } = await supabase.auth.getUser()
   if (user) {
-    const { data: acc } = await supabase
-      .schema('threads')
-      .from('threads_accounts')
-      .select('ai_credits, custom_gemini_key')
-      .eq('user_id', user.id)
-      .maybeSingle()
-      
+    const { data: acc } = await supabase.schema('threads').from('threads_accounts').select('ai_credits, custom_gemini_key').eq('user_id', user.id).maybeSingle()
     if (acc) {
       aiCredits.value = acc.ai_credits ?? 20
       hasCustomKey.value = !!acc.custom_gemini_key
@@ -376,9 +290,7 @@ onMounted(async () => {
     localStorage.removeItem('draft_repurpose')
   } else {
     const localDraftText = localStorage.getItem('ixiera_draft_text')
-    if (localDraftText) {
-      postText.value = localDraftText
-    }
+    if (localDraftText) { postText.value = localDraftText }
   }
 
   const localDraftTime = localStorage.getItem('ixiera_draft_time')
