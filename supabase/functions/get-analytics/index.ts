@@ -34,7 +34,6 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Ambil akun Threads milik user
     const { data: account, error: accErr } = await supabase
       .schema("threads")
       .from("threads_accounts")
@@ -49,7 +48,6 @@ serve(async (req) => {
       });
     }
 
-    // 1. Ambil postingan terbit dari scheduled_posts (tempat teks & tanggal terbit disimpan)
     const { data: publishedScheduled } = await supabase
       .schema("threads")
       .from("scheduled_posts")
@@ -57,7 +55,6 @@ serve(async (req) => {
       .eq("account_id", account.id)
       .eq("status", "published");
 
-    // 2. Ambil media_id & post_metrics (hanya kolom yang eksis di database)
     const { data: postsWithMetrics } = await supabase
       .schema("threads")
       .from("posts")
@@ -67,7 +64,6 @@ serve(async (req) => {
       `)
       .eq("account_id", account.id);
 
-    // Mapping scheduled_posts berdasarkan published_media_id
     const scheduledMap = new Map();
     (publishedScheduled || []).forEach((sp: any) => {
       if (sp.published_media_id) {
@@ -100,13 +96,12 @@ serve(async (req) => {
         threads_media_id: p.threads_media_id,
         text: sp?.text || "Postingan Threads",
         permalink: p.threads_media_id ? `https://www.threads.net/post/${p.threads_media_id}` : null,
-        posted_at: sp?.scheduled_for || sp?.created_at || null,
+        posted_at: sp?.scheduled_for || sp?.created_at || new Date().toISOString(),
         metrics: latestMetrics,
         engagement_rate: parseFloat(engagement.toFixed(2))
       };
     });
 
-    // 3. Ambil ringkasan harian dari account_insights_daily
     const { data: dailyInsights } = await supabase
       .schema("threads")
       .from("account_insights_daily")
@@ -115,7 +110,6 @@ serve(async (req) => {
       .order("date", { ascending: true })
       .limit(30);
 
-    // Fallback akumulasi jika post_metrics individual belum sempat disinkronisasi
     if (totalViews === 0 && totalLikes === 0 && dailyInsights && dailyInsights.length > 0) {
       dailyInsights.forEach((d: any) => {
         totalViews += d.views || 0;
@@ -125,7 +119,8 @@ serve(async (req) => {
       });
     }
 
-    const topPosts = [...formattedPosts].sort((a, b) => b.engagement_rate - a.engagement_rate).slice(0, 5);
+    // Ambil top 50 post terbaru buat dilempar ke frontend biar bisa difilter
+    const sortedByDate = [...formattedPosts].sort((a, b) => new Date(b.posted_at).getTime() - new Date(a.posted_at).getTime());
 
     const overview = {
       total_posts: publishedScheduled?.length || formattedPosts.length || 0,
@@ -133,7 +128,7 @@ serve(async (req) => {
       total_likes: totalLikes,
       total_replies: totalReplies,
       total_reposts: totalReposts,
-      avg_engagement_rate: formattedPosts.length > 0 
+      avg_engagement_rate: formattedPosts.length > 0
         ? parseFloat((formattedPosts.reduce((acc, p) => acc + p.engagement_rate, 0) / formattedPosts.length).toFixed(2))
         : 0
     };
@@ -142,8 +137,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         overview,
-        top_posts: topPosts,
-        recent_posts: formattedPosts.slice(0, 20),
+        all_posts: sortedByDate.slice(0, 50), // Kirim 50 post terbaru
         daily_trends: dailyInsights || []
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -174,25 +174,43 @@
       </div>
 
       <div class="card p-6 space-y-4">
-        <div class="flex justify-between items-center pb-3 divider">
+        <div class="flex flex-wrap justify-between items-center pb-3 divider gap-3">
           <h2 class="text-xs font-bold uppercase tracking-wide">Top 5 Postingan</h2>
-          <span class="text-[10px] font-bold theme-text-muted">By Engagement Rate</span>
+          
+          <!-- TAB FILTER SAAS GRADE -->
+          <div class="flex items-center gap-1 p-1 rounded-lg theme-bg border theme-border">
+            <button 
+              @click="activeTab = 'newest'"
+              class="px-3 py-1 text-[10px] font-bold rounded-md transition-colors"
+              :class="activeTab === 'newest' ? 'bg-white text-slate-900 shadow-sm' : 'theme-text-muted hover:theme-text'"
+            >Terbaru</button>
+            <button 
+              @click="activeTab = 'views'"
+              class="px-3 py-1 text-[10px] font-bold rounded-md transition-colors"
+              :class="activeTab === 'views' ? 'bg-white text-slate-900 shadow-sm' : 'theme-text-muted hover:theme-text'"
+            >Views Terbanyak</button>
+            <button 
+              @click="activeTab = 'er'"
+              class="px-3 py-1 text-[10px] font-bold rounded-md transition-colors"
+              :class="activeTab === 'er' ? 'bg-white text-slate-900 shadow-sm' : 'theme-text-muted hover:theme-text'"
+            >Engagement</button>
+          </div>
         </div>
 
-        <div v-if="topPosts.length === 0" class="text-center py-8 text-xs theme-text-muted">
+        <div v-if="allPosts.length === 0" class="text-center py-8 text-xs theme-text-muted">
           Belum ada data postingan terbit atau analitik belum tersinkronisasi.
         </div>
 
         <div v-else class="space-y-3">
           <div
-            v-for="post in topPosts"
+            v-for="post in filteredTopPosts"
             :key="post.id"
             class="p-4 card card-hover flex flex-col md:flex-row md:items-center justify-between gap-3 theme-bg-sec"
           >
             <div class="space-y-1 flex-1">
               <p class="text-xs font-medium line-clamp-2">{{ post.text }}</p>
               <div class="flex items-center gap-3 text-[11px] theme-text-muted">
-                <span>{{ formatDate(post.posted_at || post.created_at) }}</span>
+                <span>{{ formatDate(post.posted_at) }}</span>
                 <a v-if="post.permalink" :href="post.permalink" target="_blank" class="font-bold theme-text hover:underline">
                   Buka di Threads
                 </a>
@@ -202,11 +220,11 @@
             <div class="flex items-center gap-4 text-xs shrink-0 p-2.5 rounded-lg theme-bg theme-border border">
               <div class="text-center px-2">
                 <span class="block text-[9px] theme-text-muted uppercase font-bold">Views</span>
-                <span class="font-bold">{{ post.metrics?.views ?? post.views ?? 0 }}</span>
+                <span class="font-bold">{{ post.metrics?.views ?? 0 }}</span>
               </div>
               <div class="text-center px-2 border-l theme-border">
                 <span class="block text-[9px] theme-text-muted uppercase font-bold">Likes</span>
-                <span class="font-bold">{{ post.metrics?.likes ?? post.likes ?? 0 }}</span>
+                <span class="font-bold">{{ post.metrics?.likes ?? 0 }}</span>
               </div>
               <div class="text-center px-2 border-l theme-border">
                 <span class="block text-[9px] theme-text-muted uppercase font-bold">ER</span>
@@ -230,6 +248,7 @@ const retryingPostId = ref<string | null>(null)
 const toastMessage = ref('')
 const currentAccountId = ref<string | null>(null)
 const lastSyncedAt = ref<string | null>(null)
+const activeTab = ref('newest') // Tab Default
 
 const queueMetrics = ref({ scheduled: 0, published: 0, failed: 0 })
 
@@ -242,10 +261,23 @@ const overview = ref({
   avg_engagement_rate: 0
 })
 
-const topPosts = ref<any[]>([])
+const allPosts = ref<any[]>([])
 const dailyInsights = ref<any[]>([])
 const failedPosts = ref<any[]>([])
 const adminHealth = ref<any>(null)
+
+// COMPUTED: Nyortir 5 besar berdasarkan Tab yang dipilih
+const filteredTopPosts = computed(() => {
+  let sorted = [...allPosts.value]
+  if (activeTab.value === 'newest') {
+    sorted.sort((a, b) => new Date(b.posted_at).getTime() - new Date(a.posted_at).getTime())
+  } else if (activeTab.value === 'views') {
+    sorted.sort((a, b) => (b.metrics?.views || 0) - (a.metrics?.views || 0))
+  } else if (activeTab.value === 'er') {
+    sorted.sort((a, b) => (b.engagement_rate || 0) - (a.engagement_rate || 0))
+  }
+  return sorted.slice(0, 5)
+})
 
 const maxDailyViews = computed(() => {
   if (dailyInsights.value.length === 0) return 100
@@ -323,7 +355,8 @@ async function loadAllDashboardData() {
     const { data: analyticsData, error: analyticsErr } = await supabase.functions.invoke('get-analytics')
     if (!analyticsErr && analyticsData?.success) {
       if (analyticsData.overview) overview.value = analyticsData.overview
-      if (analyticsData.top_posts) topPosts.value = analyticsData.top_posts
+      // Pake all_posts yang baru dari Edge Function
+      if (analyticsData.all_posts) allPosts.value = analyticsData.all_posts 
     }
 
     const { data: healthData, error: healthErr } = await supabase.functions.invoke('admin-health')
