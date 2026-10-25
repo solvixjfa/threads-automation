@@ -48,10 +48,22 @@
           </div>
         </div>
 
-        <div class="flex justify-end">
+        <div class="flex justify-end items-center gap-4 mt-2">
+          <!-- CREDIT BADGE (PURE CSS) -->
+          <div 
+            class="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold transition-colors"
+            :style="aiCredits > 0 ? 'border-color: var(--accent); color: var(--accent);' : 'border-color: var(--danger); color: var(--danger);'"
+          >
+            <span 
+              class="w-2 h-2 rounded-full" 
+              :style="aiCredits > 0 ? 'background: var(--accent);' : 'background: var(--danger);'"
+            ></span>
+            <span>{{ aiCredits > 0 ? aiCredits + ' Credits Left' : 'Out of Credits' }}</span>
+          </div>
+
           <Button
             @click="generateAiIdeas"
-            :disabled="isGenerating || !aiTopic || (aiTone === 'Custom Prompt' && !customPrompt)"
+            :disabled="isGenerating || !aiTopic || (aiTone === 'Custom Prompt' && !customPrompt) || aiCredits <= 0"
             :loading="isGenerating"
           >
             {{ isGenerating ? 'Planning Content...' : 'Generate 3-Day Plan' }}
@@ -110,11 +122,9 @@
         </Button>                                                  
         <div class="flex-1 flex justify-end items-center gap-3 flex-wrap">
           <BestTimeChip @apply="(val) => scheduledDate = val" />
-
           <input v-model="scheduledDate" type="datetime-local" class="input" style="width: auto;" />
-          
           <Button @click="schedulePost" :disabled="!postText || !scheduledDate || isSaving" :loading="isSaving">
-            {{ isSaving ? 'Processing...' : (threadParts.length > 1 ? 'Schedule ' + threadParts.length + ' Thread' : 'Schedule Post') }}
+            {{ isSaving ? 'Processing...' : (threadParts.length > 1 ? 'Schedule ' + threadParts.length + ' Threads' : 'Schedule Post') }}
           </Button>
         </div>
       </div>
@@ -156,7 +166,6 @@ const threadParts = ref<string[]>([])
 const scheduledDate = ref('')
 const isSaving = ref(false)
 const isChecking = ref(false)                                      
-const isUpdating = ref(false)
                                                                   
 const showAiPanel = ref(true)
 const aiTopic = ref('')
@@ -165,6 +174,7 @@ const customPrompt = ref('')
 const isGenerating = ref(false)
 const aiResults = ref<any[]>([])
 const scoreResult = ref<any>(null)                                 
+const aiCredits = ref(20) // Nanti di-load dari database saat onMounted
 
 function splitTextIntoParts(text: string, maxLen = 480): string[] {  
   if (text.length <= maxLen) return [text]
@@ -209,17 +219,6 @@ watch(scheduledDate, (newVal) => {
   localStorage.setItem('ixiera_draft_time', newVal)
 })                                                                 
 
-function formatDate(isoString: string) {
-  const d = new Date(isoString)
-  return d.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
-}
-                                                                   
-function statusVariant(status: string) {
-  if (status === 'scheduled') return 'default'                       
-  if (status === 'published') return 'accent'
-  if (['error', 'failed', 'quota_exceeded'].includes(status)) return 'danger'
-  return 'default'
-}                                                                  
 async function generateAiIdeas() {
   if (!aiTopic.value) return
   isGenerating.value = true
@@ -255,6 +254,7 @@ async function generateAiIdeas() {
     const resData = await response.json()
     if (resData?.options) {                                              
       aiResults.value = resData.options
+      aiCredits.value = Math.max(0, aiCredits.value - 1) // Potong kredit di UI
       showToast('3-Day Content Plan generated successfully!', 'success')
     }                                                                
   } catch (err: any) {
@@ -350,7 +350,14 @@ async function schedulePost() {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // Load Kredit dari DB
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    const { data: acc } = await supabase.schema('threads').from('threads_accounts').select('ai_credits').eq('user_id', user.id).maybeSingle()
+    if (acc) aiCredits.value = acc.ai_credits ?? 20
+  }
+
   const savedRepurpose = localStorage.getItem('draft_repurpose')
   if (savedRepurpose) {
     postText.value = savedRepurpose
