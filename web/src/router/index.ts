@@ -7,6 +7,7 @@ import AccountView from '../views/settings/AccountView.vue'
 import AutoReplyView from '../views/settings/AutoReplyView.vue'
 import TemplateView from '../views/settings/TemplateView.vue'
 import KnowledgeView from '../views/settings/KnowledgeView.vue'
+import AiView from '../views/settings/AiView.vue'
 import LoginView from '../views/LoginView.vue'
 import ComposerView from '../views/ComposerView.vue'
 import RepurposeView from '../views/RepurposeView.vue'
@@ -66,6 +67,7 @@ const router = createRouter({
         { path: 'auto-reply', name: 'settings-auto-reply', component: AutoReplyView },
         { path: 'templates', name: 'settings-templates', component: TemplateView },
         { path: 'knowledge', name: 'settings-knowledge', component: KnowledgeView },
+        { path: 'ai', name: 'settings-ai', component: AiView },
       ],
     },
 
