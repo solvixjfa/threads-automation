@@ -1,6 +1,7 @@
 import os
-import time
+import asyncio
 import httpx
+from datetime import datetime, timezone
 from supabase import create_client
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
@@ -12,40 +13,75 @@ def get_supabase():
 async def import_threads_history(account_id: str, access_token: str, max_pages: int = 5):
     db = get_supabase()
     url = f"https://graph.threads.net/v1.0/me/threads?fields=id,media_product_type,text,timestamp,permalink,like_count,views&access_token={access_token}"
-    
+
     total_imported = 0
     pages_processed = 0
-    
+
     async with httpx.AsyncClient() as client:
         while url and pages_processed < max_pages:
             try:
                 resp = await client.get(url, timeout=30.0)
-                if resp.status_code == 429: # Rate limit Meta
-                    time.sleep(5) # Pause & retry
+                if resp.status_code == 429:
+                    await asyncio.sleep(5)
                     continue
-                
+
                 resp.raise_for_status()
                 data = resp.json()
-                
+
                 posts = data.get("data", [])
                 for p in posts:
+                    media_id = p.get("id")
+                    timestamp = p.get("timestamp")
+                    text = p.get("text", "Postingan Tanpa Teks")
+
+                    # 1. Simpan ke tabel posts (Biar dapet UUID buat metrik)
+                    post_res = db.schema("threads").from_("posts").upsert({
+                        "account_id": account_id,
+                        "threads_media_id": media_id,
+                        "created_at": timestamp
+                    }, on_conflict="threads_media_id").execute()
+
+                    # 2. Simpan ke scheduled_posts (FIX: pakai published_media_id)
                     db.schema("threads").from_("scheduled_posts").upsert({
                         "account_id": account_id,
-                        "threads_media_id": p.get("id"),
-                        "text": p.get("text", ""),
+                        "published_media_id": media_id,
+                        "text": text,
                         "status": "published",
-                        "posted_at": p.get("timestamp"),
-                        "permalink": p.get("permalink")
-                    }, on_conflict="threads_media_id").execute()
-                    
+                        "scheduled_for": timestamp,
+                    }, on_conflict="published_media_id").execute()
+
+                    # 3. Tarik Metrik (Views/Likes) dari Meta
+                    try:
+                        insight_url = f"https://graph.threads.net/v1.0/{media_id}/insights?metric=views,likes,replies,reposts,quotes&access_token={access_token}"
+                        ins_resp = await client.get(insight_url, timeout=15.0)
+                        if ins_resp.status_code == 200:
+                            ins_data = ins_resp.json()
+                            if "data" in ins_data:
+                                metrics = {item["name"]: item["values"][0]["value"] for item in ins_data["data"] if "values" in item}
+                                
+                                if post_res.data:
+                                    post_id = post_res.data[0]["id"]
+                                    db.schema("threads").from_("post_metrics").delete().eq("post_id", post_id).eq("snapshot_label", "latest").execute()
+                                    db.schema("threads").from_("post_metrics").insert({
+                                        "post_id": post_id,
+                                        "snapshot_label": "latest",
+                                        "views": metrics.get("views", 0),
+                                        "likes": metrics.get("likes", 0),
+                                        "replies": metrics.get("replies", 0),
+                                        "reposts": metrics.get("reposts", 0),
+                                        "quotes": metrics.get("quotes", 0),
+                                        "captured_at": datetime.now(timezone.utc).isoformat()
+                                    }).execute()
+                    except Exception as e:
+                        print(f"[Importer] Gagal narik metrik {media_id}: {e}")
+
                     total_imported += 1
-                
-                # Check pagination cursor
+
                 url = data.get("paging", {}).get("next")
                 pages_processed += 1
-                
+
             except Exception as e:
                 print(f"Error import batch page {pages_processed}: {str(e)}")
                 break
-                
+
     return {"total_imported": total_imported, "pages_processed": pages_processed}

@@ -177,7 +177,6 @@
         <div class="flex flex-wrap justify-between items-center pb-3 divider gap-3">
           <h2 class="text-xs font-bold uppercase tracking-wide">Top 5 Postingan</h2>
           
-          <!-- TAB FILTER SAAS GRADE -->
           <div class="flex items-center gap-1 p-1 rounded-lg theme-bg border theme-border">
             <button 
               @click="activeTab = 'newest'"
@@ -248,25 +247,15 @@ const retryingPostId = ref<string | null>(null)
 const toastMessage = ref('')
 const currentAccountId = ref<string | null>(null)
 const lastSyncedAt = ref<string | null>(null)
-const activeTab = ref('newest') // Tab Default
+const activeTab = ref('newest')
 
 const queueMetrics = ref({ scheduled: 0, published: 0, failed: 0 })
-
-const overview = ref({
-  total_posts: 0,
-  total_views: 0,
-  total_likes: 0,
-  total_replies: 0,
-  total_reposts: 0,
-  avg_engagement_rate: 0
-})
-
+const overview = ref({ total_posts: 0, total_views: 0, total_likes: 0, total_replies: 0, total_reposts: 0, avg_engagement_rate: 0 })
 const allPosts = ref<any[]>([])
 const dailyInsights = ref<any[]>([])
 const failedPosts = ref<any[]>([])
 const adminHealth = ref<any>(null)
 
-// COMPUTED: Nyortir 5 besar berdasarkan Tab yang dipilih
 const filteredTopPosts = computed(() => {
   let sorted = [...allPosts.value]
   if (activeTab.value === 'newest') {
@@ -303,12 +292,7 @@ function formatDayLabel(dateStr: string) {
 }
 
 async function fetchQueueMetricsAndFailed(accountId: string) {
-  const { data } = await supabase
-    .schema('threads')
-    .from('scheduled_posts')
-    .select('*')
-    .eq('account_id', accountId)
-
+  const { data } = await supabase.schema('threads').from('scheduled_posts').select('*').eq('account_id', accountId)
   if (data) {
     queueMetrics.value.scheduled = data.filter(p => p.status === 'scheduled').length
     queueMetrics.value.published = data.filter(p => p.status === 'published').length
@@ -318,14 +302,7 @@ async function fetchQueueMetricsAndFailed(accountId: string) {
 }
 
 async function fetchDailyInsights(accountId: string) {
-  const { data } = await supabase
-    .schema('threads')
-    .from('account_insights_daily')
-    .select('date, views, likes, replies, reposts')
-    .eq('account_id', accountId)
-    .order('date', { ascending: true })
-    .limit(14)
-
+  const { data } = await supabase.schema('threads').from('account_insights_daily').select('date, views, likes, replies, reposts').eq('account_id', accountId).order('date', { ascending: true }).limit(14)
   if (data) dailyInsights.value = data
 }
 
@@ -335,27 +312,17 @@ async function loadAllDashboardData() {
   try {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-
-    const { data: account } = await supabase
-      .schema('threads')
-      .from('threads_accounts')
-      .select('id, last_synced_at')
-      .eq('user_id', user.id)
-      .maybeSingle()
+    const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id, last_synced_at').eq('user_id', user.id).maybeSingle()
 
     if (account) {
       currentAccountId.value = account.id
       lastSyncedAt.value = account.last_synced_at
-      await Promise.all([
-        fetchQueueMetricsAndFailed(account.id),
-        fetchDailyInsights(account.id)
-      ])
+      await Promise.all([fetchQueueMetricsAndFailed(account.id), fetchDailyInsights(account.id)])
     }
 
     const { data: analyticsData, error: analyticsErr } = await supabase.functions.invoke('get-analytics')
     if (!analyticsErr && analyticsData?.success) {
       if (analyticsData.overview) overview.value = analyticsData.overview
-      // Pake all_posts yang baru dari Edge Function
       if (analyticsData.all_posts) allPosts.value = analyticsData.all_posts 
     }
 
@@ -375,17 +342,12 @@ async function loadAllDashboardData() {
 async function handleRetryPost(postId: string) {
   retryingPostId.value = postId
   try {
-    const { error } = await supabase.functions.invoke('admin-manage-queue', {
-      body: { action: 'retry', post_id: postId }
-    })
-
+    const { error } = await supabase.functions.invoke('admin-manage-queue', { body: { action: 'retry', post_id: postId } })
     if (error) {
       toastMessage.value = 'Gagal memicu retry: ' + error.message
     } else {
       toastMessage.value = 'Postingan berhasil dikirim ulang ke antrean terbit.'
-      if (currentAccountId.value) {
-        await fetchQueueMetricsAndFailed(currentAccountId.value)
-      }
+      if (currentAccountId.value) await fetchQueueMetricsAndFailed(currentAccountId.value)
     }
   } catch (err: any) {
     toastMessage.value = 'Terjadi kesalahan: ' + err.message
@@ -404,19 +366,20 @@ async function handleManualRefresh() {
   toastMessage.value = ''
 
   try {
-    const { error: syncErr } = await supabase.functions.invoke('worker-metrics', {
-      body: { account_id: currentAccountId.value }
-    })
+    // GANTI URL INI DENGAN URL RAILWAY LU
+    const response = await fetch('https://threads-automation-production-53ad.up.railway.app//api/v1/metrics/sync', { method: 'POST' })
 
-    if (syncErr) {
-      toastMessage.value = 'Gagal memicu sinkronisasi: ' + syncErr.message
-    } else {
-      toastMessage.value = 'Sinkronisasi metrik berhasil diperbarui dari Meta!'
-      await loadAllDashboardData()
-    }
+    if (!response.ok) throw new Error('Gagal memicu sinkronisasi backend')
+
+    toastMessage.value = 'Sinkronisasi berjalan di latar belakang. Data akan segera diperbarui.'
+    
+    setTimeout(async () => {
+        await loadAllDashboardData()
+        refreshing.value = false
+    }, 3000)
+
   } catch (err: any) {
-    toastMessage.value = 'Terjadi kesalahan saat refresh: ' + err.message
-  } finally {
+    toastMessage.value = 'Terjadi kesalahan: ' + err.message
     refreshing.value = false
   }
 }
