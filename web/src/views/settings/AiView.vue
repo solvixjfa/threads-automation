@@ -8,9 +8,9 @@
             <p class="text-xs theme-text-muted mt-0.5">Manage your AI credits and personal API keys.</p>
           </div>
           <!-- BADGE DINAMIS -->
-          <Badge v-if="hasCustomKey" variant="success">Unlimited (Own Key)</Badge>
+          <Badge v-if="hasCustomKey" variant="success">Own API Key</Badge>
           <Badge v-else :variant="credits > 0 ? 'success' : 'danger'">
-            {{ credits }} Credits Left
+            {{ credits }} SaaS Credits
           </Badge>
         </div>
       </template>
@@ -21,22 +21,33 @@
       </div>
 
       <template v-else>
-        <!-- SaaS Credits (Sembunyiin kalau pake custom key) -->
-        <div v-if="!hasCustomKey" class="p-4 rounded-lg theme-bg-sec border theme-border space-y-2 mb-6">
-          <h3 class="text-sm font-bold">SaaS AI Credits</h3>
-          <p class="text-xs theme-text-muted">
-            You have <strong>{{ credits }}</strong> credits left. 1 credit is used every time you generate a Content Plan.
-            If you run out, you can either top up or use your own Gemini API Key below.
+        <!-- STATUS BAR: Nunjukin lu lagi pake yang mana -->
+        <div 
+          class="p-4 rounded-lg border theme-border space-y-2 mb-6"
+          :style="hasCustomKey ? 'background: var(--bg-sec);' : 'background: var(--bg-sec);'"
+        >
+          <div class="flex items-center gap-2">
+            <span 
+              class="w-2.5 h-2.5 rounded-full" 
+              :style="hasCustomKey ? 'background: var(--success);' : 'background: var(--accent);'"
+            ></span>
+            <h3 class="text-sm font-bold">
+              {{ hasCustomKey ? 'Using Your Own Gemini API Key' : 'Using SaaS AI Credits' }}
+            </h3>
+          </div>
+          <p v-if="!hasCustomKey" class="text-xs theme-text-muted">
+            You have <strong>{{ credits }}</strong> credits left. 1 credit is used per Content Plan generation.
           </p>
-          <Button size="sm" @click="showToast('Top up feature coming soon.', 'info')">Top Up Credits</Button>
+          <p v-else class="text-xs theme-text-muted">
+            Unlimited generation. Your SaaS credits ({{ credits }}) will NOT be deducted.
+          </p>
         </div>
 
-        <!-- BYOK -->
+        <!-- BYOK INPUT -->
         <div class="space-y-3">
           <h3 class="text-sm font-bold">Bring Your Own Key (BYOK)</h3>
           <p class="text-xs theme-text-muted">
-            Use your own Google Gemini API Key to generate unlimited content for free (you pay Google directly). 
-            When a custom key is set, your SaaS credits will <strong>not</strong> be deducted.
+            Use your own Google Gemini API Key to generate unlimited content for free.
           </p>
           <div class="space-y-1">
             <label class="label">Gemini API Key</label>
@@ -54,9 +65,19 @@
       </template>
 
       <template #footer>
-        <div class="flex justify-end items-center gap-3">
-          <button v-if="hasCustomKey" @click="removeKey" class="text-xs font-bold theme-text-muted hover:theme-text">Remove API Key</button>
-          <Button @click="saveKey" :disabled="saving || !accountId" :loading="saving">
+        <div class="flex justify-between items-center gap-3">
+          <!-- TOMBOL REMOVE (KIRI) -->
+          <button 
+            v-if="hasCustomKey" 
+            @click="confirmRemove" 
+            class="text-xs font-bold px-3 py-2 rounded-lg border theme-border theme-text-muted hover:theme-text transition-colors"
+          >
+            Remove API Key
+          </button>
+          <div v-else></div>
+
+          <!-- TOMBOL SAVE (KANAN) -->
+          <Button @click="saveKey" :disabled="saving || !accountId || !customKey.trim()" :loading="saving">
             {{ saving ? 'Saving...' : 'Save API Key' }}
           </Button>
         </div>
@@ -71,7 +92,7 @@ import { supabase } from '../../lib/supabase'
 import { useNotify } from '../../composables/useNotify'
 import { Card, Button, Badge } from '../../components/ui'
 
-const { showToast } = useNotify()
+const { showToast, askConfirm } = useNotify()
 const loading = ref(true)
 const saving = ref(false)
 const accountId = ref<string | null>(null)
@@ -109,10 +130,10 @@ async function load() {
 }
 
 async function saveKey() {
-  if (!accountId.value) return
+  if (!accountId.value || !customKey.value.trim()) return
   saving.value = true
   try {
-    const keyToSave = customKey.value.trim() || null
+    const keyToSave = customKey.value.trim()
     const { error } = await supabase
       .schema('threads')
       .from('threads_accounts')
@@ -121,8 +142,8 @@ async function saveKey() {
 
     if (error) throw error
     
-    hasCustomKey.value = !!keyToSave
-    showToast('API Key saved successfully.', 'success')
+    hasCustomKey.value = true
+    showToast('API Key saved. You are now on Unlimited mode.', 'success')
   } catch (err: any) {
     showToast('Failed to save API Key: ' + err.message, 'error')
   } finally {
@@ -130,9 +151,35 @@ async function saveKey() {
   }
 }
 
+function confirmRemove() {
+  askConfirm({
+    title: 'Remove API Key',
+    message: 'Are you sure? Your account will switch back to using SaaS Credits.',
+    confirmText: 'Remove',
+    onConfirm: () => removeKey()
+  })
+}
+
 async function removeKey() {
-  customKey.value = ''
-  await saveKey()
+  if (!accountId.value) return
+  saving.value = true
+  try {
+    const { error } = await supabase
+      .schema('threads')
+      .from('threads_accounts')
+      .update({ custom_gemini_key: null })
+      .eq('id', accountId.value)
+
+    if (error) throw error
+    
+    customKey.value = ''
+    hasCustomKey.value = false
+    showToast('API Key removed. Switched back to SaaS Credits.', 'info')
+  } catch (err: any) {
+    showToast('Failed to remove API Key: ' + err.message, 'error')
+  } finally {
+    saving.value = false
+  }
 }
 
 onMounted(load)
