@@ -29,7 +29,6 @@ def get_all_raw_models() -> list[str]:
     return models
 
 async def get_available_models(account_id: str, provider: str) -> list[dict]:
-    """Narik daftar model yang tersedia dari provider secara real-time"""
     db = get_supabase()
     acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key").eq("id", account_id).limit(1).execute()
     acc = acc_res.data[0] if acc_res.data else {}
@@ -42,13 +41,10 @@ async def get_available_models(account_id: str, provider: str) -> list[dict]:
                 res = await client.get("https://api.groq.com/openai/v1/models", headers={"Authorization": f"Bearer {api_key}"})
                 if res.status_code == 200:
                     data = res.json().get("data", [])
-                    # Filter hanya model chat yang aktif
                     return [{"id": m["id"], "name": m["id"]} for m in data if m.get("active", True)]
-        except Exception:
-            pass
+        except Exception: pass
         return [{"id": m, "name": m} for m in DEFAULT_GROQ_MODELS]
-    
-    else: # Gemini
+    else:
         api_key = acc.get("custom_gemini_key") or GEMINI_KEY
         if not api_key: return [{"id": m, "name": m} for m in DEFAULT_GEMINI_MODELS]
         try:
@@ -62,8 +58,7 @@ async def get_available_models(account_id: str, provider: str) -> list[dict]:
                             name = m["name"].replace("models/", "")
                             valid.append({"id": name, "name": name})
                     if valid: return valid
-        except Exception:
-            pass
+        except Exception: pass
         return [{"id": m, "name": m} for m in DEFAULT_GEMINI_MODELS]
 
 def extract_vector(response) -> list[float]:
@@ -132,14 +127,22 @@ async def generate_rag_post(account_id: str, topic: str, tone: str = "Edukasi & 
     custom_groq = acc.get("custom_groq_key")
     credits = acc.get("ai_credits", 0)
     
-    gemini_key_to_use = custom_gemini if custom_gemini else GEMINI_KEY
-    use_groq = (provider == "groq")
-    
-    if not custom_gemini and not custom_groq and credits <= 0:
-        raise Exception("Insufficient AI Credits. Please add your own API Key in Settings or top up.")
+    if provider == "groq":
+        api_key_to_use = custom_groq if custom_groq else GROQ_KEY
+        is_using_saas = not custom_groq
+        if not api_key_to_use: raise Exception("Groq API Key is missing on server. Please add your own key.")
+    else:
+        api_key_to_use = custom_gemini if custom_gemini else GEMINI_KEY
+        is_using_saas = not custom_gemini
+        if not api_key_to_use: raise Exception("Gemini API Key is missing on server. Please add your own key.")
 
-    # RAG Embedding Tetap pakai Gemini
-    knowledge = await search_knowledge(account_id, topic, limit=3, api_key=gemini_key_to_use)
+    if is_using_saas and credits <= 0:
+        raise Exception("Insufficient AI Credits. Please add your own API Key for this provider in Settings or top up.")
+
+    gemini_embed_key = custom_gemini if custom_gemini else GEMINI_KEY
+    if not gemini_embed_key: raise Exception("Gemini API Key is required for RAG embeddings. Please add it in Settings.")
+        
+    knowledge = await search_knowledge(account_id, topic, limit=3, api_key=gemini_embed_key)
     context_text = "\n".join([f"- [{k.get('category', 'Fakta')} - {k.get('title')}]: {k.get('content')}" for k in knowledge])
 
     recent_res = db.schema("threads").from_("scheduled_posts").select("text, status, scheduled_for").eq("account_id", account_id).order("scheduled_for", desc=True).limit(5).execute()
@@ -169,14 +172,10 @@ Create a 3-DAY CONTENT PLAN based on the TOPIC below. Avoid repeating recent pos
 """
 
     result_options = []
-    last_error = ""
-
-    if use_groq:
-        groq_key_to_use = custom_groq if custom_groq else GROQ_KEY
-        if not groq_key_to_use: raise Exception("Groq API Key is missing.")
+    
+    if provider == "groq":
         try:
-            groq_client = Groq(api_key=groq_key_to_use)
-            # PAKAI MODEL_NAME DARI FRONTEND (Kalau kosong pakai default)
+            groq_client = Groq(api_key=api_key_to_use)
             model_to_run = model_name or "llama-3.3-70b-versatile"
             chat_completion = groq_client.chat.completions.create(
                 messages=[{"role": "user", "content": prompt}],
@@ -187,17 +186,11 @@ Create a 3-DAY CONTENT PLAN based on the TOPIC below. Avoid repeating recent pos
             parsed = json.loads(chat_completion.choices[0].message.content)
             result_options = parsed.get("options", [])
         except Exception as e:
-            logging.warning(f"[Groq Failed] {str(e)}. Falling back to Gemini...")
-            last_error = str(e)
-            use_groq = False
-
-    if not use_groq:
-        if not gemini_key_to_use: raise Exception("Gemini API Key is missing.")
-        client = genai.Client(api_key=gemini_key_to_use)
+            raise Exception(f"Groq Generation Failed: {str(e)}")
+    else:
+        client = genai.Client(api_key=api_key_to_use)
         gen_config = types.GenerateContentConfig(response_mime_type="application/json")
         response = None
-        
-        # PAKAI MODEL_NAME DARI FRONTEND (Kalau kosong pakai fallback list)
         models_to_try = [model_name] if model_name else DEFAULT_GEMINI_MODELS
 
         for m_name in models_to_try:
@@ -205,19 +198,18 @@ Create a 3-DAY CONTENT PLAN based on the TOPIC below. Avoid repeating recent pos
                 response = client.models.generate_content(model=m_name, contents=prompt, config=gen_config)
                 break
             except Exception as e:
-                err_str = str(e)
-                if "API_KEY_INVALID" in err_str or "API key not valid" in err_str:
+                last_error = str(e)
+                if "API_KEY_INVALID" in last_error or "API key not valid" in last_error:
                     raise Exception("Your Custom Gemini API Key is invalid.")
-                last_error = err_str
-
-        if not response: raise Exception(f"All AI models failed. Last error: {last_error}")
-
+        
+        if not response: raise Exception(f"Gemini failed. Last error: {last_error}")
+        
         raw_text = response.text.strip()
         if raw_text.startswith("```json"): raw_text = raw_text.replace("```json", "", 1).rstrip("`").strip()
         parsed = json.loads(raw_text)
         result_options = parsed.get("options", parsed)
 
-    if not custom_gemini and not custom_groq:
+    if is_using_saas:
         db.schema("threads").from_("threads_accounts").update({"ai_credits": credits - 1}).eq("id", account_id).execute()
 
     if not result_options: raise Exception("AI returned empty content.")
