@@ -367,7 +367,7 @@ async function handleManualRefresh() {
 
   try {
     // GANTI URL INI DENGAN URL RAILWAY LU
-    const response = await fetch('https://threads-automation-production-53ad.up.railway.app//api/v1/metrics/sync', { method: 'POST' })
+    const response = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/metrics/sync', { method: 'POST' })
 
     if (!response.ok) throw new Error('Gagal memicu sinkronisasi backend')
 
