@@ -4,9 +4,9 @@
       <div>
         <h1 class="text-2xl font-bold tracking-tight">Dashboard</h1>
         <p class="text-sm theme-text-muted mt-1">
-          Ringkasan performa postingan dan metrik otomatisasi Threads.
+          Performance summary and automation metrics for Threads.
           <span v-if="lastSyncedAt" class="text-xs theme-text-muted block mt-0.5">
-            Sync terakhir: {{ formatDate(lastSyncedAt) }}
+            Last sync: {{ formatDate(lastSyncedAt) }}
           </span>
         </p>
       </div>
@@ -18,24 +18,24 @@
           class="btn btn-secondary btn-sm"
         >
           <span v-if="refreshing || loading" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
-          <span>{{ refreshing ? 'Sinkronisasi...' : 'Refresh Data' }}</span>
+          <span>{{ refreshing ? 'Syncing...' : 'Refresh Data' }}</span>
         </button>
       </div>
     </div>
 
     <div v-if="toastMessage" class="card p-3 flex justify-between items-center text-xs border-strong">
       <span>{{ toastMessage }}</span>
-      <button @click="toastMessage = ''" class="font-bold theme-text-muted hover:theme-text ml-2">Tutup</button>
+      <button @click="toastMessage = ''" class="font-bold theme-text-muted hover:theme-text ml-2">Close</button>
     </div>
 
     <div v-if="adminHealth" class="card p-4 flex flex-wrap justify-between items-center gap-3 text-xs">
       <div class="flex items-center gap-3">
         <span class="w-2.5 h-2.5 rounded-full" :class="adminHealth.failed_posts > 0 || adminHealth.expiring_or_broken_tokens > 0 ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'"></span>
         <span>
-          Status Admin:
-          <strong class="theme-text">{{ adminHealth.connected_accounts }} Akun Terhubung</strong>
-          <span v-if="adminHealth.failed_posts > 0" class="theme-text-muted ml-2">({{ adminHealth.failed_posts }} post gagal)</span>
-          <span v-if="adminHealth.expiring_or_broken_tokens > 0" class="theme-text-muted ml-2">({{ adminHealth.expiring_or_broken_tokens }} token butuh reconnect)</span>
+          Admin Status:
+          <strong class="theme-text">{{ adminHealth.connected_accounts }} Connected Accounts</strong>
+          <span v-if="adminHealth.failed_posts > 0" class="theme-text-muted ml-2">({{ adminHealth.failed_posts }} failed posts)</span>
+          <span v-if="adminHealth.expiring_or_broken_tokens > 0" class="theme-text-muted ml-2">({{ adminHealth.expiring_or_broken_tokens }} tokens need reconnect)</span>
         </span>
       </div>
       <span class="theme-text-muted text-[10px]">Updated: {{ formatDate(adminHealth.timestamp) }}</span>
@@ -51,17 +51,17 @@
     <template v-else>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="card p-5 space-y-1">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">Terjadwal</span>
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">Scheduled</span>
           <p class="text-3xl font-black">{{ queueMetrics.scheduled }}</p>
         </div>
 
         <div class="card p-5 space-y-1">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">Terbit</span>
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">Published</span>
           <p class="text-3xl font-black">{{ queueMetrics.published }}</p>
         </div>
 
         <div class="card p-5 space-y-1">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">Gagal</span>
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">Failed</span>
           <p class="text-3xl font-black">{{ queueMetrics.failed }}</p>
         </div>
 
@@ -74,27 +74,27 @@
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="card p-4 space-y-1 theme-bg-sec">
           <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">Total Views</span>
-          <p class="text-xl font-bold">{{ overview.total_views.toLocaleString('id-ID') }}</p>
+          <p class="text-xl font-bold">{{ overview.total_views.toLocaleString('en-US') }}</p>
         </div>
         <div class="card p-4 space-y-1 theme-bg-sec">
           <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">Total Likes</span>
-          <p class="text-xl font-bold">{{ overview.total_likes.toLocaleString('id-ID') }}</p>
+          <p class="text-xl font-bold">{{ overview.total_likes.toLocaleString('en-US') }}</p>
         </div>
         <div class="card p-4 space-y-1 theme-bg-sec">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">Total Balasan</span>
-          <p class="text-xl font-bold">{{ overview.total_replies.toLocaleString('id-ID') }}</p>
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">Total Replies</span>
+          <p class="text-xl font-bold">{{ overview.total_replies.toLocaleString('en-US') }}</p>
         </div>
         <div class="card p-4 space-y-1 theme-bg-sec">
           <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">Total Reposts</span>
-          <p class="text-xl font-bold">{{ overview.total_reposts.toLocaleString('id-ID') }}</p>
+          <p class="text-xl font-bold">{{ overview.total_reposts.toLocaleString('en-US') }}</p>
         </div>
       </div>
 
       <div class="card p-6 space-y-4">
         <div class="flex justify-between items-center pb-3 divider">
           <div>
-            <h2 class="text-xs font-bold uppercase tracking-wide">Tren Pertumbuhan Harian</h2>
-            <p class="text-[11px] theme-text-muted mt-0.5">Akumulasi Views dan Likes harian</p>
+            <h2 class="text-xs font-bold uppercase tracking-wide">Daily Growth Trends</h2>
+            <p class="text-[11px] theme-text-muted mt-0.5">Accumulated daily Views and Likes</p>
           </div>
           <div class="flex items-center gap-4 text-[10px] font-bold">
             <span class="flex items-center gap-1.5">
@@ -109,7 +109,7 @@
         </div>
 
         <div v-if="dailyInsights.length === 0" class="text-center py-10 text-xs theme-text-muted">
-          Belum ada riwayat harian tersimpan. Data akan terakumulasi otomatis setiap hari.
+          No daily history saved yet. Data will accumulate automatically every day.
         </div>
 
         <div v-else class="space-y-2 pt-2">
@@ -146,9 +146,9 @@
         <div class="flex justify-between items-center pb-3 divider">
           <h2 class="text-xs font-bold uppercase tracking-wide flex items-center gap-2">
             <span class="w-2 h-2 rounded-full animate-ping" style="background: var(--danger);"></span>
-            Postingan Gagal Terbit ({{ failedPosts.length }})
+            Failed Posts ({{ failedPosts.length }})
           </h2>
-          <span class="text-[10px] font-bold theme-text-muted">Butuh Perhatian</span>
+          <span class="text-[10px] font-bold theme-text-muted">Needs Attention</span>
         </div>
 
         <div class="space-y-3">
@@ -167,7 +167,7 @@
               class="btn btn-primary btn-sm shrink-0"
             >
               <span v-if="retryingPostId === post.id" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
-              <span>{{ retryingPostId === post.id ? 'Memproses...' : 'Coba Lagi' }}</span>
+              <span>{{ retryingPostId === post.id ? 'Processing...' : 'Retry' }}</span>
             </button>
           </div>
         </div>
@@ -175,19 +175,19 @@
 
       <div class="card p-6 space-y-4">
         <div class="flex flex-wrap justify-between items-center pb-3 divider gap-3">
-          <h2 class="text-xs font-bold uppercase tracking-wide">Top 5 Postingan</h2>
+          <h2 class="text-xs font-bold uppercase tracking-wide">Top 5 Posts</h2>
           
           <div class="flex items-center gap-1 p-1 rounded-lg theme-bg border theme-border">
             <button 
               @click="activeTab = 'newest'"
               class="px-3 py-1 text-[10px] font-bold rounded-md transition-colors"
               :class="activeTab === 'newest' ? 'bg-white text-slate-900 shadow-sm' : 'theme-text-muted hover:theme-text'"
-            >Terbaru</button>
+            >Newest</button>
             <button 
               @click="activeTab = 'views'"
               class="px-3 py-1 text-[10px] font-bold rounded-md transition-colors"
               :class="activeTab === 'views' ? 'bg-white text-slate-900 shadow-sm' : 'theme-text-muted hover:theme-text'"
-            >Views Terbanyak</button>
+            >Most Views</button>
             <button 
               @click="activeTab = 'er'"
               class="px-3 py-1 text-[10px] font-bold rounded-md transition-colors"
@@ -197,7 +197,7 @@
         </div>
 
         <div v-if="allPosts.length === 0" class="text-center py-8 text-xs theme-text-muted">
-          Belum ada data postingan terbit atau analitik belum tersinkronisasi.
+          No post data yet or analytics not synced.
         </div>
 
         <div v-else class="space-y-3">
@@ -211,7 +211,7 @@
               <div class="flex items-center gap-3 text-[11px] theme-text-muted">
                 <span>{{ formatDate(post.posted_at) }}</span>
                 <a v-if="post.permalink" :href="post.permalink" target="_blank" class="font-bold theme-text hover:underline">
-                  Buka di Threads
+                  Open in Threads
                 </a>
               </div>
             </div>
@@ -282,13 +282,13 @@ function getBarHeight(val: number, max: number) {
 
 function formatDate(isoString: string) {
   if (!isoString) return ''
-  return new Date(isoString).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
+  return new Date(isoString).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
 function formatDayLabel(dateStr: string) {
   if (!dateStr) return ''
   const d = new Date(dateStr)
-  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'numeric' })
+  return d.toLocaleDateString('en-US', { day: 'numeric', month: 'numeric' })
 }
 
 async function fetchQueueMetricsAndFailed(accountId: string) {
@@ -344,13 +344,13 @@ async function handleRetryPost(postId: string) {
   try {
     const { error } = await supabase.functions.invoke('admin-manage-queue', { body: { action: 'retry', post_id: postId } })
     if (error) {
-      toastMessage.value = 'Gagal memicu retry: ' + error.message
+      toastMessage.value = 'Failed to trigger retry: ' + error.message
     } else {
-      toastMessage.value = 'Postingan berhasil dikirim ulang ke antrean terbit.'
+      toastMessage.value = 'Post successfully re-queued for publishing.'
       if (currentAccountId.value) await fetchQueueMetricsAndFailed(currentAccountId.value)
     }
   } catch (err: any) {
-    toastMessage.value = 'Terjadi kesalahan: ' + err.message
+    toastMessage.value = 'An error occurred: ' + err.message
   } finally {
     retryingPostId.value = null
   }
@@ -366,12 +366,12 @@ async function handleManualRefresh() {
   toastMessage.value = ''
 
   try {
-    // GANTI URL INI DENGAN URL RAILWAY LU
+    // URL WITHOUT DOUBLE SLASH
     const response = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/metrics/sync', { method: 'POST' })
 
-    if (!response.ok) throw new Error('Gagal memicu sinkronisasi backend')
+    if (!response.ok) throw new Error('Failed to trigger backend sync')
 
-    toastMessage.value = 'Sinkronisasi berjalan di latar belakang. Data akan segera diperbarui.'
+    toastMessage.value = 'Sync is running in the background. Data will be updated shortly.'
     
     setTimeout(async () => {
         await loadAllDashboardData()
@@ -379,7 +379,7 @@ async function handleManualRefresh() {
     }, 3000)
 
   } catch (err: any) {
-    toastMessage.value = 'Terjadi kesalahan: ' + err.message
+    toastMessage.value = 'An error occurred: ' + err.message
     refreshing.value = false
   }
 }
