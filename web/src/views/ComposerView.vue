@@ -35,7 +35,7 @@
           />
         </div>
 
-        <!-- ROW 2: PROVIDER & MODEL (DROPDOWN DINAMIS) -->
+        <!-- ROW 2: PROVIDER & MODEL (DROPDOWN REUSABLE) -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-lg border theme-border" style="background: var(--bg-sec);">
           <Select 
             v-model="aiProvider" 
@@ -46,15 +46,14 @@
             ]" 
             @update:model-value="handleProviderChange"
           />
-          <div class="space-y-1">
-            <label class="label flex justify-between items-center">
-              <span>Specific Model</span>
-              <span v-if="isLoadingModels" class="text-[10px] animate-pulse">Loading...</span>
-            </label>
-            <select v-model="aiModel" class="input w-full" :disabled="isLoadingModels || availableModels.length === 0">
-              <option v-for="m in availableModels" :key="m.id" :value="m.id">{{ m.name }}</option>
-            </select>
-          </div>
+          
+          <Select 
+            v-model="aiModel" 
+            label="Specific Model" 
+            :options="availableModels"
+            :disabled="isLoadingModels || availableModels.length === 0"
+            :placeholder="isLoadingModels ? 'Loading models...' : 'Select a model'"
+          />
         </div>
 
         <!-- CUSTOM PROMPT -->
@@ -118,7 +117,7 @@
         <div class="flex-1 flex justify-end items-center gap-3 flex-wrap">
           <BestTimeChip @apply="(val) => scheduledDate = val" />
           <input v-model="scheduledDate" type="datetime-local" class="input" style="width: auto;" />
-          <Button @click="schedulePost" :disabled="!postText || !scheduledDate || isSaving" :loading="isSaving">
+          <Button @click="schedulePost" :disabled="isSaving" :loading="isSaving">
             {{ isSaving ? 'Processing...' : (threadParts.length > 1 ? 'Schedule ' + threadParts.length + ' Threads' : 'Schedule Post') }}
           </Button>
         </div>
@@ -168,7 +167,6 @@ const aiCredits = ref(20)
 const hasCustomKey = ref(false)
 const currentAccountId = ref<string | null>(null)
 
-// STATE BARU UNTUK PROVIDER & MODEL
 const aiProvider = ref('groq')
 const aiModel = ref('')
 const availableModels = ref<{id: string, name: string}[]>([])
@@ -210,7 +208,6 @@ watch(postText, (newVal) => {
 
 watch(scheduledDate, (newVal) => { localStorage.setItem('ixiera_draft_time', newVal) })                                                                 
 
-// FETCH MODEL DARI BACKEND
 async function fetchModels() {
   if (!currentAccountId.value) return
   isLoadingModels.value = true
@@ -218,8 +215,9 @@ async function fetchModels() {
     const res = await fetch(`https://threads-automation-production-53ad.up.railway.app/api/v1/rag/models/${aiProvider.value}?account_id=${currentAccountId.value}`)
     const data = await res.json()
     if (data.models && data.models.length > 0) {
-      availableModels.value = data.models
-      aiModel.value = data.models[0].id // Set default ke model pertama
+      // Format data dari backend biar sesuai sama props options di komponen Select
+      availableModels.value = data.models.map((m: any) => ({ label: m.name, value: m.id }))
+      aiModel.value = data.models[0].id
     } else {
       availableModels.value = []
       aiModel.value = ''
@@ -254,7 +252,7 @@ async function generateAiIdeas() {
         topic: aiTopic.value, 
         tone: aiTone.value, 
         provider: aiProvider.value,
-        model_name: aiModel.value, // KIRIM MODEL SPESIFIK
+        model_name: aiModel.value,
         custom_prompt: aiTone.value === 'Custom Prompt' ? customPrompt.value : undefined 
       })
     })
@@ -301,30 +299,69 @@ async function checkScore() {
 }
 
 async function schedulePost() {
-  if (!postText.value || !scheduledDate.value) return
+  if (!postText.value.trim()) {
+    showToast('Please write a post first.', 'error')
+    return
+  }
+  if (!scheduledDate.value) {
+    showToast('Please select a schedule time.', 'error')
+    return
+  }
+  
   const scheduleTime = new Date(scheduledDate.value).getTime()
-  if (scheduleTime <= Date.now()) { showToast('Schedule time must be in the future.', 'error'); return }
+  if (isNaN(scheduleTime)) {
+    showToast('Invalid date format. Please pick a valid date.', 'error')
+    return
+  }
+  if (scheduleTime <= Date.now()) { 
+    showToast('Schedule time must be in the future.', 'error')
+    return 
+  }
+
   isSaving.value = true
-  try {                                                                
+
+  try {
+    let targetAccountId = currentAccountId.value
+    if (!targetAccountId) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('User not authenticated')    
+      const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id').eq('user_id', user.id).maybeSingle()
+      if (!account) throw new Error('Threads account not connected')
+      targetAccountId = account.id
+      currentAccountId.value = targetAccountId
+    }
+
+    const partsToSchedule = threadParts.value.length > 0 ? threadParts.value : [postText.value]
+
     let parentId = null
-    for (let i = 0; i < threadParts.value.length; i++) {                 
+    for (let i = 0; i < partsToSchedule.length; i++) {                 
       const { data: insertedPart, error: insertError } = await supabase.schema('threads').from('scheduled_posts').insert({
-        account_id: currentAccountId.value, text: threadParts.value[i], scheduled_for: new Date(scheduledDate.value).toISOString(),
-        status: 'scheduled', parent_id: parentId, sequence_number: i + 1, idempotency_key: crypto.randomUUID()                             
+        account_id: targetAccountId, 
+        text: partsToSchedule[i], 
+        scheduled_for: new Date(scheduledDate.value).toISOString(),
+        status: 'scheduled', 
+        parent_id: parentId, 
+        sequence_number: i + 1, 
+        idempotency_key: crypto.randomUUID()                             
       }).select().single()                                                  
+      
       if (insertError) throw insertError                                 
       if (i === 0) { parentId = insertedPart.id }
     }                                                              
-    showToast(`Successfully scheduled ${threadParts.value.length} thread(s)!`, 'success')
+    
+    showToast(`Successfully scheduled ${partsToSchedule.length} thread(s)!`, 'success')
     postText.value = ''
     localStorage.removeItem('ixiera_draft_text')                   
+    
     const d = new Date()                                               
     d.setHours(d.getHours() + 1); d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
     scheduledDate.value = d.toISOString().slice(0, 16)
     localStorage.setItem('ixiera_draft_time', scheduledDate.value)
   } catch (err: any) {
     showToast('Failed to schedule: ' + err.message, 'error')
-  } finally { isSaving.value = false }
+  } finally { 
+    isSaving.value = false 
+  }
 }
 
 onMounted(async () => {
@@ -337,7 +374,6 @@ onMounted(async () => {
       hasCustomKey.value = !!(acc.custom_gemini_key || acc.custom_groq_key)
       if (acc.ai_provider) aiProvider.value = acc.ai_provider
       
-      // Load daftar model pas halaman pertama dibuka
       await fetchModels()
     }
   }
