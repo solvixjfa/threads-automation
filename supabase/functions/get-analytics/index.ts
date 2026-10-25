@@ -48,14 +48,15 @@ serve(async (req) => {
       });
     }
 
+    // 1. Ambil postingan terbit dari scheduled_posts
     const { data: publishedScheduled } = await supabase
       .schema("threads")
       .from("scheduled_posts")
       .select("id, text, published_media_id, scheduled_for, created_at")
       .eq("account_id", account.id)
-      .eq("status", "published")
-      .order("scheduled_for", { ascending: false });
+      .eq("status", "published");
 
+    // 2. Ambil post & metrik
     const { data: postsWithMetrics } = await supabase
       .schema("threads")
       .from("posts")
@@ -68,7 +69,7 @@ serve(async (req) => {
     const scheduledMap = new Map();
     (publishedScheduled || []).forEach((sp: any) => {
       if (sp.published_media_id) {
-        scheduledMap.set(sp.published_media_id, sp);
+        scheduledMap.set(String(sp.published_media_id), sp);
       }
     });
 
@@ -77,16 +78,10 @@ serve(async (req) => {
     let totalReplies = 0;
     let totalReposts = 0;
 
-    const formattedPosts = (postsWithMetrics || []).map((p: any, index: number) => {
-      let sp = scheduledMap.get(p.threads_media_id);
+    const formattedPosts = (postsWithMetrics || []).map((p: any) => {
+      // Murni cocokin lewat ID, gak pake tebak-tebakan
+      const sp = scheduledMap.get(String(p.threads_media_id));
       
-      if (!sp && publishedScheduled && publishedScheduled[index]) {
-         const timeDiff = Math.abs(new Date(p.created_at).getTime() - new Date(publishedScheduled[index].created_at).getTime());
-         if (timeDiff < 600000) { 
-             sp = publishedScheduled[index];
-         }
-      }
-
       const latestMetrics = p.post_metrics?.find((m: any) => m.snapshot_label === 'latest') || p.post_metrics?.[0] || {
         views: 0, likes: 0, replies: 0, reposts: 0, quotes: 0
       };
@@ -100,7 +95,7 @@ serve(async (req) => {
         ? ((latestMetrics.likes + latestMetrics.replies + latestMetrics.reposts) / latestMetrics.views) * 100
         : 0;
 
-      // FIX LINK: Pakai shortlink resmi Threads (paling stabil, gak butuh username)
+      // Link Threads (kalau media_id kosong, link-nya null)
       const permalink = p.threads_media_id 
         ? `https://www.threads.net/t/${p.threads_media_id}` 
         : null;
@@ -108,6 +103,7 @@ serve(async (req) => {
       return {
         id: p.id,
         threads_media_id: p.threads_media_id,
+        // Kalau teks gak ketemu, baru tampilin "Postingan Tanpa Teks"
         text: sp?.text || `Postingan Tanpa Teks (ID: ${p.threads_media_id?.slice(0, 8) || 'Unknown'})`,
         permalink: permalink,
         posted_at: sp?.scheduled_for || p.created_at || new Date().toISOString(),
