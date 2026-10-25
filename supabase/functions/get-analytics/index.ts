@@ -37,7 +37,7 @@ serve(async (req) => {
     const { data: account, error: accErr } = await supabase
       .schema("threads")
       .from("threads_accounts")
-      .select("id")
+      .select("id, username") // Ambil username kalau ada, buat bikin URL
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -48,22 +48,27 @@ serve(async (req) => {
       });
     }
 
+    // Ambil SEMUA postingan terbit (berapapun jumlahnya, biar bisa diproses sorting-nya)
     const { data: publishedScheduled } = await supabase
       .schema("threads")
       .from("scheduled_posts")
       .select("id, text, published_media_id, scheduled_for, created_at")
       .eq("account_id", account.id)
-      .eq("status", "published");
+      .eq("status", "published")
+      .order("scheduled_for", { ascending: false }); // Urutkan dari yang terbaru
 
     const { data: postsWithMetrics } = await supabase
       .schema("threads")
       .from("posts")
       .select(`
-        id, threads_media_id,
+        id, threads_media_id, created_at,
         post_metrics (views, likes, replies, reposts, quotes, snapshot_label)
       `)
       .eq("account_id", account.id);
 
+    // Mapping yang lebih pintar:
+    // 1. Coba cocokin via published_media_id (Paling akurat)
+    // 2. Kalau gagal, coba cocokin via Index urutan tanggal (Fallback)
     const scheduledMap = new Map();
     (publishedScheduled || []).forEach((sp: any) => {
       if (sp.published_media_id) {
@@ -76,8 +81,19 @@ serve(async (req) => {
     let totalReplies = 0;
     let totalReposts = 0;
 
-    const formattedPosts = (postsWithMetrics || []).map((p: any) => {
-      const sp = scheduledMap.get(p.threads_media_id);
+    const formattedPosts = (postsWithMetrics || []).map((p: any, index: number) => {
+      // Coba cari via Media ID
+      let sp = scheduledMap.get(p.threads_media_id);
+      
+      // FALLBACK: Kalau gak ketemu (misal ID kosong), ambil dari urutan tanggal terdekat
+      if (!sp && publishedScheduled && publishedScheduled[index]) {
+         // Cek selisih waktu, kalau deket (di bawah 10 menit), anggap itu pasangannya
+         const timeDiff = Math.abs(new Date(p.created_at).getTime() - new Date(publishedScheduled[index].created_at).getTime());
+         if (timeDiff < 600000) { 
+             sp = publishedScheduled[index];
+         }
+      }
+
       const latestMetrics = p.post_metrics?.find((m: any) => m.snapshot_label === 'latest') || p.post_metrics?.[0] || {
         views: 0, likes: 0, replies: 0, reposts: 0, quotes: 0
       };
@@ -91,12 +107,18 @@ serve(async (req) => {
         ? ((latestMetrics.likes + latestMetrics.replies + latestMetrics.reposts) / latestMetrics.views) * 100
         : 0;
 
+      // FORMAT URL YANG BENAR (Threads format)
+      const username = account.username ? `@${account.username}` : 'post';
+      const permalink = p.threads_media_id 
+        ? `https://www.threads.net/${username}/post/${p.threads_media_id}` 
+        : null;
+
       return {
         id: p.id,
         threads_media_id: p.threads_media_id,
-        text: sp?.text || "Postingan Threads",
-        permalink: p.threads_media_id ? `https://www.threads.net/post/${p.threads_media_id}` : null,
-        posted_at: sp?.scheduled_for || sp?.created_at || new Date().toISOString(),
+        text: sp?.text || `Postingan Tanpa Teks (ID: ${p.threads_media_id?.slice(0, 8) || 'Unknown'})`,
+        permalink: permalink,
+        posted_at: sp?.scheduled_for || p.created_at || new Date().toISOString(),
         metrics: latestMetrics,
         engagement_rate: parseFloat(engagement.toFixed(2))
       };
@@ -119,7 +141,6 @@ serve(async (req) => {
       });
     }
 
-    // Ambil top 50 post terbaru buat dilempar ke frontend biar bisa difilter
     const sortedByDate = [...formattedPosts].sort((a, b) => new Date(b.posted_at).getTime() - new Date(a.posted_at).getTime());
 
     const overview = {
@@ -137,7 +158,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         overview,
-        all_posts: sortedByDate.slice(0, 50), // Kirim 50 post terbaru
+        all_posts: sortedByDate.slice(0, 50),
         daily_trends: dailyInsights || []
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
