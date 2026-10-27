@@ -10,7 +10,7 @@ from app.services.comment_classifier import classify_comment
 from app.services.comment_templates import (
     pick_template, has_template, is_category_enabled, get_custom_templates,
 )
-from app.services.auto_reply import generate_rag_reply
+from app.services.auto_reply import generate_rag_reply, publish_reply_to_threads
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
@@ -273,11 +273,25 @@ async def sync_replies_for_post(
             stats["skipped"] += 1
             continue
 
+        # LOGIKA HITL VS FULL AUTO
+        log_status = "pending_review"
+        
+        if reply_mode == "auto":
+            try:
+                # Langsung tembak ke Threads!
+                await publish_reply_to_threads(acc_id, meta_item["reply_id"], draft_text)
+                log_status = "sent"
+                logging.info(f"[Auto-Publish] Successfully replied to {meta_item['reply_id']}")
+            except Exception as pub_err:
+                logging.error(f"[Auto-Publish Failed]: {str(pub_err)}")
+                log_status = "pending_review" # Kalau gagal, masuk antrean review
+                llm_meta["auto_publish_error"] = str(pub_err)
+
         try:
             db.schema("threads").from_("auto_reply_logs").insert({
                 "account_id": acc_id,
                 "reply_id": reply_db_id,
-                "status": "pending_review" if reply_mode == "review" else "approved",
+                "status": log_status,
                 "generated_text": draft_text,
                 "final_text": draft_text,
                 "llm_meta": llm_meta,

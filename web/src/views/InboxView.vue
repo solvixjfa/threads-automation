@@ -3,7 +3,7 @@
     <div class="flex flex-wrap justify-between items-center gap-4">
       <div>
         <h1 class="text-2xl font-bold tracking-tight">Comments</h1>
-        <p class="text-sm theme-text-muted mt-1">Reply to comments on your posts with AI drafts or templates.</p>
+        <p class="text-sm theme-text-muted mt-1">Reply to comments on your posts with AI drafts or custom templates.</p>
       </div>
       <div class="flex items-center gap-3">
         <button @click="syncRepliesManual" :disabled="isSyncing" class="btn btn-primary btn-sm">
@@ -45,11 +45,6 @@
           History ({{ historyCount }})
         </button>
       </div>
-
-      <button v-if="activeTab === 'review' && reviewReplies.length > 0" @click="skipAllPending" :disabled="isSkippingAll" class="pb-3 text-xs font-bold theme-text-muted hover:theme-text transition flex items-center gap-1.5 disabled:opacity-50 shrink-0">
-        <span v-if="isSkippingAll" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
-        <span>{{ isSkippingAll ? 'Processing...' : 'Ignore All' }}</span>
-      </button>
     </div>
 
     <div v-if="loading" class="p-12 text-center text-xs theme-text-muted animate-pulse">Loading comments...</div>
@@ -74,9 +69,8 @@
           </div>
         </div>
         
-        <!-- HANDLE MEDIA / GAMBAR -->
+        <!-- MEDIA / GAMBAR -->
         <div class="p-3.5 rounded-xl theme-bg-sec border theme-border space-y-3">
-          <!-- Nampilin gambar kalau ada -->
           <div v-if="item.media_url" class="rounded-lg overflow-hidden border theme-border max-w-sm">
             <img :src="item.media_url" alt="Comment media" class="w-full h-auto object-cover" />
           </div>
@@ -84,17 +78,22 @@
           <p v-else-if="!item.media_url" class="text-xs italic theme-text-muted">(No text content)</p>
         </div>
 
-        <!-- AI DRAFTING LOGIC -->
+        <!-- DRAFT AREA (TEMPLATE VS AI) -->
         <div v-if="item.auto_reply_eligible" class="p-4 rounded-xl theme-bg-sec border theme-border">
           <div class="flex justify-between items-center mb-2">
-            <span class="text-[10px] font-bold uppercase theme-text-sec">Draft Reply</span>
-            <!-- Tombol AI Dimatiin kalau gak ada teks -->
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-bold uppercase theme-text-sec">Draft Reply</span>
+              <!-- BADGE PENANDA DRAF -->
+              <Badge v-if="item.draft_mode === 'template'" variant="default">From Template</Badge>
+              <Badge v-else-if="item.draft_mode === 'llm'" variant="accent">AI Generated</Badge>
+            </div>
+            
             <button @click="generateAIDraft(item)" :disabled="generatingId === item.id || !item.text" class="btn btn-secondary btn-sm" :class="{'opacity-50 cursor-not-allowed': !item.text}">
               <span v-if="generatingId === item.id" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
-              <span>{{ generatingId === item.id ? 'Generating...' : (item.draftText ? 'Regenerate' : 'Generate AI Draft') }}</span>
+              <span>{{ generatingId === item.id ? 'Generating...' : 'Regenerate AI' }}</span>
             </button>
           </div>
-          <textarea v-model="item.draftText" rows="3" placeholder="Type a manual reply or click Generate AI Draft above..." class="textarea"></textarea>
+          <textarea v-model="item.draftText" rows="3" placeholder="Type a manual reply, or click Regenerate AI..." class="textarea"></textarea>
         </div>
 
         <div v-else class="p-3 rounded-xl theme-bg-sec border theme-border">
@@ -167,15 +166,9 @@ const AUTO_REPLY_CATEGORIES = ['praise', 'neutral', 'question']
 
 function isProcessed(r: any) { return r.log_status === 'sent' || r.log_status === 'skipped' }
 
-// REVIEW: Yang bener-bener butuh di-approve
 const reviewReplies = computed(() => repliesData.value.filter(r => !r.is_own && (r.log_status === 'pending_review' || r.log_status === 'approved')))
-
-// PRIORITY: Leads + Question yang belum diproses (Bukan cuma leads sempit)
 const priorityReplies = computed(() => repliesData.value.filter(r => !r.is_own && (r.is_lead || r.classification === 'question') && !isProcessed(r)).sort((a, b) => new Date(b.replied_at).getTime() - new Date(a.replied_at).getTime()))
-
-// CONVERSATION: Semua reply (kecuali history)
 const conversationReplies = computed(() => repliesData.value.filter(r => !r.is_own && !isProcessed(r)))
-
 const historyReplies = computed(() => repliesData.value.filter(r => r.is_own || r.log_status === 'sent' || r.log_status === 'skipped'))
 
 const reviewCount = computed(() => reviewReplies.value.length)
@@ -231,11 +224,7 @@ async function fetchModels() {
       availableModels.value = []
       aiModel.value = ''
     }
-  } catch (err) {
-    console.error('Failed to load models', err)
-  } finally {
-    isLoadingModels.value = false
-  }
+  } catch (err) { console.error(err) } finally { isLoadingModels.value = false }
 }
 
 async function safeSaveLog(payload: any) {
@@ -268,7 +257,6 @@ async function fetchReplies() {
   if (account.ai_provider) aiProvider.value = account.ai_provider
   await fetchModels()
 
-  // NOTE: Pastikan tabel 'replies' lu punya kolom 'media_url'
   const { data: repliesRaw } = await supabase.schema('threads').from('replies').select('*').eq('account_id', account.id).order('replied_at', { ascending: false }).limit(100)
 
   if (repliesRaw && repliesRaw.length > 0) {
@@ -279,7 +267,21 @@ async function fetchReplies() {
     repliesData.value = repliesRaw.map(r => {
       const log = logsArray.find(l => l.reply_id === r.id)
       const eligible = AUTO_REPLY_CATEGORIES.includes(r.classification)
-      return { ...r, log_id: log ? log.id : null, draftText: log ? log.final_text : '', log_status: log ? log.status : 'unprocessed', auto_reply_eligible: eligible }
+      
+      // Ambil mode draf (llm atau template) dari metadata
+      let draft_mode = null;
+      if (log && log.llm_meta) {
+          draft_mode = log.llm_meta.mode || (log.llm_meta.category ? 'template' : 'llm');
+      }
+
+      return { 
+        ...r, 
+        log_id: log ? log.id : null, 
+        draftText: log ? log.final_text : '', 
+        log_status: log ? log.status : 'unprocessed', 
+        auto_reply_eligible: eligible,
+        draft_mode: draft_mode 
+      }
     })
   } else {
     repliesData.value = []
@@ -317,11 +319,12 @@ async function generateAIDraft(item: any) {
     if (!res.ok) throw new Error(data.detail || 'Failed to generate AI reply')
 
     item.draftText = data.reply
+    item.draft_mode = 'llm' // Set mode ke AI
     if (!isUsingOwnKey.value) aiCredits.value = Math.max(0, aiCredits.value - 1)
 
     const savedData = await safeSaveLog({
       account_id: item.account_id, reply_id: item.id, status: 'pending_review',
-      final_text: data.reply, llm_meta: { incoming_comment: item.text, username: item.author_username, model: aiModel.value }
+      final_text: data.reply, llm_meta: { incoming_comment: item.text, username: item.author_username, model: aiModel.value, mode: 'llm' }
     })
     
     if (savedData) { item.log_id = savedData.id; item.log_status = savedData.status }
