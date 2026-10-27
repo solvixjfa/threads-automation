@@ -342,7 +342,12 @@ async function loadAllDashboardData() {
 async function handleRetryPost(postId: string) {
   retryingPostId.value = postId
   try {
-    const { error } = await supabase.functions.invoke('admin-manage-queue', { body: { action: 'retry', post_id: postId } })
+    const res = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/queue/retry', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ post_id: postId }) 
+      }); 
+      const error = res.ok ? null : new Error('Failed to retry');
     if (error) {
       toastMessage.value = 'Failed to trigger retry: ' + error.message
     } else {
