@@ -8,7 +8,7 @@
       <div class="flex items-center gap-3">
         <button @click="syncRepliesManual" :disabled="isSyncing" class="btn btn-primary btn-sm">
           <span v-if="isSyncing" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
-          <span>{{ isSyncing ? 'Syncing...' : 'Sync New Comments' }}</span>
+          <span>{{ isSyncing ? 'Syncing...' : 'Sync Comments' }}</span>
         </button>
       </div>
     </div>
@@ -35,11 +35,11 @@
         <button @click="activeTab = 'review'" class="pb-3 border-b-2 transition -mb-px whitespace-nowrap" :class="tabClass('review')">
           Review ({{ reviewCount }})
         </button>
-        <button @click="activeTab = 'leads'" class="pb-3 border-b-2 transition -mb-px whitespace-nowrap" :class="tabClass('leads')">
-          Leads ({{ leadsCount }})
+        <button @click="activeTab = 'priority'" class="pb-3 border-b-2 transition -mb-px whitespace-nowrap" :class="tabClass('priority')">
+          Priority ({{ priorityCount }})
         </button>
-        <button @click="activeTab = 'inbox'" class="pb-3 border-b-2 transition -mb-px whitespace-nowrap" :class="tabClass('inbox')">
-          Inbox ({{ inboxCount }})
+        <button @click="activeTab = 'conversation'" class="pb-3 border-b-2 transition -mb-px whitespace-nowrap" :class="tabClass('conversation')">
+          Conversation ({{ conversationCount }})
         </button>
         <button @click="activeTab = 'history'" class="pb-3 border-b-2 transition -mb-px whitespace-nowrap" :class="tabClass('history')">
           History ({{ historyCount }})
@@ -74,14 +74,22 @@
           </div>
         </div>
         
-        <div class="p-3.5 rounded-xl theme-bg-sec border theme-border">
-          <p class="text-xs font-semibold whitespace-pre-wrap">{{ item.text }}</p>
+        <!-- HANDLE MEDIA / GAMBAR -->
+        <div class="p-3.5 rounded-xl theme-bg-sec border theme-border space-y-3">
+          <!-- Nampilin gambar kalau ada -->
+          <div v-if="item.media_url" class="rounded-lg overflow-hidden border theme-border max-w-sm">
+            <img :src="item.media_url" alt="Comment media" class="w-full h-auto object-cover" />
+          </div>
+          <p v-if="item.text" class="text-xs font-semibold whitespace-pre-wrap">{{ item.text }}</p>
+          <p v-else-if="!item.media_url" class="text-xs italic theme-text-muted">(No text content)</p>
         </div>
 
+        <!-- AI DRAFTING LOGIC -->
         <div v-if="item.auto_reply_eligible" class="p-4 rounded-xl theme-bg-sec border theme-border">
           <div class="flex justify-between items-center mb-2">
             <span class="text-[10px] font-bold uppercase theme-text-sec">Draft Reply</span>
-            <button @click="generateAIDraft(item)" :disabled="generatingId === item.id" class="btn btn-secondary btn-sm">
+            <!-- Tombol AI Dimatiin kalau gak ada teks -->
+            <button @click="generateAIDraft(item)" :disabled="generatingId === item.id || !item.text" class="btn btn-secondary btn-sm" :class="{'opacity-50 cursor-not-allowed': !item.text}">
               <span v-if="generatingId === item.id" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
               <span>{{ generatingId === item.id ? 'Generating...' : (item.draftText ? 'Regenerate' : 'Generate AI Draft') }}</span>
             </button>
@@ -138,10 +146,9 @@ const isSyncing = ref(false)
 const isSkippingAll = ref(false)
 const approvingId = ref<string | null>(null)
 const generatingId = ref<string | null>(null)
-const activeTab = ref<'review' | 'leads' | 'inbox' | 'history'>('review')
+const activeTab = ref<'review' | 'priority' | 'conversation' | 'history'>('review')
 const repliesData = ref<any[]>([])
 
-// AI States
 const aiProvider = ref('groq')
 const aiModel = ref('')
 const availableModels = ref<{id: string, name: string}[]>([])
@@ -159,27 +166,34 @@ const isUsingOwnKey = computed(() => {
 const AUTO_REPLY_CATEGORIES = ['praise', 'neutral', 'question']
 
 function isProcessed(r: any) { return r.log_status === 'sent' || r.log_status === 'skipped' }
-const inboxReplies = computed(() => repliesData.value.filter(r => !r.is_own && !isProcessed(r)))
+
+// REVIEW: Yang bener-bener butuh di-approve
 const reviewReplies = computed(() => repliesData.value.filter(r => !r.is_own && (r.log_status === 'pending_review' || r.log_status === 'approved')))
-const leadsReplies = computed(() => repliesData.value.filter(r => !r.is_own && r.is_lead && !isProcessed(r)).sort((a, b) => new Date(b.replied_at).getTime() - new Date(a.replied_at).getTime()))
+
+// PRIORITY: Leads + Question yang belum diproses (Bukan cuma leads sempit)
+const priorityReplies = computed(() => repliesData.value.filter(r => !r.is_own && (r.is_lead || r.classification === 'question') && !isProcessed(r)).sort((a, b) => new Date(b.replied_at).getTime() - new Date(a.replied_at).getTime()))
+
+// CONVERSATION: Semua reply (kecuali history)
+const conversationReplies = computed(() => repliesData.value.filter(r => !r.is_own && !isProcessed(r)))
+
 const historyReplies = computed(() => repliesData.value.filter(r => r.is_own || r.log_status === 'sent' || r.log_status === 'skipped'))
 
 const reviewCount = computed(() => reviewReplies.value.length)
-const leadsCount = computed(() => leadsReplies.value.length)
-const inboxCount = computed(() => inboxReplies.value.length)
+const priorityCount = computed(() => priorityReplies.value.length)
+const conversationCount = computed(() => conversationReplies.value.length)
 const historyCount = computed(() => historyReplies.value.length)
 
 const currentReplies = computed(() => {
   if (activeTab.value === 'review') return reviewReplies.value
-  if (activeTab.value === 'leads') return leadsReplies.value
-  if (activeTab.value === 'inbox') return inboxReplies.value
+  if (activeTab.value === 'priority') return priorityReplies.value
+  if (activeTab.value === 'conversation') return conversationReplies.value
   return []
 })
 
 const emptyMessage = computed(() => {
   if (activeTab.value === 'review') return 'No drafts waiting for review.'
-  if (activeTab.value === 'leads') return 'No leads found.'
-  if (activeTab.value === 'inbox') return 'Inbox clear. All comments processed.'
+  if (activeTab.value === 'priority') return 'No priority comments right now.'
+  if (activeTab.value === 'conversation') return 'All conversations are clear.'
   return 'No data.'
 })
 
@@ -254,6 +268,7 @@ async function fetchReplies() {
   if (account.ai_provider) aiProvider.value = account.ai_provider
   await fetchModels()
 
+  // NOTE: Pastikan tabel 'replies' lu punya kolom 'media_url'
   const { data: repliesRaw } = await supabase.schema('threads').from('replies').select('*').eq('account_id', account.id).order('replied_at', { ascending: false }).limit(100)
 
   if (repliesRaw && repliesRaw.length > 0) {
