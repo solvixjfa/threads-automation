@@ -36,14 +36,18 @@
         <input v-model="searchQuery" type="text" placeholder="Search comments or username..." class="input w-full" />
       </div>
       <div class="w-full md:w-64">
-        <select v-model="filterCategory" class="input w-full">
-          <option value="all">All Categories</option>
-          <option value="lead">Leads Only</option>
-          <option value="question">Questions</option>
-          <option value="praise">Praise</option>
-          <option value="spam">Spam</option>
-          <option value="toxic">Toxic</option>
-        </select>
+        <Select 
+          v-model="filterCategory" 
+          :options="[
+            { label: 'All Categories', value: 'all' },
+            { label: 'Priority Only', value: 'priority' },
+            { label: 'Questions', value: 'question' },
+            { label: 'Praise', value: 'praise' },
+            { label: 'Neutral', value: 'neutral' },
+            { label: 'Spam', value: 'spam' },
+            { label: 'Toxic', value: 'toxic' }
+          ]" 
+        />
       </div>
     </div>
 
@@ -256,7 +260,7 @@ const currentReplies = computed(() => {
 
   // Filter by Category
   if (filterCategory.value !== 'all') {
-    if (filterCategory.value === 'lead') base = base.filter(r => r.is_lead)
+    if (filterCategory.value === 'priority') base = base.filter(r => r.is_lead || r.classification === 'question')
     else base = base.filter(r => r.classification === filterCategory.value)
   }
 
