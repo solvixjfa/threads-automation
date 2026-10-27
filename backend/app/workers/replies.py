@@ -3,26 +3,20 @@ import asyncio
 import logging
 import time
 import httpx
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from supabase import create_client, Client
 from app.services.leads import analyze_and_notify_lead
 from app.services.comment_classifier import classify_comment
 from app.services.comment_templates import (
-    pick_template,
-    has_template,
-    is_category_enabled,
-    get_custom_templates,
+    pick_template, has_template, is_category_enabled, get_custom_templates,
 )
 from app.services.auto_reply import generate_rag_reply
-
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 
-
 def get_supabase() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_KEY)
-
 
 CATEGORY_ACTION = {
     "question": "llm",
@@ -38,16 +32,8 @@ MAX_POST_AGE_DAYS = 7
 MAX_REPLIES_PER_POST = 50
 SYNC_CONCURRENCY = 8
 
-
 def empty_stats() -> dict:
-    return {
-        "new_replies": 0,
-        "template": 0,
-        "llm": 0,
-        "skipped": 0,
-        "by_category": {},
-    }
-
+    return {"new_replies": 0, "template": 0, "llm": 0, "skipped": 0, "by_category": {}}
 
 def merge_stats(target: dict, source: dict):
     target["new_replies"] += source.get("new_replies", 0)
@@ -59,12 +45,12 @@ def merge_stats(target: dict, source: dict):
 
 
 async def sync_posts_from_meta(db, client, acc_id: str, token: str) -> int:
+    # Tambahin media_type & media_url biar post utama juga bisa ditampilin previewnya
     url = (
         "https://graph.threads.net/v1.0/me/threads"
-        f"?fields=id,text,timestamp,permalink&limit={MAX_POSTS_TO_FETCH}"
+        f"?fields=id,text,timestamp,permalink,media_type,media_url&limit={MAX_POSTS_TO_FETCH}"
         f"&access_token={token}"
     )
-
     try:
         res = await client.get(url, timeout=15.0)
         if res.status_code != 200:
@@ -83,12 +69,8 @@ async def sync_posts_from_meta(db, client, acc_id: str, token: str) -> int:
         return 0
 
     exist_res = (
-        db.schema("threads")
-        .from_("posts")
-        .select("threads_media_id")
-        .eq("account_id", acc_id)
-        .in_("threads_media_id", media_ids)
-        .execute()
+        db.schema("threads").from_("posts").select("threads_media_id")
+        .eq("account_id", acc_id).in_("threads_media_id", media_ids).execute()
     )
     existing_ids = {row["threads_media_id"] for row in (exist_res.data or [])}
 
@@ -97,11 +79,9 @@ async def sync_posts_from_meta(db, client, acc_id: str, token: str) -> int:
         media_id = p.get("id")
         if not media_id or media_id in existing_ids:
             continue
-
         ts = p.get("timestamp")
         if not ts:
             continue
-
         try:
             db.schema("threads").from_("posts").insert({
                 "account_id": acc_id,
@@ -121,20 +101,16 @@ async def sync_posts_from_meta(db, client, acc_id: str, token: str) -> int:
 async def sync_replies_for_post(
     db, client, acc_id: str, post_db_id: str, media_id: str,
     token: str, acc_username: str, is_enabled: bool, reply_mode: str,
-    category_rules: dict = None
+    category_rules: dict = None, ai_provider: str = "groq"
 ) -> dict:
-    """
-    Fetch replies dari Meta untuk satu post.
-    Pakai batch check dan bulk insert untuk minimize round trip ke Supabase.
-    """
     stats = empty_stats()
 
+    # TAMBAHIN media_type, media_url, permalink ke query
     url = (
         f"https://graph.threads.net/v1.0/{media_id}/replies"
-        f"?fields=id,text,username,timestamp&limit={MAX_REPLIES_PER_POST}"
+        f"?fields=id,text,username,timestamp,permalink,media_type,media_url&limit={MAX_REPLIES_PER_POST}"
         f"&access_token={token}"
     )
-
     try:
         res = await client.get(url, timeout=15.0)
         if res.status_code != 200:
@@ -150,21 +126,16 @@ async def sync_replies_for_post(
     if not meta_ids:
         return stats
 
-    # Batch check existing replies (1 query instead of N)
     try:
         exist_res = (
-            db.schema("threads")
-            .from_("replies")
-            .select("threads_reply_id")
-            .in_("threads_reply_id", meta_ids)
-            .execute()
+            db.schema("threads").from_("replies").select("threads_reply_id")
+            .in_("threads_reply_id", meta_ids).execute()
         )
         existing_set = {r["threads_reply_id"] for r in (exist_res.data or [])}
     except Exception as e:
         logging.error(f"[Batch Check Error] {str(e)}")
         return stats
 
-    # Filter hanya reply baru dan siapkan payload bulk insert
     new_replies_payload = []
     new_replies_meta = []
 
@@ -176,8 +147,14 @@ async def sync_replies_for_post(
         text = reply.get("text", "") or ""
         author_username = reply.get("username", "unknown")
         timestamp = reply.get("timestamp")
+        media_url = reply.get("media_url")
+        media_type = reply.get("media_type")
 
-        classification = classify_comment(text)
+        # DETEKSI MEDIA - apakah ini gambar/video?
+        has_media = bool(media_url) or (media_type in ["IMAGE", "VIDEO", "CAROUSEL_ALBUM"])
+
+        # Klasifikasi dengan info media
+        classification = classify_comment(text, has_media=has_media)
         category = classification["category"]
         is_lead = classification.get("is_lead", False)
         is_own_comment = author_username == acc_username
@@ -195,6 +172,7 @@ async def sync_replies_for_post(
             "classification": category,
             "is_own": is_own_comment,
             "replied_at": timestamp,
+            "media_url": media_url,  # SIMPAN GAMBAR
             "raw": reply,
             "processed_at": datetime.now(timezone.utc).isoformat(),
         })
@@ -205,23 +183,15 @@ async def sync_replies_for_post(
             "author_username": author_username,
             "is_own": is_own_comment,
             "is_lead": is_lead,
+            "has_media": has_media,
         })
 
     if not new_replies_payload:
         return stats
 
-    # Bulk insert (1 query instead of N)
     try:
-        insert_res = (
-            db.schema("threads")
-            .from_("replies")
-            .insert(new_replies_payload)
-            .execute()
-        )
-        inserted_by_meta_id = {
-            row["threads_reply_id"]: row
-            for row in (insert_res.data or [])
-        }
+        insert_res = db.schema("threads").from_("replies").insert(new_replies_payload).execute()
+        inserted_by_meta_id = {row["threads_reply_id"]: row for row in (insert_res.data or [])}
     except Exception as e:
         logging.error(f"[Bulk Insert Error] {str(e)}")
         return stats
@@ -238,6 +208,7 @@ async def sync_replies_for_post(
         author_username = meta_item["author_username"]
         is_own_comment = meta_item["is_own"]
         is_lead = meta_item["is_lead"]
+        has_media = meta_item["has_media"]
         category = classification["category"]
 
         if is_own_comment:
@@ -248,7 +219,6 @@ async def sync_replies_for_post(
             stats["skipped"] += 1
             continue
 
-        # Cek apakah user matikan kategori ini
         if category_rules and not is_category_enabled(category_rules, category):
             stats["skipped"] += 1
             continue
@@ -269,6 +239,7 @@ async def sync_replies_for_post(
             "confidence": classification["confidence"],
             "incoming_comment": text,
             "username": author_username,
+            "has_media": has_media,
         }
 
         if action == "template":
@@ -282,11 +253,14 @@ async def sync_replies_for_post(
             stats["template"] += 1
 
         elif action == "llm":
+            # Kalau cuma gambar tanpa teks, kasih placeholder biar AI tetap bisa jawab
+            ai_input = text.strip() if text.strip() else "[User sent an image without any text. Respond politely, ask what they need, or thank them for engaging.]"
             try:
                 draft_text = await generate_rag_reply(
                     account_id=acc_id,
-                    user_comment=text,
+                    user_comment=ai_input,
                     author_username=author_username,
+                    provider=ai_provider,
                 )
                 llm_meta["mode"] = "llm"
                 stats["llm"] += 1
@@ -315,16 +289,15 @@ async def sync_replies_for_post(
 
 
 async def sync_post_with_semaphore(
-    sem: asyncio.Semaphore,
-    db, client, acc_id: str, post_db_id: str, media_id: str,
-    token: str, acc_username: str, is_enabled: bool, reply_mode: str,
-    category_rules: dict = None
+    sem: asyncio.Semaphore, db, client, acc_id: str, post_db_id: str,
+    media_id: str, token: str, acc_username: str, is_enabled: bool,
+    reply_mode: str, category_rules: dict = None, ai_provider: str = "groq"
 ) -> dict:
     async with sem:
         try:
             return await sync_replies_for_post(
                 db, client, acc_id, post_db_id, media_id,
-                token, acc_username, is_enabled, reply_mode, category_rules
+                token, acc_username, is_enabled, reply_mode, category_rules, ai_provider
             )
         except Exception as e:
             logging.error(f"[Parallel Sync] Post {media_id} error: {str(e)}")
@@ -332,10 +305,7 @@ async def sync_post_with_semaphore(
 
 
 async def process_account(db, client, acc: dict) -> dict:
-    account_stats = {
-        "new_posts": 0,
-        **empty_stats(),
-    }
+    account_stats = {"new_posts": 0, **empty_stats()}
 
     acc_id = acc["id"]
     acc_username = acc.get("username", "")
@@ -343,28 +313,24 @@ async def process_account(db, client, acc: dict) -> dict:
     if not token:
         return account_stats
 
+    # Ambil preferensi AI provider dari account
+    ai_provider = acc.get("ai_provider") or "groq"
+
     new_posts = await sync_posts_from_meta(db, client, acc_id, token)
     account_stats["new_posts"] = new_posts
 
     settings_res = (
-        db.schema("threads")
-        .from_("auto_reply_settings")
-        .select("*")
-        .eq("account_id", acc_id)
-        .limit(1)
-        .execute()
+        db.schema("threads").from_("auto_reply_settings").select("*")
+        .eq("account_id", acc_id).limit(1).execute()
     )
     auto_settings = settings_res.data[0] if settings_res.data else {}
     is_enabled = auto_settings.get("enabled", True)
     reply_mode = auto_settings.get("mode", "review")
     category_rules = auto_settings.get("rules") or {}
 
-    from datetime import datetime, timezone, timedelta
     cutoff = (datetime.now(timezone.utc) - timedelta(days=MAX_POST_AGE_DAYS)).isoformat()
-
     posts_res = (
-        db.schema("threads")
-        .from_("posts")
+        db.schema("threads").from_("posts")
         .select("id, threads_media_id")
         .eq("account_id", acc_id)
         .gte("posted_at", cutoff)
@@ -373,7 +339,6 @@ async def process_account(db, client, acc: dict) -> dict:
         .execute()
     )
     posts = posts_res.data or []
-
     valid_posts = [p for p in posts if p.get("threads_media_id")]
     if not valid_posts:
         return account_stats
@@ -382,13 +347,11 @@ async def process_account(db, client, acc: dict) -> dict:
     tasks = [
         sync_post_with_semaphore(
             sem, db, client, acc_id, p["id"], p["threads_media_id"],
-            token, acc_username, is_enabled, reply_mode, category_rules
-        )
-        for p in valid_posts
+            token, acc_username, is_enabled, reply_mode, category_rules, ai_provider
+        ) for p in valid_posts
     ]
 
     results = await asyncio.gather(*tasks, return_exceptions=True)
-
     for r in results:
         if isinstance(r, dict):
             merge_stats(account_stats, r)
@@ -400,19 +363,16 @@ async def fetch_and_process_replies():
     started = time.time()
     db = get_supabase()
 
+    # TAMBAHIN kolom ai_provider di query
     accounts_res = (
-        db.schema("threads")
-        .from_("threads_accounts")
-        .select("id, settings, username")
+        db.schema("threads").from_("threads_accounts")
+        .select("id, settings, username, ai_provider, custom_gemini_key, custom_groq_key, ai_credits")
         .eq("connection_status", "connected")
         .execute()
     )
     accounts = accounts_res.data or []
 
-    total = {
-        "new_posts": 0,
-        **empty_stats(),
-    }
+    total = {"new_posts": 0, **empty_stats()}
 
     async with httpx.AsyncClient() as client:
         for acc in accounts:
@@ -421,7 +381,6 @@ async def fetch_and_process_replies():
             merge_stats(total, acc_stats)
 
     elapsed = round(time.time() - started, 2)
-
     logging.info(
         f"[Worker Replies Summary] "
         f"new_posts={total['new_posts']} "
