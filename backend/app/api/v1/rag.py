@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from app.services.rag import store_knowledge, backfill_unembedded_knowledge, generate_rag_post, get_all_raw_models, get_available_models
+from app.services.rag import store_knowledge, backfill_unembedded_knowledge, generate_rag_post, get_all_raw_models, get_available_models, repurpose_content
 from app.services.auto_reply import generate_rag_reply
 
 router = APIRouter()
@@ -26,7 +26,14 @@ class GeneratePostRequest(BaseModel):
     tone: Optional[str] = "Edukasi & Insight Kasual"
     custom_prompt: Optional[str] = None
     provider: Optional[str] = "gemini"
-    model_name: Optional[str] = None # <-- PARAMETER BARU
+    model_name: Optional[str] = None
+
+class RepurposeRequest(BaseModel):
+    account_id: str
+    source_text: str
+    angle: str
+    provider: Optional[str] = "gemini"
+    model_name: Optional[str] = None
 
 @router.get("/list-models")
 async def list_embedding_models():
@@ -36,7 +43,6 @@ async def list_embedding_models():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# ENDPOINT BARU: Narik model berdasarkan provider & akun
 @router.get("/models/{provider}")
 async def list_ai_models(provider: str, account_id: str):
     try:
@@ -82,7 +88,21 @@ async def generate_post(payload: GeneratePostRequest):
             tone=payload.tone or "Edukasi & Insight Kasual",
             custom_prompt=payload.custom_prompt,
             provider=payload.provider or "gemini",
-            model_name=payload.model_name # <-- KIRIM KE SERVICE
+            model_name=payload.model_name
+        )
+        return {"status": "success", "options": options}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/repurpose")
+async def repurpose(payload: RepurposeRequest):
+    try:
+        options = await repurpose_content(
+            account_id=payload.account_id,
+            source_text=payload.source_text,
+            angle=payload.angle,
+            provider=payload.provider or "gemini",
+            model_name=payload.model_name
         )
         return {"status": "success", "options": options}
     except Exception as e:

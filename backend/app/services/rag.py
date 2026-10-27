@@ -214,3 +214,91 @@ Create a 3-DAY CONTENT PLAN based on the TOPIC below. Avoid repeating recent pos
 
     if not result_options: raise Exception("AI returned empty content.")
     return result_options
+
+async def repurpose_content(account_id: str, source_text: str, angle: str, provider: str = "gemini", model_name: str = None) -> list[dict]:
+    db = get_supabase()
+    acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key, ai_credits").eq("id", account_id).limit(1).execute()
+    
+    if not acc_res.data: raise Exception("Account not found")
+    acc = acc_res.data[0]
+    
+    custom_gemini = acc.get("custom_gemini_key")
+    custom_groq = acc.get("custom_groq_key")
+    credits = acc.get("ai_credits", 0)
+    
+    if provider == "groq":
+        api_key_to_use = custom_groq if custom_groq else GROQ_KEY
+        is_using_saas = not custom_groq
+        if not api_key_to_use: raise Exception("Groq API Key is missing on server. Please add your own key.")
+    else:
+        api_key_to_use = custom_gemini if custom_gemini else GEMINI_KEY
+        is_using_saas = not custom_gemini
+        if not api_key_to_use: raise Exception("Gemini API Key is missing on server. Please add your own key.")
+
+    if is_using_saas and credits <= 0:
+        raise Exception("Insufficient AI Credits. Please add your own API Key for this provider in Settings or top up.")
+
+    prompt = f"""You are a professional Threads Copywriter.
+Your task is to REWRITE / REPURPOSE the original text below into 3 different variations.
+Do not invent new facts, just change the format, tone, and structure to fit the requested angle.
+
+[REQUESTED ANGLE]
+{angle}
+
+[ORIGINAL TEXT]
+{source_text}
+
+[OUTPUT INSTRUCTIONS]
+1. Create 3 different variations.
+2. MUST return a pure JSON object with a single key "options" containing the array:
+{{
+  "options": [
+    {{"id": "1", "content": "Variation 1 text..."}},
+    {{"id": "2", "content": "Variation 2 text..."}},
+    {{"id": "3", "content": "Variation 3 text..."}}
+  ]
+}}
+"""
+
+    result_options = []
+    
+    if provider == "groq":
+        try:
+            groq_client = Groq(api_key=api_key_to_use)
+            model_to_run = model_name or "llama-3.3-70b-versatile"
+            chat_completion = groq_client.chat.completions.create(
+                messages=[{"role": "user", "content": prompt}],
+                model=model_to_run,
+                response_format={"type": "json_object"},
+                temperature=0.7,
+            )
+            parsed = json.loads(chat_completion.choices[0].message.content)
+            result_options = parsed.get("options", [])
+        except Exception as e:
+            raise Exception(f"Groq Generation Failed: {str(e)}")
+    else:
+        client = genai.Client(api_key=api_key_to_use)
+        gen_config = types.GenerateContentConfig(response_mime_type="application/json")
+        response = None
+        models_to_try = [model_name] if model_name else DEFAULT_GEMINI_MODELS
+
+        last_error = ""
+        for m_name in models_to_try:
+            try:
+                response = client.models.generate_content(model=m_name, contents=prompt, config=gen_config)
+                break
+            except Exception as e:
+                last_error = str(e)
+        
+        if not response: raise Exception(f"Gemini failed. Last error: {last_error}")
+        
+        raw_text = response.text.strip()
+        if raw_text.startswith("```json"): raw_text = raw_text.replace("```json", "", 1).rstrip("`").strip()
+        parsed = json.loads(raw_text)
+        result_options = parsed.get("options", parsed)
+
+    if is_using_saas:
+        db.schema("threads").from_("threads_accounts").update({"ai_credits": credits - 1}).eq("id", account_id).execute()
+
+    if not result_options: raise Exception("AI returned empty content.")
+    return result_options
