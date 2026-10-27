@@ -34,7 +34,6 @@
           />
         </div>
 
-        <!-- DROPDOWN PROVIDER & MODEL (PAKAI KOMPONEN KUSTOM) -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-lg border theme-border" style="background: var(--bg-sec);">
           <Select 
             v-model="aiProvider" 
@@ -59,7 +58,6 @@
           <Textarea v-model="customPrompt" label="Custom Instruction" :rows="3" placeholder="Example: Write in casual English..." />
         </div>
 
-        <!-- BADGE STATUS KREDIT (LOGIKA BARU) -->
         <div class="flex justify-end items-center gap-4 mt-2">
           <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold transition-colors"
             :style="isUsingOwnKey ? 'border-color: var(--success); color: var(--success);' : (aiCredits > 0 ? 'border-color: var(--accent); color: var(--accent);' : 'border-color: var(--danger); color: var(--danger);')">
@@ -115,6 +113,7 @@
         <div class="flex-1 flex justify-end items-center gap-3 flex-wrap">
           <BestTimeChip @apply="(val) => scheduledDate = val" />
           <input v-model="scheduledDate" type="datetime-local" class="input" style="width: auto;" />
+          <!-- TOMBOL CUMA DISABLE KALO LAGI SAVING -->
           <Button @click="schedulePost" :disabled="isSaving" :loading="isSaving">
             {{ isSaving ? 'Processing...' : (threadParts.length > 1 ? 'Schedule ' + threadParts.length + ' Threads' : 'Schedule Post') }}
           </Button>
@@ -169,17 +168,49 @@ const aiModel = ref('')
 const availableModels = ref<{id: string, name: string}[]>([])
 const isLoadingModels = ref(false)
 
-// STATE BUAT NYIMPEN KEY
 const customGeminiKey = ref('')
 const customGroqKey = ref('')
 
-// COMPUTED: Nentuin lu pake key sendiri atau SaaS berdasarkan provider yang DIPILIH
 const isUsingOwnKey = computed(() => {
   if (aiProvider.value === 'groq') return !!customGroqKey.value
   return !!customGeminiKey.value
 })
 
-// ... (fungsi splitTextIntoParts, handleTextChange, watch tetap sama) ...
+function splitTextIntoParts(text: string, maxLen = 480): string[] {  
+  if (text.length <= maxLen) return [text]
+  const paragraphs = text.split(/\n+/)
+  const parts: string[] = []
+  let current = ''                                                   
+  for (const p of paragraphs) {
+    if ((current + '\n\n' + p).trim().length <= maxLen) {                
+      current = current ? current + '\n\n' + p : p
+    } else {
+      if (current) parts.push(current.trim())
+      if (p.length <= maxLen) { current = p } 
+      else {                                                             
+        const sentences = p.match(/[^.!?]+[.!?]+/g) || [p]
+        for (const s of sentences) {
+          if ((current + ' ' + s).trim().length <= maxLen) { current = current ? current + ' ' + s : s } 
+          else {
+            if (current) parts.push(current.trim())                            
+            current = s
+          }
+        }
+      }
+    }
+  }                                                                  
+  if (current) parts.push(current.trim())
+  return parts
+}                                                                  
+
+function handleTextChange() { threadParts.value = splitTextIntoParts(postText.value) }
+                                                                   
+watch(postText, (newVal) => {
+  handleTextChange()
+  localStorage.setItem('ixiera_draft_text', newVal)                
+})
+
+watch(scheduledDate, (newVal) => { localStorage.setItem('ixiera_draft_time', newVal) })                                                                 
 
 async function fetchModels() {
   if (!currentAccountId.value) return
@@ -196,7 +227,6 @@ async function fetchModels() {
     }
   } catch (err) {
     console.error('Failed to load models', err)
-    showToast('Failed to load models for this provider.', 'error')
   } finally {
     isLoadingModels.value = false
   }
@@ -206,7 +236,148 @@ function handleProviderChange() {
   fetchModels()
 }
 
-// ... (fungsi generateAiIdeas, applyAiDraft, checkScore, schedulePost tetap sama) ...
+async function generateAiIdeas() {
+  if (!aiTopic.value || !aiModel.value) return
+  isGenerating.value = true
+  aiResults.value = []                                             
+  
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 45000)
+
+  try {
+    const response = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/rag/generate-post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({ 
+        account_id: currentAccountId.value, 
+        topic: aiTopic.value, 
+        tone: aiTone.value, 
+        provider: aiProvider.value,
+        model_name: aiModel.value,
+        custom_prompt: aiTone.value === 'Custom Prompt' ? customPrompt.value : undefined 
+      })
+    })
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      const errData = await response.json()
+      throw new Error(errData.detail || 'Failed to process draft on backend')
+    }
+                                                                       
+    const resData = await response.json()
+    if (resData?.options) {                                              
+      aiResults.value = resData.options
+      if (!isUsingOwnKey.value) aiCredits.value = Math.max(0, aiCredits.value - 1)
+      showToast('3-Day Content Plan generated successfully!', 'success')
+    }                                                                
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      showToast('Request timed out. Please try again.', 'error')
+    } else {
+      showToast('AI Generator failed: ' + err.message, 'error')
+    }
+  } finally {
+    isGenerating.value = false                                       
+  }
+}
+
+function applyAiDraft(content: string) {
+  postText.value = content
+  showToast('AI Draft applied to Composer.', 'info')
+}
+                                                                   
+async function checkScore() {
+  isChecking.value = true
+  try {
+    const { data, error } = await supabase.functions.invoke('score-draft', { body: { text: postText.value } })
+    if (error) throw error
+    if (data?.error) throw new Error(data.error)
+    scoreResult.value = { score: data?.score ?? 80, feedback: data?.feedback ?? 'Text looks good.' }
+  } catch (err: any) {
+    showToast('AI Analysis failed: ' + err.message, 'error')           
+  } finally { isChecking.value = false }
+}
+
+async function schedulePost() {
+  // 1. VALIDASI MANUAL
+  if (!postText.value.trim()) {
+    showToast('Please write a post first.', 'error')
+    return
+  }
+  if (!scheduledDate.value) {
+    showToast('Please select a schedule time.', 'error')
+    return
+  }
+  
+  // 2. FIX TIMEZONE
+  // new Date("2026-10-26T21:00") bakal otomatis ngebaca sebagai Local Time (WIB)
+  const localDate = new Date(scheduledDate.value)
+  
+  if (isNaN(localDate.getTime())) {
+    showToast('Invalid date format. Please pick again.', 'error')
+    return
+  }
+  
+  if (localDate.getTime() <= Date.now()) { 
+    showToast('Schedule time must be in the future.', 'error')
+    return 
+  }
+
+  isSaving.value = true
+
+  try {
+    let targetAccountId = currentAccountId.value
+    if (!targetAccountId) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('User not authenticated')    
+      const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id').eq('user_id', user.id).maybeSingle()
+      if (!account) throw new Error('Threads account not connected')
+      targetAccountId = account.id
+      currentAccountId.value = targetAccountId
+    }
+
+    const partsToSchedule = threadParts.value.length > 0 ? threadParts.value : [postText.value]
+
+    let parentId = null
+    for (let i = 0; i < partsToSchedule.length; i++) {                 
+      const { data: insertedPart, error: insertError } = await supabase.schema('threads').from('scheduled_posts').insert({
+        account_id: targetAccountId, 
+        text: partsToSchedule[i], 
+        scheduled_for: localDate.toISOString(), // Ini bakal ngirim waktu UTC yang bener ke DB
+        status: 'scheduled', 
+        parent_id: parentId, 
+        sequence_number: i + 1, 
+        idempotency_key: crypto.randomUUID()                             
+      }).select().single()                                                  
+      
+      if (insertError) throw insertError                                 
+      if (i === 0) { parentId = insertedPart.id }
+    }                                                              
+    
+    showToast(`Successfully scheduled ${partsToSchedule.length} thread(s)!`, 'success')
+    postText.value = ''
+    localStorage.removeItem('ixiera_draft_text')                   
+    
+    // 3. RESET WAKTU KE +1 JAM DARI SEKARANG (WIB)
+    const nextHour = new Date()
+    nextHour.setHours(nextHour.getHours() + 1)
+    nextHour.setMinutes(0)
+    
+    // Fungsi helper buat format ke string datetime-local (YYYY-MM-DDTHH:mm)
+    const tzOffset = nextHour.getTimezoneOffset() * 60000
+    const localISOTime = (new Date(nextHour.getTime() - tzOffset)).toISOString().slice(0, 16)
+    
+    scheduledDate.value = localISOTime
+    localStorage.setItem('ixiera_draft_time', scheduledDate.value)
+
+  } catch (err: any) {
+    showToast('Failed to schedule: ' + err.message, 'error')
+  } finally { 
+    isSaving.value = false 
+  }
+}
 
 onMounted(async () => {
   const { data: { user } } = await supabase.auth.getUser()
@@ -215,16 +386,34 @@ onMounted(async () => {
     if (acc) {
       currentAccountId.value = acc.id
       aiCredits.value = acc.ai_credits ?? 20
-      
-      // Simpan key ke state
       customGeminiKey.value = acc.custom_gemini_key || ''
       customGroqKey.value = acc.custom_groq_key || ''
-      
       if (acc.ai_provider) aiProvider.value = acc.ai_provider
       await fetchModels()
     }
   }
 
-  // ... (load draft text dari localstorage tetap sama) ...
+  const savedRepurpose = localStorage.getItem('draft_repurpose')
+  if (savedRepurpose) {
+    postText.value = savedRepurpose
+    localStorage.removeItem('draft_repurpose')
+  } else {
+    const localDraftText = localStorage.getItem('ixiera_draft_text')
+    if (localDraftText) { postText.value = localDraftText }
+  }
+
+  // 4. FIX DEFAULT TIME SAAT HALAMAN DIBUKA
+  const localDraftTime = localStorage.getItem('ixiera_draft_time')
+  if (localDraftTime) {
+    scheduledDate.value = localDraftTime
+  } else {
+    const d = new Date()
+    d.setHours(d.getHours() + 1)
+    d.setMinutes(0)
+    
+    // Konversi ke Local ISO string biar pas di-set ke input datetime-local gak geser
+    const tzOffset = d.getTimezoneOffset() * 60000
+    scheduledDate.value = (new Date(d.getTime() - tzOffset)).toISOString().slice(0, 16)
+  }
 })
 </script>

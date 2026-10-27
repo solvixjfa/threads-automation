@@ -17,18 +17,18 @@
       </svg>
     </button>
 
-    <!-- DROPDOWN LIST DENGAN BACKGROUND SOLID & Z-INDEX TINGGI -->
+    <!-- DROPDOWN LIST PAKAI CUSTOM THEME LU -->
     <div 
       v-if="isOpen" 
-      class="absolute z-[100] w-full mt-1 rounded-lg shadow-xl overflow-hidden border bg-white dark:bg-slate-800 theme-border"
+      class="absolute z-[100] w-full mt-1 rounded-lg shadow-xl overflow-hidden border theme-bg-sec theme-border"
     >
       <ul class="max-h-60 overflow-y-auto py-1">
         <li 
           v-for="opt in options" 
           :key="opt.value"
           @click="select(opt.value)"
-          class="px-3 py-2.5 text-sm cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors truncate"
-          :class="modelValue === opt.value ? 'font-bold bg-slate-50 dark:bg-slate-900 theme-text' : 'theme-text-muted'"
+          class="px-3 py-2.5 text-sm cursor-pointer transition-colors truncate hover:opacity-80"
+          :class="modelValue === opt.value ? 'font-bold theme-text theme-bg' : 'theme-text-muted'"
         >
           {{ opt.label }}
         </li>
