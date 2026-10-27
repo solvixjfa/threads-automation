@@ -1,7 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from app.services.rag import store_knowledge, backfill_unembedded_knowledge, generate_rag_post, get_all_raw_models, get_available_models, repurpose_content
+from app.services.rag import (
+    store_knowledge, backfill_unembedded_knowledge, generate_rag_post, 
+    get_all_raw_models, get_available_models, repurpose_content, get_repurpose_recommendations
+)
 from app.services.auto_reply import generate_rag_reply
 
 router = APIRouter()
@@ -48,6 +51,14 @@ async def list_ai_models(provider: str, account_id: str):
     try:
         models = await get_available_models(account_id, provider)
         return {"status": "success", "models": models}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/recommendations/{account_id}")
+async def list_recommendations(account_id: str):
+    try:
+        recs = await get_repurpose_recommendations(account_id)
+        return {"status": "success", "recommendations": recs}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

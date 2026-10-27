@@ -302,3 +302,53 @@ Do not invent new facts, just change the format, tone, and structure to fit the 
 
     if not result_options: raise Exception("AI returned empty content.")
     return result_options
+
+async def get_repurpose_recommendations(account_id: str) -> list[dict]:
+    db = get_supabase()
+    
+    # 1. Ambil semua posts & metriknya (sama kayak logic get-analytics)
+    posts_res = db.schema("threads").from_("posts").select(
+        "id, threads_media_id, created_at, post_metrics(views, likes, replies, reposts, snapshot_label)"
+    ).eq("account_id", account_id).execute()
+    
+    if not posts_res.data:
+        return []
+
+    # 2. Ambil teks dari scheduled_posts
+    sp_res = db.schema("threads").from_("scheduled_posts").select(
+        "text, published_media_id, scheduled_for"
+    ).eq("account_id", account_id).eq("status", "published").execute()
+    
+    sp_map = {str(sp.get("published_media_id")): sp for sp in (sp_res.data or []) if sp.get("published_media_id")}
+
+    formatted = []
+    for p in posts_res.data:
+        media_id = str(p.get("threads_media_id"))
+        sp = sp_map.get(media_id)
+        
+        # Skip kalau teksnya gak ketemu atau kosong
+        if not sp or not sp.get("text"):
+            continue
+            
+        latest_metrics = next((m for m in p.get("post_metrics", []) if m.get("snapshot_label") == "latest"), None)
+        if not latest_metrics and p.get("post_metrics"):
+            latest_metrics = p.get("post_metrics")[0]
+            
+        views = latest_metrics.get("views", 0) if latest_metrics else 0
+        likes = latest_metrics.get("likes", 0) if latest_metrics else 0
+        
+        # Hitung Engagement Rate kasar
+        er = ((likes + latest_metrics.get("replies", 0) + latest_metrics.get("reposts", 0)) / views * 100) if views > 0 and latest_metrics else 0
+        
+        formatted.append({
+            "id": p["id"],
+            "text": sp["text"],
+            "views": views,
+            "likes": likes,
+            "er": round(er, 2),
+            "posted_at": sp.get("scheduled_for") or p.get("created_at")
+        })
+
+    # 3. Urutkan berdasarkan Views terbanyak, ambil 5 teratas
+    formatted.sort(key=lambda x: x["views"], reverse=True)
+    return formatted[:5]

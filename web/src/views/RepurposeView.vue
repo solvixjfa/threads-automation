@@ -5,6 +5,42 @@
       <p class="text-sm theme-text-muted mt-1">Recycle old posts or long text into 3 fresh Threads angles.</p>
     </div>
 
+    <!-- RECOMMENDATIONS SECTION -->
+    <div v-if="recommendations.length > 0" class="space-y-3">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-bold uppercase tracking-wide">Recommended Posts</h2>
+        <span class="text-[10px] font-bold theme-text-muted">By Highest Views</span>
+      </div>
+      <div class="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x">
+        <div 
+          v-for="rec in recommendations" 
+          :key="rec.id" 
+          class="card p-4 w-72 shrink-0 snap-start flex flex-col justify-between space-y-3 hover:border-current transition-colors cursor-pointer group"
+          @click="applyRecommendation(rec)"
+        >
+          <p class="text-xs leading-relaxed line-clamp-3 group-hover:theme-text transition-colors">{{ rec.text }}</p>
+          
+          <div class="flex items-center gap-4 text-xs">
+            <div class="text-center">
+              <span class="block text-[9px] theme-text-muted uppercase font-bold">Views</span>
+              <span class="font-bold">{{ rec.views }}</span>
+            </div>
+            <div class="text-center">
+              <span class="block text-[9px] theme-text-muted uppercase font-bold">Likes</span>
+              <span class="font-bold">{{ rec.likes }}</span>
+            </div>
+            <div class="text-center">
+              <span class="block text-[9px] theme-text-muted uppercase font-bold">ER</span>
+              <span class="font-black">{{ rec.er }}%</span>
+            </div>
+            <div class="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+               <Badge variant="accent">Use</Badge>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <Card>
       <div class="space-y-4">
         <Textarea
@@ -118,10 +154,30 @@ const aiModel = ref('')
 const availableModels = ref<{id: string, name: string}[]>([])
 const isLoadingModels = ref(false)
 
+const recommendations = ref<any[]>([])
+
 const isUsingOwnKey = computed(() => {
   if (aiProvider.value === 'groq') return !!customGroqKey.value
   return !!customGeminiKey.value
 })
+
+function applyRecommendation(rec: any) {
+  sourceText.value = rec.text
+  showToast('Post moved to text editor.', 'info')
+  // Scroll ke form input
+  window.scrollTo({ top: 400, behavior: 'smooth' })
+}
+
+async function fetchRecommendations() {
+  if (!currentAccountId.value) return
+  try {
+    const res = await fetch(`https://threads-automation-production-53ad.up.railway.app/api/v1/rag/recommendations/${currentAccountId.value}`)
+    const data = await res.json()
+    if (data.recommendations) recommendations.value = data.recommendations
+  } catch (err) {
+    console.error('Failed to load recommendations', err)
+  }
+}
 
 async function fetchModels() {
   if (!currentAccountId.value) return
@@ -208,7 +264,9 @@ onMounted(async () => {
       customGeminiKey.value = acc.custom_gemini_key || ''
       customGroqKey.value = acc.custom_groq_key || ''
       if (acc.ai_provider) aiProvider.value = acc.ai_provider
-      await fetchModels()
+      
+      // Load model & rekomendasi secara paralel
+      await Promise.all([fetchModels(), fetchRecommendations()])
     }
   }
 })
