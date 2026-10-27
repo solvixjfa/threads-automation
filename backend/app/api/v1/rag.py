@@ -3,7 +3,8 @@ from pydantic import BaseModel
 from typing import Optional
 from app.services.rag import (
     store_knowledge, backfill_unembedded_knowledge, generate_rag_post, 
-    get_all_raw_models, get_available_models, repurpose_content, get_repurpose_recommendations
+    get_all_raw_models, get_available_models, repurpose_content, get_repurpose_recommendations,
+    score_draft_ai
 )
 from app.services.auto_reply import generate_rag_reply
 
@@ -36,6 +37,12 @@ class RepurposeRequest(BaseModel):
     source_text: str
     angle: str
     provider: Optional[str] = "gemini"
+    model_name: Optional[str] = None
+
+class ScoreDraftRequest(BaseModel):
+    account_id: str
+    text: str
+    provider: Optional[str] = "groq"
     model_name: Optional[str] = None
 
 @router.get("/list-models")
@@ -116,5 +123,18 @@ async def repurpose(payload: RepurposeRequest):
             model_name=payload.model_name
         )
         return {"status": "success", "options": options}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/score-draft")
+async def score_draft(payload: ScoreDraftRequest):
+    try:
+        result = await score_draft_ai(
+            account_id=payload.account_id,
+            text=payload.text,
+            provider=payload.provider or "groq",
+            model_name=payload.model_name
+        )
+        return {"status": "success", "data": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -352,3 +352,89 @@ async def get_repurpose_recommendations(account_id: str) -> list[dict]:
     # 3. Urutkan berdasarkan Views terbanyak, ambil 5 teratas
     formatted.sort(key=lambda x: x["views"], reverse=True)
     return formatted[:5]
+
+async def score_draft_ai(account_id: str, text: str, provider: str = "groq", model_name: str = None) -> dict:
+    db = get_supabase()
+    acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key, ai_credits").eq("id", account_id).limit(1).execute()
+    
+    if not acc_res.data: raise Exception("Account not found")
+    acc = acc_res.data[0]
+    
+    custom_gemini = acc.get("custom_gemini_key")
+    custom_groq = acc.get("custom_groq_key")
+    credits = acc.get("ai_credits", 0)
+    
+    if provider == "groq":
+        api_key_to_use = custom_groq if custom_groq else GROQ_KEY
+        is_using_saas = not custom_groq
+        if not api_key_to_use: raise Exception("Groq API Key is missing.")
+    else:
+        api_key_to_use = custom_gemini if custom_gemini else GEMINI_KEY
+        is_using_saas = not custom_gemini
+        if not api_key_to_use: raise Exception("Gemini API Key is missing.")
+
+    if is_using_saas and credits <= 0:
+        raise Exception("Insufficient AI Credits. Please add your own API Key or top up.")
+
+    prompt = f"""You are an expert Threads Copywriter and Editor.
+Analyze the following draft post and provide a deep, honest critique.
+
+[DRAFT TEXT]
+{text}
+
+[OUTPUT INSTRUCTIONS]
+Evaluate the draft based on:
+1. Hook strength (Does it grab attention?)
+2. Tone (Is it natural, not robotic?)
+3. Grammar & Typo
+4. Call to Action / Engagement potential.
+
+MUST return a pure JSON object with this exact structure:
+{{
+  "score": <integer between 0-100>,
+  "feedback": [
+    "Point 1 about the draft...",
+    "Point 2 about the draft..."
+  ]
+}}
+"""
+
+    result = {"score": 0, "feedback": []}
+    
+    if provider == "groq":
+        try:
+            groq_client = Groq(api_key=api_key_to_use)
+            model_to_run = model_name or "llama-3.3-70b-versatile"
+            chat_completion = groq_client.chat.completions.create(
+                messages=[{"role": "user", "content": prompt}],
+                model=model_to_run,
+                response_format={"type": "json_object"},
+                temperature=0.5,
+            )
+            result = json.loads(chat_completion.choices[0].message.content)
+        except Exception as e:
+            raise Exception(f"Groq Analysis Failed: {str(e)}")
+    else:
+        client = genai.Client(api_key=api_key_to_use)
+        gen_config = types.GenerateContentConfig(response_mime_type="application/json")
+        response = None
+        models_to_try = [model_name] if model_name else DEFAULT_GEMINI_MODELS
+
+        last_error = ""
+        for m_name in models_to_try:
+            try:
+                response = client.models.generate_content(model=m_name, contents=prompt, config=gen_config)
+                break
+            except Exception as e:
+                last_error = str(e)
+        
+        if not response: raise Exception(f"Gemini failed. Last error: {last_error}")
+        
+        raw_text = response.text.strip()
+        if raw_text.startswith("```json"): raw_text = raw_text.replace("```json", "", 1).rstrip("`").strip()
+        result = json.loads(raw_text)
+
+    if is_using_saas:
+        db.schema("threads").from_("threads_accounts").update({"ai_credits": credits - 1}).eq("id", account_id).execute()
+
+    return result

@@ -108,7 +108,7 @@
 
       <div class="flex flex-wrap items-center gap-3 mt-4">
         <Button variant="secondary" @click="checkScore" :disabled="isChecking || !postText">
-          {{ isChecking ? 'Analyzing...' : 'Check AI Score' }}
+          {{ isChecking ? 'Analyzing...' : 'Quick Score (Free)' }}
         </Button>                                                  
         <div class="flex-1 flex justify-end items-center gap-3 flex-wrap">
           <BestTimeChip @apply="(val) => scheduledDate = val" />
@@ -120,22 +120,40 @@
       </div>
     </Card>                                                        
     
+    <!-- MODAL SCORE (SUDAH DIPERBAIKI WARNA & TOMBOL DEEP AI) -->
     <Teleport to="body">                                                 
       <div v-if="scoreResult" class="fixed inset-0 backdrop-blur-sm z-[100] flex items-center justify-center p-4" style="background: rgba(0,0,0,0.6);">                                                          
-        <div class="card max-w-md w-full p-6 space-y-4">
+        <div class="card max-w-md w-full p-6 space-y-4 shadow-2xl" style="background: var(--bg);">
           <div class="flex justify-between items-center pb-3 divider">
-            <h3 class="text-sm font-bold uppercase tracking-wide">Draft Score Analysis</h3>
+            <h3 class="text-sm font-bold uppercase tracking-wide theme-text">Draft Score Analysis</h3>
             <Badge :variant="scoreResult.score >= 80 ? 'accent' : (scoreResult.score >= 60 ? 'default' : 'danger')">
               {{ scoreResult.score }} / 100
             </Badge>
           </div>
+          
           <div class="space-y-2">
-            <label class="label">Feedback Notes</label>
-            <ul class="text-xs leading-relaxed theme-bg-sec p-3.5 rounded-xl border theme-border space-y-1.5 list-disc pl-6">
+            <label class="label theme-text-muted">{{ scoreResult.isAi ? 'Deep AI Feedback' : 'Quick Feedback' }}</label>
+            <ul class="text-xs leading-relaxed theme-bg-sec p-3.5 rounded-xl border theme-border space-y-1.5 list-disc pl-6 theme-text">
               <li v-for="(fb, i) in scoreResult.feedback" :key="i">{{ fb }}</li>
             </ul>
           </div>
-          <div class="flex justify-end pt-2"><Button @click="scoreResult = null">Close</Button></div>                                                           
+
+          <!-- TOMBOL DEEP AI (PREMIUM) -->
+          <div v-if="!scoreResult.isAi" class="pt-2 border-t theme-border flex justify-between items-center">
+            <span class="text-[10px] theme-text-muted">Want deeper analysis?</span>
+            <Button 
+              @click="deepAiScore" 
+              :disabled="isDeepScoring || (!isUsingOwnKey && aiCredits <= 0)" 
+              :loading="isDeepScoring"
+              size="sm"
+            >
+              {{ isDeepScoring ? 'Analyzing...' : 'Deep AI (1 Credit)' }}
+            </Button>
+          </div>
+
+          <div class="flex justify-end pt-2">
+            <Button variant="secondary" @click="scoreResult = null">Close</Button>
+          </div>                                                           
         </div>
       </div>                                                           
     </Teleport>
@@ -155,7 +173,8 @@ const postText = ref('')
 const threadParts = ref<string[]>([])
 const scheduledDate = ref('')
 const isSaving = ref(false)
-const isChecking = ref(false)                                      
+const isChecking = ref(false)   
+const isDeepScoring = ref(false)                                   
 const showAiPanel = ref(true)
 const aiTopic = ref('')
 const aiTone = ref('Educational & Casual Insight')
@@ -291,73 +310,80 @@ function applyAiDraft(content: string) {
   showToast('AI Draft applied to Composer.', 'info')
 }
 
-// ==========================================
-// LOGIKA LOCAL SCORING (TANPA API / AI)
-// ==========================================
+// FREE HEURISTIC SCORE
 function checkScore() {
   if (!postText.value.trim()) return
-  
   isChecking.value = true
   
-  // Kasih delay dikit biar UI-nya berasa "lagi mikir" (opsional, biar user gak kaget)
   setTimeout(() => {
     const text = postText.value.trim()
-    let score = 50 // Base score
+    let score = 50
     let feedback: string[] = []
 
-    // 1. Evaluasi Panjang Teks (Ideal: 100 - 500 karakter)
-    if (text.length < 50) {
-      feedback.push("Post is too short. Add more context to keep readers engaged.")
-    } else if (text.length > 500) {
-      score += 10
-      feedback.push("Post is long. It will be automatically split into a thread.")
-    } else {
-      score += 20
-      feedback.push("Optimal character length.")
-    }
+    if (text.length < 50) feedback.push("Post is too short. Add more context.")
+    else if (text.length > 500) { score += 10; feedback.push("Post is long. It will be automatically split into a thread.") }
+    else { score += 20; feedback.push("Optimal character length.") }
 
-    // 2. Evaluasi Hook (Pancingan di akhir kalimat)
     const hookWords = ['?', 'gimana', 'menurut', 'setuju', 'pendapat', 'how', 'what', 'agree', 'think']
-    const hasHook = hookWords.some(w => text.toLowerCase().includes(w))
-    if (hasHook) {
-      score += 15
-      feedback.push("Great hook! You are inviting readers to reply.")
+    if (hookWords.some(w => text.toLowerCase().includes(w))) {
+      score += 15; feedback.push("Great hook! You are inviting readers to reply.")
     } else {
       feedback.push("Consider adding a question or call-to-action to spark discussion.")
     }
 
-    // 3. Evaluasi Formatting (Enter/Paragraf)
     if (text.includes('\n')) {
-      score += 10
-      feedback.push("Good use of line breaks. It makes reading easier.")
+      score += 10; feedback.push("Good use of line breaks. It makes reading easier.")
     } else {
       feedback.push("It looks like a wall of text. Add some line breaks (Enter).")
     }
 
-    // 4. Evaluasi Spam Hashtag
     const hashtags = text.match(/#[\w]+/g) || []
     if (hashtags.length > 3) {
-      score -= 10
-      feedback.push(`Too many hashtags (${hashtags.length}). Use max 3 for Threads.`)
+      score -= 10; feedback.push(`Too many hashtags (${hashtags.length}). Use max 3 for Threads.`)
     }
 
-    // 5. Evaluasi Link
-    if (text.includes('http')) {
-      score -= 5
-      feedback.push("Contains a link. Keep in mind Threads may reduce reach for external links.")
-    }
-
-    // Pastikan skor maksimal 100 dan minimal 0
     score = Math.max(0, Math.min(100, score))
-    
-    // Kalau sempurna, tambahin feedback positif
-    if (score >= 80) {
-      feedback.unshift("This post looks solid and ready to schedule!")
-    }
+    if (score >= 80) feedback.unshift("This post looks solid and ready to schedule!")
 
-    scoreResult.value = { score, feedback }
+    scoreResult.value = { score, feedback, isAi: false }
     isChecking.value = false
-  }, 600) // Delay palsu 0.6 detik
+  }, 600)
+}
+
+// PREMIUM DEEP AI SCORE
+async function deepAiScore() {
+  if (!postText.value.trim() || !aiModel.value) return
+  isDeepScoring.value = true
+  
+  try {
+    const res = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/rag/score-draft', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        account_id: currentAccountId.value,
+        text: postText.value,
+        provider: aiProvider.value,
+        model_name: aiModel.value
+      })
+    })
+
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.detail)
+
+    // Update state score dengan hasil AI
+    scoreResult.value = { 
+      score: data.data.score, 
+      feedback: data.data.feedback,
+      isAi: true 
+    }
+    
+    if (!isUsingOwnKey.value) aiCredits.value = Math.max(0, aiCredits.value - 1)
+    showToast('Deep AI Analysis complete!', 'success')
+  } catch (err: any) {
+    showToast('Deep AI failed: ' + err.message, 'error')
+  } finally {
+    isDeepScoring.value = false
+  }
 }
 
 async function schedulePost() {
