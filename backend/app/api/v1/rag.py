@@ -20,6 +20,8 @@ class AutoReplyRequest(BaseModel):
     account_id: str
     user_comment: str
     author_username: Optional[str] = ""
+    provider: Optional[str] = "gemini"
+    model_name: Optional[str] = None
 
 class BackfillRequest(BaseModel):
     account_id: str
@@ -98,7 +100,8 @@ async def backfill_knowledge(payload: BackfillRequest):
 async def generate_reply(payload: AutoReplyRequest):
     try:
         reply = await generate_rag_reply(
-            account_id=payload.account_id, user_comment=payload.user_comment, author_username=payload.author_username or ""
+            account_id=payload.account_id, user_comment=payload.user_comment, author_username=payload.author_username or "",
+            provider=payload.provider or "gemini", model_name=payload.model_name
         )
         return {"status": "success", "reply": reply}
     except Exception as e:
