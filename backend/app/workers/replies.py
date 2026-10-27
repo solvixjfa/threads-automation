@@ -278,14 +278,22 @@ async def sync_replies_for_post(
         
         if reply_mode == "auto":
             try:
-                # Langsung tembak ke Threads!
+                # Delay 2 detik antar publish biar gak kena rate limit
+                await asyncio.sleep(2)
                 await publish_reply_to_threads(acc_id, meta_item["reply_id"], draft_text)
                 log_status = "sent"
                 logging.info(f"[Auto-Publish] Successfully replied to {meta_item['reply_id']}")
             except Exception as pub_err:
-                logging.error(f"[Auto-Publish Failed]: {str(pub_err)}")
-                log_status = "pending_review" # Kalau gagal, masuk antrean review
-                llm_meta["auto_publish_error"] = str(pub_err)
+                err_str = str(pub_err)
+                logging.error(f"[Auto-Publish Failed]: {err_str}")
+                
+                # Kalau kena rate limit (429), tunggu 60 detik sebelum lanjut
+                if "429" in err_str or "rate limit" in err_str.lower():
+                    logging.warning("[Rate Limit] Meta API limit reached. Pausing 60s...")
+                    await asyncio.sleep(60)
+                
+                log_status = "pending_review"
+                llm_meta["auto_publish_error"] = err_str
 
         try:
             db.schema("threads").from_("auto_reply_logs").insert({
