@@ -4,7 +4,7 @@
       <div class="p-5 divider flex justify-between items-center theme-bg-sec">                                                                
         <div class="flex items-center gap-2">
           <span class="text-xs font-bold uppercase tracking-wide">Scheduled Queue</span>
-          <Badge>{{ filteredPosts.length }} posts</Badge>
+          <Badge>{{ filteredPosts.length }} groups</Badge>
         </div>
         <button @click="loadPosts" class="text-xs font-bold hover:underline">Refresh</button>
       </div>
@@ -30,41 +30,58 @@
       </div>
 
       <div v-else class="list-divided">
-        <div v-for="post in filteredPosts" :key="post.id" class="p-5 space-y-3">
-          <div class="flex items-start justify-between gap-4">                 
-            <div class="flex-1 space-y-1">
-              <div class="flex items-center gap-2 flex-wrap">
-                <Badge :variant="statusVariant(post.status)">{{ post.status }}</Badge>
-                <span v-if="post.sequence_number > 1" class="text-[10px] font-bold theme-text-muted">
-                  Part {{ post.sequence_number }}                                  
-                </span>
-              </div>
-              <p class="text-sm font-medium whitespace-pre-wrap">{{ post.text }}</p>
+        <!-- LOOPING GROUPED POSTS -->
+        <div v-for="group in filteredPosts" :key="group.id" class="p-5 space-y-3">
+          
+          <!-- GROUP HEADER (KALAU THREAD) -->
+          <div v-if="group.isThread" class="flex items-center justify-between pb-2 border-b theme-border">
+            <div class="flex items-center gap-2">
+              <Badge variant="accent">Thread</Badge>
+              <span class="text-xs font-bold theme-text-muted">{{ group.parts.length }} Parts</span>
             </div>
+            <button @click="toggleExpand(group.id)" class="text-xs font-bold hover:underline">
+              {{ expandedThreads.has(group.id) ? 'Hide Parts' : 'Show Parts' }}
+            </button>
           </div>
 
-          <div class="flex items-center justify-between pt-1 text-xs gap-3 flex-wrap">
-            <span class="theme-text-muted font-medium">{{ formatDate(post.scheduled_for) }}</span>
+          <!-- POSTS (TAMPILIN PART 1, ATAU SEMUA KALO DI-EXPAND) -->
+          <div v-for="post in (group.isThread && !expandedThreads.has(group.id) ? [group.parts[0]] : group.parts)" 
+               :key="post.id" 
+               class="space-y-3 pt-2"
+               :class="{ 'opacity-50 pointer-events-none': group.isThread && !expandedThreads.has(group.id) && post.sequence_number > 1 }">
             
-            <!-- AKSI UNTUK POSTINGAN TERJADWAL -->
-            <div v-if="post.status === 'scheduled'" class="flex items-center gap-2">                                                                
-              <Button variant="secondary" size="sm" @click="openEditModal(post)">Edit</Button>                                                      
-              <Button variant="danger" size="sm" @click="confirmDeletePost(post.id)">Delete</Button>                                               
-            </div>                                                             
-            
-            <!-- AKSI UNTUK POSTINGAN GAGAL -->
-            <div v-else-if="['error', 'failed', 'quota_exceeded'].includes(post.status)" class="flex items-center gap-2">
-              <Button size="sm" @click="handleRetryPost(post.id)" :loading="retryingId === post.id">Retry</Button>
+            <div class="flex items-start justify-between gap-4">                 
+              <div class="flex-1 space-y-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <Badge :variant="statusVariant(post.status)">{{ post.status }}</Badge>
+                  <span v-if="post.sequence_number > 1" class="text-[10px] font-bold theme-text-muted">
+                    Part {{ post.sequence_number }}                                  
+                  </span>
+                </div>
+                <p class="text-sm font-medium whitespace-pre-wrap">{{ post.text }}</p>
+              </div>
             </div>
 
-            <!-- LINK KE THREADS -->
-            <a v-else-if="post.published_media_id"
-              :href="'https://www.threads.net/post/' + post.published_media_id"                                                                     
-              target="_blank"
-              class="text-xs font-bold hover:underline"
-            >
-              View on Threads
-            </a>                                                             
+            <div class="flex items-center justify-between pt-1 text-xs gap-3 flex-wrap">
+              <span class="theme-text-muted font-medium">{{ formatDate(post.scheduled_for) }}</span>
+              
+              <div v-if="post.status === 'scheduled'" class="flex items-center gap-2">                                                                
+                <Button variant="secondary" size="sm" @click="openEditModal(post)">Edit</Button>                                                      
+                <Button variant="danger" size="sm" @click="confirmDeletePost(post.id)">Delete</Button>                                               
+              </div>                                                             
+              
+              <div v-else-if="['error', 'failed', 'quota_exceeded'].includes(post.status)" class="flex items-center gap-2">
+                <Button size="sm" @click="handleRetryPost(post.id)" :loading="retryingId === post.id">Retry</Button>
+              </div>
+
+              <a v-else-if="post.published_media_id"
+                :href="'https://www.threads.net/post/' + post.published_media_id"                                                                     
+                target="_blank"
+                class="text-xs font-bold hover:underline"
+              >
+                View on Threads
+              </a>                                                             
+            </div>
           </div>
         </div>
       </div>                                                           
@@ -74,8 +91,17 @@
     <Teleport to="body">                                                 
       <div v-if="editingPost" class="fixed inset-0 backdrop-blur-sm z-[100] flex items-center justify-center p-4" style="background: rgba(0,0,0,0.6);">
         <div class="card max-w-lg w-full p-6 space-y-4 shadow-2xl" style="background: var(--bg);">
-          <h3 class="text-base font-bold theme-text">Edit Post</h3>                
+          <div class="flex justify-between items-center">
+            <h3 class="text-base font-bold theme-text">Edit Post</h3>
+            <button @click="magicRewrite" :disabled="isRewriting || !editForm.text" class="text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-lg border theme-border hover:theme-bg-sec transition-colors">
+              <span v-if="isRewriting" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+              <span v-else>✨</span>
+              <span>{{ isRewriting ? 'Improving...' : 'Magic Rewrite' }}</span>
+            </button>
+          </div>
+          
           <Textarea v-model="editForm.text" :rows="5" :max-length="500" />
+          
           <div class="space-y-1">
             <label class="label theme-text">New Schedule Time</label>
             <input v-model="editForm.scheduled_for" type="datetime-local" class="input" />
@@ -101,12 +127,18 @@ import { Card, Button, Textarea, Badge } from '../../components/ui'
 const { showToast, askConfirm } = useNotify()
 
 const loading = ref(true)
-const isUpdating = ref(false)                                      
+const isUpdating = ref(false)  
+const isRewriting = ref(false)                                    
 const posts = ref<any[]>([])
 const retryingId = ref<string | null>(null)
 const activeFilter = ref<'all' | 'scheduled' | 'published' | 'failed'>('scheduled')
 const editingPost = ref<any>(null)                                 
 const editForm = ref({ text: '', scheduled_for: '' })
+const expandedThreads = ref<Set<string>>(new Set())
+
+const currentAccountId = ref<string | null>(null)
+const aiProvider = ref('groq')
+const aiModel = ref('')
 
 const tabs = [
   { label: 'Scheduled', value: 'scheduled' as const },                 
@@ -115,12 +147,35 @@ const tabs = [
   { label: 'All', value: 'all' as const },
 ]
 
+// LOGIKA GROUPING UTASAN
 const filteredPosts = computed(() => {
-  if (activeFilter.value === 'all') return posts.value
+  let filtered = posts.value
   if (activeFilter.value === 'failed') {
-    return posts.value.filter(p => ['error', 'failed', 'quota_exceeded'].includes(p.status))
-  }                                                                  
-  return posts.value.filter(p => p.status === activeFilter.value)
+    filtered = posts.value.filter(p => ['error', 'failed', 'quota_exceeded'].includes(p.status))
+  } else if (activeFilter.value !== 'all') {
+    filtered = posts.value.filter(p => p.status === activeFilter.value)
+  }
+
+  // Grouping berdasarkan parent_id (atau id kalau standalone)
+  const groups = new Map()
+  filtered.forEach(post => {
+    const groupId = post.parent_id || post.id
+    if (!groups.has(groupId)) {
+      groups.set(groupId, { id: groupId, parts: [], isThread: false })
+    }
+    groups.get(groupId).parts.push(post)
+  })
+
+  // Format & Sorting
+  return Array.from(groups.values()).map(g => {
+    g.parts.sort((a: any, b: any) => (a.sequence_number || 0) - (b.sequence_number || 0))
+    g.isThread = g.parts.length > 1
+    return g
+  }).sort((a, b) => {
+    const dateA = new Date(a.parts[0].scheduled_for).getTime()
+    const dateB = new Date(b.parts[0].scheduled_for).getTime()
+    return dateA - dateB
+  })
 })
 
 const emptyMessage = computed(() => {
@@ -129,12 +184,21 @@ const emptyMessage = computed(() => {
   if (activeFilter.value === 'failed') return 'No failed posts.'
   return 'No posts found.'
 })                                                                 
+
 function countByStatus(status: string) {
   if (status === 'all') return posts.value.length
   if (status === 'failed') {
     return posts.value.filter(p => ['error', 'failed', 'quota_exceeded'].includes(p.status)).length
   }                                                                  
   return posts.value.filter(p => p.status === status).length
+}
+
+function toggleExpand(groupId: string) {
+  if (expandedThreads.value.has(groupId)) {
+    expandedThreads.value.delete(groupId)
+  } else {
+    expandedThreads.value.add(groupId)
+  }
 }
 
 function formatDate(isoString: string) {                             
@@ -152,30 +216,15 @@ async function loadPosts() {
   loading.value = true
   posts.value = []                                                 
   const { data: { user } } = await supabase.auth.getUser()           
-  if (!user) {
-    loading.value = false                                              
-    return                                                           
-  }
+  if (!user) { loading.value = false; return }
 
-  const { data: account } = await supabase
-    .schema('threads')
-    .from('threads_accounts')                                          
-    .select('id')
-    .eq('user_id', user.id)
-    .maybeSingle()                                                 
-  if (!account) {
-    loading.value = false                                              
-    return
-  }
+  const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id, ai_provider').eq('user_id', user.id).maybeSingle()                                                 
+  if (!account) { loading.value = false; return }
+  
+  currentAccountId.value = account.id
+  if (account.ai_provider) aiProvider.value = account.ai_provider
 
-  const { data } = await supabase
-    .schema('threads')
-    .from('scheduled_posts')                                           
-    .select('*')
-    .eq('account_id', account.id)
-    .order('scheduled_for', { ascending: true })
-    .limit(100)
-                                                                     
+  const { data } = await supabase.schema('threads').from('scheduled_posts').select('*').eq('account_id', account.id).order('scheduled_for', { ascending: true }).limit(100)                                                                     
   if (data) posts.value = data                                       
   loading.value = false
 }
@@ -192,9 +241,7 @@ async function saveEdit() {
   if (!editingPost.value) return
   isUpdating.value = true
   try {
-    // NEMBAK KE RAILWAY
     const localDate = new Date(editForm.value.scheduled_for)
-    
     const res = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/queue/edit', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -205,11 +252,7 @@ async function saveEdit() {
       })
     })
 
-    if (!res.ok) {
-      const err = await res.json()
-      throw new Error(err.detail)
-    }
-
+    if (!res.ok) throw new Error('Update failed')
     editingPost.value = null
     showToast('Post updated successfully.', 'success')
     await loadPosts()                                                
@@ -219,7 +262,35 @@ async function saveEdit() {
     isUpdating.value = false
   }                                                                
 }
-                                                                   
+
+// LOGIKA MAGIC REWRITE
+async function magicRewrite() {
+  if (!editForm.value.text.trim()) return
+  isRewriting.value = true
+  try {
+    const res = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/rag/improve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        account_id: currentAccountId.value,
+        text: editForm.value.text,
+        provider: aiProvider.value,
+        model_name: null // Biarkan backend pake default model terbaik
+      })
+    })
+
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.detail)
+
+    editForm.value.text = data.improved_text
+    showToast('Text magically improved!', 'success')
+  } catch (err: any) {
+    showToast('Magic Rewrite failed: ' + err.message, 'error')
+  } finally {
+    isRewriting.value = false
+  }
+}
+
 function confirmDeletePost(id: string) {
   askConfirm({
     title: 'Delete Scheduled Post',                                
@@ -231,12 +302,8 @@ function confirmDeletePost(id: string) {
 
 async function deletePost(id: string) {                              
   try {                                                                
-    const res = await fetch(`https://threads-automation-production-53ad.up.railway.app/api/v1/queue/${id}`, {
-      method: 'DELETE'
-    })
-
+    const res = await fetch(`https://threads-automation-production-53ad.up.railway.app/api/v1/queue/${id}`, { method: 'DELETE' })
     if (!res.ok) throw new Error('Failed to delete')
-    
     showToast('Post deleted.', 'info')
     await loadPosts()
   } catch (err: any) {
@@ -252,9 +319,7 @@ async function handleRetryPost(id: string) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ post_id: id })
     })
-
     if (!res.ok) throw new Error('Failed to retry')
-    
     showToast('Post re-queued for publishing.', 'success')
     await loadPosts()
   } catch (err: any) {

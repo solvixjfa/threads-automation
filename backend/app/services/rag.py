@@ -438,3 +438,73 @@ MUST return a pure JSON object with this exact structure:
         db.schema("threads").from_("threads_accounts").update({"ai_credits": credits - 1}).eq("id", account_id).execute()
 
     return result
+
+async def improve_draft_ai(account_id: str, text: str, provider: str = "groq", model_name: str = None) -> str:
+    db = get_supabase()
+    acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key, ai_credits").eq("id", account_id).limit(1).execute()
+    
+    if not acc_res.data: raise Exception("Account not found")
+    acc = acc_res.data[0]
+    
+    custom_gemini = acc.get("custom_gemini_key")
+    custom_groq = acc.get("custom_groq_key")
+    credits = acc.get("ai_credits", 0)
+    
+    if provider == "groq":
+        api_key_to_use = custom_groq if custom_groq else GROQ_KEY
+        is_using_saas = not custom_groq
+        if not api_key_to_use: raise Exception("Groq API Key is missing.")
+    else:
+        api_key_to_use = custom_gemini if custom_gemini else GEMINI_KEY
+        is_using_saas = not custom_gemini
+        if not api_key_to_use: raise Exception("Gemini API Key is missing.")
+
+    if is_using_saas and credits <= 0:
+        raise Exception("Insufficient AI Credits. Please add your own API Key or top up.")
+
+    prompt = f"""You are an expert Threads copywriter.
+Improve the following draft. Make it more engaging, fix typos, improve the hook, and make it sound natural for Threads. 
+Keep the core meaning and the original language (Indonesian/English). Do not add hashtags unless it already has them.
+
+[DRAFT]
+{text}
+
+[OUTPUT INSTRUCTIONS]
+Return ONLY the improved text. No explanations, no quotes, just the plain text.
+"""
+
+    improved_text = ""
+    
+    if provider == "groq":
+        try:
+            groq_client = Groq(api_key=api_key_to_use)
+            model_to_run = model_name or "llama-3.3-70b-versatile"
+            chat_completion = groq_client.chat.completions.create(
+                messages=[{"role": "user", "content": prompt}],
+                model=model_to_run,
+                temperature=0.7,
+            )
+            improved_text = chat_completion.choices[0].message.content.strip()
+        except Exception as e:
+            raise Exception(f"Groq Failed: {str(e)}")
+    else:
+        client = genai.Client(api_key=api_key_to_use)
+        response = None
+        models_to_try = [model_name] if model_name else DEFAULT_GEMINI_MODELS
+
+        last_error = ""
+        for m_name in models_to_try:
+            try:
+                # Gemini gak butuh config JSON karena outputnya string biasa
+                response = client.models.generate_content(model=m_name, contents=prompt)
+                break
+            except Exception as e:
+                last_error = str(e)
+        
+        if not response: raise Exception(f"Gemini failed: {last_error}")
+        improved_text = response.text.strip()
+
+    if is_using_saas:
+        db.schema("threads").from_("threads_accounts").update({"ai_credits": credits - 1}).eq("id", account_id).execute()
+
+    return improved_text
