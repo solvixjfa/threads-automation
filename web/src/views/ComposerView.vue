@@ -107,13 +107,12 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-3 mt-4">
-        <Button variant="secondary" @click="checkScore" :disabled="isChecking || !postText" :loading="isChecking">
+        <Button variant="secondary" @click="checkScore" :disabled="isChecking || !postText">
           {{ isChecking ? 'Analyzing...' : 'Check AI Score' }}
         </Button>                                                  
         <div class="flex-1 flex justify-end items-center gap-3 flex-wrap">
           <BestTimeChip @apply="(val) => scheduledDate = val" />
           <input v-model="scheduledDate" type="datetime-local" class="input" style="width: auto;" />
-          <!-- TOMBOL CUMA DISABLE KALO LAGI SAVING -->
           <Button @click="schedulePost" :disabled="isSaving" :loading="isSaving">
             {{ isSaving ? 'Processing...' : (threadParts.length > 1 ? 'Schedule ' + threadParts.length + ' Threads' : 'Schedule Post') }}
           </Button>
@@ -125,12 +124,16 @@
       <div v-if="scoreResult" class="fixed inset-0 backdrop-blur-sm z-[100] flex items-center justify-center p-4" style="background: rgba(0,0,0,0.6);">                                                          
         <div class="card max-w-md w-full p-6 space-y-4">
           <div class="flex justify-between items-center pb-3 divider">
-            <h3 class="text-sm font-bold uppercase tracking-wide">AI Score Analysis</h3>
-            <Badge variant="accent">{{ scoreResult.score }} / 100</Badge>
+            <h3 class="text-sm font-bold uppercase tracking-wide">Draft Score Analysis</h3>
+            <Badge :variant="scoreResult.score >= 80 ? 'accent' : (scoreResult.score >= 60 ? 'default' : 'danger')">
+              {{ scoreResult.score }} / 100
+            </Badge>
           </div>
-          <div class="space-y-1">
+          <div class="space-y-2">
             <label class="label">Feedback Notes</label>
-            <p class="text-xs leading-relaxed theme-bg-sec p-3.5 rounded-xl border theme-border">{{ scoreResult.feedback }}</p>
+            <ul class="text-xs leading-relaxed theme-bg-sec p-3.5 rounded-xl border theme-border space-y-1.5 list-disc pl-6">
+              <li v-for="(fb, i) in scoreResult.feedback" :key="i">{{ fb }}</li>
+            </ul>
           </div>
           <div class="flex justify-end pt-2"><Button @click="scoreResult = null">Close</Button></div>                                                           
         </div>
@@ -287,21 +290,77 @@ function applyAiDraft(content: string) {
   postText.value = content
   showToast('AI Draft applied to Composer.', 'info')
 }
-                                                                   
-async function checkScore() {
+
+// ==========================================
+// LOGIKA LOCAL SCORING (TANPA API / AI)
+// ==========================================
+function checkScore() {
+  if (!postText.value.trim()) return
+  
   isChecking.value = true
-  try {
-    const { data, error } = await supabase.functions.invoke('score-draft', { body: { text: postText.value } })
-    if (error) throw error
-    if (data?.error) throw new Error(data.error)
-    scoreResult.value = { score: data?.score ?? 80, feedback: data?.feedback ?? 'Text looks good.' }
-  } catch (err: any) {
-    showToast('AI Analysis failed: ' + err.message, 'error')           
-  } finally { isChecking.value = false }
+  
+  // Kasih delay dikit biar UI-nya berasa "lagi mikir" (opsional, biar user gak kaget)
+  setTimeout(() => {
+    const text = postText.value.trim()
+    let score = 50 // Base score
+    let feedback: string[] = []
+
+    // 1. Evaluasi Panjang Teks (Ideal: 100 - 500 karakter)
+    if (text.length < 50) {
+      feedback.push("Post is too short. Add more context to keep readers engaged.")
+    } else if (text.length > 500) {
+      score += 10
+      feedback.push("Post is long. It will be automatically split into a thread.")
+    } else {
+      score += 20
+      feedback.push("Optimal character length.")
+    }
+
+    // 2. Evaluasi Hook (Pancingan di akhir kalimat)
+    const hookWords = ['?', 'gimana', 'menurut', 'setuju', 'pendapat', 'how', 'what', 'agree', 'think']
+    const hasHook = hookWords.some(w => text.toLowerCase().includes(w))
+    if (hasHook) {
+      score += 15
+      feedback.push("Great hook! You are inviting readers to reply.")
+    } else {
+      feedback.push("Consider adding a question or call-to-action to spark discussion.")
+    }
+
+    // 3. Evaluasi Formatting (Enter/Paragraf)
+    if (text.includes('\n')) {
+      score += 10
+      feedback.push("Good use of line breaks. It makes reading easier.")
+    } else {
+      feedback.push("It looks like a wall of text. Add some line breaks (Enter).")
+    }
+
+    // 4. Evaluasi Spam Hashtag
+    const hashtags = text.match(/#[\w]+/g) || []
+    if (hashtags.length > 3) {
+      score -= 10
+      feedback.push(`Too many hashtags (${hashtags.length}). Use max 3 for Threads.`)
+    }
+
+    // 5. Evaluasi Link
+    if (text.includes('http')) {
+      score -= 5
+      feedback.push("Contains a link. Keep in mind Threads may reduce reach for external links.")
+    }
+
+    // Pastikan skor maksimal 100 dan minimal 0
+    score = Math.max(0, Math.min(100, score))
+    
+    // Kalau sempurna, tambahin feedback positif
+    if (score >= 80) {
+      feedback.unshift("This post looks solid and ready to schedule!")
+    }
+
+    scoreResult.value = { score, feedback }
+    isChecking.value = false
+  }, 600) // Delay palsu 0.6 detik
 }
 
 async function schedulePost() {
-  // 1. VALIDASI MANUAL
   if (!postText.value.trim()) {
     showToast('Please write a post first.', 'error')
     return
@@ -311,15 +370,11 @@ async function schedulePost() {
     return
   }
   
-  // 2. FIX TIMEZONE
-  // new Date("2026-10-26T21:00") bakal otomatis ngebaca sebagai Local Time (WIB)
   const localDate = new Date(scheduledDate.value)
-  
   if (isNaN(localDate.getTime())) {
     showToast('Invalid date format. Please pick again.', 'error')
     return
   }
-  
   if (localDate.getTime() <= Date.now()) { 
     showToast('Schedule time must be in the future.', 'error')
     return 
@@ -345,7 +400,7 @@ async function schedulePost() {
       const { data: insertedPart, error: insertError } = await supabase.schema('threads').from('scheduled_posts').insert({
         account_id: targetAccountId, 
         text: partsToSchedule[i], 
-        scheduled_for: localDate.toISOString(), // Ini bakal ngirim waktu UTC yang bener ke DB
+        scheduled_for: localDate.toISOString(),
         status: 'scheduled', 
         parent_id: parentId, 
         sequence_number: i + 1, 
@@ -360,16 +415,11 @@ async function schedulePost() {
     postText.value = ''
     localStorage.removeItem('ixiera_draft_text')                   
     
-    // 3. RESET WAKTU KE +1 JAM DARI SEKARANG (WIB)
     const nextHour = new Date()
     nextHour.setHours(nextHour.getHours() + 1)
     nextHour.setMinutes(0)
-    
-    // Fungsi helper buat format ke string datetime-local (YYYY-MM-DDTHH:mm)
     const tzOffset = nextHour.getTimezoneOffset() * 60000
-    const localISOTime = (new Date(nextHour.getTime() - tzOffset)).toISOString().slice(0, 16)
-    
-    scheduledDate.value = localISOTime
+    scheduledDate.value = (new Date(nextHour.getTime() - tzOffset)).toISOString().slice(0, 16)
     localStorage.setItem('ixiera_draft_time', scheduledDate.value)
 
   } catch (err: any) {
@@ -402,7 +452,6 @@ onMounted(async () => {
     if (localDraftText) { postText.value = localDraftText }
   }
 
-  // 4. FIX DEFAULT TIME SAAT HALAMAN DIBUKA
   const localDraftTime = localStorage.getItem('ixiera_draft_time')
   if (localDraftTime) {
     scheduledDate.value = localDraftTime
@@ -410,8 +459,6 @@ onMounted(async () => {
     const d = new Date()
     d.setHours(d.getHours() + 1)
     d.setMinutes(0)
-    
-    // Konversi ke Local ISO string biar pas di-set ke input datetime-local gak geser
     const tzOffset = d.getTimezoneOffset() * 60000
     scheduledDate.value = (new Date(d.getTime() - tzOffset)).toISOString().slice(0, 16)
   }
