@@ -1,0 +1,15 @@
+{
+  "menu": {
+    "dashboard": "Dashboard",
+    "content": "Content",
+    "comments": "Comments",
+    "analytics": "Analytics",
+    "settings": "Settings"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "refresh": "Refresh"
+  }
+}

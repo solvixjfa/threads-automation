@@ -1,0 +1,15 @@
+{
+  "menu": {
+    "dashboard": "Dasbor",
+    "content": "Konten",
+    "comments": "Komentar",
+    "analytics": "Analitik",
+    "settings": "Pengaturan"
+  },
+  "common": {
+    "save": "Simpan",
+    "cancel": "Batal",
+    "loading": "Memuat...",
+    "refresh": "Segarkan"
+  }
+}

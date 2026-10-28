@@ -3,10 +3,10 @@
     <template #header>
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-sm font-bold">Topic Clusters</h2>
-          <p class="text-xs theme-text-muted mt-0.5">Automatic topic grouping using TF-IDF & KMeans</p>
+          <h2 class="text-sm font-bold">Content Topics</h2>
+          <p class="text-xs theme-text-muted mt-0.5">See which topics generate the most engagement.</p>
         </div>
-        <Badge variant="accent">Machine Learning</Badge>
+        <Badge variant="accent">Smart Analysis</Badge>
       </div>
     </template>
 
@@ -15,7 +15,7 @@
     <div v-else-if="data.length === 0" class="text-center py-8">
       <EmptyState 
         title="Not enough data" 
-        :description="message || 'Publish more posts to see topic clusters.'" 
+        :description="message || 'Publish more posts to see your topic performance.'" 
       />
     </div>
     
@@ -23,7 +23,7 @@
       <div v-for="(item, idx) in data" :key="idx" class="p-4 rounded-xl theme-bg-sec border theme-border flex justify-between items-center">
         <div>
           <p class="text-sm font-bold">{{ item.topic }}</p>
-          <p class="text-xs theme-text-muted">{{ item.count }} posts</p>
+          <p class="text-xs theme-text-muted">{{ item.count }} posts in this topic</p>
         </div>
         <div class="text-right">
           <p class="text-lg font-black">{{ item.avg_er }}%</p>
