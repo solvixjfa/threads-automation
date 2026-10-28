@@ -93,6 +93,20 @@
             <h2 class="text-xs font-bold uppercase tracking-wide">{{ $t('dashboard.daily_trends_title') }}</h2>
             <p class="text-[11px] theme-text-muted mt-0.5">{{ $t('dashboard.daily_trends_subtitle') }}</p>
           </div>
+          
+          <!-- LEGENDA DIKEMBALIKAN DI SINI -->
+          <div class="flex items-center gap-4 text-[10px] font-bold">
+            <span class="flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full" style="background: var(--accent);"></span>
+              Views
+            </span>
+            <span class="flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full" style="background: var(--text-muted);"></span>
+              Likes
+            </span>
+          </div>
+          <!-- END LEGENDA -->
+          
         </div>
 
         <div v-if="dailyInsights.length === 0" class="text-center py-10 text-xs theme-text-muted">
@@ -307,4 +321,4 @@ async function handleManualRefresh() {
 }
 
 onMounted(() => loadAllDashboardData())
-</script
+</script>
