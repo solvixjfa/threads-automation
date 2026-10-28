@@ -1,61 +1,64 @@
 from fastapi import APIRouter, HTTPException
 from app.services.rag import get_supabase
 from datetime import datetime, timedelta
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.cluster import KMeans
 
 router = APIRouter()
 
 WEEKDAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+
+# KAMUS BUANGAN BAHASA INDONESIA (Termasuk slang/singkatan)
+INDONESIAN_STOPWORDS = [
+    "yang", "yg", "dan", "di", "ke", "dari", "untuk", "dengan", "ini", "itu", 
+    "aja", "saja", "gak", "tidak", "ga", "enggak", "bikin", "buat", "ada", 
+    "adalah", "pada", "saya", "aku", "gw", "gue", "kamu", "lu", "lo", 
+    "dia", "kita", "kami", "mereka", "jadi", "bisa", "sudah", "udah", 
+    "akan", "lagi", "juga", "banyak", "banget", "bgt", "kalau", "kalo", 
+    "tapi", "namun", "atau", "karena", "soalnya", "bahwa", "dalam", "oleh", 
+    "seperti", "bagi", "saat", "waktu", "hari", "kali", "orang", "hal", 
+    "the", "and", "is", "in", "it", "to", "of", "for", "on", "with", "as"
+]
 
 def fetch_posts_with_metrics(account_id: str):
     db = get_supabase()
     
     # 1. Ambil text dan tanggal publish dari scheduled_posts
     sp_res = db.schema("threads").from_("scheduled_posts").select("published_media_id, text, scheduled_for").eq("account_id", account_id).eq("status", "published").execute()
-    
-    # Bikin map biar gampang dicari: { media_id: { text, scheduled_for } }
     sp_map = {}
     for row in (sp_res.data or []):
         if row.get("published_media_id"):
             sp_map[str(row["published_media_id"])] = row
 
-    # 2. Ambil metrik dari tabel posts (TANPA kolom text)
+    # 2. Ambil metrik dari tabel posts
     posts_res = db.schema("threads").from_("posts").select("id, threads_media_id, posted_at, created_at, post_metrics(views, likes, replies, reposts, snapshot_label)").eq("account_id", account_id).execute()
     
     formatted = []
     for p in (posts_res.data or []):
         media_id = str(p.get("threads_media_id"))
         sp = sp_map.get(media_id)
-        
-        # Kalau gak ada di scheduled_posts (postingan manual lama), skip
-        if not sp or not sp.get("text"):
-            continue
+        if not sp or not sp.get("text"): continue
 
         metrics_arr = p.get("post_metrics", [])
         latest = next((m for m in metrics_arr if m.get("snapshot_label") == "latest"), None)
-        if not latest and metrics_arr:
-            latest = metrics_arr[0]
-            
-        if not latest or not latest.get("views") or latest["views"] <= 0:
-            continue
+        if not latest and metrics_arr: latest = metrics_arr[0]
+        if not latest or not latest.get("views") or latest["views"] <= 0: continue
 
         engagement = ((latest.get("likes", 0) + latest.get("replies", 0) + latest.get("reposts", 0)) / latest["views"]) * 100
-        
         ts = sp.get("scheduled_for") or p.get("posted_at") or p.get("created_at")
         
         formatted.append({
-            "text": sp.get("text", ""),
-            "er": engagement,
-            "views": latest["views"],
+            "text": sp.get("text", ""), 
+            "er": engagement, 
+            "views": latest["views"], 
             "timestamp": ts
         })
-        
     return formatted
 
 @router.get("/best-time/{account_id}")
 async def get_best_time(account_id: str):
     try:
         posts = fetch_posts_with_metrics(account_id)
-        
         sum_matrix = [[0.0]*24 for _ in range(7)]
         count_matrix = [[0]*24 for _ in range(7)]
         total_posts = 0
@@ -156,9 +159,6 @@ async def get_length_performance(account_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.cluster import KMeans
-
 @router.get("/topic-clusters/{account_id}")
 async def get_topic_clusters(account_id: str):
     try:
@@ -166,22 +166,23 @@ async def get_topic_clusters(account_id: str):
         if len(posts) < 5:
             return {"success": True, "data": [], "message": "Need at least 5 posts to cluster topics."}
 
-        # 1. Siapin teks
         texts = [p["text"] for p in posts]
         ers = [p["er"] for p in posts]
 
-        # 2. TF-IDF (min_df=1 biar semua kata dihitung kalau datanya dikit)
-        vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
+        # Pake stopwords Indo + N-Gram (biar "machine learning" gak kepisah)
+        vectorizer = TfidfVectorizer(
+            stop_words=INDONESIAN_STOPWORDS, 
+            max_features=1000,
+            ngram_range=(1, 2)
+        )
         X = vectorizer.fit_transform(texts)
 
-        # 3. KMeans (Tentukan jumlah cluster, misal max 3 atau sesuai jumlah post)
-        num_clusters = min(3, len(texts))
+        # Batasi max cluster. Jangan lebih dari 1/3 jumlah post, minimal 2
+        num_clusters = min(4, max(2, len(texts) // 10)) 
         kmeans = KMeans(n_clusters=num_clusters, random_state=42, n_init=10)
         kmeans.fit(X)
-        
         labels = kmeans.labels_
 
-        # 4. Ambil keywords per cluster
         order_centroids = kmeans.cluster_centers_.argsort()[:, ::-1]
         terms = vectorizer.get_feature_names_out()
         
@@ -190,11 +191,7 @@ async def get_topic_clusters(account_id: str):
             top_terms = [terms[ind] for ind in order_centroids[i, :3]]
             cluster_keywords[i] = ", ".join(top_terms).title()
 
-        # 5. Hitung avg ER & count per cluster
-        cluster_stats = {}
-        for i in range(num_clusters):
-            cluster_stats[i] = {"ers": [], "count": 0}
-
+        cluster_stats = {i: {"ers": [], "count": 0} for i in range(num_clusters)}
         for idx, label in enumerate(labels):
             cluster_stats[label]["ers"].append(ers[idx])
             cluster_stats[label]["count"] += 1
@@ -210,9 +207,7 @@ async def get_topic_clusters(account_id: str):
                     "count": stats["count"]
                 })
 
-        # Urutkan dari ER tertinggi
         results.sort(key=lambda x: x["avg_er"], reverse=True)
-
         return {"success": True, "data": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
