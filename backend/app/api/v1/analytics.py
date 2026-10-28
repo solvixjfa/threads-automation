@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.services.rag import get_supabase
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 
 router = APIRouter()
 
@@ -9,15 +9,27 @@ WEEKDAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday
 def fetch_posts_with_metrics(account_id: str):
     db = get_supabase()
     
-    # 1. Ambil scheduled_posts (buat dapet tanggal publish yang akurat)
-    sp_res = db.schema("threads").from_("scheduled_posts").select("published_media_id, scheduled_for").eq("account_id", account_id).eq("status", "published").execute()
-    scheduled_map = {str(row["published_media_id"]): row["scheduled_for"] for row in (sp_res.data or []) if row.get("published_media_id")}
+    # 1. Ambil text dan tanggal publish dari scheduled_posts
+    sp_res = db.schema("threads").from_("scheduled_posts").select("published_media_id, text, scheduled_for").eq("account_id", account_id).eq("status", "published").execute()
+    
+    # Bikin map biar gampang dicari: { media_id: { text, scheduled_for } }
+    sp_map = {}
+    for row in (sp_res.data or []):
+        if row.get("published_media_id"):
+            sp_map[str(row["published_media_id"])] = row
 
-    # 2. Ambil posts & metrics
-    posts_res = db.schema("threads").from_("posts").select("id, threads_media_id, text, posted_at, created_at, post_metrics(views, likes, replies, reposts, snapshot_label)").eq("account_id", account_id).execute()
+    # 2. Ambil metrik dari tabel posts (TANPA kolom text)
+    posts_res = db.schema("threads").from_("posts").select("id, threads_media_id, posted_at, created_at, post_metrics(views, likes, replies, reposts, snapshot_label)").eq("account_id", account_id).execute()
     
     formatted = []
     for p in (posts_res.data or []):
+        media_id = str(p.get("threads_media_id"))
+        sp = sp_map.get(media_id)
+        
+        # Kalau gak ada di scheduled_posts (postingan manual lama), skip
+        if not sp or not sp.get("text"):
+            continue
+
         metrics_arr = p.get("post_metrics", [])
         latest = next((m for m in metrics_arr if m.get("snapshot_label") == "latest"), None)
         if not latest and metrics_arr:
@@ -27,13 +39,11 @@ def fetch_posts_with_metrics(account_id: str):
             continue
 
         engagement = ((latest.get("likes", 0) + latest.get("replies", 0) + latest.get("reposts", 0)) / latest["views"]) * 100
-        media_id = str(p.get("threads_media_id"))
         
-        # Prioritas waktu: scheduled_for -> posted_at -> created_at
-        ts = scheduled_map.get(media_id) or p.get("posted_at") or p.get("created_at")
+        ts = sp.get("scheduled_for") or p.get("posted_at") or p.get("created_at")
         
         formatted.append({
-            "text": p.get("text", ""),
+            "text": sp.get("text", ""),
             "er": engagement,
             "views": latest["views"],
             "timestamp": ts
@@ -54,11 +64,10 @@ async def get_best_time(account_id: str):
             ts = p["timestamp"]
             if not ts: continue
             
-            # Ubah ke WIB (UTC+7) agar sesuai dengan timezone mayoritas user
             dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
             wib_dt = dt + timedelta(hours=7)
             
-            day = (wib_dt.weekday() + 1) % 7 # Python Senin=0, kita mau Minggu=0
+            day = (wib_dt.weekday() + 1) % 7
             hour = wib_dt.hour
             
             sum_matrix[day][hour] += p["er"]
