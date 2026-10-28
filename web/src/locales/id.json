@@ -10,6 +10,10 @@
     "save": "Simpan",
     "cancel": "Batal",
     "loading": "Memuat...",
-    "refresh": "Segarkan"
+    "refresh": "Segarkan",
+    "language": "Bahasa",
+    "dark_mode": "Mode Gelap",
+    "light_mode": "Mode Terang",
+    "sign_out": "Keluar"
   }
 }

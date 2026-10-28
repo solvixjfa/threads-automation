@@ -36,11 +36,20 @@
         ]"
       >
         <component :is="item.icon" class="w-4 h-4 shrink-0" />
-        <span>{{ item.label }}</span>
+        <span>{{ $t(item.labelKey) }}</span>
       </RouterLink>
     </nav>
 
     <div class="p-3 border-t theme-border space-y-1">
+      <!-- LANGUAGE SWITCHER -->
+      <div class="px-3 py-2">
+        <label class="block text-[10px] font-bold uppercase tracking-wider theme-text-muted mb-1.5">{{ $t('common.language') }}</label>
+        <select v-model="currentLang" @change="changeLang" class="input w-full text-xs py-1.5">
+          <option value="en">English</option>
+          <option value="id">Indonesia</option>
+        </select>
+      </div>
+
       <button
         @click="toggleTheme"
         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium theme-text-sec hover:theme-bg-hover hover:theme-text transition"
@@ -51,21 +60,22 @@
         <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
         </svg>
-        <span>{{ theme === 'light' ? 'Dark mode' : 'Light mode' }}</span>
+        <span>{{ theme === 'light' ? $t('common.dark_mode') : $t('common.light_mode') }}</span>
       </button>
 
       <div class="px-3 py-2 text-xs truncate theme-text-muted">{{ email }}</div>
 
       <button @click="$emit('logout')" class="w-full text-left px-3 py-2 rounded-lg text-sm font-semibold transition" style="color: var(--danger);">
-        Sign out
+        {{ $t('common.sign_out') }}
       </button>
     </div>
   </aside>
 </template>
 
 <script setup lang="ts">
-import { h } from 'vue'
+import { h, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { useTheme } from '../composables/useTheme'
 
 defineProps<{ open: boolean; email?: string }>()
@@ -73,6 +83,15 @@ defineEmits<{ (e: 'close'): void; (e: 'logout'): void }>()
 
 const route = useRoute()
 const { theme, toggle: toggleTheme } = useTheme()
+
+// LANGUAGE SWITCHER LOGIC
+const { locale } = useI18n()
+const currentLang = ref(locale.value)
+
+function changeLang() {
+  locale.value = currentLang.value
+  localStorage.setItem('app_lang', currentLang.value)
+}
 
 function isActive(path: string) {
   if (path === '/dashboard') return route.path === '/dashboard'
@@ -100,11 +119,12 @@ const IconSettings = () => h('svg', { class: 'w-4 h-4', fill: 'none', stroke: 'c
   h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z' })
 ])
 
+// PAKE labelKey (bukan label text) biar bisa di-translate
 const items = [
-  { label: 'Dashboard', path: '/dashboard', icon: IconDashboard },
-  { label: 'Content', path: '/content', icon: IconContent },
-  { label: 'Comment', path: '/comment', icon: IconComment },
-  { label: 'Analytics', path: '/analytics', icon: IconAnalytics },
-  { label: 'Settings', path: '/settings', icon: IconSettings },
+  { labelKey: 'menu.dashboard', path: '/dashboard', icon: IconDashboard },
+  { labelKey: 'menu.content', path: '/content', icon: IconContent },
+  { labelKey: 'menu.comments', path: '/comment', icon: IconComment },
+  { labelKey: 'menu.analytics', path: '/analytics', icon: IconAnalytics },
+  { labelKey: 'menu.settings', path: '/settings', icon: IconSettings },
 ]
 </script>

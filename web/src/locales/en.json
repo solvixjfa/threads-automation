@@ -10,6 +10,10 @@
     "save": "Save",
     "cancel": "Cancel",
     "loading": "Loading...",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "language": "Language",
+    "dark_mode": "Dark Mode",
+    "light_mode": "Light Mode",
+    "sign_out": "Sign out"
   }
 }
