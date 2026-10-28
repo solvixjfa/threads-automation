@@ -3,50 +3,66 @@
     <template #header>
       <div class="flex items-center justify-between">
         <div>
-          <h2 class="text-sm font-bold">Reply templates</h2>
-          <p class="text-xs theme-text-muted mt-0.5">Control auto replies per comment category.</p>
+          <h2 class="text-sm font-bold">Reply Strategy</h2>
+          <p class="text-xs theme-text-muted mt-0.5">Control how the AI handles each comment category.</p>
         </div>
         <Button @click="save" :disabled="saving" :loading="saving" size="sm">
-          {{ saving ? 'Saving...' : 'Save' }}
+          {{ saving ? 'Saving...' : 'Save Settings' }}
         </Button>
       </div>
     </template>
 
     <div v-if="loading" class="space-y-3">
-      <div v-for="i in 3" :key="i" class="h-16 skeleton"></div>
+      <div v-for="i in 5" :key="i" class="h-20 skeleton"></div>
     </div>
 
     <div v-else class="space-y-4">
       <div v-for="cat in categories" :key="cat.value" class="p-4 rounded-xl theme-bg-sec border theme-border space-y-3">
-        <div class="flex items-start justify-between gap-3">
+        <!-- HEADER KATEGORI & DROPDOWN AKSI -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2 flex-wrap">
               <span class="text-sm font-bold">{{ cat.label }}</span>
-              <Badge :variant="cat.llmOnly ? 'accent' : 'default'">
-                {{ cat.llmOnly ? 'AI only' : 'Template' }}
-              </Badge>
+              <Badge v-if="!state[cat.value].enabled" variant="danger">Disabled</Badge>
             </div>
             <p class="text-xs theme-text-muted mt-0.5">{{ cat.description }}</p>
           </div>
-          <button
-            type="button"
-            @click="state[cat.value].enabled = !state[cat.value].enabled"
-            class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition"
-            :style="{ background: state[cat.value].enabled ? 'var(--accent)' : 'var(--bg-hover)' }"
-          >
-            <span
-              class="inline-block h-5 w-5 rounded-full transition-transform"
-              :style="{
-                background: state[cat.value].enabled ? 'var(--accent-text)' : 'var(--text-muted)',
-                transform: state[cat.value].enabled ? 'translateX(22px)' : 'translateX(2px)'
-              }"
-            ></span>
-          </button>
+          
+          <div class="flex items-center gap-3 shrink-0">
+            <div class="w-40">
+              <Select 
+                v-model="state[cat.value].action" 
+                :options="[
+                  { label: 'Auto AI', value: 'llm' },
+                  { label: 'Use Template', value: 'template' },
+                  { label: 'Ignore / Skip', value: 'skip' }
+                ]" 
+                :disabled="!state[cat.value].enabled"
+              />
+            </div>
+            
+            <!-- TOGGLE ENABLE/DISABLE -->
+            <button
+              type="button"
+              @click="state[cat.value].enabled = !state[cat.value].enabled"
+              class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition"
+              :style="{ background: state[cat.value].enabled ? 'var(--accent)' : 'var(--bg-hover)' }"
+            >
+              <span
+                class="inline-block h-5 w-5 rounded-full transition-transform"
+                :style="{
+                  background: state[cat.value].enabled ? 'var(--accent-text)' : 'var(--text-muted)',
+                  transform: state[cat.value].enabled ? 'translateX(22px)' : 'translateX(2px)'
+                }"
+              ></span>
+            </button>
+          </div>
         </div>
 
-        <div v-if="!cat.llmOnly && state[cat.value].enabled" class="space-y-2 pt-2 divider">
-          <div v-if="state[cat.value].templates.length === 0" class="text-xs theme-text-muted italic">
-            Using system templates. Add custom below to override.
+        <!-- TEMPLATE EDITOR (Hanya muncul kalau milih 'Use Template') -->
+        <div v-if="state[cat.value].enabled && state[cat.value].action === 'template'" class="space-y-2 pt-3 border-t theme-border">
+          <div v-if="state[cat.value].templates.length === 0" class="text-[11px] theme-text-muted italic">
+            Using default system templates. Add custom below to override.
           </div>
           <div
             v-for="(tpl, idx) in state[cat.value].templates"
@@ -69,11 +85,8 @@
           </div>
         </div>
 
-        <div v-if="cat.llmOnly && state[cat.value].enabled" class="text-xs theme-text-muted pt-2 divider">
-          This category always uses AI with your knowledge base. Cannot use templates.
-        </div>
-        <div v-if="!state[cat.value].enabled" class="text-xs theme-text-muted pt-2 divider">
-          Disabled. Comments in this category will not receive auto replies.
+        <div v-if="state[cat.value].enabled && state[cat.value].action === 'llm'" class="text-[11px] theme-text-muted pt-2 border-t theme-border">
+          This category will generate replies using AI (costs 1 credit per reply, unless using your own API key).
         </div>
       </div>
     </div>
@@ -84,7 +97,7 @@
 import { ref, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
-import { Card, Button, Badge } from './ui'
+import { Card, Button, Badge, Select } from './ui'
 
 const { showToast } = useNotify()
 const loading = ref(true)
@@ -92,22 +105,29 @@ const saving = ref(false)
 const accountId = ref<string | null>(null)
 
 const categories = [
-  { value: 'praise', label: 'Praise', description: 'Comments like keren, mantap, thanks', llmOnly: false },
-  { value: 'neutral', label: 'Neutral', description: 'Greetings or general comments', llmOnly: false },
-  { value: 'question', label: 'Question', description: 'Needs answer with brand context', llmOnly: true },
-  { value: 'spam', label: 'Spam', description: 'Promotions or suspicious links', llmOnly: true },
-  { value: 'toxic', label: 'Toxic', description: 'Insults or attacks', llmOnly: true },
+  { value: 'question', label: 'Questions', description: 'Asking about price, info, etc.' },
+  { value: 'praise', label: 'Praise', description: 'Compliments like "keren", "mantap"' },
+  { value: 'neutral', label: 'Neutral', description: 'Greetings or general comments' },
+  { value: 'spam', label: 'Spam', description: 'Promotions or suspicious links' },
+  { value: 'toxic', label: 'Toxic', description: 'Insults or negative attacks' },
 ]
 
-const state = ref<Record<string, { enabled: boolean; templates: string[] }>>({})
+const state = ref<Record<string, { enabled: boolean; action: string; templates: string[] }>>({})
 const newTemplate = ref<Record<string, string>>({})
 
 function initState(rules: any = {}) {
   const s: Record<string, any> = {}
   for (const cat of categories) {
     const r = rules[cat.value] || {}
+    
+    // Default action kalau belum pernah disetting
+    let defaultAction = 'llm'
+    if (cat.value === 'praise' || cat.value === 'neutral') defaultAction = 'template'
+    if (cat.value === 'spam' || cat.value === 'toxic') defaultAction = 'skip'
+
     s[cat.value] = {
       enabled: r.enabled !== undefined ? r.enabled : true,
+      action: r.action || defaultAction,
       templates: Array.isArray(r.templates) ? [...r.templates] : [],
     }
     newTemplate.value[cat.value] = ''
@@ -163,7 +183,7 @@ async function save() {
       .update({ rules: state.value })
       .eq('account_id', accountId.value)
     if (error) throw error
-    showToast('Templates saved.', 'success')
+    showToast('Reply strategy saved.', 'success')
   } catch (err: any) {
     showToast('Failed to save: ' + err.message, 'error')
   } finally {

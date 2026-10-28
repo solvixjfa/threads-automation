@@ -237,7 +237,11 @@ async def sync_replies_for_post(
                 continue
         # ----------------------------------
 
-        action = CATEGORY_ACTION.get(category, "skip")
+        # BACA DARI SETTINGAN USER (UI)
+        rule = category_rules.get(category, {}) if category_rules else {}
+        action = rule.get("action", CATEGORY_ACTION.get(category, "skip"))
+        if not rule.get("enabled", True):
+            action = "skip"
         if action == "skip":
             stats["skipped"] += 1
             continue
