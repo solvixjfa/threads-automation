@@ -41,13 +41,17 @@
     </nav>
 
     <div class="p-3 border-t theme-border space-y-1">
-      <!-- LANGUAGE SWITCHER -->
-      <div class="px-3 py-2">
-        <label class="block text-[10px] font-bold uppercase tracking-wider theme-text-muted mb-1.5">{{ $t('common.language') }}</label>
-        <select v-model="currentLang" @change="changeLang" class="input w-full text-xs py-1.5">
-          <option value="en">English</option>
-          <option value="id">Indonesia</option>
-        </select>
+      <!-- LANGUAGE SWITCHER PAKAI KOMPONEN SELECT -->
+      <div class="px-2 py-1 mb-2">
+        <Select
+          v-model="currentLang"
+          :options="[
+            { label: 'EN', value: 'en' },
+            { label: 'ID', value: 'id' }
+          ]"
+          :label="$t('common.language')"
+          @update:model-value="changeLang"
+        />
       </div>
 
       <button
@@ -77,6 +81,7 @@ import { h, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useTheme } from '../composables/useTheme'
+import { Select } from './ui' // Import komponen Select
 
 defineProps<{ open: boolean; email?: string }>()
 defineEmits<{ (e: 'close'): void; (e: 'logout'): void }>()
@@ -88,9 +93,9 @@ const { theme, toggle: toggleTheme } = useTheme()
 const { locale } = useI18n()
 const currentLang = ref(locale.value)
 
-function changeLang() {
-  locale.value = currentLang.value
-  localStorage.setItem('app_lang', currentLang.value)
+function changeLang(val: string) {
+  locale.value = val
+  localStorage.setItem('app_lang', val)
 }
 
 function isActive(path: string) {
@@ -119,7 +124,6 @@ const IconSettings = () => h('svg', { class: 'w-4 h-4', fill: 'none', stroke: 'c
   h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z' })
 ])
 
-// PAKE labelKey (bukan label text) biar bisa di-translate
 const items = [
   { labelKey: 'menu.dashboard', path: '/dashboard', icon: IconDashboard },
   { labelKey: 'menu.content', path: '/content', icon: IconContent },
