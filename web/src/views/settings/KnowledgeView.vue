@@ -4,7 +4,7 @@
       <template #header>
         <div class="flex items-center justify-between">
           <div>
-            <h2 class="text-sm font-bold">Knowledge base</h2>
+            <h2 class="text-sm font-bold">Knowledge Base</h2>
             <p class="text-xs theme-text-muted mt-0.5">The more detailed your documents, the better the AI understands your context.</p>
           </div>
           <Badge>pgvector / 768d</Badge>
@@ -13,13 +13,16 @@
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="space-y-1">
-          <label class="label">Category</label>
-          <select v-model="ragForm.category" class="input">
-            <option value="portfolio">Portfolio / Project</option>
-            <option value="persona">Persona and tone</option>
-            <option value="rules">Content rules</option>
-            <option value="faq">FAQ / Info</option>
-          </select>
+          <Select 
+            v-model="ragForm.category" 
+            label="Category" 
+            :options="[
+              { label: 'Portfolio / Project', value: 'portfolio' },
+              { label: 'Persona and Tone', value: 'persona' },
+              { label: 'Content Rules', value: 'rules' },
+              { label: 'FAQ / Info', value: 'faq' }
+            ]" 
+          />
         </div>
         <div class="md:col-span-2 space-y-1">
           <label class="label">Document title</label>
@@ -40,7 +43,7 @@
       <template #footer>
         <div class="flex justify-end">
           <Button @click="saveKnowledge" :disabled="isSavingRag || !ragForm.title || !ragForm.content" :loading="isSavingRag">
-            {{ isSavingRag ? 'Processing...' : 'Add document' }}
+            {{ isSavingRag ? 'Processing...' : 'Add Document' }}
           </Button>
         </div>
       </template>
@@ -49,7 +52,7 @@
     <Card padding="false">
       <div class="p-5 divider flex justify-between items-center theme-bg-sec">
         <div class="flex items-center gap-2">
-          <span class="text-xs font-bold uppercase tracking-wide">Saved documents</span>
+          <span class="text-xs font-bold uppercase tracking-wide">Saved Documents</span>
           <Badge>{{ ragItems.length }}</Badge>
         </div>
         <button @click="fetchKnowledge" class="text-xs font-bold hover:underline">Refresh</button>
@@ -96,7 +99,7 @@
 import { ref, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
 import { useNotify } from '../../composables/useNotify'
-import { Card, Button, Badge } from '../../components/ui'
+import { Card, Button, Badge, Select } from '../../components/ui'
 
 const { showToast, askConfirm } = useNotify()
 const loadingRag = ref(true)

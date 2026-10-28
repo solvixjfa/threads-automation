@@ -101,7 +101,7 @@ async def sync_posts_from_meta(db, client, acc_id: str, token: str) -> int:
 async def sync_replies_for_post(
     db, client, acc_id: str, post_db_id: str, media_id: str,
     token: str, acc_username: str, is_enabled: bool, reply_mode: str,
-    category_rules: dict = None, ai_provider: str = "groq"
+    category_rules: dict = None, ai_provider: str = "groq", auto_settings: dict = None
 ) -> dict:
     stats = empty_stats()
 
@@ -226,6 +226,17 @@ async def sync_replies_for_post(
         if is_lead:
             await analyze_and_notify_lead(acc_id, author_username, text)
 
+        # --- CEK MAX REPLIES PER HOUR ---
+        max_per_hour = auto_settings.get("max_per_hour", 10)
+        if max_per_hour > 0:
+            one_hour_ago = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+            limit_check = db.schema("threads").from_("auto_reply_logs").select("id", count="exact").eq("account_id", acc_id).eq("status", "sent").gte("created_at", one_hour_ago).execute()
+            if limit_check.count >= max_per_hour:
+                logging.warning(f"[Rate Limit] Max replies per hour ({max_per_hour}) reached for acc {acc_id}. Skipping.")
+                stats["skipped"] += 1
+                continue
+        # ----------------------------------
+
         action = CATEGORY_ACTION.get(category, "skip")
         if action == "skip":
             stats["skipped"] += 1
@@ -319,7 +330,7 @@ async def sync_post_with_semaphore(
         try:
             return await sync_replies_for_post(
                 db, client, acc_id, post_db_id, media_id,
-                token, acc_username, is_enabled, reply_mode, category_rules, ai_provider
+                token, acc_username, is_enabled, reply_mode, category_rules, ai_provider, auto_settings
             )
         except Exception as e:
             logging.error(f"[Parallel Sync] Post {media_id} error: {str(e)}")
@@ -369,7 +380,7 @@ async def process_account(db, client, acc: dict) -> dict:
     tasks = [
         sync_post_with_semaphore(
             sem, db, client, acc_id, p["id"], p["threads_media_id"],
-            token, acc_username, is_enabled, reply_mode, category_rules, ai_provider
+            token, acc_username, is_enabled, reply_mode, category_rules, ai_provider, auto_settings
         ) for p in valid_posts
     ]
 
