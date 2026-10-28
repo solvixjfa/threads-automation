@@ -155,3 +155,64 @@ async def get_length_performance(account_id: str):
         return {"success": True, "data": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.cluster import KMeans
+
+@router.get("/topic-clusters/{account_id}")
+async def get_topic_clusters(account_id: str):
+    try:
+        posts = fetch_posts_with_metrics(account_id)
+        if len(posts) < 5:
+            return {"success": True, "data": [], "message": "Need at least 5 posts to cluster topics."}
+
+        # 1. Siapin teks
+        texts = [p["text"] for p in posts]
+        ers = [p["er"] for p in posts]
+
+        # 2. TF-IDF (min_df=1 biar semua kata dihitung kalau datanya dikit)
+        vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
+        X = vectorizer.fit_transform(texts)
+
+        # 3. KMeans (Tentukan jumlah cluster, misal max 3 atau sesuai jumlah post)
+        num_clusters = min(3, len(texts))
+        kmeans = KMeans(n_clusters=num_clusters, random_state=42, n_init=10)
+        kmeans.fit(X)
+        
+        labels = kmeans.labels_
+
+        # 4. Ambil keywords per cluster
+        order_centroids = kmeans.cluster_centers_.argsort()[:, ::-1]
+        terms = vectorizer.get_feature_names_out()
+        
+        cluster_keywords = {}
+        for i in range(num_clusters):
+            top_terms = [terms[ind] for ind in order_centroids[i, :3]]
+            cluster_keywords[i] = ", ".join(top_terms).title()
+
+        # 5. Hitung avg ER & count per cluster
+        cluster_stats = {}
+        for i in range(num_clusters):
+            cluster_stats[i] = {"ers": [], "count": 0}
+
+        for idx, label in enumerate(labels):
+            cluster_stats[label]["ers"].append(ers[idx])
+            cluster_stats[label]["count"] += 1
+
+        results = []
+        for i in range(num_clusters):
+            stats = cluster_stats[i]
+            if stats["count"] > 0:
+                avg_er = sum(stats["ers"]) / stats["count"]
+                results.append({
+                    "topic": cluster_keywords[i] or f"Topic {i+1}",
+                    "avg_er": round(avg_er, 2),
+                    "count": stats["count"]
+                })
+
+        # Urutkan dari ER tertinggi
+        results.sort(key=lambda x: x["avg_er"], reverse=True)
+
+        return {"success": True, "data": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
