@@ -13,44 +13,45 @@
         </p>
       </div>
 
-      <Card>
-        <div class="space-y-4">
-          <!-- EMAIL INPUT -->
-          <div class="space-y-1">
-            <label class="label">{{ $t('login.email') }}</label>
-            <input v-model="email" type="email" :placeholder="$t('login.email_placeholder')" class="input w-full" />
-          </div>
-
-          <!-- PASSWORD INPUT (Disembunyiin kalau mode Forgot Password) -->
-          <div v-if="mode !== 'forgot'" class="space-y-1">
-            <div class="flex justify-between items-center">
-              <label class="label">{{ $t('login.password') }}</label>
-              <button v-if="mode === 'login'" @click="mode = 'forgot'" class="text-[11px] font-bold theme-text-muted hover:theme-text transition">
-                {{ $t('login.forgot_password') }}
-              </button>
-            </div>
-            <input v-model="password" type="password" :placeholder="$t('login.password_placeholder')" class="input w-full" @keydown.enter="handleSubmit" />
-          </div>
-
-          <!-- SUBMIT BUTTON -->
-          <Button @click="handleSubmit" :disabled="loading" :loading="loading" class="w-full">
-            {{ loading ? $t('common.processing') : (
-              mode === 'login' ? $t('login.sign_in') : 
-              (mode === 'signup' ? $t('login.sign_up') : $t('login.send_reset_link'))
-            ) }}
-          </Button>
-
-          <!-- FOOTER TOGGLE -->
-          <div class="text-center pt-2">
-            <button v-if="mode === 'forgot'" @click="mode = 'login'" class="text-xs font-bold theme-text-muted hover:theme-text transition">
-              {{ $t('login.back_to_login') }}
-            </button>
-            <button v-else @click="mode = mode === 'login' ? 'signup' : 'login'" class="text-xs theme-text-muted hover:theme-text transition">
-              {{ mode === 'login' ? $t('login.toggle_to_signup') : $t('login.toggle_to_login') }}
-            </button>
-          </div>
+      <!-- FORM CARD (PAKE HTML BIASA BIAR GAK BUG) -->
+      <div class="card p-6 space-y-4">
+        
+        <!-- EMAIL INPUT -->
+        <div class="space-y-1">
+          <label class="label">{{ $t('login.email') }}</label>
+          <input v-model="email" type="email" :placeholder="$t('login.email_placeholder')" class="input w-full" />
         </div>
-      </Card>
+
+        <!-- PASSWORD INPUT -->
+        <div v-if="mode !== 'forgot'" class="space-y-1">
+          <div class="flex justify-between items-center">
+            <label class="label">{{ $t('login.password') }}</label>
+            <button v-if="mode === 'login'" @click="mode = 'forgot'" class="text-[11px] font-bold theme-text-muted hover:theme-text transition">
+              {{ $t('login.forgot_password') }}
+            </button>
+          </div>
+          <input v-model="password" type="password" :placeholder="$t('login.password_placeholder')" class="input w-full" @keydown.enter="handleSubmit" />
+        </div>
+
+        <!-- SUBMIT BUTTON -->
+        <button @click="handleSubmit" :disabled="loading" class="btn btn-primary w-full flex justify-center items-center h-10">
+          <span v-if="loading" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+          {{ loading ? $t('common.processing') : (
+            mode === 'login' ? $t('login.sign_in') : 
+            (mode === 'signup' ? $t('login.sign_up') : $t('login.send_reset_link'))
+          ) }}
+        </button>
+
+        <!-- FOOTER TOGGLE -->
+        <div class="text-center pt-2">
+          <button v-if="mode === 'forgot'" @click="mode = 'login'" class="text-xs font-bold theme-text-muted hover:theme-text transition">
+            {{ $t('login.back_to_login') }}
+          </button>
+          <button v-else @click="mode = mode === 'login' ? 'signup' : 'login'" class="text-xs theme-text-muted hover:theme-text transition">
+            {{ mode === 'login' ? $t('login.toggle_to_signup') : $t('login.toggle_to_login') }}
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -61,7 +62,6 @@ import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
 import { useI18n } from 'vue-i18n'
-import { Card, Button } from '../components/ui'
 
 const router = useRouter()
 const { showToast } = useNotify()
@@ -75,7 +75,7 @@ const password = ref('')
 const loading = ref(false)
 
 async function handleSubmit() {
-  // Validasi basic
+  // Validasi
   if (!email.value) {
     showToast(t('login.error_empty'), 'error')
     return
@@ -100,11 +100,11 @@ async function handleSubmit() {
       const { error } = await supabase.auth.signUp({ email: email.value, password: password.value })
       if (error) throw error
       showToast('Account created! Check your email to confirm.', 'success')
-      mode.value = 'login' // Balikin ke mode login setelah signup
+      mode.value = 'login' // Balikin ke login
       
     } else if (mode.value === 'forgot') {
       const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
-        redirectTo: `${window.location.origin}/login` // Nanti lu perlu halaman update password
+        redirectTo: `${window.location.origin}/login`
       })
       if (error) throw error
       showToast(t('login.reset_link_sent'), 'success')
