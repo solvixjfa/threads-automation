@@ -39,7 +39,14 @@
     "toggle_to_login": "Udah punya akun? Login",
     "error_empty": "Isi semua kolom dulu ya",
     "error_invalid": "Email atau password salah",
-    "error_short_password": "Password minimal 6 karakter"
+    "error_short_password": "Password minimal 6 karakter",
+    "forgot_password": "Lupa password?",
+    "reset_password_title": "Reset password lu",
+    "reset_password_subtitle": "Masukin email lu buat dapet link reset",
+    "send_reset_link": "Kirim Link Reset",
+    "back_to_login": "Balik ke login",
+    "reset_link_sent": "Link reset udah dikirim! Cek email lu.",
+    "reset_link_error": "Gagal ngirim link reset"
   },
   "dashboard": {
     "title": "Dashboard",
