@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { supabase } from '../lib/supabase'
 
+import LandingView from '../views/LandingView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import SettingsLayout from '../views/settings/SettingsLayout.vue'
 import AccountView from '../views/settings/AccountView.vue'
@@ -25,8 +26,10 @@ import TopicView from '../views/analytics/TopicView.vue'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
+    // LANDING PAGE DI ROOT
+    { path: '/', name: 'landing', component: LandingView },
+    
     { path: '/login', name: 'login', component: LoginView },
-    { path: '/', redirect: '/dashboard' },
 
     { path: '/dashboard', name: 'dashboard', component: DashboardView, meta: { requiresAuth: true } },
 
@@ -76,16 +79,17 @@ const router = createRouter({
     { path: '/repurpose', redirect: '/content/variant' },
     { path: '/inbox', redirect: '/comment' },
 
-    { path: '/:pathMatch(.*)*', redirect: '/dashboard' },
+    { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
 })
 
+// ROUTER GUARD: Redirect user yang udah login dari landing/login ke dashboard
 router.beforeEach(async (to, _from, next) => {
   const { data: { session } } = await supabase.auth.getSession()
 
   if (to.meta.requiresAuth && !session) {
     next('/login')
-  } else if (to.path === '/login' && session) {
+  } else if ((to.path === '/login' || to.path === '/') && session) {
     next('/dashboard')
   } else {
     next()
