@@ -3,10 +3,10 @@
     <Card padding="false">
       <div class="p-5 divider flex justify-between items-center theme-bg-sec">                                                                
         <div class="flex items-center gap-2">
-          <span class="text-xs font-bold uppercase tracking-wide">Scheduled Queue</span>
+          <span class="text-xs font-bold uppercase tracking-wide">{{ $t('content.queue.title') }}</span>
           <Badge>{{ filteredPosts.length }} groups</Badge>
         </div>
-        <button @click="loadPosts" class="text-xs font-bold hover:underline">Refresh</button>
+        <button @click="loadPosts" class="text-xs font-bold hover:underline">{{ $t('common.refresh') }}</button>
       </div>
 
       <div class="flex gap-2 px-5 pt-4 pb-3 overflow-x-auto">
@@ -17,12 +17,12 @@
           class="px-3 py-1.5 text-xs font-bold rounded-lg transition whitespace-nowrap"
           :class="activeFilter === tab.value ? 'theme-accent' : 'theme-bg-sec theme-text-muted hover:theme-text'"
         >
-          {{ tab.label }} ({{ countByStatus(tab.value) }})
+          {{ $t(tab.labelKey) }} ({{ countByStatus(tab.value) }})
         </button>
       </div>
 
       <div v-if="loading" class="p-8 text-center text-xs theme-text-muted font-medium animate-pulse">
-        Loading queue...
+        {{ $t('common.loading') }}
       </div>
 
       <div v-else-if="filteredPosts.length === 0" class="p-12 text-center text-xs theme-text-muted">
@@ -31,11 +31,11 @@
 
       <div v-else class="list-divided">
         <!-- LOOPING PER GROUP TANGGAL -->
-        <div v-for="dateGroup in groupedByDate" :key="dateGroup.label" class="border-b theme-border last:border-0">
+        <div v-for="dateGroup in groupedByDate" :key="dateGroup.key" class="border-b theme-border last:border-0">
           
-          <!-- DATE SEPARATOR (FITUR 3) -->
+          <!-- DATE SEPARATOR -->
           <div class="px-5 py-3 theme-bg-sec text-xs font-bold uppercase tracking-wide theme-text-muted sticky top-0 z-10">
-            {{ dateGroup.label }}
+            {{ $t('content.queue.' + dateGroup.key) }}
           </div>
 
           <div class="divide-y theme-border">
@@ -51,10 +51,10 @@
                     class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <Badge variant="accent">Thread</Badge>
-                  <span class="text-xs font-bold theme-text-muted">{{ group.parts.length }} Parts</span>
+                  <span class="text-xs font-bold theme-text-muted">{{ $t('content.queue.thread_parts', { n: group.parts.length }) }}</span>
                 </div>
                 <button @click="toggleExpand(group.id)" class="text-xs font-bold hover:underline">
-                  {{ expandedThreads.has(group.id) ? 'Hide Parts' : 'Show Parts' }}
+                  {{ expandedThreads.has(group.id) ? $t('content.queue.hide_parts') : $t('content.queue.show_parts') }}
                 </button>
               </div>
 
@@ -84,14 +84,14 @@
                   <span class="theme-text-muted font-medium">{{ formatTime(post.scheduled_for) }}</span>
                   
                   <div v-if="post.status === 'scheduled'" class="flex items-center gap-2">                                                                
-                    <Button variant="secondary" size="sm" @click="openEditModal(post)">Edit</Button>                                                      
-                    <Button variant="danger" size="sm" @click="confirmDeletePost(post.id)">Delete</Button>                                               
+                    <Button variant="secondary" size="sm" @click="openEditModal(post)">{{ $t('content.queue.edit') }}</Button>                                                      
+                    <Button variant="danger" size="sm" @click="confirmDeletePost(post.id)">{{ $t('content.queue.delete') }}</Button>                                               
                   </div>                                                             
                   <div v-else-if="['error', 'failed', 'quota_exceeded'].includes(post.status)" class="flex items-center gap-2">
-                    <Button size="sm" @click="handleRetryPost(post.id)" :loading="retryingId === post.id">Retry</Button>
+                    <Button size="sm" @click="handleRetryPost(post.id)" :loading="retryingId === post.id">{{ $t('content.queue.retry') }}</Button>
                   </div>
                   <a v-else-if="post.published_media_id" :href="'https://www.threads.net/post/' + post.published_media_id" target="_blank" class="text-xs font-bold hover:underline">
-                    View on Threads
+                    {{ $t('content.queue.view_threads') }}
                   </a>                                                             
                 </div>
               </div>
@@ -101,32 +101,32 @@
       </div>                                                           
     </Card>
 
-    <!-- FLOATING BULK ACTION BAR (FITUR 4) -->
+    <!-- FLOATING BULK ACTION BAR -->
     <Transition name="fade">
       <div v-if="totalSelected > 0" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 px-6 py-3 rounded-full shadow-2xl border theme-border theme-bg-sec">
-        <span class="text-sm font-bold theme-text">{{ totalSelected }} selected</span>
+        <span class="text-sm font-bold theme-text">{{ $t('content.queue.bulk_selected', { n: totalSelected }) }}</span>
         <div class="w-px h-4 theme-border bg-current opacity-20"></div>
         <button @click="handleBulkDelete" :disabled="isBulkDeleting" class="text-sm font-bold text-red-500 hover:text-red-600 transition flex items-center gap-2">
           <span v-if="isBulkDeleting" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
-          Delete Selected
+          {{ $t('content.queue.bulk_delete') }}
         </button>
       </div>
     </Transition>
 
-    <!-- EDIT MODAL DENGAN FITUR 5 (PREVIEW) -->
+    <!-- EDIT MODAL -->
     <Teleport to="body">                                                 
       <div v-if="editingPost" class="fixed inset-0 backdrop-blur-sm z-[100] flex items-center justify-center p-4" style="background: rgba(0,0,0,0.6);">
         <div class="card max-w-lg w-full p-6 space-y-4 shadow-2xl flex flex-col max-h-[90vh]" style="background: var(--bg);">
           
           <div class="flex justify-between items-center pb-2 border-b theme-border shrink-0">
             <div class="flex gap-4">
-              <button @click="modalTab = 'edit'" class="text-base font-bold transition" :class="modalTab === 'edit' ? 'theme-text border-b-2 border-current' : 'theme-text-muted hover:theme-text'">Edit Post</button>
-              <button @click="modalTab = 'preview'" class="text-base font-bold transition" :class="modalTab === 'preview' ? 'theme-text border-b-2 border-current' : 'theme-text-muted hover:theme-text'">Preview</button>
+              <button @click="modalTab = 'edit'" class="text-base font-bold transition" :class="modalTab === 'edit' ? 'theme-text border-b-2 border-current' : 'theme-text-muted hover:theme-text'">{{ $t('content.queue.edit_tab_edit') }}</button>
+              <button @click="modalTab = 'preview'" class="text-base font-bold transition" :class="modalTab === 'preview' ? 'theme-text border-b-2 border-current' : 'theme-text-muted hover:theme-text'">{{ $t('content.queue.edit_tab_preview') }}</button>
             </div>
             <button @click="magicRewrite" :disabled="isRewriting || !editForm.text" class="text-xs font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-lg border theme-border hover:theme-bg-sec transition-colors">
               <span v-if="isRewriting" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
               <span v-else>✨</span>
-              <span>{{ isRewriting ? 'Improving...' : 'Magic Rewrite' }}</span>
+              <span>{{ isRewriting ? $t('content.queue.magic_rewriting') : $t('content.queue.magic_rewrite') }}</span>
             </button>
           </div>
           
@@ -135,12 +135,12 @@
             <div v-if="modalTab === 'edit'" class="space-y-4">
               <Textarea v-model="editForm.text" :rows="6" :max-length="500" />
               <div class="space-y-1">
-                <label class="label theme-text">New Schedule Time</label>
+                <label class="label theme-text">{{ $t('content.queue.new_time') }}</label>
                 <input v-model="editForm.scheduled_for" type="datetime-local" class="input" />
               </div>  
             </div>
 
-            <!-- TAB PREVIEW (MOCKUP THREADS) -->
+            <!-- TAB PREVIEW -->
             <div v-else class="py-4">
               <div class="flex gap-3">
                 <div class="w-10 h-10 rounded-full theme-bg-sec border theme-border shrink-0 flex items-center justify-center font-bold text-xs">IX</div>
@@ -163,9 +163,9 @@
           </div>
 
           <div class="flex justify-end gap-3 pt-4 border-t theme-border shrink-0">
-            <Button variant="secondary" @click="editingPost = null">Cancel</Button>
+            <Button variant="secondary" @click="editingPost = null">{{ $t('content.queue.cancel') }}</Button>
             <Button @click="saveEdit" :disabled="isUpdating || modalTab === 'preview'" :loading="isUpdating">
-              {{ isUpdating ? 'Saving...' : 'Save Changes' }}
+              {{ isUpdating ? $t('common.processing') : $t('content.queue.save_changes') }}
             </Button>
           </div>                                                           
         </div>
@@ -178,9 +178,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
 import { useNotify } from '../../composables/useNotify'            
+import { useI18n } from 'vue-i18n'
 import { Card, Button, Textarea, Badge } from '../../components/ui'
 
 const { showToast, askConfirm } = useNotify()
+const { t } = useI18n()
 
 const loading = ref(true)
 const isUpdating = ref(false)  
@@ -201,10 +203,10 @@ const selectedPosts = ref<Set<string>>(new Set())
 const selectedThreads = ref<Set<string>>(new Set())
 
 const tabs = [
-  { label: 'Scheduled', value: 'scheduled' as const },                 
-  { label: 'Published', value: 'published' as const },
-  { label: 'Failed', value: 'failed' as const },
-  { label: 'All', value: 'all' as const },
+  { labelKey: 'content.queue.tab_scheduled', value: 'scheduled' as const },                 
+  { labelKey: 'content.queue.tab_published', value: 'published' as const },
+  { labelKey: 'content.queue.tab_failed', value: 'failed' as const },
+  { labelKey: 'content.queue.tab_all', value: 'all' as const },
 ]
 
 const filteredPosts = computed(() => {
@@ -231,7 +233,6 @@ const filteredPosts = computed(() => {
   })
 })
 
-// FITUR 3: GROUPING BY DATE
 const groupedByDate = computed(() => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -239,10 +240,9 @@ const groupedByDate = computed(() => {
   tomorrow.setDate(tomorrow.getDate() + 1)
 
   const groups: Record<string, any[]> = {
-    'Today': [], 'Tomorrow': [], 'Upcoming': [], 'Past': []
+    'today': [], 'tomorrow': [], 'upcoming': [], 'past': []
   }
 
-  // Sort by date first
   const sorted = [...filteredPosts.value].sort((a, b) => {
     return new Date(a.parts[0].scheduled_for).getTime() - new Date(b.parts[0].scheduled_for).getTime()
   })
@@ -251,18 +251,17 @@ const groupedByDate = computed(() => {
     const postDate = new Date(group.parts[0].scheduled_for)
     postDate.setHours(0, 0, 0, 0)
 
-    if (postDate.getTime() === today.getTime()) groups['Today'].push(group)
-    else if (postDate.getTime() === tomorrow.getTime()) groups['Tomorrow'].push(group)
-    else if (postDate > tomorrow) groups['Upcoming'].push(group)
-    else groups['Past'].push(group)
+    if (postDate.getTime() === today.getTime()) groups['today'].push(group)
+    else if (postDate.getTime() === tomorrow.getTime()) groups['tomorrow'].push(group)
+    else if (postDate > tomorrow) groups['upcoming'].push(group)
+    else groups['past'].push(group)
   })
 
   return Object.entries(groups)
     .filter(([_, items]) => items.length > 0)
-    .map(([label, items]) => ({ label, items }))
+    .map(([key, items]) => ({ key, items }))
 })
 
-// FITUR 4: BULK SELECT LOGIC
 const totalSelected = computed(() => selectedPosts.value.size + selectedThreads.value.size)
 
 function togglePostSelection(id: string) {
@@ -285,12 +284,10 @@ function isGroupSelected(group: any) {
 async function handleBulkDelete() {
   const allIds: string[] = []
   
-  // Kumpulin ID dari thread yang dicentang
   filteredPosts.value.forEach(group => {
     if (selectedThreads.value.has(group.id)) {
       group.parts.forEach((p: any) => allIds.push(p.id))
     } else {
-      // Kumpulin ID dari post standalone yang dicentang
       group.parts.forEach((p: any) => {
         if (selectedPosts.value.has(p.id)) allIds.push(p.id)
       })
@@ -326,12 +323,11 @@ async function handleBulkDelete() {
   })
 }
 
-// LOGIKA LAINNYA
 const emptyMessage = computed(() => {
-  if (activeFilter.value === 'scheduled') return 'No posts in queue.'
-  if (activeFilter.value === 'published') return 'No published posts yet.'                                                     
-  if (activeFilter.value === 'failed') return 'No failed posts.'
-  return 'No posts found.'
+  if (activeFilter.value === 'scheduled') return t('content.queue.empty_scheduled')
+  if (activeFilter.value === 'published') return t('content.queue.empty_published')                                                     
+  if (activeFilter.value === 'failed') return t('content.queue.empty_failed')
+  return t('content.queue.empty_all')
 })                                                                 
 
 function countByStatus(status: string) {
@@ -348,7 +344,7 @@ function toggleExpand(groupId: string) {
 function formatTime(isoString: string) {                             
   if (!isoString) return ''
   const d = new Date(isoString)
-  return d.toLocaleString('en-US', { timeStyle: 'short' })
+  return d.toLocaleString(undefined, { timeStyle: 'short' })
 }                                                                  
 function statusVariant(status: string) {
   if (status === 'published') return 'accent'                        
