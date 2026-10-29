@@ -333,14 +333,14 @@
       "how_it_works": "Cara Kerja",
       "faq": "FAQ",
       "login": "Masuk",
-      "start_free": "Mulai Gratis"
+      "start_free": "Minta Akses"
     },
     "hero": {
-      "badge": "Akses Beta Tersedia (Gratis)",
+      "badge": "Early Access",
       "title_1": "Kembangkan Threads Kamu",
       "title_2": "Tanpa Kelelahan.",
       "subtitle": "Ixiera adalah asisten cerdas untuk kreator. Rencanakan konten, balas interaksi secara otomatis, dan pahami audiens kamu\u2014semuanya dalam satu tempat yang tenang.",
-      "cta_primary": "Mulai Gunakan Ixiera",
+      "cta_primary": "Minta Akses Early Access",
       "cta_secondary": "Pelajari Fitur",
       "no_cc": "Tanpa kartu kredit. Dirancang untuk kreator."
     },
@@ -373,6 +373,20 @@
       "copy": "Dibuat dengan tenang untuk para kreator.",
       "privacy": "Privasi",
       "terms": "Ketentuan"
+    },
+    "faq": {
+      "title": "Pertanyaan Umum",
+      "q1": "Kenapa saya harus minta akses?",
+      "a1": "Ixiera saat ini masih dalam tahap Early Access. Kami memverifikasi setiap akun secara manual untuk memastikan kualitas dan kapasitas server. Kami akan mengabari kamu lewat email setelah akun disetujui.",
+      "q2": "Apakah ini gratis?",
+      "a2": "Ya, selama fase Early Access, semua fitur bisa digunakan secara gratis.",
+      "q3": "Apakah ini otomatis posting tanpa izin saya?",
+      "a3": "Tidak. Secara bawaan, Ixiera akan membuat draf balasan untuk kamu tinjau. Kamu bisa mengaktifkan mode full-auto nanti jika sudah yakin."
+    },
+    "modal": {
+      "title": "Minta Akses Early Access",
+      "desc": "Karena Ixiera masih dalam tahap awal, kami perlu menyetujui akunmu secara manual demi kenyamanan bersama. Silakan daftar dengan emailmu, dan kami akan segera mengabari.",
+      "cta": "Lanjut ke Pendaftaran"
     }
   }
 }
