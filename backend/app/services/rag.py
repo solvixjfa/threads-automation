@@ -508,3 +508,73 @@ Return ONLY the improved text. No explanations, no quotes, just the plain text.
         db.schema("threads").from_("threads_accounts").update({"ai_credits": credits - 1}).eq("id", account_id).execute()
 
     return improved_text
+
+async def label_topics_ai(account_id: str, clusters: list, provider: str = "groq", model_name: str = None) -> list:
+    """Enhance topic cluster names using LLM. Returns list of enhanced names."""
+    db = get_supabase()
+    acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key, ai_credits").eq("id", account_id).limit(1).execute()
+    
+    if not acc_res.data: raise Exception("Account not found")
+    acc = acc_res.data[0]
+    
+    custom_gemini = acc.get("custom_gemini_key")
+    custom_groq = acc.get("custom_groq_key")
+    credits = acc.get("ai_credits", 0)
+    
+    if provider == "groq":
+        api_key_to_use = custom_groq if custom_groq else GROQ_KEY
+        is_using_saas = not custom_groq
+    else:
+        api_key_to_use = custom_gemini if custom_gemini else GEMINI_KEY
+        is_using_saas = not custom_gemini
+    
+    if not api_key_to_use:
+        raise Exception(f"{provider.title()} API Key missing")
+    
+    if is_using_saas and credits <= 0:
+        raise Exception("Insufficient AI Credits. Add your own API Key or top up.")
+    
+    # Build prompt with all clusters
+    prompt = "You are analyzing Threads post clusters. For each cluster, give a short, natural topic name (3-5 words max) in Bahasa Indonesia that captures the theme.\n\n"
+    for i, c in enumerate(clusters):
+        prompt += f"--- Cluster {i+1} ({c.get('count', 0)} posts) ---\n"
+        for s in (c.get('samples') or [])[:2]:
+            prompt += f"- {s}\n"
+        prompt += "\n"
+    
+    prompt += 'Return ONLY a JSON object like this: {"topics": ["Name 1", "Name 2", "Name 3", "Name 4"]} - one name per cluster in order.\n'
+    
+    result_names = []
+    
+    try:
+        if provider == "groq":
+            from groq import Groq
+            client = Groq(api_key=api_key_to_use)
+            model = model_name or "llama-3.3-70b-versatile"
+            completion = client.chat.completions.create(
+                messages=[{"role": "user", "content": prompt}],
+                model=model,
+                response_format={"type": "json_object"},
+                temperature=0.5,
+            )
+            parsed = json.loads(completion.choices[0].message.content)
+        else:
+            client = genai.Client(api_key=api_key_to_use)
+            response = client.models.generate_content(
+                model=model_name or "gemini-3.5-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(response_mime_type="application/json")
+            )
+            raw = response.text.strip()
+            if raw.startswith("```json"): raw = raw.replace("```json", "", 1).rstrip("`").strip()
+            parsed = json.loads(raw)
+        
+        result_names = parsed.get("topics", [])
+    except Exception as e:
+        raise Exception(f"AI labeling failed: {str(e)}")
+    
+    # Charge 1 credit if using SaaS key
+    if is_using_saas:
+        db.schema("threads").from_("threads_accounts").update({"ai_credits": credits - 1}).eq("id", account_id).execute()
+    
+    return result_names
