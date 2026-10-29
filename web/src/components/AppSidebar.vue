@@ -1,16 +1,18 @@
 <template>
-  <div v-if="open" @click="$emit('close')" class="md:hidden fixed inset-0 z-40" style="background: rgba(0,0,0,0.5);"></div>
+  <!-- OVERLAY GELAP DI MOBILE -->
+  <div v-if="open" @click="$emit('close')" class="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"></div>
 
   <aside
     :class="open ? 'translate-x-0' : '-translate-x-full'"
-    class="md:translate-x-0 fixed md:static inset-y-0 left-0 z-50 w-64 flex flex-col transition-transform duration-300 ease-in-out border-r theme-border theme-bg"
+    class="md:translate-x-0 fixed md:static inset-y-0 left-0 z-50 w-64 flex flex-col transition-transform duration-300 ease-in-out border-r theme-border theme-bg h-[100dvh] md:h-full"
   >
-    <div class="h-16 hidden md:flex items-center px-5 border-b theme-border">
+    <!-- HEADER SIDEBAR -->
+    <div class="h-16 hidden md:flex items-center px-5 border-b theme-border shrink-0">
       <div class="w-7 h-7 flex items-center justify-center rounded text-xs font-black theme-accent">IX</div>
       <span class="ml-3 font-bold tracking-tight">ixiera.id</span>
     </div>
 
-    <div class="md:hidden h-16 flex items-center justify-between px-4 border-b theme-border">
+    <div class="md:hidden h-16 flex items-center justify-between px-4 border-b theme-border shrink-0">
       <div class="flex items-center gap-2">
         <div class="w-7 h-7 flex items-center justify-center rounded text-xs font-black theme-accent">IX</div>
         <span class="font-bold tracking-tight text-sm">ixiera.id</span>
@@ -22,6 +24,7 @@
       </button>
     </div>
 
+    <!-- MENU NAVIGASI (BISA DI-SCROLL) -->
     <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
       <RouterLink
         v-for="item in items"
@@ -40,8 +43,9 @@
       </RouterLink>
     </nav>
 
-    <div class="p-3 border-t theme-border space-y-1">
-      <!-- LANGUAGE SWITCHER PAKAI KOMPONEN SELECT -->
+    <!-- FOOTER SIDEBAR (NEMPEL DI BAWAH) -->
+    <div class="p-3 border-t theme-border space-y-1 shrink-0 bg-inherit">
+      <!-- LANGUAGE SWITCHER -->
       <div class="px-2 py-1 mb-2">
         <Select
           v-model="currentLang"
@@ -67,9 +71,9 @@
         <span>{{ theme === 'light' ? $t('common.dark_mode') : $t('common.light_mode') }}</span>
       </button>
 
-      <div class="px-3 py-2 text-xs truncate theme-text-muted">{{ email }}</div>
+      <div class="px-3 py-2 text-[11px] truncate theme-text-muted">{{ email }}</div>
 
-      <button @click="$emit('logout')" class="w-full text-left px-3 py-2 rounded-lg text-sm font-semibold transition" style="color: var(--danger);">
+      <button @click="$emit('logout')" class="w-full text-left px-3 py-2 rounded-lg text-sm font-semibold transition hover:opacity-80" style="color: var(--danger);">
         {{ $t('common.sign_out') }}
       </button>
     </div>
@@ -81,7 +85,7 @@ import { h, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useTheme } from '../composables/useTheme'
-import { Select } from './ui' // Import komponen Select
+import { Select } from './ui'
 
 defineProps<{ open: boolean; email?: string }>()
 defineEmits<{ (e: 'close'): void; (e: 'logout'): void }>()
@@ -89,7 +93,6 @@ defineEmits<{ (e: 'close'): void; (e: 'logout'): void }>()
 const route = useRoute()
 const { theme, toggle: toggleTheme } = useTheme()
 
-// LANGUAGE SWITCHER LOGIC
 const { locale } = useI18n()
 const currentLang = ref(locale.value)
 

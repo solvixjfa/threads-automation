@@ -1,13 +1,13 @@
 <template>
-  <div v-if="loading" class="h-screen w-screen flex items-center justify-center theme-bg">
+  <div v-if="loading" class="h-[100dvh] w-screen flex items-center justify-center theme-bg">
     <p class="text-xs font-medium tracking-widest animate-pulse theme-text-muted">LOADING...</p>
   </div>
 
-  <div v-else-if="!session" class="min-h-screen theme-bg">
+  <div v-else-if="!session" class="min-h-[100dvh] theme-bg">
     <RouterView />
   </div>
 
-  <div v-else class="flex h-screen overflow-hidden theme-bg theme-text">
+  <div v-else class="flex h-[100dvh] overflow-hidden theme-bg theme-text">
     <AppSidebar
       :open="sidebarOpen"
       :email="session.user.email"
@@ -15,8 +15,8 @@
       @logout="handleLogout"
     />
 
-    <div class="flex-1 flex flex-col min-w-0">
-      <header class="md:hidden flex items-center justify-between h-16 px-4 border-b theme-border theme-bg">
+    <div class="flex-1 flex flex-col min-w-0 h-full">
+      <header class="md:hidden flex items-center justify-between h-16 px-4 border-b theme-border theme-bg shrink-0 z-30">
         <div class="flex items-center gap-2">
           <div class="w-7 h-7 flex items-center justify-center rounded text-xs font-black theme-accent">IX</div>
           <span class="font-bold tracking-tight text-sm">ixiera.id</span>
@@ -29,7 +29,7 @@
       </header>
 
       <main class="flex-1 overflow-y-auto p-4 md:p-8">
-        <div class="max-w-5xl mx-auto">
+        <div class="max-w-5xl mx-auto pb-10">
           <RouterView />
         </div>
       </main>
