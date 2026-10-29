@@ -243,7 +243,9 @@
     "topic_sub": "Liat topik mana yang paling ngasih engagement.",
     "smart_analysis": "Analisa Pintar",
     "topic_posts": "{n} post di topik ini",
-    "no_data": "Data belum cukup buat dianalisa. Rajin posting dulu!"
+    "no_data": "Data belum cukup buat dianalisa. Rajin posting dulu!",
+    "sample_posts": "Contoh Postingan",
+    "keywords": "Kata Kunci"
   },
   "settings": {
     "title": "Pengaturan",

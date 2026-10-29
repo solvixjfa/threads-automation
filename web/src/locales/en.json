@@ -243,7 +243,9 @@
     "topic_sub": "See which topics generate the most engagement.",
     "smart_analysis": "Smart Analysis",
     "topic_posts": "{n} posts in this topic",
-    "no_data": "Not enough data to analyze. Publish more posts!"
+    "no_data": "Not enough data to analyze. Publish more posts!",
+    "sample_posts": "Sample Posts",
+    "keywords": "Keywords"
   },
   "settings": {
     "title": "Settings",
