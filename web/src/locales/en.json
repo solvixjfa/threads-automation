@@ -30,7 +30,7 @@
     "sign_up_title": "Create an account",
     "sign_up_subtitle": "Get started with Ixiera",
     "email": "Email",
-    "email_placeholder": "you@example.com",
+    "email_placeholder": "you{'@'}example.com",
     "password": "Password",
     "password_placeholder": "Enter your password",
     "sign_in": "Sign In",

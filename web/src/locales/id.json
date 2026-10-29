@@ -30,7 +30,7 @@
     "sign_up_title": "Bikin akun baru",
     "sign_up_subtitle": "Mulai pakai Ixiera",
     "email": "Email",
-    "email_placeholder": "email@lu.com",
+    "email_placeholder": "email{'@'}lu.com",
     "password": "Password",
     "password_placeholder": "Masukin password lu",
     "sign_in": "Login",
