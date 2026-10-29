@@ -4,11 +4,11 @@
       <template #header>
         <div class="flex items-center justify-between">
           <div>
-            <h2 class="text-sm font-bold">Connected account</h2>
-            <p class="text-xs theme-text-muted mt-0.5">Meta Threads API connection.</p>
+            <h2 class="text-sm font-bold">{{ $t('settings.account.title') }}</h2>
+            <p class="text-xs theme-text-muted mt-0.5">{{ $t('settings.account.subtitle') }}</p>
           </div>
           <Badge :variant="accountConnected ? 'success' : 'default'">
-            {{ accountConnected ? 'Connected' : 'Not connected' }}
+            {{ accountConnected ? $t('settings.account.connected') : $t('settings.account.not_connected') }}
           </Badge>
         </div>
       </template>
@@ -22,13 +22,11 @@
         <div>
           <p class="text-sm font-bold">{{ accountUsername ? '@' + accountUsername : 'No active account' }}</p>
           <p class="text-xs theme-text-muted mt-0.5">
-            {{ accountConnected
-              ? 'Ready to publish posts and read interactions.'
-              : 'Connect your Threads account to start automation.' }}
+            {{ accountConnected ? $t('settings.account.ready') : $t('settings.account.start') }}
           </p>
         </div>
         <Button @click="connectThreads" size="sm">
-          {{ accountConnected ? 'Reconnect' : 'Connect' }}
+          {{ accountConnected ? $t('settings.account.reconnect') : $t('settings.account.connect') }}
         </Button>
       </div>
     </Card>
@@ -51,12 +49,7 @@ async function initAccount() {
   try {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const { data: account } = await supabase
-      .schema('threads')
-      .from('threads_accounts')
-      .select('username, connection_status')
-      .eq('user_id', user.id)
-      .maybeSingle()
+    const { data: account } = await supabase.schema('threads').from('threads_accounts').select('username, connection_status').eq('user_id', user.id).maybeSingle()
     if (account) {
       accountConnected.value = account.connection_status === 'connected'
       accountUsername.value = account.username || ''
