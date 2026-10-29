@@ -326,5 +326,53 @@
       "remove": "Hapus",
       "ai_cost": "Kategori ini bakal pakai AI buat balas (potong 1 kredit per balasan, kecuali pakai API key sendiri)."
     }
+  },
+  "landing": {
+    "nav": {
+      "features": "Fitur",
+      "how_it_works": "Cara Kerja",
+      "faq": "FAQ",
+      "login": "Masuk",
+      "start_free": "Mulai Gratis"
+    },
+    "hero": {
+      "badge": "Akses Beta Tersedia (Gratis)",
+      "title_1": "Kembangkan Threads Kamu",
+      "title_2": "Tanpa Kelelahan.",
+      "subtitle": "Ixiera adalah asisten cerdas untuk kreator. Rencanakan konten, balas interaksi secara otomatis, dan pahami audiens kamu\u2014semuanya dalam satu tempat yang tenang.",
+      "cta_primary": "Mulai Gunakan Ixiera",
+      "cta_secondary": "Pelajari Fitur",
+      "no_cc": "Tanpa kartu kredit. Dirancang untuk kreator."
+    },
+    "features": {
+      "title": "Dirancang untuk Ketenangan Pikiranmu",
+      "subtitle": "Fokuslah pada ide dan karyamu. Biarkan Ixiera yang mengurus kerumitan operasional Threads.",
+      "f1_title": "Perencanaan Konten",
+      "f1_desc": "Tidak perlu lagi bingung mencari ide. AI kami membantu menyusun draf dan rencana konten 3 hari ke depan sesuai gayamu.",
+      "f2_title": "Interaksi Otomatis",
+      "f2_desc": "Jaga hubungan hangat dengan audiens. Ixiera membalas komentar dengan nada yang sopan dan relevan, memakai konteks brand kamu.",
+      "f3_title": "Analitik Mendalam",
+      "f3_desc": "Pahami kapan audiens kamu aktif dan topik apa yang mereka sukai. Ambil keputusan berdasarkan data, bukan tebakan."
+    },
+    "how": {
+      "title": "Mulai dalam 3 Langkah Sederhana",
+      "subtitle": "Tanpa perlu keahlian teknis. Kamu bisa langsung menghemat waktu dalam hitungan menit.",
+      "s1_title": "Hubungkan Akun",
+      "s1_desc": "Sambungkan akun Threads kamu dengan aman. Ixiera akan menyiapkan segalanya untukmu.",
+      "s2_title": "Kenalkan Brand Kamu",
+      "s2_desc": "Unggah dokumen atau ketik aturan gaya bahasamu. AI kami akan mempelajari persona unikmu.",
+      "s3_title": "Bekerja dengan Tenang",
+      "s3_desc": "Tinjau draf konten dan biarkan asisten kami mengurus interaksi harianmu secara otomatis."
+    },
+    "cta": {
+      "title": "Siap Memulai Perjalananmu?",
+      "subtitle": "Bergabunglah dengan kreator lain yang telah menemukan ketenangan dalam berkarya dengan bantuan Ixiera.",
+      "button": "Mulai Gunakan Ixiera"
+    },
+    "footer": {
+      "copy": "Dibuat dengan tenang untuk para kreator.",
+      "privacy": "Privasi",
+      "terms": "Ketentuan"
+    }
   }
 }

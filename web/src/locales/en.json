@@ -326,5 +326,53 @@
       "remove": "Remove",
       "ai_cost": "This category will generate replies using AI (costs 1 credit per reply, unless using your own API key)."
     }
+  },
+  "landing": {
+    "nav": {
+      "features": "Features",
+      "how_it_works": "How it Works",
+      "faq": "FAQ",
+      "login": "Sign In",
+      "start_free": "Start for Free"
+    },
+    "hero": {
+      "badge": "Beta Access Available (Free)",
+      "title_1": "Grow Your Threads",
+      "title_2": "Without the Burnout.",
+      "subtitle": "Ixiera is your smart assistant. Plan content, auto-reply to interactions, and understand your audience\u2014all in one calm space.",
+      "cta_primary": "Start Using Ixiera",
+      "cta_secondary": "Learn Features",
+      "no_cc": "No credit card required. Built for creators."
+    },
+    "features": {
+      "title": "Designed for Your Peace of Mind",
+      "subtitle": "Focus on your ideas and craft. Let Ixiera handle the operational complexity of Threads.",
+      "f1_title": "Content Planning",
+      "f1_desc": "Never run out of ideas again. Our AI helps draft and plan your next 3 days of content in your unique voice.",
+      "f2_title": "Auto Interactions",
+      "f2_desc": "Keep the conversation warm. Ixiera replies to comments politely and relevantly, using your brand context.",
+      "f3_title": "Deep Analytics",
+      "f3_desc": "Understand when your audience is active and what topics they love. Make decisions based on data, not guesses."
+    },
+    "how": {
+      "title": "Start in 3 Simple Steps",
+      "subtitle": "No technical skills needed. You can start saving time in minutes.",
+      "s1_title": "Connect Account",
+      "s1_desc": "Securely connect your Threads account. Ixiera will set everything up for you.",
+      "s2_title": "Introduce Your Brand",
+      "s2_desc": "Upload docs or type your tone rules. Our AI learns your unique persona.",
+      "s3_title": "Work in Peace",
+      "s3_desc": "Review content drafts and let our assistant handle your daily interactions automatically."
+    },
+    "cta": {
+      "title": "Ready to Start Your Journey?",
+      "subtitle": "Join other creators who found peace in creating with Ixiera.",
+      "button": "Start Using Ixiera"
+    },
+    "footer": {
+      "copy": "Built calmly for creators.",
+      "privacy": "Privacy",
+      "terms": "Terms"
+    }
   }
 }
