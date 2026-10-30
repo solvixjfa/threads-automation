@@ -1,41 +1,41 @@
 <template>
-  <div class="space-y-8 relative pb-24">
+  <div class="space-y-6 relative pb-24 w-full overflow-x-hidden">
     <div class="flex flex-wrap justify-between items-center gap-4">
       <div>
         <h1 class="text-2xl font-bold tracking-tight">{{ $t('comments.title') }}</h1>
         <p class="text-sm theme-text-muted mt-1">{{ $t('comments.subtitle') }}</p>
       </div>
       <div class="flex items-center gap-3">
-        <button @click="syncRepliesManual" :disabled="isSyncing || isBulkProcessing" class="btn btn-primary btn-sm">
+        <button @click="syncRepliesManual" :disabled="isSyncing || isBulkProcessing" class="btn btn-primary btn-sm whitespace-nowrap">
           <span v-if="isSyncing" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
           <span>{{ isSyncing ? $t('common.syncing') : $t('comments.sync') }}</span>
         </button>
       </div>
     </div>
 
-    <!-- AI SETTINGS BAR -->
-    <div class="p-4 rounded-xl border theme-border flex flex-wrap items-center justify-between gap-4" style="background: var(--bg-sec);">
+    <!-- AI SETTINGS BAR (Dibuat numpuk ke bawah di HP) -->
+    <div class="p-4 rounded-xl border theme-border flex flex-col md:flex-row md:items-center justify-between gap-4" style="background: var(--bg-sec);">
       <div class="flex items-center gap-3">
-        <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold transition-colors"
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-bold transition-colors w-full md:w-auto justify-center"
           :style="isUsingOwnKey ? 'border-color: var(--success); color: var(--success);' : (aiCredits > 0 ? 'border-color: var(--accent); color: var(--accent);' : 'border-color: var(--danger); color: var(--danger);')">
-          <span class="w-2 h-2 rounded-full" :style="isUsingOwnKey ? 'background: var(--success);' : (aiCredits > 0 ? 'background: var(--accent);' : 'background: var(--danger);')"></span>
+          <span class="w-2 h-2 rounded-full shrink-0" :style="isUsingOwnKey ? 'background: var(--success);' : (aiCredits > 0 ? 'background: var(--accent);' : 'background: var(--danger);')"></span>
           <span v-if="isUsingOwnKey">Unlimited (Own Key)</span>
           <span v-else-if="aiCredits > 0">{{ aiCredits }} Credits Left</span>
           <span v-else>Out of Credits</span>
         </div>
       </div>
-      <div class="flex items-center gap-3">
-        <Select v-model="aiProvider" :options="[{label: 'Groq (Fast)', value: 'groq'}, {label: 'Gemini (Smart)', value: 'gemini'}]" @update:model-value="fetchModels" />
-        <Select v-model="aiModel" :options="availableModels" :disabled="isLoadingModels" class="min-w-[150px]" />
+      <div class="grid grid-cols-2 md:flex items-center gap-2 w-full md:w-auto">
+        <Select v-model="aiProvider" :options="[{label: 'Groq', value: 'groq'}, {label: 'Gemini', value: 'gemini'}]" @update:model-value="fetchModels" class="w-full" />
+        <Select v-model="aiModel" :options="availableModels" :disabled="isLoadingModels" class="w-full md:min-w-[150px]" />
       </div>
     </div>
 
     <!-- SEARCH & FILTER -->
-    <div class="flex flex-col md:flex-row gap-3">
-      <div class="flex-1">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div class="md:col-span-2">
         <input v-model="searchQuery" type="text" :placeholder="$t('comments.search_ph')" class="input w-full" />
       </div>
-      <div class="w-full md:w-64">
+      <div class="w-full">
         <Select 
           v-model="filterCategory" 
           :options="[
@@ -51,38 +51,40 @@
       </div>
     </div>
 
-    <div class="flex justify-between items-end divider">
-      <div class="flex text-xs font-bold gap-5 overflow-x-auto">
-        <button @click="activeTab = 'review'" class="pb-3 border-b-2 transition -mb-px whitespace-nowrap" :class="tabClass('review')">
+    <!-- TABS (Dibuat scrollable horizontal biar gak jebol) -->
+    <div class="w-full border-b theme-border pb-0 overflow-x-auto">
+      <div class="flex items-center gap-5 w-max pb-3">
+        <button @click="activeTab = 'review'" class="text-xs font-bold transition whitespace-nowrap pb-1 border-b-2 -mb-[13px]" :class="tabClass('review')">
           {{ $t('comments.tab_review') }} ({{ reviewCount }})
         </button>
-        <button @click="activeTab = 'priority'" class="pb-3 border-b-2 transition -mb-px whitespace-nowrap" :class="tabClass('priority')">
+        <button @click="activeTab = 'priority'" class="text-xs font-bold transition whitespace-nowrap pb-1 border-b-2 -mb-[13px]" :class="tabClass('priority')">
           {{ $t('comments.tab_priority') }} ({{ priorityCount }})
         </button>
-        <button @click="activeTab = 'conversation'" class="pb-3 border-b-2 transition -mb-px whitespace-nowrap" :class="tabClass('conversation')">
+        <button @click="activeTab = 'conversation'" class="text-xs font-bold transition whitespace-nowrap pb-1 border-b-2 -mb-[13px]" :class="tabClass('conversation')">
           {{ $t('comments.tab_conversation') }} ({{ conversationCount }})
         </button>
-        <button @click="activeTab = 'history'" class="pb-3 border-b-2 transition -mb-px whitespace-nowrap" :class="tabClass('history')">
+        <button @click="activeTab = 'history'" class="text-xs font-bold transition whitespace-nowrap pb-1 border-b-2 -mb-[13px]" :class="tabClass('history')">
           {{ $t('comments.tab_history') }} ({{ historyCount }})
         </button>
       </div>
+    </div>
 
-      <div v-if="activeTab !== 'history' && currentReplies.length > 0" class="flex items-center gap-3 pb-3 shrink-0">
-        <label class="flex items-center gap-2 cursor-pointer text-xs font-bold theme-text-muted hover:theme-text">
-          <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-          {{ $t('comments.select_all') }}
-        </label>
-      </div>
+    <!-- SELECT ALL (Dipisah biar gak nabrak tab) -->
+    <div v-if="activeTab !== 'history' && currentReplies.length > 0" class="flex justify-end pt-2">
+      <label class="flex items-center gap-2 cursor-pointer text-xs font-bold theme-text-muted hover:theme-text">
+        <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+        {{ $t('comments.select_all') }}
+      </label>
     </div>
 
     <div v-if="loading" class="p-12 text-center text-xs theme-text-muted animate-pulse">{{ $t('common.loading') }}</div>
 
     <div v-else-if="activeTab !== 'history'" class="space-y-4">
-      <div v-if="currentReplies.length === 0" class="card p-12 text-center text-xs theme-text-muted">
+      <div v-if="currentReplies.length === 0" class="card p-8 text-center text-xs theme-text-muted">
         {{ emptyMessage }}
       </div>
 
-      <div v-for="item in currentReplies" :key="item.id" class="card p-6 space-y-4" :class="{'border-current shadow-sm': selectedIds.has(item.id)}">
+      <div v-for="item in currentReplies" :key="item.id" class="card p-4 md:p-6 space-y-3 md:space-y-4" :class="{'border-current shadow-sm': selectedIds.has(item.id)}">
         <div class="flex items-start gap-3">
           <input type="checkbox" :checked="selectedIds.has(item.id)" @change="toggleSelection(item.id)" class="w-4 h-4 mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500 shrink-0" />
           
@@ -90,48 +92,40 @@
             <div class="flex items-center gap-2 flex-wrap">
               <span class="text-[10px] font-bold uppercase tracking-wide theme-text">@{{ item.author_username }}</span>
               <Badge>{{ item.classification || 'unclassified' }}</Badge>
-              <span v-if="item.is_lead" class="badge badge-accent">
+              <span v-if="item.is_lead" class="badge badge-accent text-[9px]">
                 <span class="w-1.5 h-1.5 rounded-full animate-pulse" style="background: currentColor;"></span>
                 Lead
               </span>
             </div>
-            <p class="text-xs theme-text-muted">{{ formatDate(item.replied_at) }}</p>
+            <p class="text-[10px] md:text-xs theme-text-muted">{{ formatDate(item.replied_at) }}</p>
           </div>
         </div>
         
-        <div class="p-3.5 rounded-xl theme-bg-sec border theme-border space-y-3 ml-7">
-          <div v-if="item.media_url" class="rounded-lg overflow-hidden border theme-border max-w-sm">
+        <div class="p-3 md:p-3.5 rounded-xl theme-bg-sec border theme-border space-y-3 ml-0 md:ml-7">
+          <div v-if="item.media_url" class="rounded-lg overflow-hidden border theme-border max-w-full md:max-w-sm">
             <img :src="item.media_url" alt="Comment media" class="w-full h-auto object-cover" />
           </div>
-          <p v-if="item.text" class="text-xs font-semibold whitespace-pre-wrap">{{ item.text }}</p>
+          <p v-if="item.text" class="text-xs font-semibold whitespace-pre-wrap break-words">{{ item.text }}</p>
           <p v-else-if="!item.media_url" class="text-xs italic theme-text-muted">(No text content)</p>
         </div>
 
-        <div v-if="item.auto_reply_eligible" class="p-4 rounded-xl theme-bg-sec border theme-border ml-7">
-          <div class="flex justify-between items-center mb-2">
+        <div v-if="item.auto_reply_eligible" class="p-3 md:p-4 rounded-xl theme-bg-sec border theme-border ml-0 md:ml-7">
+          <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
             <div class="flex items-center gap-2">
               <span class="text-[10px] font-bold uppercase theme-text-sec">{{ $t('comments.draft_reply') }}</span>
               <Badge v-if="item.draft_mode === 'template'" variant="default">{{ $t('comments.from_template') }}</Badge>
               <Badge v-else-if="item.draft_mode === 'llm'" variant="accent">{{ $t('comments.ai_generated') }}</Badge>
             </div>
             
-            <button @click="generateAIDraft(item)" :disabled="generatingId === item.id || !item.text || isBulkProcessing" class="btn btn-secondary btn-sm" :class="{'opacity-50 cursor-not-allowed': !item.text || isBulkProcessing}">
+            <button @click="generateAIDraft(item)" :disabled="generatingId === item.id || !item.text || isBulkProcessing" class="btn btn-secondary btn-sm w-full sm:w-auto" :class="{'opacity-50 cursor-not-allowed': !item.text || isBulkProcessing}">
               <span v-if="generatingId === item.id" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
               <span>{{ generatingId === item.id ? $t('comments.generating') : $t('comments.regenerate_ai') }}</span>
             </button>
           </div>
-          <textarea v-model="item.draftText" rows="3" :placeholder="$t('comments.draft_ph')" class="textarea"></textarea>
+          <textarea v-model="item.draftText" rows="3" :placeholder="$t('comments.draft_ph')" class="textarea w-full text-xs"></textarea>
         </div>
 
-        <div v-else class="p-3 rounded-xl theme-bg-sec border theme-border ml-7">
-          <p class="text-[11px] theme-text-muted">
-            <span v-if="item.classification === 'spam'">Comment marked as spam. No draft generated.</span>
-            <span v-else-if="item.classification === 'toxic'">Comment marked as toxic. No draft generated.</span>
-            <span v-else>This comment is not in the auto-reply queue.</span>
-          </p>
-        </div>
-
-        <div class="flex justify-end items-center gap-3 ml-7">
+        <div class="flex justify-end items-center gap-2 md:gap-3 ml-0 md:ml-7">
           <button @click="skipReply(item)" :disabled="isBulkProcessing" class="btn btn-ghost btn-sm">{{ $t('comments.ignore') }}</button>
           <button @click="approveAndPublish(item)" :disabled="approvingId === item.id || !item.draftText || isBulkProcessing" class="btn btn-primary btn-sm">
             <span v-if="approvingId === item.id" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
@@ -144,33 +138,33 @@
     <div v-else class="card overflow-hidden">
       <div v-if="historyReplies.length === 0" class="p-12 text-center text-xs theme-text-muted">{{ $t('comments.no_history') }}</div>
       <div v-else class="list-divided">
-        <div v-for="item in historyReplies" :key="item.id" class="p-5 space-y-2">
-          <div class="flex justify-between items-center gap-3">
+        <div v-for="item in historyReplies" :key="item.id" class="p-4 md:p-5 space-y-2">
+          <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
             <div class="flex items-center gap-2 flex-wrap">
               <span class="text-[10px] font-bold uppercase tracking-wide theme-text">@{{ item.author_username }}</span>
               <Badge :variant="historyBadgeVariant(item)">{{ historyBadgeLabel(item) }}</Badge>
             </div>
-            <span class="text-xs theme-text-muted shrink-0">{{ formatDate(item.replied_at) }}</span>
+            <span class="text-[10px] md:text-xs theme-text-muted shrink-0">{{ formatDate(item.replied_at) }}</span>
           </div>
-          <p class="text-xs theme-text-muted italic whitespace-pre-wrap">{{ item.text }}</p>
-          <p v-if="item.draftText" class="text-xs font-medium p-3 rounded-lg theme-bg-sec border theme-border mt-2 whitespace-pre-wrap">{{ item.draftText }}</p>
+          <p class="text-xs theme-text-muted italic whitespace-pre-wrap break-words">{{ item.text }}</p>
+          <p v-if="item.draftText" class="text-xs font-medium p-3 rounded-lg theme-bg-sec border theme-border mt-2 whitespace-pre-wrap break-words">{{ item.draftText }}</p>
         </div>
       </div>
     </div>
 
     <Transition name="fade">
-      <div v-if="selectedIds.size > 0" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 px-6 py-3 rounded-full shadow-2xl border theme-border theme-bg-sec min-w-[300px] justify-between">
-        <div class="flex items-center gap-3">
-          <span class="text-sm font-bold theme-text whitespace-nowrap">{{ $t('comments.bulk_selected', { n: selectedIds.size }) }}</span>
-          <div class="w-px h-4 bg-current opacity-20"></div>
+      <div v-if="selectedIds.size > 0" class="fixed bottom-6 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:right-auto z-50 flex flex-col md:flex-row items-center gap-3 md:gap-4 px-4 md:px-6 py-3 rounded-2xl md:rounded-full shadow-2xl border theme-border theme-bg-sec md:min-w-[300px] justify-between">
+        <div class="flex items-center justify-between w-full md:w-auto gap-3">
+          <span class="text-xs md:text-sm font-bold theme-text whitespace-nowrap">{{ $t('comments.bulk_selected', { n: selectedIds.size }) }}</span>
+          <div class="hidden md:block w-px h-4 bg-current opacity-20"></div>
         </div>
-        <div class="flex items-center gap-3">
-          <button @click="handleBulkGenerate" :disabled="isBulkProcessing" class="text-xs font-bold text-blue-500 hover:text-blue-600 transition flex items-center gap-2">
+        <div class="flex items-center justify-between w-full md:w-auto gap-3">
+          <button @click="handleBulkGenerate" :disabled="isBulkProcessing" class="text-[11px] md:text-xs font-bold text-blue-500 hover:text-blue-600 transition flex items-center gap-1.5">
             <span v-if="isBulkProcessing" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
             {{ $t('comments.bulk_generate') }}
           </button>
-          <button @click="handleBulkIgnore" :disabled="isBulkProcessing" class="text-xs font-bold text-gray-500 hover:text-gray-700 transition">{{ $t('comments.bulk_ignore') }}</button>
-          <button @click="handleBulkPublish" :disabled="isBulkProcessing" class="text-xs font-bold text-green-500 hover:text-green-600 transition">{{ $t('comments.bulk_publish') }}</button>
+          <button @click="handleBulkIgnore" :disabled="isBulkProcessing" class="text-[11px] md:text-xs font-bold text-gray-500 hover:text-gray-700 transition">{{ $t('comments.bulk_ignore') }}</button>
+          <button @click="handleBulkPublish" :disabled="isBulkProcessing" class="text-[11px] md:text-xs font-bold text-green-500 hover:text-green-600 transition">{{ $t('comments.bulk_publish') }}</button>
         </div>
       </div>
     </Transition>
