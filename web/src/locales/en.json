@@ -348,10 +348,6 @@
       "p3_title": "Flying blind.",
       "p3_desc": "Which posts, what time, what hooks—it is all just a feeling."
     },
-    "founder": {
-      "quote": "I built Ixiera because I was tired of managing my Threads account while trying to write. This is still a private beta, so some things might not be perfect. If you run into issues, tell me directly, and I will fix it.",
-      "author": "[Name], founder of Ixiera"
-    },
     "features": {
       "title": "More than just a scheduler.",
       "f1_title": "A 3-day content plan from one topic.",
@@ -368,7 +364,7 @@
     },
     "examples": {
       "title": "Real Examples",
-      "label": "Illustration. [Replace with real account data]",
+      "label": "Illustration examples, not real data.",
       "insight_title": "Insight",
       "insight_desc": "\"Posts opening with a question get more replies than statements. Your best time: Tuesday, 19:30.\"",
       "reply_title": "Reply",
@@ -385,7 +381,7 @@
       "s1_title": "Register and request access.",
       "s1_desc": "Create an account, then send your Threads {'@'}username. I review it manually and email you back.",
       "s2_title": "Connect and teach your style.",
-      "s2_desc": "Once approved, accept the tester invite on Threads and log in via Meta. Upload sample posts or set style rules, then choose an AI engine.",
+      "s2_desc": "Once approved, accept the tester invite on Threads and log in via Meta. Upload sample posts or set style rules, then choose an AI engine: use free credits, or plug in your own API key (Gemini/Groq).",
       "s3_title": "Review and go.",
       "s3_desc": "Approve drafts, set reply modes, and check Analytics over the weekend."
     },
@@ -397,8 +393,7 @@
     },
     "beta": {
       "title": "Private beta, limited slots.",
-      "desc": "I am opening 25 slots so I can guide you directly and improve the product with you. During beta, core features are free.",
-      "counter": "[X] of 25 slots filled",
+      "desc": "I am opening 25 slots so I can guide you directly and improve the product with you. During beta, core features are free. After that, it will be paid, with early-bird pricing for beta users.",
       "cta": "Claim 1 of 25 Slots"
     },
     "faq": {
@@ -408,7 +403,7 @@
       "q2": "Is it free?",
       "a2": "During beta, core features are free for the first 25 users. After that, it will be paid.",
       "q3": "Does it post without my permission?",
-      "a3": "No, unless you enable it. Replies have two modes: Manual Review and Full Auto.",
+      "a3": "No, unless you enable it. Replies have two modes: Manual Review and Full Auto. The Kill Switch stops everything at any time.",
       "q4": "Can my account get blocked?",
       "a4": "You can set hourly reply limits to comply with Meta API policies.",
       "q5": "Can the AI reply rudely?",
@@ -424,7 +419,7 @@
     },
     "footer": {
       "copy": "Ixiera is an independent product and is not affiliated with Meta Platforms. Threads is a trademark of Meta.",
-      "contact": "Contact email",
+      "contact": "Email",
       "privacy": "Privacy Policy",
       "terms": "Terms & Conditions",
       "delete": "Data Deletion"

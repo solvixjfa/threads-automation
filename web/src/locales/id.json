@@ -348,10 +348,6 @@
       "p3_title": "Nggak tahu apa yang jalan.",
       "p3_desc": "Post mana, jam berapa, hook seperti apa, semua cuma feeling."
     },
-    "founder": {
-      "quote": "Aku bikin Ixiera karena capek ngurus akun Threads sambil nulis. Ini masih private beta, jadi ada yang belum sempurna. Kalau kamu ketemu masalah, kabari aku langsung, dan aku yang perbaiki.",
-      "author": "[Nama], founder Ixiera"
-    },
     "features": {
       "title": "Bukan sekadar scheduler.",
       "f1_title": "Rencana konten 3 hari dari satu topik.",
@@ -368,7 +364,7 @@
     },
     "examples": {
       "title": "Contoh Nyata",
-      "label": "Ilustrasi. [Ganti dengan data akun asli]",
+      "label": "Contoh ilustrasi, bukan data nyata.",
       "insight_title": "Insight",
       "insight_desc": "\"Post yang dibuka dengan pertanyaan dapat lebih banyak reply daripada pembuka pernyataan. Jam terbaikmu: Selasa, 19.30.\"",
       "reply_title": "Balasan",
@@ -385,7 +381,7 @@
       "s1_title": "Daftar dan minta akses.",
       "s1_desc": "Buat akun, lalu kirim {'@'}username Threads kamu. Aku cek manual dan kabari lewat email.",
       "s2_title": "Hubungkan dan ajari gayamu.",
-      "s2_desc": "Setelah disetujui, terima undangan tester di Threads dan login lewat sistem resmi Meta. Unggah contoh post atau tulis aturan gaya, lalu pilih mesin AI.",
+      "s2_desc": "Setelah disetujui, terima undangan tester di Threads dan login lewat sistem resmi Meta. Unggah contoh post atau tulis aturan gaya, lalu pilih mesin AI: pakai kredit gratis, atau pasang API key sendiri (Gemini/Groq).",
       "s3_title": "Review dan jalan.",
       "s3_desc": "Setujui draf, atur mode balasan, pantau Analytics di akhir pekan."
     },
@@ -397,8 +393,7 @@
     },
     "beta": {
       "title": "Private beta, slot terbatas.",
-      "desc": "Aku buka 25 slot supaya bisa mendampingi langsung dan memperbaiki produk bareng kamu. Selama beta, fitur inti gratis.",
-      "counter": "[X] dari 25 slot terisi",
+      "desc": "Aku buka 25 slot supaya bisa mendampingi langsung dan memperbaiki produk bareng kamu. Selama beta, fitur inti gratis. Setelah itu berbayar, dengan harga awal untuk pengguna beta.",
       "cta": "Ambil 1 dari 25 Slot"
     },
     "faq": {
@@ -408,7 +403,7 @@
       "q2": "Apakah ini gratis?",
       "a2": "Selama beta, fitur inti gratis untuk 25 pengguna pertama. Setelah itu berbayar.",
       "q3": "Apakah posting tanpa izinku?",
-      "a3": "Nggak, kecuali kamu aktifkan. Balasan punya dua mode: Review Manual dan Full Auto.",
+      "a3": "Nggak, kecuali kamu aktifkan. Balasan punya dua mode: Review Manual dan Full Auto. Kill Switch mematikan semuanya kapan saja.",
       "q4": "Apakah akunku bisa kena blokir?",
       "a4": "Kamu bisa atur batas balasan per jam agar sesuai kebijakan Meta API.",
       "q5": "Apakah balasannya bisa kasar?",

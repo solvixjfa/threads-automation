@@ -2,6 +2,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { supabase } from '../lib/supabase'
 
 import LandingView from '../views/LandingView.vue'
+import PrivacyView from '../views/PrivacyView.vue'
+import TermsView from '../views/TermsView.vue'
+import DataDeletionView from '../views/DataDeletionView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import SettingsLayout from '../views/settings/SettingsLayout.vue'
 import AccountView from '../views/settings/AccountView.vue'
@@ -29,6 +32,9 @@ const router = createRouter({
   routes: [
     // LANDING PAGE DI ROOT
     { path: '/', name: 'landing', component: LandingView },
+    { path: '/privacy', name: 'privacy', component: PrivacyView },
+    { path: '/terms', name: 'terms', component: TermsView },
+    { path: '/data-deletion', name: 'data-deletion', component: DataDeletionView },
     
     { path: '/login', name: 'login', component: LoginView },
     { path: '/update-password', name: 'update-password', component: UpdatePasswordView },
