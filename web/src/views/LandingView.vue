@@ -114,7 +114,7 @@
             <p class="theme-text-muted text-sm">{{ $t('landing.problems.p2_desc') }}</p>
           </div>
           <div class="p-6 text-center space-y-2">
-            <div class="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-4 bg-blue-500/10 text-blue-500"><Blind class="w-6 h-6" /></div>
+            <div class="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-4 bg-blue-500/10 text-blue-500"><EyeOff class="w-6 h-6" /></div>
             <h3 class="text-lg font-bold">{{ $t('landing.problems.p3_title') }}</h3>
             <p class="theme-text-muted text-sm">{{ $t('landing.problems.p3_desc') }}</p>
           </div>
@@ -180,7 +180,7 @@
       </div>
     </section>
 
-    <!-- CONTOH NYATA (Kartu UI dari Teks) -->
+    <!-- CONTOH NYATA -->
     <section id="contoh-nyata" class="py-20">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-12">
@@ -189,7 +189,6 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <!-- Insight Card -->
           <div class="p-6 rounded-2xl border theme-border bg-[var(--bg)] shadow-lg space-y-4 relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-1 bg-[var(--accent)]"></div>
             <h3 class="font-bold flex items-center gap-2 text-sm uppercase tracking-wide text-[var(--accent)]">
@@ -198,7 +197,6 @@
             <p class="text-sm theme-text leading-relaxed">{{ $t('landing.examples.insight_desc') }}</p>
           </div>
 
-          <!-- Balasan Card -->
           <div class="p-6 rounded-2xl border theme-border bg-[var(--bg)] shadow-lg space-y-4 relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-1 bg-[var(--success)]"></div>
             <h3 class="font-bold flex items-center gap-2 text-sm uppercase tracking-wide text-[var(--success)]">
@@ -210,7 +208,6 @@
             </div>
           </div>
 
-          <!-- Repurpose Card -->
           <div class="p-6 rounded-2xl border theme-border bg-[var(--bg)] shadow-lg space-y-4 relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-1 bg-purple-500"></div>
             <h3 class="font-bold flex items-center gap-2 text-sm uppercase tracking-wide text-purple-500">
@@ -222,7 +219,7 @@
       </div>
     </section>
 
-    <!-- BUKTI NYATA (KONDISIONAL) -->
+    <!-- BUKTI NYATA -->
     <section v-if="false" class="py-10 px-4">
       <div class="max-w-3xl mx-auto p-6 rounded-2xl border border-green-500/30 bg-green-500/5 text-center">
         <p class="text-sm text-green-600 dark:text-green-400 font-medium">
@@ -344,7 +341,7 @@ import { useI18n } from 'vue-i18n'
 import { useTheme } from '../composables/useTheme'
 import { 
   Menu, X, ArrowRight, Sun, Moon, ChevronDown, 
-  ShieldCheck, ToggleRight, Lock, BrainCircuit, MessageSquareDashed, Blind,
+  ShieldCheck, ToggleRight, Lock, BrainCircuit, MessageSquareDashed, EyeOff,
   PenTool, MessageCircle, BarChart3, RotateCcw, CheckCircle, Sparkles, Power
 } from 'lucide-vue-next'
 
