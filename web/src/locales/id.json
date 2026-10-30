@@ -333,60 +333,108 @@
       "how_it_works": "Cara Kerja",
       "faq": "FAQ",
       "login": "Masuk",
-      "start_free": "Minta Akses"
+      "start_free": "Ambil 1 dari 25 Slot"
     },
     "hero": {
-      "badge": "Early Access",
-      "title_1": "Kembangkan Threads Kamu",
-      "title_2": "Tanpa Kelelahan.",
-      "subtitle": "Ixiera adalah asisten cerdas untuk kreator. Rencanakan konten, balas interaksi secara otomatis, dan pahami audiens kamu\u2014semuanya dalam satu tempat yang tenang.",
-      "cta_primary": "Minta Akses Early Access",
-      "cta_secondary": "Pelajari Fitur",
-      "no_cc": "Tanpa kartu kredit. Dirancang untuk kreator."
+      "badge": "Private Beta \u00b7 25 slot",
+      "title_1": "Posting yang belajar dari",
+      "title_2": "akun kamu sendiri.",
+      "subtitle": "Ixiera membaca post kamu yang paling jalan (jam, hook, topik), lalu membantu bikin rencana konten dan membalas komentar dengan gayamu.",
+      "cta_primary": "Ambil 1 dari 25 Slot",
+      "cta_secondary": "Lihat contohnya",
+      "trust_1": "Login resmi Meta, tanpa simpan password",
+      "trust_2": "Kamu yang kendalikan, ada Kill Switch",
+      "trust_3": "Data kamu terpisah dari user lain"
+    },
+    "problems": {
+      "title": "Jadi admin akun sendiri itu melelahkan.",
+      "p1_title": "Bingung mau posting apa.",
+      "p1_desc": "Ide habis padahal harus konsisten.",
+      "p2_title": "Komentar numpuk.",
+      "p2_desc": "Telat balas, interaksi dan momentum hilang.",
+      "p3_title": "Nggak tahu apa yang jalan.",
+      "p3_desc": "Post mana, jam berapa, hook seperti apa, semua cuma feeling."
+    },
+    "founder": {
+      "quote": "Aku bikin Ixiera karena capek ngurus akun Threads sambil nulis. Ini masih private beta, jadi ada yang belum sempurna. Kalau kamu ketemu masalah, kabari aku langsung, dan aku yang perbaiki.",
+      "author": "[Nama], founder Ixiera"
     },
     "features": {
-      "title": "Dirancang untuk Ketenangan Pikiranmu",
-      "subtitle": "Fokuslah pada ide dan karyamu. Biarkan Ixiera yang mengurus kerumitan operasional Threads.",
-      "f1_title": "Perencanaan Konten",
-      "f1_desc": "Tidak perlu lagi bingung mencari ide. AI kami membantu menyusun draf dan rencana konten 3 hari ke depan sesuai gayamu.",
-      "f2_title": "Interaksi Otomatis",
-      "f2_desc": "Jaga hubungan hangat dengan audiens. Ixiera membalas komentar dengan nada yang sopan dan relevan, memakai konteks brand kamu.",
-      "f3_title": "Analitik Mendalam",
-      "f3_desc": "Pahami kapan audiens kamu aktif dan topik apa yang mereka sukai. Ambil keputusan berdasarkan data, bukan tebakan."
+      "title": "Bukan sekadar scheduler.",
+      "f1_title": "Rencana konten 3 hari dari satu topik.",
+      "f1_desc": "Kasih satu topik, dapat rencana post lengkap dengan gaya tulisanmu.",
+      "f2_title": "Balasan komentar sesuai gayamu.",
+      "f2_desc": "Pilih Review Manual (kamu setujui dulu) atau Full Auto. Atur batas balasan per jam.",
+      "f3_title": "Tahu apa yang jalan.",
+      "f3_desc": "Jam terbaik, tipe hook yang menarik, dan topik yang disukai audiensmu, dari data akunmu.",
+      "f4_title": "Satu post sukses jadi tiga.",
+      "f4_desc": "Ubah post lama yang ramai jadi Listicle, Opini, atau Cerita sekali klik.",
+      "small_1": "Laporan visual pertumbuhan, views, dan engagement",
+      "small_2": "Knowledge Base gaya bahasa",
+      "small_3": "Antarmuka ID/EN"
+    },
+    "examples": {
+      "title": "Contoh Nyata",
+      "label": "Ilustrasi. [Ganti dengan data akun asli]",
+      "insight_title": "Insight",
+      "insight_desc": "\"Post yang dibuka dengan pertanyaan dapat lebih banyak reply daripada pembuka pernyataan. Jam terbaikmu: Selasa, 19.30.\"",
+      "reply_title": "Balasan",
+      "reply_incoming": "Komentar: \"Kak, tips bikin hook kayak gini gimana?\"",
+      "reply_outgoing": "Balasan: \"Makasih kak! Mulai dari satu pertanyaan yang bikin orang pengin jawab. Nanti aku bahas lengkap di post berikutnya \ud83d\udc40\"",
+      "repurpose_title": "Repurpose",
+      "repurpose_desc": "1 post lama \u2192 versi Listicle \u00b7 Opini \u00b7 Cerita"
+    },
+    "proof": {
+      "text": "Akun [@username founder] memakai Ixiera sejak [tanggal]. [Hasil nyata]"
     },
     "how": {
-      "title": "Mulai dalam 3 Langkah Sederhana",
-      "subtitle": "Tanpa perlu keahlian teknis. Kamu bisa langsung menghemat waktu dalam hitungan menit.",
-      "s1_title": "Hubungkan Akun",
-      "s1_desc": "Sambungkan akun Threads kamu dengan aman. Ixiera akan menyiapkan segalanya untukmu.",
-      "s2_title": "Kenalkan Brand Kamu",
-      "s2_desc": "Unggah dokumen atau ketik aturan gaya bahasamu. AI kami akan mempelajari persona unikmu.",
-      "s3_title": "Bekerja dengan Tenang",
-      "s3_desc": "Tinjau draf konten dan biarkan asisten kami mengurus interaksi harianmu secara otomatis."
+      "title": "Mulai dalam 3 langkah.",
+      "s1_title": "Daftar dan minta akses.",
+      "s1_desc": "Buat akun, lalu kirim @username Threads kamu. Aku cek manual dan kabari lewat email.",
+      "s2_title": "Hubungkan dan ajari gayamu.",
+      "s2_desc": "Setelah disetujui, terima undangan tester di Threads dan login lewat sistem resmi Meta. Unggah contoh post atau tulis aturan gaya, lalu pilih mesin AI: kredit gratis, atau pasang API key sendiri (Gemini/Groq).",
+      "s3_title": "Review dan jalan.",
+      "s3_desc": "Setujui draf, atur mode balasan, pantau Analytics di akhir pekan."
     },
-    "cta": {
-      "title": "Siap Memulai Perjalananmu?",
-      "subtitle": "Bergabunglah dengan kreator lain yang telah menemukan ketenangan dalam berkarya dengan bantuan Ixiera.",
-      "button": "Mulai Gunakan Ixiera"
+    "security": {
+      "title": "Keamanan",
+      "s1": "Password Threads tidak pernah disimpan. Login hanya lewat OAuth resmi Meta.",
+      "s2": "Data analitik dan dokumen gayamu terpisah dari user lain.",
+      "s3": "Matikan otomatisasi atau putus koneksi kapan saja lewat Kill Switch, tanpa perantara."
     },
-    "footer": {
-      "copy": "Dibuat dengan tenang untuk para kreator.",
-      "privacy": "Privasi",
-      "terms": "Ketentuan"
+    "beta": {
+      "title": "Private beta, slot terbatas.",
+      "desc": "Aku buka 25 slot supaya bisa mendampingi langsung dan memperbaiki produk bareng kamu. Selama beta, fitur inti gratis. Setelah itu berbayar, dengan harga awal untuk pengguna beta.",
+      "counter": "[X] dari 25 slot terisi",
+      "cta": "Ambil 1 dari 25 Slot"
     },
     "faq": {
-      "title": "Pertanyaan Umum",
-      "q1": "Kenapa saya harus minta akses?",
-      "a1": "Ixiera saat ini masih dalam tahap Early Access. Kami memverifikasi setiap akun secara manual untuk memastikan kualitas dan kapasitas server. Kami akan mengabari kamu lewat email setelah akun disetujui.",
+      "title": "FAQ",
+      "q1": "Kenapa harus minta akses?",
+      "a1": "Ixiera masih early access dan aplikasinya masih mode developer di Meta. Aku menambahkan tiap akun secara manual, jadi kamu perlu disetujui dulu. Kabar lewat email.",
       "q2": "Apakah ini gratis?",
-      "a2": "Ya, selama fase Early Access, semua fitur bisa digunakan secara gratis.",
-      "q3": "Apakah ini otomatis posting tanpa izin saya?",
-      "a3": "Tidak. Secara bawaan, Ixiera akan membuat draf balasan untuk kamu tinjau. Kamu bisa mengaktifkan mode full-auto nanti jika sudah yakin."
+      "a2": "Selama beta, fitur inti gratis untuk 25 pengguna pertama. Setelah itu berbayar.",
+      "q3": "Apakah posting tanpa izinku?",
+      "a3": "Nggak, kecuali kamu aktifkan. Balasan punya dua mode: Review Manual dan Full Auto. Kill Switch mematikan semuanya kapan saja.",
+      "q4": "Apakah akunku bisa kena blokir?",
+      "a4": "Kamu bisa atur batas balasan per jam agar sesuai kebijakan Meta API. Keputusan akhir tetap di Meta, jadi mulai dari batas rendah.",
+      "q5": "Apakah balasannya bisa kasar?",
+      "a5": "Atur \"Tone Prompt\" di Pengaturan, AI diarahkan sopan, singkat, dan sesuai gayamu.",
+      "q6": "Apa bedanya dengan scheduler biasa?",
+      "a6": "Scheduler hanya menjadwalkan. Ixiera belajar dari data akunmu untuk menentukan apa, kapan, dan bagaimana kamu posting.",
+      "q7": "Harus paham teknis?",
+      "a7": "Nggak. Ada panduan langkah demi langkah, dan opsi kredit tanpa urusan API key."
     },
-    "modal": {
-      "title": "Minta Akses Early Access",
-      "desc": "Karena Ixiera masih dalam tahap awal, kami perlu menyetujui akunmu secara manual demi kenyamanan bersama. Silakan daftar dengan emailmu, dan kami akan segera mengabari.",
-      "cta": "Lanjut ke Pendaftaran"
+    "cta": {
+      "title": "Siap berhenti nebak-nebak?",
+      "button": "Ambil 1 dari 25 Slot"
+    },
+    "footer": {
+      "copy": "Ixiera adalah produk independen dan tidak berafiliasi dengan Meta Platforms. Threads adalah merek dagang Meta.",
+      "contact": "Email kontak",
+      "privacy": "Kebijakan Privasi",
+      "terms": "Syarat & Ketentuan",
+      "delete": "Hapus Data"
     }
   }
 }

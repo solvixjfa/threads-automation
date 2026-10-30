@@ -332,61 +332,109 @@
       "features": "Features",
       "how_it_works": "How it Works",
       "faq": "FAQ",
-      "login": "Sign In",
-      "start_free": "Request Access"
+      "login": "Log in",
+      "start_free": "Claim 1 of 25 Slots"
     },
     "hero": {
-      "badge": "Early Access",
-      "title_1": "Grow Your Threads",
-      "title_2": "Without the Burnout.",
-      "subtitle": "Ixiera is your smart assistant. Plan content, auto-reply to interactions, and understand your audience\u2014all in one calm space.",
-      "cta_primary": "Request Early Access",
-      "cta_secondary": "Learn Features",
-      "no_cc": "No credit card required. Built for creators."
+      "badge": "Private Beta \u00b7 25 slots",
+      "title_1": "Posts that learn from",
+      "title_2": "your own account.",
+      "subtitle": "Ixiera reads your best-performing posts (time, hooks, topics) and helps you plan content and reply to comments in your own voice.",
+      "cta_primary": "Claim 1 of 25 Slots",
+      "cta_secondary": "See examples",
+      "trust_1": "Official Meta login, we never store passwords",
+      "trust_2": "You are in control, with a Kill Switch",
+      "trust_3": "Your data is isolated from other users"
+    },
+    "problems": {
+      "title": "Being your own account admin is exhausting.",
+      "p1_title": "Stuck on what to post.",
+      "p1_desc": "Running out of ideas while trying to stay consistent.",
+      "p2_title": "Comments pile up.",
+      "p2_desc": "Replying late kills engagement and momentum.",
+      "p3_title": "Flying blind.",
+      "p3_desc": "Which posts, what time, what hooks\u2014it is all just a feeling."
+    },
+    "founder": {
+      "quote": "I built Ixiera because I was tired of managing my Threads account while trying to write. This is still a private beta, so some things might not be perfect. If you run into issues, tell me directly, and I will fix it.",
+      "author": "[Name], founder of Ixiera"
     },
     "features": {
-      "title": "Designed for Your Peace of Mind",
-      "subtitle": "Focus on your ideas and craft. Let Ixiera handle the operational complexity of Threads.",
-      "f1_title": "Content Planning",
-      "f1_desc": "Never run out of ideas again. Our AI helps draft and plan your next 3 days of content in your unique voice.",
-      "f2_title": "Auto Interactions",
-      "f2_desc": "Keep the conversation warm. Ixiera replies to comments politely and relevantly, using your brand context.",
-      "f3_title": "Deep Analytics",
-      "f3_desc": "Understand when your audience is active and what topics they love. Make decisions based on data, not guesses."
+      "title": "More than just a scheduler.",
+      "f1_title": "A 3-day content plan from one topic.",
+      "f1_desc": "Give one topic, get a full post plan in your writing style.",
+      "f2_title": "Comments replied in your voice.",
+      "f2_desc": "Choose Manual Review (you approve first) or Full Auto. Set a hourly reply limit.",
+      "f3_title": "Know what works.",
+      "f3_desc": "Best times, engaging hook types, and audience-favorite topics\u2014straight from your account data.",
+      "f4_title": "Turn one viral post into three.",
+      "f4_desc": "Convert an old high-performing post into a Listicle, Opinion, or Story with one click.",
+      "small_1": "Visual growth, views, and engagement reports",
+      "small_2": "Brand voice Knowledge Base",
+      "small_3": "ID/EN Interface"
+    },
+    "examples": {
+      "title": "Real Examples",
+      "label": "Illustration. [Replace with real account data]",
+      "insight_title": "Insight",
+      "insight_desc": "\"Posts opening with a question get more replies than statements. Your best time: Tuesday, 19:30.\"",
+      "reply_title": "Reply",
+      "reply_incoming": "Comment: \"How do you write hooks like this?\"",
+      "reply_outgoing": "Reply: \"Thanks! Start with a question that makes people want to answer. I will cover it in detail in my next post \ud83d\udc40\"",
+      "repurpose_title": "Repurpose",
+      "repurpose_desc": "1 old post \u2192 Listicle \u00b7 Opinion \u00b7 Story version"
+    },
+    "proof": {
+      "text": "[@username founder] has used Ixiera since [date]. [Real result]"
     },
     "how": {
-      "title": "Start in 3 Simple Steps",
-      "subtitle": "No technical skills needed. You can start saving time in minutes.",
-      "s1_title": "Connect Account",
-      "s1_desc": "Securely connect your Threads account. Ixiera will set everything up for you.",
-      "s2_title": "Introduce Your Brand",
-      "s2_desc": "Upload docs or type your tone rules. Our AI learns your unique persona.",
-      "s3_title": "Work in Peace",
-      "s3_desc": "Review content drafts and let our assistant handle your daily interactions automatically."
+      "title": "Start in 3 simple steps.",
+      "s1_title": "Register and request access.",
+      "s1_desc": "Create an account, then send your Threads @username. I review it manually and email you back.",
+      "s2_title": "Connect and teach your style.",
+      "s2_desc": "Once approved, accept the tester invite on Threads and log in via Meta. Upload sample posts or set style rules, then choose an AI engine: free credits or your own API key (Gemini/Groq).",
+      "s3_title": "Review and go.",
+      "s3_desc": "Approve drafts, set reply modes, and check Analytics over the weekend."
     },
-    "cta": {
-      "title": "Ready to Start Your Journey?",
-      "subtitle": "Join other creators who found peace in creating with Ixiera.",
-      "button": "Start Using Ixiera"
+    "security": {
+      "title": "Security",
+      "s1": "Threads passwords are never stored. Login is strictly via official Meta OAuth.",
+      "s2": "Your analytics and style documents are isolated from other users.",
+      "s3": "Turn off automation or disconnect anytime with the Kill Switch, no middleman."
     },
-    "footer": {
-      "copy": "Built calmly for creators.",
-      "privacy": "Privacy",
-      "terms": "Terms"
+    "beta": {
+      "title": "Private beta, limited slots.",
+      "desc": "I am opening 25 slots so I can guide you directly and improve the product with you. During beta, core features are free. After that, it will be paid, with early-bird pricing for beta users.",
+      "counter": "[X] of 25 slots filled",
+      "cta": "Claim 1 of 25 Slots"
     },
     "faq": {
-      "title": "Frequently Asked Questions",
+      "title": "FAQ",
       "q1": "Why do I need to request access?",
-      "a1": "Ixiera is currently in Early Access. We manually verify each account to ensure the best experience and manage server capacity. We will notify you via email once your account is approved.",
+      "a1": "Ixiera is in early access and the app is still in Meta developer mode. I manually add each account, so you need to be approved first. You will be notified via email.",
       "q2": "Is it free?",
-      "a2": "Yes, during the Early Access phase, all features are completely free to use.",
-      "q3": "Does it auto-post without my permission?",
-      "a3": "No. By default, Ixiera will draft replies for your review. You can enable full-auto mode later if you trust the AI persona."
+      "a2": "During beta, core features are free for the first 25 users. After that, it will be paid.",
+      "q3": "Does it post without my permission?",
+      "a3": "No, unless you enable it. Replies have two modes: Manual Review and Full Auto. The Kill Switch stops everything at any time.",
+      "q4": "Can my account get blocked?",
+      "a4": "You can set hourly reply limits to comply with Meta API policies. The final decision rests with Meta, so start with a low limit.",
+      "q5": "Can the AI reply rudely?",
+      "a5": "Set the \"Tone Prompt\" in Settings. The AI is directed to be polite, concise, and match your style.",
+      "q6": "How is this different from a scheduler?",
+      "a6": "Schedulers just schedule. Ixiera learns from your account data to determine what, when, and how you post.",
+      "q7": "Do I need technical skills?",
+      "a7": "No. There is a step-by-step guide and a credit option with no API key required."
     },
-    "modal": {
-      "title": "Request Early Access",
-      "desc": "Since Ixiera is in its early phase, we need to manually approve your account to ensure quality. Please register using your email, and we will notify you shortly.",
-      "cta": "Go to Registration"
+    "cta": {
+      "title": "Ready to stop guessing?",
+      "button": "Claim 1 of 25 Slots"
+    },
+    "footer": {
+      "copy": "Ixiera is an independent product and is not affiliated with Meta Platforms. Threads is a trademark of Meta.",
+      "contact": "Contact email",
+      "privacy": "Privacy Policy",
+      "terms": "Terms & Conditions",
+      "delete": "Data Deletion"
     }
   }
 }
