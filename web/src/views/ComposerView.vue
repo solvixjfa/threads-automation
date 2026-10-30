@@ -63,10 +63,15 @@
         </div>
 
         <div v-if="aiResults.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3 divider">
-          <div v-for="item in aiResults" :key="item.id" class="card card-hover p-4 flex flex-col justify-between space-y-3">
-            <div class="space-y-1.5">
-              <Badge variant="accent">{{ item.title }}</Badge>
-              <p class="text-xs whitespace-pre-wrap leading-relaxed">{{ item.content }}</p>
+          <!-- FIX: Tambahin min-w-0 biar grid gak jebol -->
+          <div v-for="item in aiResults" :key="item.id" class="card card-hover p-4 flex flex-col justify-between space-y-3 min-w-0">
+            <div class="space-y-2 min-w-0">
+              <!-- FIX: Ganti Badge jadi div dengan break-words -->
+              <div class="inline-block px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[var(--accent)] text-white leading-tight break-words whitespace-normal">
+                {{ item.title }}
+              </div>
+              <!-- FIX: Tambahin break-words di paragraf -->
+              <p class="text-xs whitespace-pre-wrap leading-relaxed break-words">{{ item.content }}</p>
             </div>
             <Button variant="secondary" size="sm" @click="applyAiDraft(item.content)">Use This Draft</Button>
           </div>
