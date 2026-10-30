@@ -1,40 +1,43 @@
-# Ixiera — Threads Automation & Intelligence
+# Ixiera - Threads Automation & Intelligence
 
-Sistem full-stack untuk otomasi dan analitik platform Threads (Meta). Aplikasi ini mencakup auto-reply cerdas berbasis RAG (Retrieval-Augmented Generation), penjadwalan posting, analitik performa, dan deteksi *lead*.
+Ixiera adalah platform SaaS all-in-one untuk kreator, agency, dan bisnis untuk mengelola akun Threads secara otomatis. Dibangun dengan arsitektur modern yang memisahkan antara Frontend, Backend AI, dan Database.
 
-## 🏗️ Arsitektur Sistem
+## 🚀 Fitur Utama
+- **AI Content Planner**: Membuat rencana konten 3 hari ke depan berdasarkan histori dan RAG.
+- **Auto-Reply Cerdas**: Membalas komentar menggunakan AI (HITL / Full Auto) dengan persona brand.
+- **Repurpose Engine**: Mengubah postingan lama menjadi 3 angle baru yang segar.
+- **Deep Analytics**: Analisis Best Time, Hook, Length, dan Topic Clustering (menggunakan ML).
+- **BYOK (Bring Your Own Key)**: Dukungan API Key Groq/Gemini milik user sendiri untuk menghemat biaya server.
+- **Multi-Bahasa**: Dukungan penuh Bahasa Indonesia (ID) dan Inggris (EN).
 
-1. **Frontend (`/web`)**: Vue 3 + Vite + Tailwind + Pinia. Di-deploy otomatis via **Vercel**.
-2. **Backend Core (`/backend`)**: Python + FastAPI. Menangani background worker untuk antrean balasan, klasifikasi teks, dan AI. Di-deploy via **Railway**.
-3. **Supabase Edge Functions (`/supabase/functions`)**: Deno + TypeScript. Menangani webhook Meta dan OAuth. Di-deploy via **Supabase CLI**.
+## 🛠️ Tech Stack
+- **Frontend**: Vue 3, Vite, TailwindCSS, Pinia, Vue Router, Vue-i18n. Di-deploy di **Vercel**.
+- **Backend (API & AI)**: Python, FastAPI, Scikit-Learn (untuk ML), Groq SDK, Google GenAI. Di-deploy di **Railway**.
+- **Database & Auth**: Supabase (PostgreSQL), pgvector (untuk RAG).
+- **Edge Functions**: Deno (TypeScript) untuk Webhook, OAuth, dan task ringan. Di-deploy di **Supabase**.
+- **Email**: Resend API.
 
 ## 📁 Struktur Direktori
-- `backend/` — FastAPI Engine, Services (RAG, AI, Classifier), Worker.
-- `web/` — Frontend Vue 3.
-- `supabase/` — Edge Functions & Migrations SQL.
-- `docs/` — Dokumentasi arsitektur.
+- `/backend` - Python FastAPI, Logic AI, Worker background (Queue, Metrics, Replies).
+- `/web` - Vue 3 Frontend.
+- `/supabase` - Migrations SQL, Edge Functions (OAuth, Webhook, Worker ringan).
+- `/docs` - Dokumentasi teknis & arsitektur.
 
-## 🚀 Panduan Deployment (Production)
+## ⚙️ Environment Variables
 
-### 1. Frontend (Vercel)
-- Hubungkan repository GitHub ini ke Vercel.
-- Set Root Directory ke `web`.
-- Tambahkan Environment Variables di dashboard Vercel:
-  - `VITE_SUPABASE_URL`
-  - `VITE_SUPABASE_ANON_KEY`
-- Deploy otomatis setiap ada push ke branch `main`.
+### Backend (`/backend/.env`)
+- `SUPABASE_URL`: URL project Supabase.
+- `SUPABASE_SERVICE_ROLE_KEY`: Secret key (Bypass RLS).
+- `GEMINI_API_KEY`: API Key Google Gemini.
+- `GROQ_API_KEY`: API Key Groq (untuk fallback/primary text generation).
+- `DISCORD_WEBHOOK_URL`: Notifikasi error/health.
 
-### 2. Backend (Railway)
-- Hubungkan repository ke Railway.
-- Set Root Directory ke `backend`.
-- Railway akan otomatis mendeteksi `Dockerfile` dan melakukan build.
-- Tambahkan Environment Variables di dashboard Railway:
-  - `SUPABASE_URL`
-  - `SUPABASE_SERVICE_ROLE_KEY`
-  - `GEMINI_API_KEY`
-  - `GEMINI_MODEL`
-  - `DISCORD_WEBHOOK_URL`
+### Frontend (`/web/.env`)
+- `VITE_SUPABASE_URL`: URL project Supabase.
+- `VITE_SUPABASE_ANON_KEY`: Public anon key.
 
-### 3. Supabase (Edge Functions)
-- Deploy otomatis berjalan via GitHub Actions (`.github/workflows/deploy-functions.yml`).
-- Pastikan `SUPABASE_ACCESS_TOKEN` sudah diset di GitHub Secrets.
+## 🚀 Cara Deploy
+1. **Database**: Jalankan semua file di `supabase/migrations` ke Supabase SQL Editor.
+2. **Backend**: Hubungkan repo ke Railway, set Root Directory ke `/backend`, dan masukkan env vars.
+3. **Frontend**: Hubungkan repo ke Vercel, set Root Directory ke `/web`, masukkan env vars.
+4. **Edge Functions**: Push ke branch `main`, GitHub Actions akan otomatis deploy fungsi ke Supabase.

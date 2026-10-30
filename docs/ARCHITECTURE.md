@@ -1,17 +1,33 @@
-# Arsitektur & Alur Data Ixiera
+# Arsitektur Sistem Ixiera
 
-## 1. Alur Auto-Reply (Backend Python)
-1. Komentar baru masuk dari Webhook Threads (via Supabase Edge Function).
-2. Data masuk ke tabel antrean `reply_queue` di database Supabase.
-3. `reply_worker_loop` (berjalan di FastAPI) melakukan *polling* data dari antrean.
-4. `comment_classifier.py` mengklasifikasi komentar (Spam/Toxic di-skip, Question/Lead diproses).
-5. `rag.py` melakukan pencarian vektor ke tabel `brand_knowledge` untuk mendapatkan konteks.
-6. `auto_reply.py` merangkai prompt dan memanggil Gemini API.
-7. `publish_reply_to_threads` mengirim balasan ke Meta Graph API.
-8. Status antrean di database diperbarui (Sukses/Gagal).
+Ixiera menggunakan arsitektur *hybrid* untuk memisahkan beban kerja berat dan ringan.
 
-## 2. Alur Content Composer (Frontend)
-1. User mengisi topik dan tone di `ComposerView.vue`.
-2. Frontend memanggil Edge Function `generate-post` (Supabase).
-3. Edge Function memanggil Gemini API dengan prompt RAG.
-4. AI mengembalikan 3 draf (JSON). User memilih dan menjadwalkan post.
+## 1. Frontend (Vue 3 di Vercel)
+- Berkomunikasi langsung dengan Supabase (Auth & Query data ringan).
+- Memanggil Edge Functions Supabase untuk tugas ringan (OAuth, Webhook).
+- Memanggil Backend Python di Railway untuk tugas berat (AI Generation, ML Clustering).
+
+## 2. Backend Python (FastAPI di Railway)
+- **API**: Menyediakan endpoint untuk generate content, repurpose, scoring, dan embedding.
+- **Worker Loop**: Berjalan di background (asyncio) untuk:
+  - Menarik komentar baru dari Meta API.
+  - Melakukan klasifikasi teks (Spam, Toxic, Question).
+  - Memanggil AI (Groq/Gemini) untuk membuat draf balasan.
+  - Mempublikasikan balasan secara otomatis (jika mode Auto).
+- **Machine Learning**: Menggunakan `scikit-learn` (TF-IDF + KMeans) untuk clustering topik secara lokal tanpa membebani API LLM.
+
+## 3. Supabase (Database, Auth, Edge Functions)
+- **Database**: PostgreSQL dengan ekstensi `pgvector` untuk RAG (Retrieval-Augmented Generation).
+- **Edge Functions (Deno)**:
+  - `threads-oauth-*`: Menangani login/authorize akun Threads.
+  - `worker-metrics` & `worker-publish`: Worker ringan untuk metrik harian dan publikasi post.
+  - `generate-post`: Fallback logic jika Railway down.
+  - `send-email`: Integrasi Resend API untuk verifikasi akun.
+
+## 4. Alur AI (LLM & RAG)
+1. User memberikan instruksi (misal: "Bikin plan konten soal AI").
+2. Backend Python mencari data di tabel `brand_knowledge` menggunakan embedding Gemini.
+3. Data konteks (RAG) + instruksi user dikirim ke Groq atau Gemini.
+4. AI menghasilkan output JSON.
+5. Backend memotong kredit user (jika tidak menggunakan BYOK).
+6. Hasil dikembalikan ke Frontend.
