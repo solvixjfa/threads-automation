@@ -10,6 +10,7 @@ import TemplateView from '../views/settings/TemplateView.vue'
 import KnowledgeView from '../views/settings/KnowledgeView.vue'
 import AiView from '../views/settings/AiView.vue'
 import LoginView from '../views/LoginView.vue'
+import UpdatePasswordView from '../views/UpdatePasswordView.vue'
 import ComposerView from '../views/ComposerView.vue'
 import RepurposeView from '../views/RepurposeView.vue'
 import InboxView from '../views/InboxView.vue'
@@ -30,6 +31,7 @@ const router = createRouter({
     { path: '/', name: 'landing', component: LandingView },
     
     { path: '/login', name: 'login', component: LoginView },
+    { path: '/update-password', name: 'update-password', component: UpdatePasswordView },
 
     { path: '/dashboard', name: 'dashboard', component: DashboardView, meta: { requiresAuth: true } },
 

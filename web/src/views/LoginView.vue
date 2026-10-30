@@ -104,7 +104,7 @@ async function handleSubmit() {
       
     } else if (mode.value === 'forgot') {
       const { error } = await supabase.auth.resetPasswordForEmail(email.value, {
-        redirectTo: `${window.location.origin}/login`
+        redirectTo: `${window.location.origin}/update-password`
       })
       if (error) throw error
       showToast(t('login.reset_link_sent'), 'success')
