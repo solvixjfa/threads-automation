@@ -39,7 +39,14 @@
     "toggle_to_login": "Udah punya akun? Login",
     "error_empty": "Isi semua kolom dulu ya",
     "error_invalid": "Email atau password salah",
-    "error_short_password": "Password minimal 6 karakter"
+    "error_short_password": "Password minimal 6 karakter",
+    "forgot_password": "Lupa password?",
+    "reset_password_title": "Reset password kamu",
+    "reset_password_subtitle": "Masukin email kamu buat dapet link reset",
+    "send_reset_link": "Kirim Link Reset",
+    "back_to_login": "Balik ke Login",
+    "reset_link_sent": "Link reset udah dikirim! Cek email kamu.",
+    "reset_link_error": "Gagal ngirim link reset"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -329,7 +336,7 @@
       "start_free": "Ambil 1 dari 25 Slot"
     },
     "hero": {
-      "badge": "Private Beta · 25 slot",
+      "badge": "Private Beta \u00b7 25 slot",
       "title_1": "Posting yang belajar dari",
       "title_2": "akun kamu sendiri.",
       "subtitle": "Ixiera membaca post kamu yang paling jalan (jam, hook, topik), lalu membantu bikin rencana konten dan membalas komentar dengan gayamu.",
@@ -369,9 +376,9 @@
       "insight_desc": "\"Post yang dibuka dengan pertanyaan dapat lebih banyak reply daripada pembuka pernyataan. Jam terbaikmu: Selasa, 19.30.\"",
       "reply_title": "Balasan",
       "reply_incoming": "Komentar: \"Kak, tips bikin hook kayak gini gimana?\"",
-      "reply_outgoing": "Balasan: \"Makasih kak! Mulai dari satu pertanyaan yang bikin orang pengin jawab. Nanti aku bahas lengkap di post berikutnya 👀\"",
+      "reply_outgoing": "Balasan: \"Makasih kak! Mulai dari satu pertanyaan yang bikin orang pengin jawab. Nanti aku bahas lengkap di post berikutnya \ud83d\udc40\"",
       "repurpose_title": "Repurpose",
-      "repurpose_desc": "1 post lama → versi Listicle · Opini · Cerita"
+      "repurpose_desc": "1 post lama \u2192 versi Listicle \u00b7 Opini \u00b7 Cerita"
     },
     "proof": {
       "text": "Akun [{'@'}username founder] memakai Ixiera sejak [tanggal]. [Hasil nyata]"
