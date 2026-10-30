@@ -192,7 +192,7 @@
           <div class="p-6 rounded-2xl border theme-border bg-[var(--bg)] shadow-lg space-y-4 relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-1 bg-[var(--accent)]"></div>
             <h3 class="font-bold flex items-center gap-2 text-sm uppercase tracking-wide text-[var(--accent)]">
-              <Sparkles class="w-4 h-4" /> {{ $t('landing.examples.insight_title') }}
+              <Star class="w-4 h-4" /> {{ $t('landing.examples.insight_title') }}
             </h3>
             <p class="text-sm theme-text leading-relaxed">{{ $t('landing.examples.insight_desc') }}</p>
           </div>
@@ -339,10 +339,9 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTheme } from '../composables/useTheme'
-// CUMA IMPORT IKON YANG 100% AMAN DAN STANDAR
 import { 
   Menu, X, ArrowRight, Sun, Moon, ChevronDown, CheckCircle,
-  PenTool, MessageCircle, BarChart3, RotateCcw, Sparkles
+  PenTool, MessageCircle, BarChart3, RotateCcw, Star
 } from 'lucide-vue-next'
 
 const mobileMenuOpen = ref(false)
