@@ -39,14 +39,7 @@
     "toggle_to_login": "Already have an account? Sign in",
     "error_empty": "Please fill in all fields",
     "error_invalid": "Invalid email or password",
-    "error_short_password": "Password must be at least 6 characters",
-    "forgot_password": "Forgot password?",
-    "reset_password_title": "Reset your password",
-    "reset_password_subtitle": "Enter your email to receive a reset link",
-    "send_reset_link": "Send Reset Link",
-    "back_to_login": "Back to login",
-    "reset_link_sent": "Reset link sent! Check your email.",
-    "reset_link_error": "Failed to send reset link"
+    "error_short_password": "Password must be at least 6 characters"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -336,7 +329,7 @@
       "start_free": "Claim 1 of 25 Slots"
     },
     "hero": {
-      "badge": "Private Beta \u00b7 25 slots",
+      "badge": "Private Beta · 25 slots",
       "title_1": "Posts that learn from",
       "title_2": "your own account.",
       "subtitle": "Ixiera reads your best-performing posts (time, hooks, topics) and helps you plan content and reply to comments in your own voice.",
@@ -353,7 +346,7 @@
       "p2_title": "Comments pile up.",
       "p2_desc": "Replying late kills engagement and momentum.",
       "p3_title": "Flying blind.",
-      "p3_desc": "Which posts, what time, what hooks\u2014it is all just a feeling."
+      "p3_desc": "Which posts, what time, what hooks—it is all just a feeling."
     },
     "founder": {
       "quote": "I built Ixiera because I was tired of managing my Threads account while trying to write. This is still a private beta, so some things might not be perfect. If you run into issues, tell me directly, and I will fix it.",
@@ -366,7 +359,7 @@
       "f2_title": "Comments replied in your voice.",
       "f2_desc": "Choose Manual Review (you approve first) or Full Auto. Set a hourly reply limit.",
       "f3_title": "Know what works.",
-      "f3_desc": "Best times, engaging hook types, and audience-favorite topics\u2014straight from your account data.",
+      "f3_desc": "Best times, engaging hook types, and audience-favorite topics—straight from your account data.",
       "f4_title": "Turn one viral post into three.",
       "f4_desc": "Convert an old high-performing post into a Listicle, Opinion, or Story with one click.",
       "small_1": "Visual growth, views, and engagement reports",
@@ -380,17 +373,17 @@
       "insight_desc": "\"Posts opening with a question get more replies than statements. Your best time: Tuesday, 19:30.\"",
       "reply_title": "Reply",
       "reply_incoming": "Comment: \"How do you write hooks like this?\"",
-      "reply_outgoing": "Reply: \"Thanks! Start with a question that makes people want to answer. I will cover it in detail in my next post \ud83d\udc40\"",
+      "reply_outgoing": "Reply: \"Thanks! Start with a question that makes people want to answer. I will cover it in detail in my next post 👀\"",
       "repurpose_title": "Repurpose",
-      "repurpose_desc": "1 old post \u2192 Listicle \u00b7 Opinion \u00b7 Story version"
+      "repurpose_desc": "1 old post → Listicle · Opinion · Story version"
     },
     "proof": {
-      "text": "[@username founder] has used Ixiera since [date]. [Real result]"
+      "text": "[{'@'}username founder] has used Ixiera since [date]. [Real result]"
     },
     "how": {
       "title": "Start in 3 simple steps.",
       "s1_title": "Register and request access.",
-      "s1_desc": "Create an account, then send your Threads @username. I review it manually and email you back.",
+      "s1_desc": "Create an account, then send your Threads {'@'}username. I review it manually and email you back.",
       "s2_title": "Connect and teach your style.",
       "s2_desc": "Once approved, accept the tester invite on Threads and log in via Meta. Upload sample posts or set style rules, then choose an AI engine.",
       "s3_title": "Review and go.",

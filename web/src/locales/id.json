@@ -26,31 +26,24 @@
   },
   "login": {
     "welcome": "Welcome back!",
-    "subtitle": "Login buat masuk ke dashboard lu",
+    "subtitle": "Login buat masuk ke dashboard kamu",
     "sign_up_title": "Bikin akun baru",
     "sign_up_subtitle": "Mulai pakai Ixiera",
     "email": "Email",
-    "email_placeholder": "email{'@'}lu.com",
+    "email_placeholder": "email{'@'}kamu.com",
     "password": "Password",
-    "password_placeholder": "Masukin password lu",
+    "password_placeholder": "Masukin password kamu",
     "sign_in": "Login",
     "sign_up": "Sign Up",
     "toggle_to_signup": "Belum punya akun? Sign up",
     "toggle_to_login": "Udah punya akun? Login",
     "error_empty": "Isi semua kolom dulu ya",
     "error_invalid": "Email atau password salah",
-    "error_short_password": "Password minimal 6 karakter",
-    "forgot_password": "Lupa password?",
-    "reset_password_title": "Reset password lu",
-    "reset_password_subtitle": "Masukin email lu buat dapet link reset",
-    "send_reset_link": "Kirim Link Reset",
-    "back_to_login": "Balik ke login",
-    "reset_link_sent": "Link reset udah dikirim! Cek email lu.",
-    "reset_link_error": "Gagal ngirim link reset"
+    "error_short_password": "Password minimal 6 karakter"
   },
   "dashboard": {
     "title": "Dashboard",
-    "subtitle": "Ringkasan performa & metrik otomatisasi Threads lu.",
+    "subtitle": "Ringkasan performa & metrik otomatisasi Threads kamu.",
     "last_sync": "Terakhir sinkron",
     "refresh_data": "Refresh Data",
     "admin_status": "Status Admin:",
@@ -102,7 +95,7 @@
       "generating": "Ngerencanain Konten...",
       "main_text": "Teks Postingan Utama",
       "chars": "Karakter",
-      "draft_ph": "Tulis draf lu di sini...",
+      "draft_ph": "Tulis draf kamu di sini...",
       "split_preview": "Preview Utasan",
       "check_score": "Cek Skor (Gratis)",
       "checking": "Menganalisa...",
@@ -176,7 +169,7 @@
   },
   "comments": {
     "title": "Komentar",
-    "subtitle": "Bales komentar di postingan lu pakai draf AI atau template.",
+    "subtitle": "Bales komentar di postingan kamu pakai draf AI atau template.",
     "sync": "Sinkron Komentar",
     "search_ph": "Cari komentar atau username...",
     "filter_all": "Semua Kategori",
@@ -216,7 +209,7 @@
   },
   "analytics": {
     "title": "Analitik",
-    "subtitle": "Bedah performa Threads lu lebih dalam",
+    "subtitle": "Bedah performa Threads kamu lebih dalam",
     "tab_best": "Waktu Terbaik",
     "tab_hook": "Hook",
     "tab_length": "Panjang",
@@ -235,7 +228,7 @@
     "not_enough": "Data belum cukup",
     "not_enough_sub": "Butuh post terbit dengan metrik.",
     "hook_title": "Performa Hook",
-    "hook_sub": "Efektivitas baris pertama postingan lu",
+    "hook_sub": "Efektivitas baris pertama postingan kamu",
     "hook_posts": "{n} post",
     "length_title": "Panjang Konten",
     "length_sub": "Hubungan panjang teks dengan engagement",
@@ -249,7 +242,7 @@
   },
   "settings": {
     "title": "Pengaturan",
-    "subtitle": "Atur akun, auto-reply, basis pengetahuan, dan billing AI lu.",
+    "subtitle": "Atur akun, auto-reply, basis pengetahuan, dan billing AI kamu.",
     "tabs": {
       "account": "Akun",
       "auto_reply": "Auto Reply",
@@ -263,7 +256,7 @@
       "connected": "Terhubung",
       "not_connected": "Belum Terhubung",
       "ready": "Siap buat posting dan baca interaksi.",
-      "start": "Hubungkan akun Threads lu buat mulai otomatisasi.",
+      "start": "Hubungkan akun Threads kamu buat mulai otomatisasi.",
       "reconnect": "Hubungkan Ulang",
       "connect": "Hubungkan"
     },
@@ -279,12 +272,12 @@
       "tone_label": "Prompt Gaya Bahasa",
       "tone_ph": "Contoh: Bales dengan sopan, singkat, dan membantu. Jangan menggurui.",
       "tone_desc": "Ngarahin AI nulis balasan. Kosongin buat gaya bahasa default.",
-      "warning": "Peringatan: Mode Full Otomatis bakal langsung publish tanpa review. Pastiin basis pengetahuan dan prompt lu udah bener.",
+      "warning": "Peringatan: Mode Full Otomatis bakal langsung publish tanpa review. Pastiin basis pengetahuan dan prompt kamu udah bener.",
       "save_btn": "Simpan Pengaturan"
     },
     "knowledge": {
       "title": "Basis Pengetahuan",
-      "subtitle": "Makin detail dokumen lu, makin paham AI sama konteks brand lu.",
+      "subtitle": "Makin detail dokumen kamu, makin paham AI sama konteks brand kamu.",
       "category": "Kategori",
       "cat_portfolio": "Portofolio / Proyek",
       "cat_persona": "Persona & Gaya Bahasa",
@@ -336,7 +329,7 @@
       "start_free": "Ambil 1 dari 25 Slot"
     },
     "hero": {
-      "badge": "Private Beta \u00b7 25 slot",
+      "badge": "Private Beta · 25 slot",
       "title_1": "Posting yang belajar dari",
       "title_2": "akun kamu sendiri.",
       "subtitle": "Ixiera membaca post kamu yang paling jalan (jam, hook, topik), lalu membantu bikin rencana konten dan membalas komentar dengan gayamu.",
@@ -380,17 +373,17 @@
       "insight_desc": "\"Post yang dibuka dengan pertanyaan dapat lebih banyak reply daripada pembuka pernyataan. Jam terbaikmu: Selasa, 19.30.\"",
       "reply_title": "Balasan",
       "reply_incoming": "Komentar: \"Kak, tips bikin hook kayak gini gimana?\"",
-      "reply_outgoing": "Balasan: \"Makasih kak! Mulai dari satu pertanyaan yang bikin orang pengin jawab. Nanti aku bahas lengkap di post berikutnya \ud83d\udc40\"",
+      "reply_outgoing": "Balasan: \"Makasih kak! Mulai dari satu pertanyaan yang bikin orang pengin jawab. Nanti aku bahas lengkap di post berikutnya 👀\"",
       "repurpose_title": "Repurpose",
-      "repurpose_desc": "1 post lama \u2192 versi Listicle \u00b7 Opini \u00b7 Cerita"
+      "repurpose_desc": "1 post lama → versi Listicle · Opini · Cerita"
     },
     "proof": {
-      "text": "Akun [@username founder] memakai Ixiera sejak [tanggal]. [Hasil nyata]"
+      "text": "Akun [{'@'}username founder] memakai Ixiera sejak [tanggal]. [Hasil nyata]"
     },
     "how": {
       "title": "Mulai dalam 3 langkah.",
       "s1_title": "Daftar dan minta akses.",
-      "s1_desc": "Buat akun, lalu kirim @username Threads kamu. Aku cek manual dan kabari lewat email.",
+      "s1_desc": "Buat akun, lalu kirim {'@'}username Threads kamu. Aku cek manual dan kabari lewat email.",
       "s2_title": "Hubungkan dan ajari gayamu.",
       "s2_desc": "Setelah disetujui, terima undangan tester di Threads dan login lewat sistem resmi Meta. Unggah contoh post atau tulis aturan gaya, lalu pilih mesin AI.",
       "s3_title": "Review dan jalan.",
