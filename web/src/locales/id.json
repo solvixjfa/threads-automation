@@ -392,7 +392,7 @@
       "s1_title": "Daftar dan minta akses.",
       "s1_desc": "Buat akun, lalu kirim @username Threads kamu. Aku cek manual dan kabari lewat email.",
       "s2_title": "Hubungkan dan ajari gayamu.",
-      "s2_desc": "Setelah disetujui, terima undangan tester di Threads dan login lewat sistem resmi Meta. Unggah contoh post atau tulis aturan gaya, lalu pilih mesin AI: kredit gratis, atau pasang API key sendiri (Gemini/Groq).",
+      "s2_desc": "Setelah disetujui, terima undangan tester di Threads dan login lewat sistem resmi Meta. Unggah contoh post atau tulis aturan gaya, lalu pilih mesin AI.",
       "s3_title": "Review dan jalan.",
       "s3_desc": "Setujui draf, atur mode balasan, pantau Analytics di akhir pekan."
     },
@@ -404,24 +404,24 @@
     },
     "beta": {
       "title": "Private beta, slot terbatas.",
-      "desc": "Aku buka 25 slot supaya bisa mendampingi langsung dan memperbaiki produk bareng kamu. Selama beta, fitur inti gratis. Setelah itu berbayar, dengan harga awal untuk pengguna beta.",
+      "desc": "Aku buka 25 slot supaya bisa mendampingi langsung dan memperbaiki produk bareng kamu. Selama beta, fitur inti gratis.",
       "counter": "[X] dari 25 slot terisi",
       "cta": "Ambil 1 dari 25 Slot"
     },
     "faq": {
       "title": "FAQ",
       "q1": "Kenapa harus minta akses?",
-      "a1": "Ixiera masih early access dan aplikasinya masih mode developer di Meta. Aku menambahkan tiap akun secara manual, jadi kamu perlu disetujui dulu. Kabar lewat email.",
+      "a1": "Ixiera masih early access dan aplikasinya masih mode developer di Meta. Aku menambahkan tiap akun secara manual.",
       "q2": "Apakah ini gratis?",
       "a2": "Selama beta, fitur inti gratis untuk 25 pengguna pertama. Setelah itu berbayar.",
       "q3": "Apakah posting tanpa izinku?",
-      "a3": "Nggak, kecuali kamu aktifkan. Balasan punya dua mode: Review Manual dan Full Auto. Kill Switch mematikan semuanya kapan saja.",
+      "a3": "Nggak, kecuali kamu aktifkan. Balasan punya dua mode: Review Manual dan Full Auto.",
       "q4": "Apakah akunku bisa kena blokir?",
-      "a4": "Kamu bisa atur batas balasan per jam agar sesuai kebijakan Meta API. Keputusan akhir tetap di Meta, jadi mulai dari batas rendah.",
+      "a4": "Kamu bisa atur batas balasan per jam agar sesuai kebijakan Meta API.",
       "q5": "Apakah balasannya bisa kasar?",
       "a5": "Atur \"Tone Prompt\" di Pengaturan, AI diarahkan sopan, singkat, dan sesuai gayamu.",
       "q6": "Apa bedanya dengan scheduler biasa?",
-      "a6": "Scheduler hanya menjadwalkan. Ixiera belajar dari data akunmu untuk menentukan apa, kapan, dan bagaimana kamu posting.",
+      "a6": "Scheduler hanya menjadwalkan. Ixiera belajar dari data akunmu.",
       "q7": "Harus paham teknis?",
       "a7": "Nggak. Ada panduan langkah demi langkah, dan opsi kredit tanpa urusan API key."
     },

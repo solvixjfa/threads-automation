@@ -89,9 +89,9 @@
         </div>
         
         <div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 pt-8 text-xs theme-text-muted">
-          <span class="flex items-center gap-2"><ShieldCheck class="w-4 h-4 text-green-500 shrink-0"/> {{ $t('landing.hero.trust_1') }}</span>
-          <span class="flex items-center gap-2"><ToggleRight class="w-4 h-4 text-green-500 shrink-0"/> {{ $t('landing.hero.trust_2') }}</span>
-          <span class="flex items-center gap-2"><Lock class="w-4 h-4 text-green-500 shrink-0"/> {{ $t('landing.hero.trust_3') }}</span>
+          <span class="flex items-center gap-2"><CheckCircle class="w-4 h-4 text-green-500 shrink-0"/> {{ $t('landing.hero.trust_1') }}</span>
+          <span class="flex items-center gap-2"><CheckCircle class="w-4 h-4 text-green-500 shrink-0"/> {{ $t('landing.hero.trust_2') }}</span>
+          <span class="flex items-center gap-2"><CheckCircle class="w-4 h-4 text-green-500 shrink-0"/> {{ $t('landing.hero.trust_3') }}</span>
         </div>
       </div>
     </section>
@@ -104,17 +104,17 @@
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div class="p-6 text-center space-y-2">
-            <div class="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-4 bg-red-500/10 text-red-500"><BrainCircuit class="w-6 h-6" /></div>
+            <div class="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-4 bg-red-500/10 text-red-500"><X class="w-6 h-6" /></div>
             <h3 class="text-lg font-bold">{{ $t('landing.problems.p1_title') }}</h3>
             <p class="theme-text-muted text-sm">{{ $t('landing.problems.p1_desc') }}</p>
           </div>
           <div class="p-6 text-center space-y-2">
-            <div class="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-4 bg-amber-500/10 text-amber-500"><MessageSquareDashed class="w-6 h-6" /></div>
+            <div class="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-4 bg-amber-500/10 text-amber-500"><X class="w-6 h-6" /></div>
             <h3 class="text-lg font-bold">{{ $t('landing.problems.p2_title') }}</h3>
             <p class="theme-text-muted text-sm">{{ $t('landing.problems.p2_desc') }}</p>
           </div>
           <div class="p-6 text-center space-y-2">
-            <div class="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-4 bg-blue-500/10 text-blue-500"><EyeOff class="w-6 h-6" /></div>
+            <div class="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-4 bg-blue-500/10 text-blue-500"><X class="w-6 h-6" /></div>
             <h3 class="text-lg font-bold">{{ $t('landing.problems.p3_title') }}</h3>
             <p class="theme-text-muted text-sm">{{ $t('landing.problems.p3_desc') }}</p>
           </div>
@@ -261,15 +261,15 @@
         <h2 class="text-2xl font-bold mb-8">{{ $t('landing.security.title') }}</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="flex flex-col items-center text-center space-y-2">
-            <ShieldCheck class="w-8 h-8 text-[var(--success)]" />
+            <CheckCircle class="w-8 h-8 text-[var(--success)]" />
             <p class="text-sm theme-text-muted">{{ $t('landing.security.s1') }}</p>
           </div>
           <div class="flex flex-col items-center text-center space-y-2">
-            <Lock class="w-8 h-8 text-[var(--success)]" />
+            <CheckCircle class="w-8 h-8 text-[var(--success)]" />
             <p class="text-sm theme-text-muted">{{ $t('landing.security.s2') }}</p>
           </div>
           <div class="flex flex-col items-center text-center space-y-2">
-            <Power class="w-8 h-8 text-[var(--success)]" />
+            <CheckCircle class="w-8 h-8 text-[var(--success)]" />
             <p class="text-sm theme-text-muted">{{ $t('landing.security.s3') }}</p>
           </div>
         </div>
@@ -339,10 +339,10 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTheme } from '../composables/useTheme'
+// CUMA IMPORT IKON YANG 100% AMAN DAN STANDAR
 import { 
-  Menu, X, ArrowRight, Sun, Moon, ChevronDown, 
-  ShieldCheck, ToggleRight, Lock, BrainCircuit, MessageSquareDashed, EyeOff,
-  PenTool, MessageCircle, BarChart3, RotateCcw, CheckCircle, Sparkles, Power
+  Menu, X, ArrowRight, Sun, Moon, ChevronDown, CheckCircle,
+  PenTool, MessageCircle, BarChart3, RotateCcw, Sparkles
 } from 'lucide-vue-next'
 
 const mobileMenuOpen = ref(false)
