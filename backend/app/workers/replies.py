@@ -45,7 +45,6 @@ def merge_stats(target: dict, source: dict):
 
 
 async def sync_posts_from_meta(db, client, acc_id: str, token: str) -> int:
-    # Tambahin media_type & media_url biar post utama juga bisa ditampilin previewnya
     url = (
         "https://graph.threads.net/v1.0/me/threads"
         f"?fields=id,text,timestamp,permalink,media_type,media_url&limit={MAX_POSTS_TO_FETCH}"
@@ -105,7 +104,6 @@ async def sync_replies_for_post(
 ) -> dict:
     stats = empty_stats()
 
-    # TAMBAHIN media_type, media_url, permalink ke query
     url = (
         f"https://graph.threads.net/v1.0/{media_id}/replies"
         f"?fields=id,text,username,timestamp,permalink,media_type,media_url&limit={MAX_REPLIES_PER_POST}"
@@ -116,7 +114,8 @@ async def sync_replies_for_post(
         if res.status_code != 200:
             return stats
         data = res.json().get("data", [])
-    except Exception:
+    except Exception as e:
+        logging.error(f"[Sync Replies] Error fetching for {media_id}: {str(e)}")
         return stats
 
     if not data:
@@ -149,11 +148,8 @@ async def sync_replies_for_post(
         timestamp = reply.get("timestamp")
         media_url = reply.get("media_url")
         media_type = reply.get("media_type")
-
-        # DETEKSI MEDIA - apakah ini gambar/video?
         has_media = bool(media_url) or (media_type in ["IMAGE", "VIDEO", "CAROUSEL_ALBUM"])
 
-        # Klasifikasi dengan info media
         classification = classify_comment(text, has_media=has_media)
         category = classification["category"]
         is_lead = classification.get("is_lead", False)
@@ -172,7 +168,7 @@ async def sync_replies_for_post(
             "classification": category,
             "is_own": is_own_comment,
             "replied_at": timestamp,
-            "media_url": media_url,  # SIMPAN GAMBAR
+            "media_url": media_url,
             "raw": reply,
             "processed_at": datetime.now(timezone.utc).isoformat(),
         })
@@ -196,7 +192,6 @@ async def sync_replies_for_post(
         logging.error(f"[Bulk Insert Error] {str(e)}")
         return stats
 
-    # Proses AI draft per reply baru
     for meta_item in new_replies_meta:
         reply_db = inserted_by_meta_id.get(meta_item["reply_id"])
         if not reply_db:
@@ -211,11 +206,7 @@ async def sync_replies_for_post(
         has_media = meta_item["has_media"]
         category = classification["category"]
 
-        if is_own_comment:
-            stats["skipped"] += 1
-            continue
-
-        if not is_enabled:
+        if is_own_comment or not is_enabled:
             stats["skipped"] += 1
             continue
 
@@ -224,37 +215,40 @@ async def sync_replies_for_post(
             continue
 
         if is_lead:
-            await analyze_and_notify_lead(acc_id, author_username, text)
-
-        # --- CEK MAX REPLIES PER HOUR ---
-        max_per_hour = auto_settings.get("max_per_hour", 10)
-        if max_per_hour > 0:
-            one_hour_ago = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
-            limit_check = db.schema("threads").from_("auto_reply_logs").select("id", count="exact").eq("account_id", acc_id).eq("status", "sent").gte("created_at", one_hour_ago).execute()
-            if limit_check.count >= max_per_hour:
-                logging.warning(f"[Rate Limit] Max replies per hour ({max_per_hour}) reached for acc {acc_id}. Skipping.")
-                stats["skipped"] += 1
-                continue
-        # ----------------------------------
+            try:
+                await analyze_and_notify_lead(acc_id, author_username, text)
+            except Exception as e:
+                logging.error(f"[Lead Error] {str(e)}")
 
         # BACA DARI SETTINGAN USER (UI)
         rule = category_rules.get(category, {}) if category_rules else {}
         action = rule.get("action", CATEGORY_ACTION.get(category, "skip"))
         if not rule.get("enabled", True):
             action = "skip"
+
         if action == "skip":
             stats["skipped"] += 1
             continue
 
+        # Rate Limit per hour
+        max_per_hour = auto_settings.get("max_per_hour", 10) if auto_settings else 10
+        if max_per_hour > 0:
+            one_hour_ago = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+            try:
+                limit_check = db.schema("threads").from_("auto_reply_logs").select("id", count="exact").eq("account_id", acc_id).eq("status", "sent").gte("created_at", one_hour_ago).execute()
+                if limit_check.count >= max_per_hour:
+                    logging.warning(f"[Rate Limit] Max replies/hour reached.")
+                    stats["skipped"] += 1
+                    continue
+            except Exception as e:
+                logging.error(f"[Rate Limit Check Error] {str(e)}")
+
         draft_text = None
         llm_meta = {
-            "category": category,
-            "is_lead": is_lead,
+            "category": category, "is_lead": is_lead,
             "matched_signals": classification["matched_signals"],
-            "confidence": classification["confidence"],
-            "incoming_comment": text,
-            "username": author_username,
-            "has_media": has_media,
+            "confidence": classification["confidence"], "incoming_comment": text,
+            "username": author_username, "has_media": has_media,
         }
 
         if action == "template":
@@ -264,18 +258,14 @@ async def sync_replies_for_post(
                 continue
             draft_text = pick_template(category, custom_tpls)
             llm_meta["mode"] = "template"
-            llm_meta["custom_templates_used"] = len(custom_tpls) > 0
             stats["template"] += 1
 
         elif action == "llm":
-            # Kalau cuma gambar tanpa teks, kasih placeholder biar AI tetap bisa jawab
-            ai_input = text.strip() if text.strip() else "[User sent an image without any text. Respond politely, ask what they need, or thank them for engaging.]"
+            ai_input = text.strip() if text.strip() else "[User sent an image without any text...]"
             try:
                 draft_text = await generate_rag_reply(
-                    account_id=acc_id,
-                    user_comment=ai_input,
-                    author_username=author_username,
-                    provider=ai_provider,
+                    account_id=acc_id, user_comment=ai_input,
+                    author_username=author_username, provider=ai_provider,
                 )
                 llm_meta["mode"] = "llm"
                 stats["llm"] += 1
@@ -288,36 +278,21 @@ async def sync_replies_for_post(
             stats["skipped"] += 1
             continue
 
-        # LOGIKA HITL VS FULL AUTO
         log_status = "pending_review"
-        
         if reply_mode == "auto":
             try:
-                # Delay 2 detik antar publish biar gak kena rate limit
                 await asyncio.sleep(2)
                 await publish_reply_to_threads(acc_id, meta_item["reply_id"], draft_text)
                 log_status = "sent"
-                logging.info(f"[Auto-Publish] Successfully replied to {meta_item['reply_id']}")
             except Exception as pub_err:
-                err_str = str(pub_err)
-                logging.error(f"[Auto-Publish Failed]: {err_str}")
-                
-                # Kalau kena rate limit (429), tunggu 60 detik sebelum lanjut
-                if "429" in err_str or "rate limit" in err_str.lower():
-                    logging.warning("[Rate Limit] Meta API limit reached. Pausing 60s...")
-                    await asyncio.sleep(60)
-                
+                logging.error(f"[Auto-Publish Failed]: {str(pub_err)}")
                 log_status = "pending_review"
-                llm_meta["auto_publish_error"] = err_str
+                llm_meta["auto_publish_error"] = str(pub_err)
 
         try:
             db.schema("threads").from_("auto_reply_logs").insert({
-                "account_id": acc_id,
-                "reply_id": reply_db_id,
-                "status": log_status,
-                "generated_text": draft_text,
-                "final_text": draft_text,
-                "llm_meta": llm_meta,
+                "account_id": acc_id, "reply_id": reply_db_id, "status": log_status,
+                "generated_text": draft_text, "final_text": draft_text, "llm_meta": llm_meta,
             }).execute()
         except Exception as log_err:
             logging.error(f"[Log Insert Error]: {str(log_err)}")
@@ -328,7 +303,7 @@ async def sync_replies_for_post(
 async def sync_post_with_semaphore(
     sem: asyncio.Semaphore, db, client, acc_id: str, post_db_id: str,
     media_id: str, token: str, acc_username: str, is_enabled: bool,
-    reply_mode: str, category_rules: dict = None, ai_provider: str = "groq"
+    reply_mode: str, category_rules: dict = None, ai_provider: str = "groq", auto_settings: dict = None
 ) -> dict:
     async with sem:
         try:
@@ -350,7 +325,6 @@ async def process_account(db, client, acc: dict) -> dict:
     if not token:
         return account_stats
 
-    # Ambil preferensi AI provider dari account
     ai_provider = acc.get("ai_provider") or "groq"
 
     new_posts = await sync_posts_from_meta(db, client, acc_id, token)
@@ -376,7 +350,7 @@ async def process_account(db, client, acc: dict) -> dict:
         .execute()
     )
     posts = posts_res.data or []
-    valid_posts = [p for p in posts if p.get("threads_media_id")]
+    valid_posts = [p for p in posts if p.get("threads_media_id") and p.get("id")]
     if not valid_posts:
         return account_stats
 
@@ -392,6 +366,8 @@ async def process_account(db, client, acc: dict) -> dict:
     for r in results:
         if isinstance(r, dict):
             merge_stats(account_stats, r)
+        elif isinstance(r, Exception):
+            logging.error(f"[Gather Exception] {str(r)}")
 
     return account_stats
 
@@ -400,7 +376,6 @@ async def fetch_and_process_replies():
     started = time.time()
     db = get_supabase()
 
-    # TAMBAHIN kolom ai_provider di query
     accounts_res = (
         db.schema("threads").from_("threads_accounts")
         .select("id, settings, username, ai_provider, custom_gemini_key, custom_groq_key, ai_credits")
@@ -413,20 +388,18 @@ async def fetch_and_process_replies():
 
     async with httpx.AsyncClient() as client:
         for acc in accounts:
-            acc_stats = await process_account(db, client, acc)
-            total["new_posts"] += acc_stats.get("new_posts", 0)
-            merge_stats(total, acc_stats)
+            try:
+                acc_stats = await process_account(db, client, acc)
+                total["new_posts"] += acc_stats.get("new_posts", 0)
+                merge_stats(total, acc_stats)
+            except Exception as e:
+                logging.error(f"[Process Account Error] {acc.get('id')}: {str(e)}")
 
     elapsed = round(time.time() - started, 2)
     logging.info(
-        f"[Worker Replies Summary] "
-        f"new_posts={total['new_posts']} "
-        f"new_replies={total['new_replies']} "
-        f"template={total['template']} "
-        f"llm={total['llm']} "
-        f"skipped={total['skipped']} "
-        f"by_category={total['by_category']} "
-        f"elapsed={elapsed}s"
+        f"[Worker Replies Summary] new_posts={total['new_posts']} new_replies={total['new_replies']} "
+        f"template={total['template']} llm={total['llm']} skipped={total['skipped']} "
+        f"by_category={total['by_category']} elapsed={elapsed}s"
     )
 
 
