@@ -1,19 +1,13 @@
 <template>
   <div class="space-y-6">
-    <!-- HEADER -->
     <div class="flex flex-wrap justify-between items-center gap-4">
       <div>
         <h1 class="text-2xl font-bold tracking-tight">Admin Panel</h1>
         <p class="text-sm theme-text-muted mt-1">Manage users, plans, and credits.</p>
       </div>
-      <div class="flex items-center gap-2">
-        <button @click="loadData" :disabled="loading" class="btn btn-secondary btn-sm">
-          Refresh
-        </button>
-      </div>
+      <button @click="loadData" :disabled="loading" class="btn btn-secondary btn-sm">Refresh</button>
     </div>
 
-    <!-- FILTERS -->
     <div class="flex flex-wrap gap-2">
       <button @click="filter = 'all'" class="px-3 py-1.5 text-xs font-bold rounded-lg transition" :class="filter === 'all' ? 'bg-black text-white dark:bg-white dark:text-black' : 'theme-bg-sec theme-text-muted'">All Users</button>
       <button @click="filter = 'trial'" class="px-3 py-1.5 text-xs font-bold rounded-lg transition" :class="filter === 'trial' ? 'bg-black text-white dark:bg-white dark:text-black' : 'theme-bg-sec theme-text-muted'">Active Trial</button>
@@ -43,20 +37,11 @@
                 <div class="font-bold">{{ u.email }}</div>
                 <div class="text-xs theme-text-muted">@{{ u.username || 'unlinked' }}</div>
               </td>
-              <td class="p-4">
-                <Badge :variant="u.connection_status === 'connected' ? 'success' : 'default'">{{ u.connection_status }}</Badge>
-              </td>
-              <td class="p-4">
-                <Badge :variant="u.plan !== 'none' ? 'accent' : 'danger'">{{ u.plan }}</Badge>
-              </td>
-              <td class="p-4 text-xs">
-                {{ u.plan_expires_at ? formatDate(u.plan_expires_at) : '-' }}
-              </td>
-              <td class="p-4 font-bold text-lg">
-                {{ u.credit_balance }}
-              </td>
+              <td class="p-4"><Badge :variant="u.connection_status === 'connected' ? 'success' : 'default'">{{ u.connection_status }}</Badge></td>
+              <td class="p-4"><Badge :variant="u.plan !== 'none' ? 'accent' : 'danger'">{{ u.plan }}</Badge></td>
+              <td class="p-4 text-xs">{{ u.plan_expires_at ? formatDate(u.plan_expires_at) : '-' }}</td>
+              <td class="p-4 font-bold text-lg">{{ u.credit_balance }}</td>
               <td class="p-4 text-right space-x-2">
-                <!-- Tombol Action -->
                 <button @click="openExtendModal(u)" class="text-xs font-bold underline hover:theme-text-muted">Extend</button>
                 <button @click="openCreditModal(u)" class="text-xs font-bold underline hover:theme-text-muted">Adjust</button>
                 <button @click="openLedgerModal(u)" class="text-xs font-bold underline hover:theme-text-muted">Ledger</button>
@@ -70,7 +55,7 @@
       </div>
     </div>
 
-    <!-- MODAL EXTEND PLAN -->
+    <!-- MODALS (SAMA KAYA SEBELUMNYA, CUMA PINDAH FUNGSI FETCH) -->
     <Teleport to="body">
       <div v-if="selectedUser && modalType === 'extend'" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="card max-w-sm w-full p-6 space-y-4 bg-[var(--bg)]">
@@ -85,7 +70,6 @@
       </div>
     </Teleport>
 
-    <!-- MODAL ADJUST CREDITS -->
     <Teleport to="body">
       <div v-if="selectedUser && modalType === 'credits'" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="card max-w-sm w-full p-6 space-y-4 bg-[var(--bg)]">
@@ -106,7 +90,6 @@
       </div>
     </Teleport>
 
-    <!-- MODAL LEDGER -->
     <Teleport to="body">
       <div v-if="selectedUser && modalType === 'ledger'" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="card max-w-lg w-full p-6 space-y-4 bg-[var(--bg)] max-h-[80vh] flex flex-col">
@@ -134,10 +117,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
-import { Card, Button, Badge, Select } from '../components/ui'
+import { Button, Badge, Select } from '../components/ui'
 
 const { showToast } = useNotify()
-
 const users = ref<any[]>([])
 const loading = ref(true)
 const isAuthorized = ref(false)
@@ -145,13 +127,13 @@ const filter = ref('all')
 
 const selectedUser = ref<any>(null)
 const modalType = ref<'extend' | 'credits' | 'ledger' | null>(null)
-
 const extendType = ref('paid_credit')
 const creditAmount = ref<number | null>(null)
 const creditNote = ref('')
 const ledgerData = ref<any[]>([])
 const isProcessing = ref(false)
 
+// Ganti URL kalau backend lu beda
 const API_BASE = 'https://threads-automation-production-53ad.up.railway.app/api/v1/admin'
 
 function formatDate(iso: string) {
@@ -163,7 +145,6 @@ const filteredUsers = computed(() => {
   if (filter.value === 'all') return users.value
   const now = new Date()
   const threeDays = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
-
   return users.value.filter(u => {
     if (filter.value === 'trial') return u.plan === 'trial'
     if (filter.value === 'zero_credits') return u.credit_balance === 0 && u.plan !== 'paid_byok'
@@ -176,25 +157,32 @@ const filteredUsers = computed(() => {
   })
 })
 
+// Fungsi Helper buat dapetin header Auth dari Supabase
+async function getAuthHeader() {
+  const { data: { session } } = await supabase.auth.getSession()
+  return session ? { 'Authorization': `Bearer ${session.access_token}` } : {}
+}
+
 async function loadData() {
   loading.value = true
   try {
-    // CEK ADMIN (Hardcoded email untuk MVP)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user?.email !== 'jeffry4job@gmail.com') {
+    const headers = await getAuthHeader()
+    if (!headers.Authorization) throw new Error("Not logged in")
+
+    const res = await fetch(`${API_BASE}/users`, { headers })
+    
+    if (res.status === 403 || res.status === 401) {
       isAuthorized.value = false
-      loading.value = false
       return
     }
-    isAuthorized.value = true
 
-    const res = await fetch(`${API_BASE}/users`)
     const data = await res.json()
     if (data.success) {
+      isAuthorized.value = true
       users.value = data.users
     }
   } catch (err: any) {
-    showToast('Failed to load admin data: ' + err.message, 'error')
+    showToast('Failed: ' + err.message, 'error')
   } finally {
     loading.value = false
   }
@@ -218,7 +206,8 @@ async function openLedgerModal(user: any) {
   modalType.value = 'ledger'
   ledgerData.value = []
   try {
-    const res = await fetch(`${API_BASE}/ledger/${user.id}`)
+    const headers = await getAuthHeader()
+    const res = await fetch(`${API_BASE}/ledger/${user.id}`, { headers })
     const data = await res.json()
     if (data.success) ledgerData.value = data.ledger
   } catch (err) {}
@@ -228,9 +217,9 @@ async function handleExtend() {
   if (!selectedUser.value) return
   isProcessing.value = true
   try {
+    const headers = await getAuthHeader()
     const res = await fetch(`${API_BASE}/extend`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ account_id: selectedUser.value.id, plan_type: extendType.value })
     })
     const data = await res.json()
@@ -240,18 +229,16 @@ async function handleExtend() {
     await loadData()
   } catch (err: any) {
     showToast('Failed: ' + err.message, 'error')
-  } finally {
-    isProcessing.value = false
-  }
+  } finally { isProcessing.value = false }
 }
 
 async function handleAdjustCredits() {
   if (!selectedUser.value || !creditAmount.value || !creditNote.value) return
   isProcessing.value = true
   try {
+    const headers = await getAuthHeader()
     const res = await fetch(`${API_BASE}/adjust-credits`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ account_id: selectedUser.value.id, delta: creditAmount.value, note: creditNote.value })
     })
     const data = await res.json()
@@ -261,9 +248,7 @@ async function handleAdjustCredits() {
     await loadData()
   } catch (err: any) {
     showToast('Failed: ' + err.message, 'error')
-  } finally {
-    isProcessing.value = false
-  }
+  } finally { isProcessing.value = false }
 }
 
 onMounted(loadData)
