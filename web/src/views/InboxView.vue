@@ -9,10 +9,12 @@
         <p class="text-sm theme-text-muted mt-1">{{ $t('comments.subtitle') }}</p>
       </div>
       <div class="flex items-center gap-3">
-        <button @click="syncRepliesManual" :disabled="isSyncing || isBulkProcessing" class="btn btn-primary btn-sm whitespace-nowrap shadow-sm hover:shadow-md transition-shadow">
+        <button @click="syncRepliesManual" :disabled="isSyncing || isBulkProcessing || syncCooldown > 0" class="btn btn-primary btn-sm whitespace-nowrap shadow-sm hover:shadow-md transition-shadow">
           <span v-if="isSyncing" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+          <RefreshCw v-else-if="syncCooldown > 0" class="w-3.5 h-3.5 opacity-50" />
           <RefreshCw v-else class="w-3.5 h-3.5" />
-          <span>{{ isSyncing ? $t('common.syncing') : $t('comments.sync') }}</span>
+          <span v-if="syncCooldown > 0">Tunggu {{ syncCooldown }}s</span>
+          <span v-else>{{ isSyncing ? $t('common.syncing') : $t('comments.sync') }}</span>
         </button>
       </div>
     </div>
@@ -192,7 +194,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
 import { useI18n } from 'vue-i18n'
@@ -221,6 +223,9 @@ const aiCredits = ref(20)
 const customGeminiKey = ref('')
 const customGroqKey = ref('')
 const currentAccountId = ref<string | null>(null)
+
+const syncCooldown = ref(0)
+let cooldownInterval: ReturnType<typeof setInterval> | null = null
 
 const isUsingOwnKey = computed(() => {
   if (aiProvider.value === 'groq') return !!customGroqKey.value
@@ -353,12 +358,24 @@ async function fetchReplies() {
 }
 
 async function syncRepliesManual() {
+  if (syncCooldown.value > 0) return // Prevent click if on cooldown
   isSyncing.value = true
   try {
     const res = await fetch('https://threads-automation-r9so.onrender.com/api/v1/leads/sync-replies', { method: 'GET' })
     if (!res.ok) throw new Error('Sync failed')
     showToast('Sync complete!', 'success')
     await fetchReplies()
+    
+    // Set cooldown for 60 seconds
+    syncCooldown.value = 60
+    if (cooldownInterval) clearInterval(cooldownInterval)
+    cooldownInterval = setInterval(() => {
+      syncCooldown.value--
+      if (syncCooldown.value <= 0) {
+        if (cooldownInterval) clearInterval(cooldownInterval)
+      }
+    }, 1000)
+
   } catch (err: any) { showToast('Sync failed: ' + err.message, 'error') } finally { isSyncing.value = false }
 }
 
@@ -453,4 +470,7 @@ async function handleBulkPublish() {
 }
 
 onMounted(() => fetchReplies())
+onUnmounted(() => {
+  if (cooldownInterval) clearInterval(cooldownInterval)
+})
 </script>

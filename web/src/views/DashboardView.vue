@@ -14,11 +14,14 @@
       <div class="flex items-center gap-3">
         <button
           @click="handleManualRefresh"
-          :disabled="loading || refreshing"
+          :disabled="loading || refreshing || syncCooldown > 0"
           class="btn btn-secondary btn-sm whitespace-nowrap"
         >
           <span v-if="refreshing || loading" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
-          <span>{{ refreshing ? $t('common.syncing') : $t('dashboard.refresh_data') }}</span>
+          <RefreshCw v-else-if="syncCooldown > 0" class="w-3.5 h-3.5 opacity-50" />
+          <RefreshCw v-else class="w-3.5 h-3.5" />
+          <span v-if="syncCooldown > 0">Tunggu {{ syncCooldown }}s</span>
+          <span v-else>{{ refreshing ? $t('common.syncing') : $t('dashboard.refresh_data') }}</span>
         </button>
       </div>
     </div>
@@ -231,14 +234,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
 import { useI18n } from 'vue-i18n'
 import { 
   CalendarClock, CheckCircle2, AlertCircle, Activity, Eye, Heart, 
   MessageCircle, Repeat2, BarChart3, LineChart, RotateCcw, 
-  Trophy, FileText, Clock, ExternalLink 
+  Trophy, FileText, Clock, ExternalLink, RefreshCw
 } from 'lucide-vue-next'
 
 const { showToast } = useNotify()
@@ -251,6 +254,10 @@ const toastMessage = ref('')
 const currentAccountId = ref<string | null>(null)
 const lastSyncedAt = ref<string | null>(null)
 const activeTab = ref('newest')
+
+// COOLDOWN STATE
+const syncCooldown = ref(0)
+let cooldownInterval: ReturnType<typeof setInterval> | null = null
 
 const queueMetrics = ref({ scheduled: 0, published: 0, failed: 0 })
 const overview = ref({ total_posts: 0, total_views: 0, total_likes: 0, total_replies: 0, total_reposts: 0, avg_engagement_rate: 0 })
@@ -349,6 +356,8 @@ async function handleRetryPost(postId: string) {
 }
 
 async function handleManualRefresh() {
+  if (syncCooldown.value > 0) return // Prevent click if on cooldown
+
   if (!currentAccountId.value) {
     await loadAllDashboardData()
     return
@@ -359,6 +368,17 @@ async function handleManualRefresh() {
     const response = await fetch('https://threads-automation-r9so.onrender.com/api/v1/metrics/sync', { method: 'POST' })
     if (!response.ok) throw new Error('Gagal sinkronisasi: Endpoint backend belum siap (404)')
     toastMessage.value = t('dashboard.toast_sync_started')
+    
+    // Set cooldown for 60 seconds
+    syncCooldown.value = 60
+    if (cooldownInterval) clearInterval(cooldownInterval)
+    cooldownInterval = setInterval(() => {
+      syncCooldown.value--
+      if (syncCooldown.value <= 0) {
+        if (cooldownInterval) clearInterval(cooldownInterval)
+      }
+    }, 1000)
+
     setTimeout(async () => {
       await loadAllDashboardData()
       refreshing.value = false
@@ -370,4 +390,7 @@ async function handleManualRefresh() {
 }
 
 onMounted(() => loadAllDashboardData())
+onUnmounted(() => {
+  if (cooldownInterval) clearInterval(cooldownInterval)
+})
 </script>
