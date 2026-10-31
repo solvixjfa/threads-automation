@@ -48,7 +48,7 @@ import { supabase } from '../../lib/supabase'
 const loading = ref(true)
 const stats = ref<any>(null)
 const errorMessage = ref('')
-const API_BASE = 'https://threads-automation-production-53ad.up.railway.app/api/v1/admin'
+const API_BASE = 'https://threads-automation-r9so.onrender.com/api/v1/admin'
 
 async function getAuthHeader() {
   const { data: { session } } = await supabase.auth.getSession()

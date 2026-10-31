@@ -240,7 +240,7 @@ async function fetchModels() {
   if (!currentAccountId.value) return
   isLoadingModels.value = true
   try {
-    const res = await fetch(`https://threads-automation-production-53ad.up.railway.app/api/v1/rag/models/${aiProvider.value}?account_id=${currentAccountId.value}`)
+    const res = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/rag/models/${aiProvider.value}?account_id=${currentAccountId.value}`)
     const data = await res.json()
     if (data.models && data.models.length > 0) {
       availableModels.value = data.models.map((m: any) => ({ label: m.name, value: m.id }))
@@ -263,7 +263,7 @@ async function generateAiIdeas() {
   const timeoutId = setTimeout(() => controller.abort(), 45000)
 
   try {
-    const response = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/rag/generate-post', {
+    const response = await fetch('https://threads-automation-r9so.onrender.com/api/v1/rag/generate-post', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
@@ -336,7 +336,7 @@ async function deepAiScore() {
   if (!postText.value.trim() || !aiModel.value) return
   isDeepScoring.value = true
   try {
-    const res = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/rag/score-draft', {
+    const res = await fetch('https://threads-automation-r9so.onrender.com/api/v1/rag/score-draft', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ account_id: currentAccountId.value, text: postText.value, provider: aiProvider.value, model_name: aiModel.value })

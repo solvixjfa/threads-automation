@@ -37,7 +37,7 @@ async function loadData() {
     if (!user) return
     const { data: acc } = await supabase.schema('threads').from('threads_accounts').select('id').eq('user_id', user.id).maybeSingle()
     if (!acc) return
-    const res = await fetch(`https://threads-automation-production-53ad.up.railway.app/api/v1/analytics/length-performance/${acc.id}`)
+    const res = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/analytics/length-performance/${acc.id}`)
     const resData = await res.json()
     if (resData.success) data.value = resData.data
   } catch (err) { console.error(err) } finally { loading.value = false }

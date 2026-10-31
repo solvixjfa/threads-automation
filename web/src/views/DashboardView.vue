@@ -286,7 +286,7 @@ async function loadAllDashboardData() {
 async function handleRetryPost(postId: string) {
   retryingPostId.value = postId
   try {
-    const res = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/queue/retry', {
+    const res = await fetch('https://threads-automation-r9so.onrender.com/api/v1/queue/retry', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ post_id: postId })
     })
     if (!res.ok) throw new Error(t('dashboard.toast_retry_failed'))
@@ -307,7 +307,7 @@ async function handleManualRefresh() {
   refreshing.value = true
   toastMessage.value = ''
   try {
-    const response = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/metrics/sync', { method: 'POST' })
+    const response = await fetch('https://threads-automation-r9so.onrender.com/api/v1/metrics/sync', { method: 'POST' })
     if (!response.ok) throw new Error(t('dashboard.toast_sync_failed'))
     toastMessage.value = t('dashboard.toast_sync_started')
     setTimeout(async () => {

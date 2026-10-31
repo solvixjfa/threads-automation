@@ -92,7 +92,7 @@ async function loadData() {
     if (!user) return
     const { data: acc } = await supabase.schema('threads').from('threads_accounts').select('id').eq('user_id', user.id).maybeSingle()
     if (!acc) throw new Error("Account not found")
-    const res = await fetch(`https://threads-automation-production-53ad.up.railway.app/api/v1/analytics/best-time/${acc.id}`)
+    const res = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/analytics/best-time/${acc.id}`)
     const data = await res.json()
     if (!res.ok) throw new Error(data.detail)
     matrix.value = data.matrix || Array(7).fill(0).map(() => Array(24).fill(0))

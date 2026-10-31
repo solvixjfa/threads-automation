@@ -303,7 +303,7 @@ async function handleBulkDelete() {
     onConfirm: async () => {
       isBulkDeleting.value = true
       try {
-        const res = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/queue/bulk-delete', {
+        const res = await fetch('https://threads-automation-r9so.onrender.com/api/v1/queue/bulk-delete', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ post_ids: allIds })
@@ -386,7 +386,7 @@ async function saveEdit() {
   isUpdating.value = true
   try {
     const localDate = new Date(editForm.value.scheduled_for)
-    const res = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/queue/edit', {
+    const res = await fetch('https://threads-automation-r9so.onrender.com/api/v1/queue/edit', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -410,7 +410,7 @@ async function magicRewrite() {
   if (!editForm.value.text.trim()) return
   isRewriting.value = true
   try {
-    const res = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/rag/improve', {
+    const res = await fetch('https://threads-automation-r9so.onrender.com/api/v1/rag/improve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -442,7 +442,7 @@ function confirmDeletePost(id: string) {
 
 async function deletePost(id: string) {                              
   try {                                                                
-    const res = await fetch(`https://threads-automation-production-53ad.up.railway.app/api/v1/queue/${id}`, { method: 'DELETE' })
+    const res = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/queue/${id}`, { method: 'DELETE' })
     if (!res.ok) throw new Error('Failed to delete')
     showToast('Post deleted.', 'info')
     await loadPosts()
@@ -454,7 +454,7 @@ async function deletePost(id: string) {
 async function handleRetryPost(id: string) {
   retryingId.value = id
   try {
-    const res = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/queue/retry', {
+    const res = await fetch('https://threads-automation-r9so.onrender.com/api/v1/queue/retry', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ post_id: id })

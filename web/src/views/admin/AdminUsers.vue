@@ -116,7 +116,7 @@ const creditNote = ref('')
 const ledgerData = ref<any[]>([])
 const isProcessing = ref(false)
 
-const API_BASE = 'https://threads-automation-production-53ad.up.railway.app/api/v1/admin'
+const API_BASE = 'https://threads-automation-r9so.onrender.com/api/v1/admin'
 
 function getPlanLabel(plan: string) {
   if (!plan || plan === 'none') return 'Free'

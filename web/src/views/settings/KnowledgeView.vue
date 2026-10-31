@@ -109,7 +109,7 @@ async function saveKnowledge() {
 
   isSavingRag.value = true
   try {
-    const response = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/rag/embed', {
+    const response = await fetch('https://threads-automation-r9so.onrender.com/api/v1/rag/embed', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ account_id: accountId.value, title: ragForm.value.title, content: ragForm.value.content, category: ragForm.value.category })
     })

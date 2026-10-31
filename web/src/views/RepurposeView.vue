@@ -127,7 +127,7 @@ function applyRecommendation(rec: any) {
 async function fetchRecommendations() {
   if (!currentAccountId.value) return
   try {
-    const res = await fetch(`https://threads-automation-production-53ad.up.railway.app/api/v1/rag/recommendations/${currentAccountId.value}`)
+    const res = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/rag/recommendations/${currentAccountId.value}`)
     const data = await res.json()
     if (data.recommendations) recommendations.value = data.recommendations
   } catch (err) { console.error(err) }
@@ -137,7 +137,7 @@ async function fetchModels() {
   if (!currentAccountId.value) return
   isLoadingModels.value = true
   try {
-    const res = await fetch(`https://threads-automation-production-53ad.up.railway.app/api/v1/rag/models/${aiProvider.value}?account_id=${currentAccountId.value}`)
+    const res = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/rag/models/${aiProvider.value}?account_id=${currentAccountId.value}`)
     const data = await res.json()
     if (data.models && data.models.length > 0) {
       availableModels.value = data.models.map((m: any) => ({ label: m.name, value: m.id }))
@@ -159,7 +159,7 @@ async function generateRepurpose() {
   const timeoutId = setTimeout(() => controller.abort(), 45000)
 
   try {
-    const res = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/rag/repurpose', {
+    const res = await fetch('https://threads-automation-r9so.onrender.com/api/v1/rag/repurpose', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
       body: JSON.stringify({ account_id: currentAccountId.value, source_text: sourceText.value, angle: repurposeAngle.value, provider: aiProvider.value, model_name: aiModel.value })
     })

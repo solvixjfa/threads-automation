@@ -96,7 +96,7 @@ async function loadData() {
     if (acc.ai_provider) aiProvider.value = acc.ai_provider
     
     // Fetch clusters
-    const res = await fetch(`https://threads-automation-production-53ad.up.railway.app/api/v1/analytics/topic-clusters/${acc.id}`)
+    const res = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/analytics/topic-clusters/${acc.id}`)
     const resData = await res.json()
     if (resData.success) data.value = resData.data
     
@@ -127,7 +127,7 @@ async function enhanceNames() {
   if (!currentAccountId.value || data.value.length === 0) return
   isEnhancing.value = true
   try {
-    const res = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/rag/label-topics', {
+    const res = await fetch('https://threads-automation-r9so.onrender.com/api/v1/rag/label-topics', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

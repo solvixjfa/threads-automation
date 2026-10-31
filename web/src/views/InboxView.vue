@@ -275,7 +275,7 @@ async function fetchModels() {
   if (!currentAccountId.value) return
   isLoadingModels.value = true
   try {
-    const res = await fetch(`https://threads-automation-production-53ad.up.railway.app/api/v1/rag/models/${aiProvider.value}?account_id=${currentAccountId.value}`)
+    const res = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/rag/models/${aiProvider.value}?account_id=${currentAccountId.value}`)
     const data = await res.json()
     if (data.models && data.models.length > 0) {
       availableModels.value = data.models.map((m: any) => ({ label: m.name, value: m.id }))
@@ -334,7 +334,7 @@ async function fetchReplies() {
 async function syncRepliesManual() {
   isSyncing.value = true
   try {
-    const res = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/leads/sync-replies', { method: 'GET' })
+    const res = await fetch('https://threads-automation-r9so.onrender.com/api/v1/leads/sync-replies', { method: 'GET' })
     if (!res.ok) throw new Error('Sync failed')
     showToast('Sync complete!', 'success')
     await fetchReplies()
@@ -344,7 +344,7 @@ async function syncRepliesManual() {
 async function generateAIDraft(item: any) {
   generatingId.value = item.id
   try {
-    const res = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/rag/generate-reply', {
+    const res = await fetch('https://threads-automation-r9so.onrender.com/api/v1/rag/generate-reply', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ account_id: item.account_id, user_comment: item.text, author_username: item.author_username, provider: aiProvider.value, model_name: aiModel.value })
     })
@@ -373,7 +373,7 @@ async function skipReply(item: any) {
 async function approveAndPublish(item: any) {
   approvingId.value = item.id
   try {
-    const res = await fetch('https://threads-automation-production-53ad.up.railway.app/api/v1/leads/publish-reply', {
+    const res = await fetch('https://threads-automation-r9so.onrender.com/api/v1/leads/publish-reply', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ account_id: item.account_id, threads_reply_id: item.threads_reply_id, text: item.draftText, log_id: item.log_id })
     })
