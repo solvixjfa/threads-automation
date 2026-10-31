@@ -1,10 +1,12 @@
 <template>
-  <!-- KUNCI: w-full max-w-full overflow-hidden -->
   <div class="space-y-6 w-full max-w-full overflow-hidden">
     <!-- HEADER -->
     <div class="flex flex-wrap justify-between items-center gap-4 w-full">
       <div class="min-w-0">
-        <h1 class="text-2xl font-bold tracking-tight">{{ $t('dashboard.title') }}</h1>
+        <h1 class="text-2xl font-bold tracking-tight flex items-center gap-2">
+          <LayoutDashboard class="w-6 h-6 theme-text-muted hidden sm:block" />
+          {{ $t('dashboard.title') }}
+        </h1>
         <p class="text-sm theme-text-muted mt-1 break-words">
           {{ $t('dashboard.subtitle') }}
           <span v-if="lastSyncedAt" class="text-xs theme-text-muted block mt-0.5">
@@ -16,24 +18,28 @@
         <button
           @click="handleManualRefresh"
           :disabled="loading || refreshing"
-          class="btn btn-secondary btn-sm whitespace-nowrap"
+          class="btn btn-secondary btn-sm whitespace-nowrap shadow-sm hover:shadow-md transition-shadow"
         >
           <span v-if="refreshing || loading" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+          <RefreshCw v-else class="w-3.5 h-3.5" />
           <span>{{ refreshing ? $t('common.syncing') : $t('dashboard.refresh_data') }}</span>
         </button>
       </div>
     </div>
 
     <!-- TOAST -->
-    <div v-if="toastMessage" class="card p-3 flex justify-between items-center text-xs border-strong w-full">
-      <span class="break-words">{{ toastMessage }}</span>
-      <button @click="toastMessage = ''" class="font-bold theme-text-muted hover:theme-text ml-2">{{ $t('common.close') }}</button>
+    <div v-if="toastMessage" class="card p-3 flex justify-between items-center text-xs border-strong w-full bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200">
+      <span class="break-words font-medium flex items-center gap-2">
+        <Info class="w-4 h-4 shrink-0" /> {{ toastMessage }}
+      </span>
+      <button @click="toastMessage = ''" class="font-bold opacity-70 hover:opacity-100 ml-2">{{ $t('common.close') }}</button>
     </div>
 
     <!-- ADMIN HEALTH -->
-    <div v-if="adminHealth" class="card p-4 flex flex-wrap justify-between items-center gap-3 text-xs w-full">
+    <div v-if="adminHealth" class="card p-4 flex flex-wrap justify-between items-center gap-3 text-xs w-full border-l-4" :style="{ borderLeftColor: adminHealth.failed_posts > 0 || adminHealth.expiring_or_broken_tokens > 0 ? 'var(--danger)' : 'var(--success)' }">
       <div class="flex items-center gap-3">
-        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ background: adminHealth.failed_posts > 0 || adminHealth.expiring_or_broken_tokens > 0 ? 'var(--danger)' : 'var(--success)', animation: adminHealth.failed_posts > 0 || adminHealth.expiring_or_broken_tokens > 0 ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none' }"></span>
+        <ShieldAlert v-if="adminHealth.failed_posts > 0 || adminHealth.expiring_or_broken_tokens > 0" class="w-4 h-4 text-red-500 flex-shrink-0" />
+        <ShieldCheck v-else class="w-4 h-4 text-green-500 flex-shrink-0" />
         <span class="break-words">
           {{ $t('dashboard.admin_status') }}
           <strong class="theme-text">{{ adminHealth.connected_accounts }} {{ $t('dashboard.connected_accounts') }}</strong>
@@ -47,50 +53,90 @@
     <!-- LOADING SKELETON -->
     <div v-if="loading" class="animate-pulse space-y-4 w-full">
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
-        <div v-for="i in 4" :key="i" class="h-28 skeleton w-full"></div>
+        <div v-for="i in 4" :key="i" class="h-28 skeleton w-full rounded-xl"></div>
       </div>
-      <div class="h-48 skeleton w-full"></div>
+      <div class="h-48 skeleton w-full rounded-xl"></div>
     </div>
 
     <!-- MAIN CONTENT -->
     <template v-else>
       <!-- STATS ROW 1 -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 w-full max-w-full">
-        <div class="card p-4 md:p-5 space-y-1 w-full min-w-0 overflow-hidden">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate">{{ $t('dashboard.stat_scheduled') }}</span>
+        <!-- Scheduled -->
+        <div class="card p-4 md:p-5 w-full min-w-0 overflow-hidden relative group hover:border-blue-500/50 transition-colors">
+          <div class="absolute top-4 right-4 opacity-10 group-hover:opacity-20 transition-opacity">
+            <CalendarClock class="w-12 h-12" />
+          </div>
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate mb-1">{{ $t('dashboard.stat_scheduled') }}</span>
           <p class="text-2xl md:text-3xl font-black truncate">{{ queueMetrics.scheduled }}</p>
         </div>
-        <div class="card p-4 md:p-5 space-y-1 w-full min-w-0 overflow-hidden">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate">{{ $t('dashboard.stat_published') }}</span>
+        <!-- Published -->
+        <div class="card p-4 md:p-5 w-full min-w-0 overflow-hidden relative group hover:border-green-500/50 transition-colors">
+          <div class="absolute top-4 right-4 opacity-10 group-hover:opacity-20 transition-opacity text-green-500">
+            <CheckCircle2 class="w-12 h-12" />
+          </div>
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate mb-1">{{ $t('dashboard.stat_published') }}</span>
           <p class="text-2xl md:text-3xl font-black truncate">{{ queueMetrics.published }}</p>
         </div>
-        <div class="card p-4 md:p-5 space-y-1 w-full min-w-0 overflow-hidden">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate">{{ $t('dashboard.stat_failed') }}</span>
+        <!-- Failed -->
+        <div class="card p-4 md:p-5 w-full min-w-0 overflow-hidden relative group hover:border-red-500/50 transition-colors">
+          <div class="absolute top-4 right-4 opacity-10 group-hover:opacity-20 transition-opacity text-red-500">
+            <AlertCircle class="w-12 h-12" />
+          </div>
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate mb-1">{{ $t('dashboard.stat_failed') }}</span>
           <p class="text-2xl md:text-3xl font-black truncate">{{ queueMetrics.failed }}</p>
         </div>
-        <div class="card p-4 md:p-5 space-y-1 w-full min-w-0 overflow-hidden">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate">{{ $t('dashboard.stat_avg_engagement') }}</span>
+        <!-- Engagement -->
+        <div class="card p-4 md:p-5 w-full min-w-0 overflow-hidden relative group hover:border-purple-500/50 transition-colors">
+          <div class="absolute top-4 right-4 opacity-10 group-hover:opacity-20 transition-opacity text-purple-500">
+            <Activity class="w-12 h-12" />
+          </div>
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate mb-1">{{ $t('dashboard.stat_avg_engagement') }}</span>
           <p class="text-2xl md:text-3xl font-black truncate">{{ overview.avg_engagement_rate }}%</p>
         </div>
       </div>
 
       <!-- STATS ROW 2 -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 w-full max-w-full">
-        <div class="card p-4 space-y-1 theme-bg-sec w-full min-w-0 overflow-hidden">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate">{{ $t('dashboard.stat_total_views') }}</span>
-          <p class="text-lg md:text-xl font-bold truncate">{{ overview.total_views.toLocaleString() }}</p>
+        <!-- Views -->
+        <div class="card p-4 space-y-1 theme-bg-sec w-full min-w-0 overflow-hidden flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate">{{ $t('dashboard.stat_total_views') }}</span>
+            <p class="text-lg md:text-xl font-bold truncate">{{ overview.total_views.toLocaleString() }}</p>
+          </div>
+          <div class="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shrink-0">
+            <Eye class="w-5 h-5" />
+          </div>
         </div>
-        <div class="card p-4 space-y-1 theme-bg-sec w-full min-w-0 overflow-hidden">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate">{{ $t('dashboard.stat_total_likes') }}</span>
-          <p class="text-lg md:text-xl font-bold truncate">{{ overview.total_likes.toLocaleString() }}</p>
+        <!-- Likes -->
+        <div class="card p-4 space-y-1 theme-bg-sec w-full min-w-0 overflow-hidden flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate">{{ $t('dashboard.stat_total_likes') }}</span>
+            <p class="text-lg md:text-xl font-bold truncate">{{ overview.total_likes.toLocaleString() }}</p>
+          </div>
+          <div class="p-2 rounded-lg bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 shrink-0">
+            <Heart class="w-5 h-5" />
+          </div>
         </div>
-        <div class="card p-4 space-y-1 theme-bg-sec w-full min-w-0 overflow-hidden">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate">{{ $t('dashboard.stat_total_replies') }}</span>
-          <p class="text-lg md:text-xl font-bold truncate">{{ overview.total_replies.toLocaleString() }}</p>
+        <!-- Replies -->
+        <div class="card p-4 space-y-1 theme-bg-sec w-full min-w-0 overflow-hidden flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate">{{ $t('dashboard.stat_total_replies') }}</span>
+            <p class="text-lg md:text-xl font-bold truncate">{{ overview.total_replies.toLocaleString() }}</p>
+          </div>
+          <div class="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 shrink-0">
+            <MessageCircle class="w-5 h-5" />
+          </div>
         </div>
-        <div class="card p-4 space-y-1 theme-bg-sec w-full min-w-0 overflow-hidden">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate">{{ $t('dashboard.stat_total_reposts') }}</span>
-          <p class="text-lg md:text-xl font-bold truncate">{{ overview.total_reposts.toLocaleString() }}</p>
+        <!-- Reposts -->
+        <div class="card p-4 space-y-1 theme-bg-sec w-full min-w-0 overflow-hidden flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate">{{ $t('dashboard.stat_total_reposts') }}</span>
+            <p class="text-lg md:text-xl font-bold truncate">{{ overview.total_reposts.toLocaleString() }}</p>
+          </div>
+          <div class="p-2 rounded-lg bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 shrink-0">
+            <Repeat2 class="w-5 h-5" />
+          </div>
         </div>
       </div>
 
@@ -98,20 +144,22 @@
       <div class="card p-4 md:p-6 space-y-4 w-full max-w-full overflow-hidden">
         <div class="flex flex-wrap justify-between items-center pb-3 divider gap-2">
           <div>
-            <h2 class="text-xs font-bold uppercase tracking-wide">{{ $t('dashboard.daily_trends_title') }}</h2>
+            <h2 class="text-xs font-bold uppercase tracking-wide flex items-center gap-2">
+              <BarChart3 class="w-4 h-4 theme-text-muted" />
+              {{ $t('dashboard.daily_trends_title') }}
+            </h2>
             <p class="text-[11px] theme-text-muted mt-0.5">{{ $t('dashboard.daily_trends_subtitle') }}</p>
           </div>
           <div class="flex items-center gap-4 text-[10px] font-bold flex-shrink-0">
-            <span class="flex items-center gap-1.5">
-              <span class="w-2.5 h-2.5 rounded-full" style="background: var(--accent);"></span> Views
-            </span>
-            <span class="flex items-center gap-1.5">
-              <span class="w-2.5 h-2.5 rounded-full" style="background: var(--text-muted);"></span> Likes
-            </span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background: var(--accent);"></span> Views</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full" style="background: var(--text-muted);"></span> Likes</span>
           </div>
         </div>
 
-        <div v-if="dailyInsights.length === 0" class="text-center py-10 text-xs theme-text-muted">
+        <div v-if="dailyInsights.length === 0" class="text-center py-10 text-xs theme-text-muted flex flex-col items-center justify-center gap-3">
+          <div class="w-12 h-12 rounded-full theme-bg-sec flex items-center justify-center">
+            <LineChart class="w-6 h-6 opacity-50" />
+          </div>
           {{ $t('dashboard.no_daily_data') }}
         </div>
 
@@ -122,8 +170,8 @@
                 {{ day.views }} / {{ day.likes }}
               </div>
               <div class="w-full max-w-[16px] flex items-end gap-0.5 h-full justify-center">
-                <div class="w-full rounded-t transition-all" :style="{ height: getBarHeight(day.views, maxDailyViews), background: 'var(--accent)' }"></div>
-                <div class="w-full rounded-t transition-all" :style="{ height: getBarHeight(day.likes, maxDailyViews), background: 'var(--text-muted)' }"></div>
+                <div class="w-full rounded-t transition-all group-hover:opacity-100 opacity-80" :style="{ height: getBarHeight(day.views, maxDailyViews), background: 'var(--accent)' }"></div>
+                <div class="w-full rounded-t transition-all group-hover:opacity-100 opacity-50" :style="{ height: getBarHeight(day.likes, maxDailyViews), background: 'var(--text-muted)' }"></div>
               </div>
               <span class="text-[9px] font-bold theme-text-muted truncate w-full text-center">{{ formatDayLabel(day.date) }}</span>
             </div>
@@ -132,21 +180,22 @@
       </div>
 
       <!-- FAILED POSTS -->
-      <div v-if="failedPosts.length > 0" class="card p-4 md:p-6 space-y-4 w-full max-w-full overflow-hidden">
-        <div class="flex justify-between items-center pb-3 divider">
-          <h2 class="text-xs font-bold uppercase tracking-wide flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full animate-ping" style="background: var(--danger);"></span>
+      <div v-if="failedPosts.length > 0" class="card p-4 md:p-6 space-y-4 w-full max-w-full overflow-hidden border-red-200 dark:border-red-900/50 bg-red-50/30 dark:bg-red-900/10">
+        <div class="flex justify-between items-center pb-3 border-b border-red-200 dark:border-red-900/50">
+          <h2 class="text-xs font-bold uppercase tracking-wide flex items-center gap-2 text-red-600 dark:text-red-400">
+            <span class="w-2 h-2 rounded-full animate-ping" style="background: currentColor;"></span>
             {{ $t('dashboard.failed_posts_title') }} ({{ failedPosts.length }})
           </h2>
-          <span class="text-[10px] font-bold theme-text-muted">{{ $t('dashboard.needs_attention') }}</span>
+          <span class="text-[10px] font-bold text-red-500/70">{{ $t('dashboard.needs_attention') }}</span>
         </div>
         <div class="space-y-3">
-          <div v-for="post in failedPosts" :key="post.id" class="p-4 card flex flex-col md:flex-row md:items-center justify-between gap-3 w-full">
+          <div v-for="post in failedPosts" :key="post.id" class="p-4 card bg-white dark:bg-black flex flex-col md:flex-row md:items-center justify-between gap-3 w-full border-red-100 dark:border-red-900/30">
             <div class="space-y-1 flex-1 min-w-0">
               <p class="text-xs font-medium line-clamp-2 break-words">{{ post.text }}</p>
             </div>
-            <button @click="handleRetryPost(post.id)" :disabled="retryingPostId === post.id" class="btn btn-primary btn-sm shrink-0 w-full md:w-auto">
+            <button @click="handleRetryPost(post.id)" :disabled="retryingPostId === post.id" class="btn btn-primary btn-sm shrink-0 w-full md:w-auto shadow-md">
               <span v-if="retryingPostId === post.id" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+              <RotateCcw v-else class="w-3.5 h-3.5" />
               <span>{{ retryingPostId === post.id ? $t('common.processing') : $t('dashboard.retry_btn') }}</span>
             </button>
           </div>
@@ -156,30 +205,46 @@
       <!-- TOP POSTS -->
       <div class="card p-4 md:p-6 space-y-4 w-full max-w-full overflow-hidden">
         <div class="flex flex-wrap justify-between items-center pb-3 divider gap-3">
-          <h2 class="text-xs font-bold uppercase tracking-wide">{{ $t('dashboard.top_posts_title') }}</h2>
-          <!-- KUNCI: overflow-x-auto tanpa maksa lebar parent -->
-          <div class="flex items-center gap-1 p-1 rounded-lg theme-bg border theme-border overflow-x-auto max-w-full hide-scrollbar flex-shrink-0">
-            <button @click="activeTab = 'newest'" class="px-3 py-1 text-[10px] font-bold rounded-md transition-colors whitespace-nowrap flex-shrink-0" :class="activeTab === 'newest' ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm border theme-border' : 'theme-text-muted hover:theme-text border border-transparent'">{{ $t('dashboard.tab_newest') }}</button>
-            <button @click="activeTab = 'views'" class="px-3 py-1 text-[10px] font-bold rounded-md transition-colors whitespace-nowrap flex-shrink-0" :class="activeTab === 'views' ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm border theme-border' : 'theme-text-muted hover:theme-text border border-transparent'">{{ $t('dashboard.tab_views') }}</button>
-            <button @click="activeTab = 'er'" class="px-3 py-1 text-[10px] font-bold rounded-md transition-colors whitespace-nowrap flex-shrink-0" :class="activeTab === 'er' ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm border theme-border' : 'theme-text-muted hover:theme-text border border-transparent'">{{ $t('dashboard.tab_engagement') }}</button>
+          <h2 class="text-xs font-bold uppercase tracking-wide flex items-center gap-2">
+            <Trophy class="w-4 h-4 theme-text-muted" />
+            {{ $t('dashboard.top_posts_title') }}
+          </h2>
+          <div class="flex items-center gap-1 p-1 rounded-lg theme-bg border theme-border overflow-x-auto max-w-full hide-scrollbar flex-shrink-0 shadow-inner">
+            <button @click="activeTab = 'newest'" class="px-3 py-1 text-[10px] font-bold rounded-md transition-all whitespace-nowrap flex-shrink-0" :class="activeTab === 'newest' ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm border theme-border' : 'theme-text-muted hover:theme-text border border-transparent'">{{ $t('dashboard.tab_newest') }}</button>
+            <button @click="activeTab = 'views'" class="px-3 py-1 text-[10px] font-bold rounded-md transition-all whitespace-nowrap flex-shrink-0" :class="activeTab === 'views' ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm border theme-border' : 'theme-text-muted hover:theme-text border border-transparent'">{{ $t('dashboard.tab_views') }}</button>
+            <button @click="activeTab = 'er'" class="px-3 py-1 text-[10px] font-bold rounded-md transition-all whitespace-nowrap flex-shrink-0" :class="activeTab === 'er' ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm border theme-border' : 'theme-text-muted hover:theme-text border border-transparent'">{{ $t('dashboard.tab_engagement') }}</button>
           </div>
         </div>
 
-        <div v-if="allPosts.length === 0" class="text-center py-8 text-xs theme-text-muted">{{ $t('dashboard.no_posts') }}</div>
+        <div v-if="allPosts.length === 0" class="text-center py-8 text-xs theme-text-muted flex flex-col items-center gap-2">
+          <FileText class="w-8 h-8 opacity-20" />
+          {{ $t('dashboard.no_posts') }}
+        </div>
         <div v-else class="space-y-3">
-          <div v-for="post in filteredTopPosts" :key="post.id" class="p-4 card card-hover flex flex-col md:flex-row md:items-center justify-between gap-3 theme-bg-sec w-full max-w-full overflow-hidden">
+          <div v-for="post in filteredTopPosts" :key="post.id" class="p-4 card card-hover flex flex-col md:flex-row md:items-center justify-between gap-3 theme-bg-sec w-full max-w-full overflow-hidden group">
             <div class="space-y-1 flex-1 min-w-0">
-              <p class="text-xs font-medium line-clamp-2 break-words w-full">{{ post.text }}</p>
-              <div class="flex items-center gap-3 text-[11px] theme-text-muted flex-wrap">
-                <span>{{ formatDate(post.posted_at) }}</span>
-                <a v-if="post.permalink" :href="post.permalink" target="_blank" class="font-bold theme-text hover:underline">Buka di Threads</a>
+              <p class="text-xs font-medium line-clamp-2 break-words w-full group-hover:text-blue-500 transition-colors">{{ post.text }}</p>
+              <div class="flex items-center gap-3 text-[11px] theme-text-muted flex-wrap mt-1">
+                <span class="flex items-center gap-1"><Clock class="w-3 h-3" /> {{ formatDate(post.posted_at) }}</span>
+                <a v-if="post.permalink" :href="post.permalink" target="_blank" class="font-bold theme-text hover:underline flex items-center gap-1">
+                  <ExternalLink class="w-3 h-3" /> Buka di Threads
+                </a>
               </div>
             </div>
-            <!-- KUNCI: flex-1 min-w-0 biar metrics box gak maksa lebar -->
-            <div class="flex items-center text-xs shrink-0 p-2 rounded-lg theme-bg theme-border border w-full md:w-auto justify-between md:justify-around gap-2 max-w-full">
-              <div class="text-center px-1 flex-1 min-w-0"><span class="block text-[9px] theme-text-muted uppercase font-bold truncate">Views</span><span class="font-bold truncate">{{ post.metrics?.views ?? 0 }}</span></div>
-              <div class="text-center px-1 border-l theme-border flex-1 min-w-0"><span class="block text-[9px] theme-text-muted uppercase font-bold truncate">Likes</span><span class="font-bold truncate">{{ post.metrics?.likes ?? 0 }}</span></div>
-              <div class="text-center px-1 border-l theme-border flex-1 min-w-0"><span class="block text-[9px] theme-text-muted uppercase font-bold truncate">ER</span><span class="font-black truncate">{{ post.engagement_rate ?? 0 }}%</span></div>
+            <!-- Metrics box -->
+            <div class="flex items-center text-xs shrink-0 p-2 rounded-lg bg-white dark:bg-black theme-border border w-full md:w-auto justify-between md:justify-around gap-3 max-w-full shadow-sm">
+              <div class="text-center px-1 flex-1 min-w-0">
+                <span class="block text-[9px] theme-text-muted uppercase font-bold truncate">Views</span>
+                <span class="font-bold truncate text-blue-600 dark:text-blue-400">{{ post.metrics?.views ?? 0 }}</span>
+              </div>
+              <div class="text-center px-1 border-l theme-border flex-1 min-w-0">
+                <span class="block text-[9px] theme-text-muted uppercase font-bold truncate">Likes</span>
+                <span class="font-bold truncate text-pink-600 dark:text-pink-400">{{ post.metrics?.likes ?? 0 }}</span>
+              </div>
+              <div class="text-center px-1 border-l theme-border flex-1 min-w-0">
+                <span class="block text-[9px] theme-text-muted uppercase font-bold truncate">ER</span>
+                <span class="font-black truncate text-green-600 dark:text-green-400">{{ post.engagement_rate ?? 0 }}%</span>
+              </div>
             </div>
           </div>
         </div>
@@ -193,6 +258,12 @@ import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
 import { useI18n } from 'vue-i18n'
+import { 
+  LayoutDashboard, RefreshCw, Info, ShieldAlert, ShieldCheck, 
+  CalendarClock, CheckCircle2, AlertCircle, Activity, Eye, Heart, 
+  MessageCircle, Repeat2, BarChart3, LineChart, RotateCcw, 
+  Trophy, FileText, Clock, ExternalLink 
+} from 'lucide-vue-next'
 
 const { showToast } = useNotify()
 const { t } = useI18n()
