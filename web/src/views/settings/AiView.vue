@@ -47,7 +47,7 @@
             <Badge v-if="plan !== 'paid_byok'" variant="danger">Locked</Badge>
           </div>
           <p class="text-xs theme-text-muted">
-            Gunakan API Key sendiri agar tidak memotong kredit. Fitur ini khusus untuk paket <b>Pro BYOK</strong>.
+            Gunakan API Key sendiri agar tidak memotong kredit. Fitur ini khusus untuk paket <strong>Pro BYOK</strong>.
           </p>
           
           <div v-if="plan !== 'paid_byok'" class="p-4 rounded-lg border border-red-500/20 bg-red-500/5 text-red-500 text-xs text-center">
