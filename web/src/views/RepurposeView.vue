@@ -188,10 +188,10 @@ function sendToComposer(text: string) {
 onMounted(async () => {
   const { data: { user } } = await supabase.auth.getUser()
   if (user) {
-    const { data: acc } = await supabase.schema('threads').from('threads_accounts').select('id, ai_credits, custom_gemini_key, custom_groq_key, ai_provider').eq('user_id', user.id).maybeSingle()
+    const { data: acc } = await supabase.schema('threads').from('threads_accounts').select('id, credit_balance, custom_gemini_key, custom_groq_key, ai_provider').eq('user_id', user.id).maybeSingle()
     if (acc) {
       currentAccountId.value = acc.id
-      aiCredits.value = acc.ai_credits ?? 20
+      aiCredits.value = acc.credit_balance ?? 20
       customGeminiKey.value = acc.custom_gemini_key || ''
       customGroqKey.value = acc.custom_groq_key || ''
       if (acc.ai_provider) aiProvider.value = acc.ai_provider

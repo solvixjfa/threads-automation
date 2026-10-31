@@ -302,11 +302,11 @@ async function fetchReplies() {
   loading.value = true
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return
-  const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id, ai_credits, custom_gemini_key, custom_groq_key, ai_provider').eq('user_id', user.id).maybeSingle()
+  const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id, credit_balance, custom_gemini_key, custom_groq_key, ai_provider').eq('user_id', user.id).maybeSingle()
   if (!account) return
 
   currentAccountId.value = account.id
-  aiCredits.value = account.ai_credits ?? 20
+  aiCredits.value = account.credit_balance ?? 20
   customGeminiKey.value = account.custom_gemini_key || ''
   customGroqKey.value = account.custom_groq_key || ''
   if (account.ai_provider) aiProvider.value = account.ai_provider

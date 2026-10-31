@@ -20,13 +20,13 @@ async def generate_rag_reply(account_id: str, user_comment: str, author_username
         return None
     
     # 1. CEK KREDIT & API KEY USER
-    acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key, ai_credits").eq("id", account_id).limit(1).execute()
+    acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key, credit_balance").eq("id", account_id).limit(1).execute()
     if not acc_res.data: raise Exception("Account not found")
     acc = acc_res.data[0]
     
     custom_gemini = acc.get("custom_gemini_key")
     custom_groq = acc.get("custom_groq_key")
-    credits = acc.get("ai_credits", 0)
+    credits = acc.get("credit_balance", 0)
     
     if provider == "groq":
         api_key_to_use = custom_groq if custom_groq else GROQ_KEY
@@ -94,7 +94,7 @@ Your task is to reply to a user comment. Be friendly, concise, and professional.
 
     # 5. POTONG KREDIT (Kalau pakai SaaS)
     if is_using_saas:
-        db.schema("threads").from_("threads_accounts").update({"ai_credits": credits - 1}).eq("id", account_id).execute()
+        db.schema("threads").from_("threads_accounts").update({"credit_balance": credits - 1}).eq("id", account_id).execute()
 
     return result_text
 

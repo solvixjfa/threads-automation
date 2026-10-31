@@ -85,12 +85,12 @@ async function loadData() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     const { data: acc } = await supabase.schema('threads').from('threads_accounts')
-      .select('id, ai_credits, custom_gemini_key, custom_groq_key, ai_provider, topic_labels_cache, topic_labels_cached_at')
+      .select('id, credit_balance, custom_gemini_key, custom_groq_key, ai_provider, topic_labels_cache, topic_labels_cached_at')
       .eq('user_id', user.id).maybeSingle()
     if (!acc) return
     
     currentAccountId.value = acc.id
-    aiCredits.value = acc.ai_credits ?? 0
+    aiCredits.value = acc.credit_balance ?? 0
     customGeminiKey.value = acc.custom_gemini_key || ''
     customGroqKey.value = acc.custom_groq_key || ''
     if (acc.ai_provider) aiProvider.value = acc.ai_provider

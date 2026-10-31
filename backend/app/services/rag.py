@@ -118,14 +118,14 @@ async def search_knowledge(account_id: str, query: str, limit: int = 3, api_key:
 
 async def generate_rag_post(account_id: str, topic: str, tone: str = "Edukasi & Insight Kasual", custom_prompt: str = None, provider: str = "gemini", model_name: str = None) -> list[dict]:
     db = get_supabase()
-    acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key, ai_credits").eq("id", account_id).limit(1).execute()
+    acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key, credit_balance").eq("id", account_id).limit(1).execute()
     
     if not acc_res.data: raise Exception("Account not found")
     acc = acc_res.data[0]
     
     custom_gemini = acc.get("custom_gemini_key")
     custom_groq = acc.get("custom_groq_key")
-    credits = acc.get("ai_credits", 0)
+    credits = acc.get("credit_balance", 0)
     
     if provider == "groq":
         api_key_to_use = custom_groq if custom_groq else GROQ_KEY
@@ -210,21 +210,21 @@ Create a 3-DAY CONTENT PLAN based on the TOPIC below. Avoid repeating recent pos
         result_options = parsed.get("options", parsed)
 
     if is_using_saas:
-        db.schema("threads").from_("threads_accounts").update({"ai_credits": credits - 1}).eq("id", account_id).execute()
+        db.schema("threads").from_("threads_accounts").update({"credit_balance": credits - 1}).eq("id", account_id).execute()
 
     if not result_options: raise Exception("AI returned empty content.")
     return result_options
 
 async def repurpose_content(account_id: str, source_text: str, angle: str, provider: str = "gemini", model_name: str = None) -> list[dict]:
     db = get_supabase()
-    acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key, ai_credits").eq("id", account_id).limit(1).execute()
+    acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key, credit_balance").eq("id", account_id).limit(1).execute()
     
     if not acc_res.data: raise Exception("Account not found")
     acc = acc_res.data[0]
     
     custom_gemini = acc.get("custom_gemini_key")
     custom_groq = acc.get("custom_groq_key")
-    credits = acc.get("ai_credits", 0)
+    credits = acc.get("credit_balance", 0)
     
     if provider == "groq":
         api_key_to_use = custom_groq if custom_groq else GROQ_KEY
@@ -298,7 +298,7 @@ Do not invent new facts, just change the format, tone, and structure to fit the 
         result_options = parsed.get("options", parsed)
 
     if is_using_saas:
-        db.schema("threads").from_("threads_accounts").update({"ai_credits": credits - 1}).eq("id", account_id).execute()
+        db.schema("threads").from_("threads_accounts").update({"credit_balance": credits - 1}).eq("id", account_id).execute()
 
     if not result_options: raise Exception("AI returned empty content.")
     return result_options
@@ -355,14 +355,14 @@ async def get_repurpose_recommendations(account_id: str) -> list[dict]:
 
 async def score_draft_ai(account_id: str, text: str, provider: str = "groq", model_name: str = None) -> dict:
     db = get_supabase()
-    acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key, ai_credits").eq("id", account_id).limit(1).execute()
+    acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key, credit_balance").eq("id", account_id).limit(1).execute()
     
     if not acc_res.data: raise Exception("Account not found")
     acc = acc_res.data[0]
     
     custom_gemini = acc.get("custom_gemini_key")
     custom_groq = acc.get("custom_groq_key")
-    credits = acc.get("ai_credits", 0)
+    credits = acc.get("credit_balance", 0)
     
     if provider == "groq":
         api_key_to_use = custom_groq if custom_groq else GROQ_KEY
@@ -435,20 +435,20 @@ MUST return a pure JSON object with this exact structure:
         result = json.loads(raw_text)
 
     if is_using_saas:
-        db.schema("threads").from_("threads_accounts").update({"ai_credits": credits - 1}).eq("id", account_id).execute()
+        db.schema("threads").from_("threads_accounts").update({"credit_balance": credits - 1}).eq("id", account_id).execute()
 
     return result
 
 async def improve_draft_ai(account_id: str, text: str, provider: str = "groq", model_name: str = None) -> str:
     db = get_supabase()
-    acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key, ai_credits").eq("id", account_id).limit(1).execute()
+    acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key, credit_balance").eq("id", account_id).limit(1).execute()
     
     if not acc_res.data: raise Exception("Account not found")
     acc = acc_res.data[0]
     
     custom_gemini = acc.get("custom_gemini_key")
     custom_groq = acc.get("custom_groq_key")
-    credits = acc.get("ai_credits", 0)
+    credits = acc.get("credit_balance", 0)
     
     if provider == "groq":
         api_key_to_use = custom_groq if custom_groq else GROQ_KEY
@@ -505,21 +505,21 @@ Return ONLY the improved text. No explanations, no quotes, just the plain text.
         improved_text = response.text.strip()
 
     if is_using_saas:
-        db.schema("threads").from_("threads_accounts").update({"ai_credits": credits - 1}).eq("id", account_id).execute()
+        db.schema("threads").from_("threads_accounts").update({"credit_balance": credits - 1}).eq("id", account_id).execute()
 
     return improved_text
 
 async def label_topics_ai(account_id: str, clusters: list, provider: str = "groq", model_name: str = None) -> list:
     """Enhance topic cluster names using LLM. Returns list of enhanced names."""
     db = get_supabase()
-    acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key, ai_credits").eq("id", account_id).limit(1).execute()
+    acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key, credit_balance").eq("id", account_id).limit(1).execute()
     
     if not acc_res.data: raise Exception("Account not found")
     acc = acc_res.data[0]
     
     custom_gemini = acc.get("custom_gemini_key")
     custom_groq = acc.get("custom_groq_key")
-    credits = acc.get("ai_credits", 0)
+    credits = acc.get("credit_balance", 0)
     
     if provider == "groq":
         api_key_to_use = custom_groq if custom_groq else GROQ_KEY
@@ -575,6 +575,6 @@ async def label_topics_ai(account_id: str, clusters: list, provider: str = "groq
     
     # Charge 1 credit if using SaaS key
     if is_using_saas:
-        db.schema("threads").from_("threads_accounts").update({"ai_credits": credits - 1}).eq("id", account_id).execute()
+        db.schema("threads").from_("threads_accounts").update({"credit_balance": credits - 1}).eq("id", account_id).execute()
     
     return result_names

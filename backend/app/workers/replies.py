@@ -389,7 +389,7 @@ async def fetch_and_process_replies():
 
     accounts_res = (
         db.schema("threads").from_("threads_accounts")
-        .select("id, settings, username, ai_provider, custom_gemini_key, custom_groq_key, ai_credits")
+        .select("id, settings, username, ai_provider, custom_gemini_key, custom_groq_key, credit_balance")
         .eq("connection_status", "connected")
         .execute()
     )
