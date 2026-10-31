@@ -5,10 +5,19 @@ import asyncio
 import json
 from google import genai
 from app.services.rag import search_knowledge, get_supabase, GROQ_KEY, GEMINI_KEY, DEFAULT_GEMINI_MODELS, DEFAULT_GROQ_MODELS
+from app.services.billing import check_and_spend, refund_credits, BillingError
 from groq import Groq
 
 async def generate_rag_reply(account_id: str, user_comment: str, author_username: str = "", provider: str = "gemini", model_name: str = None) -> str:
     db = get_supabase()
+    ref_id = None
+    try:
+        ref_id = check_and_spend(account_id, "reply_ai")
+    except BillingError as e:
+        # Fallback ke template gratis jika kredit habis / expired
+        return None # Signal ke worker untuk pake template
+    except Exception:
+        return None
     
     # 1. CEK KREDIT & API KEY USER
     acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key, ai_credits").eq("id", account_id).limit(1).execute()

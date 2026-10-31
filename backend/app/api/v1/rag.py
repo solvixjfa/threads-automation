@@ -7,6 +7,7 @@ from app.services.rag import (
     score_draft_ai, improve_draft_ai, label_topics_ai
 )
 from app.services.auto_reply import generate_rag_reply
+from app.services.billing import check_and_spend, refund_credits, BillingError
 
 router = APIRouter()
 
@@ -115,7 +116,9 @@ async def generate_reply(payload: AutoReplyRequest):
 
 @router.post("/generate-post")
 async def generate_post(payload: GeneratePostRequest):
+    ref_id = None
     try:
+        ref_id = check_and_spend(payload.account_id, "generate")
         options = await generate_rag_post(
             account_id=payload.account_id, topic=payload.topic,
             tone=payload.tone or "Edukasi & Insight Kasual",
@@ -125,11 +128,15 @@ async def generate_post(payload: GeneratePostRequest):
         )
         return {"status": "success", "options": options}
     except Exception as e:
+        if ref_id: refund_credits(payload.account_id, "generate", ref_id)
+        if isinstance(e, BillingError): raise HTTPException(status_code=403, detail=e.message)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/repurpose")
 async def repurpose(payload: RepurposeRequest):
+    ref_id = None
     try:
+        ref_id = check_and_spend(payload.account_id, "repurpose")
         options = await repurpose_content(
             account_id=payload.account_id,
             source_text=payload.source_text,
@@ -139,11 +146,15 @@ async def repurpose(payload: RepurposeRequest):
         )
         return {"status": "success", "options": options}
     except Exception as e:
+        if ref_id: refund_credits(payload.account_id, "repurpose", ref_id)
+        if isinstance(e, BillingError): raise HTTPException(status_code=403, detail=e.message)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/score-draft")
 async def score_draft(payload: ScoreDraftRequest):
+    ref_id = None
     try:
+        ref_id = check_and_spend(payload.account_id, "deep_scoring")
         result = await score_draft_ai(
             account_id=payload.account_id,
             text=payload.text,

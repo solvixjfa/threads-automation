@@ -267,8 +267,19 @@ async def sync_replies_for_post(
                     account_id=acc_id, user_comment=ai_input,
                     author_username=author_username, provider=ai_provider,
                 )
-                llm_meta["mode"] = "llm"
-                stats["llm"] += 1
+                if draft_text is None:
+                    # Fallback ke template gratis karena kredit habis
+                    custom_tpls = get_custom_templates(category_rules or {}, category)
+                    if has_template(category, custom_tpls):
+                        draft_text = pick_template(category, custom_tpls)
+                        llm_meta["mode"] = "template_fallback"
+                        stats["template"] += 1
+                    else:
+                        stats["skipped"] += 1
+                        continue
+                else:
+                    llm_meta["mode"] = "llm"
+                    stats["llm"] += 1
             except Exception as ai_err:
                 logging.error(f"[AI Draft Error]: {str(ai_err)}")
                 stats["skipped"] += 1

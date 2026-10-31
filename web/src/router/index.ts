@@ -17,6 +17,7 @@ import InboxView from '../views/InboxView.vue'
 import PrivacyView from '../views/PrivacyView.vue'
 import TermsView from '../views/TermsView.vue'
 import DataDeletionView from '../views/DataDeletionView.vue'
+import AdminView from '../views/AdminView.vue'
 
 import ContentLayout from '../views/content/ContentLayout.vue'
 import QueueView from '../views/content/QueueView.vue'
@@ -36,6 +37,7 @@ const router = createRouter({
     { path: '/privacy', name: 'privacy', component: PrivacyView },
     { path: '/terms', name: 'terms', component: TermsView },
     { path: '/data-deletion', name: 'data-deletion', component: DataDeletionView },
+    { path: '/admin', name: 'admin', component: AdminView, meta: { requiresAuth: true } },
 
     { path: '/dashboard', name: 'dashboard', component: DashboardView, meta: { requiresAuth: true } },
     {
