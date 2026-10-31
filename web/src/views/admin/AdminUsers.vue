@@ -99,9 +99,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { supabase } from '../lib/supabase'
-import { useNotify } from '../composables/useNotify'
-import { Button, Badge, Select } from '../components/ui'
+import { supabase } from '../../lib/supabase'
+import { useNotify } from '../../composables/useNotify'
+import { Button, Badge, Select } from '../../components/ui'
 
 const { showToast } = useNotify()
 const users = ref<any[]>([])
