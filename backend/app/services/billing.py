@@ -15,13 +15,11 @@ def check_and_spend(account_id: str, action_type: str) -> str:
     """Mengecek plan dan memotong kredit. Return ref_id untuk refund."""
     db = get_supabase()
     
-    # FIX: Ganti maybeSingle() jadi limit(1).execute()
     acc = db.schema("threads").from_("threads_accounts").select("plan, plan_expires_at, credit_balance, custom_gemini_key, custom_groq_key").eq("id", account_id).limit(1).execute()
     
     if not acc.data:
         raise BillingError("Account not found", "NOT_FOUND")
 
-    # FIX: Ambil index [0] karena data berupa list
     acc_data = acc.data[0]
     plan = acc_data.get("plan", "none")
     expires_at = acc_data.get("plan_expires_at")
@@ -30,7 +28,6 @@ def check_and_spend(account_id: str, action_type: str) -> str:
     if plan == "none":
         raise BillingError("Plan kamu sudah berakhir. Perpanjang untuk memakai fitur AI.", "PLAN_EXPIRED")
 
-    # Cek expiry (Supabase returns ISO string)
     if expires_at:
         try:
             exp_dt = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
@@ -39,15 +36,14 @@ def check_and_spend(account_id: str, action_type: str) -> str:
         except ValueError:
             pass 
 
-    # 2. Dapatkan Cost
     cost = CREDIT_COSTS.get(action_type, 1)
     if cost == 0:
-        return str(uuid.uuid4()) # No cost
+        return str(uuid.uuid4())
 
-    # 3. Eksekusi RPC Atomik
     ref_id = str(uuid.uuid4())
     try:
-        db.rpc("spend_credits", {
+        # FIX: Tambahkan .schema("threads") sebelum .rpc
+        db.schema("threads").rpc("spend_credits", {
             "p_account_id": account_id,
             "p_amount": cost,
             "p_action_type": action_type,
@@ -73,7 +69,8 @@ def refund_credits(account_id: str, action_type: str, ref_id: str):
         return
 
     try:
-        db.rpc("refund_credits", {
+        # FIX: Tambahkan .schema("threads") sebelum .rpc
+        db.schema("threads").rpc("refund_credits", {
             "p_account_id": account_id,
             "p_amount": cost,
             "p_action_type": action_type,
