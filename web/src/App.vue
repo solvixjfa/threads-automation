@@ -7,10 +7,17 @@
     <RouterView />
   </div>
 
+  <!-- JIKA DI HALAMAN ADMIN, JANGAN TAMPILKAN SIDEBAR UTAMA -->
+  <div v-else-if="isAdminPage" class="h-[100dvh] overflow-hidden theme-bg theme-text">
+    <RouterView />
+  </div>
+
+  <!-- LAYOUT UTAMA (USER BIASA) -->
   <div v-else class="flex h-[100dvh] overflow-hidden theme-bg theme-text">
     <AppSidebar
       :open="sidebarOpen"
       :email="session.user.email"
+      :isAdmin="session.user.email === 'jepri097@gmail.com'"
       @close="sidebarOpen = false"
       @logout="handleLogout"
     />
@@ -28,7 +35,6 @@
         </button>
       </header>
 
-      <!-- Perbaikan: pb-4 md:pb-8 biar gak kelewat panjang, min-h-full biar rapi -->
       <main class="flex-1 overflow-y-auto p-4 md:p-8">
         <div class="max-w-5xl mx-auto pb-4 md:pb-8 min-h-full flex flex-col">
           <RouterView />
@@ -40,17 +46,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { RouterView, useRouter } from 'vue-router'
+import { ref, onMounted, computed } from 'vue'
+import { RouterView, useRouter, useRoute } from 'vue-router'
 import { supabase } from './lib/supabase'
 import AppSidebar from './components/AppSidebar.vue'
 import NotifyOverlay from './components/NotifyOverlay.vue'
 import { useTheme } from './composables/useTheme'
 
 const router = useRouter()
+const route = useRoute()
 const session = ref<any>(null)
 const loading = ref(true)
 const sidebarOpen = ref(false)
+
+const isAdminPage = computed(() => route.path.startsWith('/admin'))
 
 const { initTheme } = useTheme()
 initTheme()
