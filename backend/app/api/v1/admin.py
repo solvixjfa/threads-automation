@@ -4,8 +4,12 @@ from app.services.rag import get_supabase
 from app.core.config import PAID_DAYS, PAID_CREDITS
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+import httpx
+import os
+import logging
 
 router = APIRouter()
+logger = logging.getLogger("uvicorn.error")
 
 class AdminActionRequest(BaseModel):
     account_id: str
@@ -34,6 +38,47 @@ def verify_admin(authorization: Optional[str] = Header(None)):
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Auth failed: {str(e)}")
 
+async def send_approval_email(email: str, plan_name: str):
+    api_key = os.getenv("RESEND_API_KEY")
+    from_email = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+    
+    if not api_key:
+        logger.error("❌ RESEND_API_KEY tidak ditemukan di env Railway!")
+        return
+
+    html_content = f"""
+    <div style="font-family: sans-serif; color: #111; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #000;">Pembayaran Berhasil! 🎉</h2>
+        <p>Halo Kreator,</p>
+        <p>Kabar baik! Akun Ixiera kamu sudah berhasil di-upgrade ke paket <strong>{plan_name}</strong>.</p>
+        <p>Sekarang kamu bisa menikmati semua fitur AI (Generate, Repurpose, Auto-Reply) tanpa batas.</p>
+        <br/>
+        <a href="https://meta.ixiera.id/dashboard" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Buka Dashboard</a>
+        <br/><br/>
+        <p style="font-size: 12px; color: #666;">Jika ada kendala, balas email ini atau hubungi WhatsApp Admin.</p>
+    </div>
+    """
+
+    try:
+        async with httpx.AsyncClient() as client:
+            res = await client.post(
+                "https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json={
+                    "from": f"Ixiera <{from_email}>",
+                    "to": [email],
+                    "subject": "Upgrade Berhasil! Akun Ixiera Kamu Sudah Aktif",
+                    "html": html_content
+                },
+                timeout=10.0
+            )
+            if res.status_code == 200:
+                logger.info(f"✅ Email sukses terkirim ke {email}")
+            else:
+                logger.error(f"❌ Gagal kirim email via Resend: {res.text}")
+    except Exception as e:
+        logger.error(f"❌ Error saat kirim email: {str(e)}")
+
 @router.get("/users")
 async def get_users(user = Depends(verify_admin)):
     db = get_supabase()
@@ -49,12 +94,13 @@ async def get_users(user = Depends(verify_admin)):
     for acc in (accs.data or []):
         results.append({
             "id": acc["id"],
+            "user_id": acc["user_id"],
             "email": user_map.get(acc["user_id"], "Unknown"),
             "username": acc.get("username", "-"),
             "role": acc.get("role", "user"),
             "connection_status": acc.get("connection_status", "-"),
             "plan": acc.get("plan", "none"),
-            "pending_plan": acc.get("pending_plan"), # TAMBAHAN
+            "pending_plan": acc.get("pending_plan"),
             "plan_expires_at": acc.get("plan_expires_at"),
             "credit_balance": acc.get("credit_balance", 0),
             "created_at": acc.get("created_at")
@@ -65,11 +111,12 @@ async def get_users(user = Depends(verify_admin)):
 @router.post("/extend")
 async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin)):
     db = get_supabase()
-    acc = db.schema("threads").from_("threads_accounts").select("plan_expires_at").eq("id", payload.account_id).limit(1).execute()
+    acc = db.schema("threads").from_("threads_accounts").select("plan_expires_at, user_id").eq("id", payload.account_id).limit(1).execute()
     if not acc.data: raise HTTPException(404, "Account not found")
     
     now = datetime.now(timezone.utc)
     current_exp = acc.data[0].get("plan_expires_at")
+    target_user_id = acc.data[0].get("user_id")
     
     if current_exp:
         try:
@@ -87,7 +134,7 @@ async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin))
         "plan_started_at": now.isoformat(),
         "plan_expires_at": new_exp.isoformat(),
         "credit_balance": credits,
-        "pending_plan": None # HAPUS REQUEST
+        "pending_plan": None
     }).eq("id", payload.account_id).execute()
 
     db.schema("threads").from_("credit_ledger").insert({
@@ -95,23 +142,15 @@ async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin))
         "note": f"Admin extended to {payload.plan_type}"
     }).execute()
 
+    # KIRIM EMAIL
+    try:
+        user_res = db.auth.admin.get_user_by_id(target_user_id)
+        if user_res and user_res.user and user_res.user.email:
+            plan_name = "Pro Credit" if payload.plan_type == 'paid_credit' else "Pro BYOK"
+            await send_approval_email(user_res.user.email, plan_name)
+        else:
+            logger.warning(f"⚠️ Email user tidak ditemukan untuk ID {target_user_id}")
+    except Exception as e:
+        logger.error(f"❌ Gagal ambil data user untuk email: {str(e)}")
+
     return {"success": True, "new_expires": new_exp.isoformat(), "credits": credits}
-
-@router.post("/adjust-credits")
-async def adjust_credits(payload: AdjustCreditRequest, user = Depends(verify_admin)):
-    db = get_supabase()
-    acc = db.schema("threads").from_("threads_accounts").select("credit_balance").eq("id", payload.account_id).limit(1).execute()
-    if not acc.data: raise HTTPException(404, "Account not found")
-    new_bal = acc.data[0].get("credit_balance", 0) + payload.delta
-    if new_bal < 0: raise HTTPException(400, "Balance cannot be negative")
-    db.schema("threads").from_("threads_accounts").update({"credit_balance": new_bal}).eq("id", payload.account_id).execute()
-    db.schema("threads").from_("credit_ledger").insert({
-        "account_id": payload.account_id, "delta": payload.delta, "reason": "admin_adjust", "note": payload.note
-    }).execute()
-    return {"success": True, "new_balance": new_bal}
-
-@router.get("/ledger/{account_id}")
-async def get_ledger(account_id: str, user = Depends(verify_admin)):
-    db = get_supabase()
-    res = db.schema("threads").from_("credit_ledger").select("*").eq("account_id", account_id).order("created_at", desc=True).limit(50).execute()
-    return {"success": True, "ledger": res.data or []}
