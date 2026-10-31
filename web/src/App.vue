@@ -1,19 +1,17 @@
 <template>
-  <div v-if="loading" class="h-[100dvh] w-screen flex items-center justify-center theme-bg">
+  <div v-if="loading" class="h-[100dvh] w-screen flex items-center justify-center theme-bg overflow-hidden">
     <p class="text-xs font-medium tracking-widest animate-pulse theme-text-muted">LOADING...</p>
   </div>
 
-  <div v-else-if="!session" class="min-h-[100dvh] w-full overflow-x-hidden theme-bg">
+  <div v-else-if="!session" class="min-h-[100dvh] w-full max-w-[100vw] overflow-x-hidden theme-bg">
     <RouterView />
   </div>
 
-  <!-- JIKA DI HALAMAN ADMIN, JANGAN TAMPILKAN SIDEBAR UTAMA -->
-  <div v-else-if="isAdminPage" class="h-[100dvh] w-full overflow-hidden theme-bg theme-text">
+  <div v-else-if="isAdminPage" class="h-[100dvh] w-full max-w-[100vw] overflow-hidden theme-bg theme-text">
     <RouterView />
   </div>
 
-  <!-- LAYOUT UTAMA (USER BIASA) -->
-  <div v-else class="flex h-[100dvh] w-full overflow-hidden theme-bg theme-text">
+  <div v-else class="flex h-[100dvh] w-full max-w-[100vw] overflow-hidden theme-bg theme-text">
     <AppSidebar
       :open="sidebarOpen"
       :email="session.user.email"
@@ -22,6 +20,7 @@
       @logout="handleLogout"
     />
 
+    <!-- min-w-0 ini WAJIB banget di flexbox biar anak-anaknya gak melebar -->
     <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
       <header class="md:hidden flex items-center justify-between h-16 px-4 border-b theme-border theme-bg shrink-0 z-30">
         <div class="flex items-center gap-2">
@@ -35,9 +34,9 @@
         </button>
       </header>
 
-      <!-- Tambahan w-full overflow-x-hidden di main -->
       <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 w-full">
-        <div class="max-w-5xl mx-auto pb-4 md:pb-8 min-h-full flex flex-col w-full">
+        <!-- Pastikan inner wrapper ini gak maksa lebar -->
+        <div class="max-w-5xl mx-auto pb-4 md:pb-8 min-h-full flex flex-col w-full max-w-full">
           <RouterView />
         </div>
       </main>

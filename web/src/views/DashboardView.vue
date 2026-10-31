@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 w-full max-w-full overflow-hidden">
     <!-- HEADER -->
     <div class="flex flex-wrap justify-between items-center gap-4">
       <div>
@@ -11,7 +11,6 @@
           </span>
         </p>
       </div>
-
       <div class="flex items-center gap-3">
         <button
           @click="handleManualRefresh"
@@ -25,22 +24,16 @@
     </div>
 
     <!-- TOAST -->
-    <div v-if="toastMessage" class="card p-3 flex justify-between items-center text-xs border-strong">
-      <span>{{ toastMessage }}</span>
+    <div v-if="toastMessage" class="card p-3 flex justify-between items-center text-xs border-strong w-full">
+      <span class="break-words">{{ toastMessage }}</span>
       <button @click="toastMessage = ''" class="font-bold theme-text-muted hover:theme-text ml-2">{{ $t('common.close') }}</button>
     </div>
 
     <!-- ADMIN HEALTH -->
-    <div v-if="adminHealth" class="card p-4 flex flex-wrap justify-between items-center gap-3 text-xs">
+    <div v-if="adminHealth" class="card p-4 flex flex-wrap justify-between items-center gap-3 text-xs w-full">
       <div class="flex items-center gap-3">
-        <span 
-          class="w-2.5 h-2.5 rounded-full" 
-          :style="{ 
-            background: adminHealth.failed_posts > 0 || adminHealth.expiring_or_broken_tokens > 0 ? 'var(--danger)' : 'var(--success)', 
-            animation: adminHealth.failed_posts > 0 || adminHealth.expiring_or_broken_tokens > 0 ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none' 
-          }"
-        ></span>
-        <span>
+        <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ background: adminHealth.failed_posts > 0 || adminHealth.expiring_or_broken_tokens > 0 ? 'var(--danger)' : 'var(--success)', animation: adminHealth.failed_posts > 0 || adminHealth.expiring_or_broken_tokens > 0 ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none' }"></span>
+        <span class="break-words">
           {{ $t('dashboard.admin_status') }}
           <strong class="theme-text">{{ adminHealth.connected_accounts }} {{ $t('dashboard.connected_accounts') }}</strong>
           <span v-if="adminHealth.failed_posts > 0" class="theme-text-muted ml-2">({{ adminHealth.failed_posts }} {{ $t('dashboard.failed_posts_count') }})</span>
@@ -51,70 +44,68 @@
     </div>
 
     <!-- LOADING SKELETON -->
-    <div v-if="loading" class="animate-pulse space-y-4">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div v-for="i in 4" :key="i" class="h-28 skeleton"></div>
+    <div v-if="loading" class="animate-pulse space-y-4 w-full">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
+        <div v-for="i in 4" :key="i" class="h-28 skeleton w-full"></div>
       </div>
-      <div class="h-48 skeleton"></div>
+      <div class="h-48 skeleton w-full"></div>
     </div>
 
     <!-- MAIN CONTENT -->
     <template v-else>
       <!-- STATS ROW 1 -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="card p-4 md:p-5 space-y-1">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">{{ $t('dashboard.stat_scheduled') }}</span>
-          <p class="text-2xl md:text-3xl font-black">{{ queueMetrics.scheduled }}</p>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
+        <div class="card p-4 md:p-5 space-y-1 w-full min-w-0">
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate">{{ $t('dashboard.stat_scheduled') }}</span>
+          <p class="text-2xl md:text-3xl font-black truncate">{{ queueMetrics.scheduled }}</p>
         </div>
-        <div class="card p-4 md:p-5 space-y-1">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">{{ $t('dashboard.stat_published') }}</span>
-          <p class="text-2xl md:text-3xl font-black">{{ queueMetrics.published }}</p>
+        <div class="card p-4 md:p-5 space-y-1 w-full min-w-0">
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate">{{ $t('dashboard.stat_published') }}</span>
+          <p class="text-2xl md:text-3xl font-black truncate">{{ queueMetrics.published }}</p>
         </div>
-        <div class="card p-4 md:p-5 space-y-1">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">{{ $t('dashboard.stat_failed') }}</span>
-          <p class="text-2xl md:text-3xl font-black">{{ queueMetrics.failed }}</p>
+        <div class="card p-4 md:p-5 space-y-1 w-full min-w-0">
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate">{{ $t('dashboard.stat_failed') }}</span>
+          <p class="text-2xl md:text-3xl font-black truncate">{{ queueMetrics.failed }}</p>
         </div>
-        <div class="card p-4 md:p-5 space-y-1">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">{{ $t('dashboard.stat_avg_engagement') }}</span>
-          <p class="text-2xl md:text-3xl font-black">{{ overview.avg_engagement_rate }}%</p>
+        <div class="card p-4 md:p-5 space-y-1 w-full min-w-0">
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate">{{ $t('dashboard.stat_avg_engagement') }}</span>
+          <p class="text-2xl md:text-3xl font-black truncate">{{ overview.avg_engagement_rate }}%</p>
         </div>
       </div>
 
       <!-- STATS ROW 2 -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="card p-4 space-y-1 theme-bg-sec">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">{{ $t('dashboard.stat_total_views') }}</span>
-          <p class="text-lg md:text-xl font-bold">{{ overview.total_views.toLocaleString() }}</p>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 w-full">
+        <div class="card p-4 space-y-1 theme-bg-sec w-full min-w-0">
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate">{{ $t('dashboard.stat_total_views') }}</span>
+          <p class="text-lg md:text-xl font-bold truncate">{{ overview.total_views.toLocaleString() }}</p>
         </div>
-        <div class="card p-4 space-y-1 theme-bg-sec">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">{{ $t('dashboard.stat_total_likes') }}</span>
-          <p class="text-lg md:text-xl font-bold">{{ overview.total_likes.toLocaleString() }}</p>
+        <div class="card p-4 space-y-1 theme-bg-sec w-full min-w-0">
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate">{{ $t('dashboard.stat_total_likes') }}</span>
+          <p class="text-lg md:text-xl font-bold truncate">{{ overview.total_likes.toLocaleString() }}</p>
         </div>
-        <div class="card p-4 space-y-1 theme-bg-sec">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">{{ $t('dashboard.stat_total_replies') }}</span>
-          <p class="text-lg md:text-xl font-bold">{{ overview.total_replies.toLocaleString() }}</p>
+        <div class="card p-4 space-y-1 theme-bg-sec w-full min-w-0">
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate">{{ $t('dashboard.stat_total_replies') }}</span>
+          <p class="text-lg md:text-xl font-bold truncate">{{ overview.total_replies.toLocaleString() }}</p>
         </div>
-        <div class="card p-4 space-y-1 theme-bg-sec">
-          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">{{ $t('dashboard.stat_total_reposts') }}</span>
-          <p class="text-lg md:text-xl font-bold">{{ overview.total_reposts.toLocaleString() }}</p>
+        <div class="card p-4 space-y-1 theme-bg-sec w-full min-w-0">
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block truncate">{{ $t('dashboard.stat_total_reposts') }}</span>
+          <p class="text-lg md:text-xl font-bold truncate">{{ overview.total_reposts.toLocaleString() }}</p>
         </div>
       </div>
 
       <!-- CHART SECTION -->
-      <div class="card p-4 md:p-6 space-y-4">
+      <div class="card p-4 md:p-6 space-y-4 w-full overflow-hidden">
         <div class="flex flex-wrap justify-between items-center pb-3 divider gap-2">
           <div>
             <h2 class="text-xs font-bold uppercase tracking-wide">{{ $t('dashboard.daily_trends_title') }}</h2>
             <p class="text-[11px] theme-text-muted mt-0.5">{{ $t('dashboard.daily_trends_subtitle') }}</p>
           </div>
-          <div class="flex items-center gap-4 text-[10px] font-bold">
+          <div class="flex items-center gap-4 text-[10px] font-bold flex-shrink-0">
             <span class="flex items-center gap-1.5">
-              <span class="w-2.5 h-2.5 rounded-full" style="background: var(--accent);"></span>
-              Views
+              <span class="w-2.5 h-2.5 rounded-full" style="background: var(--accent);"></span> Views
             </span>
             <span class="flex items-center gap-1.5">
-              <span class="w-2.5 h-2.5 rounded-full" style="background: var(--text-muted);"></span>
-              Likes
+              <span class="w-2.5 h-2.5 rounded-full" style="background: var(--text-muted);"></span> Likes
             </span>
           </div>
         </div>
@@ -123,17 +114,13 @@
           {{ $t('dashboard.no_daily_data') }}
         </div>
 
-        <div v-else class="space-y-2 pt-2">
-          <div class="h-48 flex items-end gap-2 sm:gap-4 pt-12 pb-2 px-2 divider overflow-x-auto">
-            <div
-              v-for="day in dailyInsights"
-              :key="day.date"
-              class="flex-1 min-w-[40px] flex flex-col items-center gap-1.5 h-full justify-end group relative"
-            >
+        <div v-else class="space-y-2 pt-2 w-full">
+          <div class="h-48 flex items-end gap-1 sm:gap-2 pt-12 pb-2 px-1 divider overflow-x-auto w-full hide-scrollbar">
+            <div v-for="day in dailyInsights" :key="day.date" class="flex-1 min-w-[20px] flex flex-col items-center gap-1.5 h-full justify-end group relative">
               <div class="absolute -top-9 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity text-[9px] px-2 py-1 rounded-md whitespace-nowrap pointer-events-none z-20 theme-accent">
                 {{ day.views }} / {{ day.likes }}
               </div>
-              <div class="w-full max-w-[20px] flex items-end gap-1 h-full justify-center">
+              <div class="w-full max-w-[16px] flex items-end gap-0.5 h-full justify-center">
                 <div class="w-full rounded-t transition-all" :style="{ height: getBarHeight(day.views, maxDailyViews), background: 'var(--accent)' }"></div>
                 <div class="w-full rounded-t transition-all" :style="{ height: getBarHeight(day.likes, maxDailyViews), background: 'var(--text-muted)' }"></div>
               </div>
@@ -144,7 +131,7 @@
       </div>
 
       <!-- FAILED POSTS -->
-      <div v-if="failedPosts.length > 0" class="card p-4 md:p-6 space-y-4">
+      <div v-if="failedPosts.length > 0" class="card p-4 md:p-6 space-y-4 w-full overflow-hidden">
         <div class="flex justify-between items-center pb-3 divider">
           <h2 class="text-xs font-bold uppercase tracking-wide flex items-center gap-2">
             <span class="w-2 h-2 rounded-full animate-ping" style="background: var(--danger);"></span>
@@ -153,11 +140,11 @@
           <span class="text-[10px] font-bold theme-text-muted">{{ $t('dashboard.needs_attention') }}</span>
         </div>
         <div class="space-y-3">
-          <div v-for="post in failedPosts" :key="post.id" class="p-4 card flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div class="space-y-1 flex-1">
-              <p class="text-xs font-medium line-clamp-2">{{ post.text }}</p>
+          <div v-for="post in failedPosts" :key="post.id" class="p-4 card flex flex-col md:flex-row md:items-center justify-between gap-3 w-full">
+            <div class="space-y-1 flex-1 min-w-0">
+              <p class="text-xs font-medium line-clamp-2 break-words">{{ post.text }}</p>
             </div>
-            <button @click="handleRetryPost(post.id)" :disabled="retryingPostId === post.id" class="btn btn-primary btn-sm shrink-0">
+            <button @click="handleRetryPost(post.id)" :disabled="retryingPostId === post.id" class="btn btn-primary btn-sm shrink-0 w-full md:w-auto">
               <span v-if="retryingPostId === post.id" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
               <span>{{ retryingPostId === post.id ? $t('common.processing') : $t('dashboard.retry_btn') }}</span>
             </button>
@@ -166,30 +153,32 @@
       </div>
 
       <!-- TOP POSTS -->
-      <div class="card p-4 md:p-6 space-y-4">
+      <div class="card p-4 md:p-6 space-y-4 w-full overflow-hidden">
         <div class="flex flex-wrap justify-between items-center pb-3 divider gap-3">
           <h2 class="text-xs font-bold uppercase tracking-wide">{{ $t('dashboard.top_posts_title') }}</h2>
-          <div class="flex items-center gap-1 p-1 rounded-lg theme-bg border theme-border overflow-x-auto max-w-full">
-            <button @click="activeTab = 'newest'" class="px-3 py-1 text-[10px] font-bold rounded-md transition-colors whitespace-nowrap" :class="activeTab === 'newest' ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm border theme-border' : 'theme-text-muted hover:theme-text border border-transparent'">{{ $t('dashboard.tab_newest') }}</button>
-            <button @click="activeTab = 'views'" class="px-3 py-1 text-[10px] font-bold rounded-md transition-colors whitespace-nowrap" :class="activeTab === 'views' ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm border theme-border' : 'theme-text-muted hover:theme-text border border-transparent'">{{ $t('dashboard.tab_views') }}</button>
-            <button @click="activeTab = 'er'" class="px-3 py-1 text-[10px] font-bold rounded-md transition-colors whitespace-nowrap" :class="activeTab === 'er' ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm border theme-border' : 'theme-text-muted hover:theme-text border border-transparent'">{{ $t('dashboard.tab_engagement') }}</button>
+          <div class="flex items-center gap-1 p-1 rounded-lg theme-bg border theme-border overflow-x-auto max-w-full hide-scrollbar flex-shrink-0">
+            <button @click="activeTab = 'newest'" class="px-3 py-1 text-[10px] font-bold rounded-md transition-colors whitespace-nowrap flex-shrink-0" :class="activeTab === 'newest' ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm border theme-border' : 'theme-text-muted hover:theme-text border border-transparent'">{{ $t('dashboard.tab_newest') }}</button>
+            <button @click="activeTab = 'views'" class="px-3 py-1 text-[10px] font-bold rounded-md transition-colors whitespace-nowrap flex-shrink-0" :class="activeTab === 'views' ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm border theme-border' : 'theme-text-muted hover:theme-text border border-transparent'">{{ $t('dashboard.tab_views') }}</button>
+            <button @click="activeTab = 'er'" class="px-3 py-1 text-[10px] font-bold rounded-md transition-colors whitespace-nowrap flex-shrink-0" :class="activeTab === 'er' ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm border theme-border' : 'theme-text-muted hover:theme-text border border-transparent'">{{ $t('dashboard.tab_engagement') }}</button>
           </div>
         </div>
 
         <div v-if="allPosts.length === 0" class="text-center py-8 text-xs theme-text-muted">{{ $t('dashboard.no_posts') }}</div>
         <div v-else class="space-y-3">
-          <div v-for="post in filteredTopPosts" :key="post.id" class="p-4 card card-hover flex flex-col md:flex-row md:items-center justify-between gap-3 theme-bg-sec">
+          <!-- KUNCI: min-w-0 dan max-w-full biar flexbox gak jebol -->
+          <div v-for="post in filteredTopPosts" :key="post.id" class="p-4 card card-hover flex flex-col md:flex-row md:items-center justify-between gap-3 theme-bg-sec w-full max-w-full overflow-hidden">
             <div class="space-y-1 flex-1 min-w-0">
-              <p class="text-xs font-medium line-clamp-2 break-words">{{ post.text }}</p>
+              <p class="text-xs font-medium line-clamp-2 break-words w-full">{{ post.text }}</p>
               <div class="flex items-center gap-3 text-[11px] theme-text-muted flex-wrap">
                 <span>{{ formatDate(post.posted_at) }}</span>
                 <a v-if="post.permalink" :href="post.permalink" target="_blank" class="font-bold theme-text hover:underline">Buka di Threads</a>
               </div>
             </div>
-            <div class="flex items-center gap-2 md:gap-4 text-xs shrink-0 p-2 rounded-lg theme-bg theme-border border w-full md:w-auto justify-around">
-              <div class="text-center px-1 md:px-2"><span class="block text-[9px] theme-text-muted uppercase font-bold">Views</span><span class="font-bold">{{ post.metrics?.views ?? 0 }}</span></div>
-              <div class="text-center px-1 md:px-2 border-l theme-border"><span class="block text-[9px] theme-text-muted uppercase font-bold">Likes</span><span class="font-bold">{{ post.metrics?.likes ?? 0 }}</span></div>
-              <div class="text-center px-1 md:px-2 border-l theme-border"><span class="block text-[9px] theme-text-muted uppercase font-bold">ER</span><span class="font-black">{{ post.engagement_rate ?? 0 }}%</span></div>
+            <!-- Metrics Box di HP dibikin w-full biar rapi -->
+            <div class="flex items-center text-xs shrink-0 p-2 rounded-lg theme-bg theme-border border w-full md:w-auto justify-between md:justify-around gap-2 max-w-full">
+              <div class="text-center px-1 flex-1 min-w-0"><span class="block text-[9px] theme-text-muted uppercase font-bold truncate">Views</span><span class="font-bold truncate">{{ post.metrics?.views ?? 0 }}</span></div>
+              <div class="text-center px-1 border-l theme-border flex-1 min-w-0"><span class="block text-[9px] theme-text-muted uppercase font-bold truncate">Likes</span><span class="font-bold truncate">{{ post.metrics?.likes ?? 0 }}</span></div>
+              <div class="text-center px-1 border-l theme-border flex-1 min-w-0"><span class="block text-[9px] theme-text-muted uppercase font-bold truncate">ER</span><span class="font-black truncate">{{ post.engagement_rate ?? 0 }}%</span></div>
             </div>
           </div>
         </div>
