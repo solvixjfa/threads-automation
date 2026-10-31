@@ -19,21 +19,15 @@ class AdjustCreditRequest(BaseModel):
 def verify_admin(authorization: Optional[str] = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing auth token")
-    
     token = authorization.replace("Bearer ", "").strip()
     db = get_supabase()
-    
     try:
         user_res = db.auth.get_user(token)
         if not user_res or not user_res.user:
             raise HTTPException(status_code=401, detail="Invalid token")
-        
-        # FIX: Ganti maybeSingle() jadi limit(1).execute()
         acc = db.schema("threads").from_("threads_accounts").select("role").eq("user_id", user_res.user.id).limit(1).execute()
-        
         if not acc.data or acc.data[0].get("role") != "admin":
             raise HTTPException(status_code=403, detail="Admin access required")
-        
         return user_res.user
     except HTTPException:
         raise
@@ -44,7 +38,6 @@ def verify_admin(authorization: Optional[str] = Header(None)):
 async def get_users(user = Depends(verify_admin)):
     db = get_supabase()
     accs = db.schema("threads").from_("threads_accounts").select("*").execute()
-    
     try:
         users_res = db.auth.admin.list_users()
         users_list = users_res if isinstance(users_res, list) else users_res.users if hasattr(users_res, 'users') else []
@@ -61,21 +54,19 @@ async def get_users(user = Depends(verify_admin)):
             "role": acc.get("role", "user"),
             "connection_status": acc.get("connection_status", "-"),
             "plan": acc.get("plan", "none"),
+            "pending_plan": acc.get("pending_plan"), # TAMBAHAN
             "plan_expires_at": acc.get("plan_expires_at"),
             "credit_balance": acc.get("credit_balance", 0),
             "created_at": acc.get("created_at")
         })
-    
     results.sort(key=lambda x: x["created_at"] or "", reverse=True)
     return {"success": True, "users": results}
 
 @router.post("/extend")
 async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin)):
     db = get_supabase()
-    # FIX: Ganti maybeSingle() jadi limit(1).execute()
     acc = db.schema("threads").from_("threads_accounts").select("plan_expires_at").eq("id", payload.account_id).limit(1).execute()
-    if not acc.data: 
-        raise HTTPException(404, "Account not found")
+    if not acc.data: raise HTTPException(404, "Account not found")
     
     now = datetime.now(timezone.utc)
     current_exp = acc.data[0].get("plan_expires_at")
@@ -95,7 +86,8 @@ async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin))
         "plan": payload.plan_type,
         "plan_started_at": now.isoformat(),
         "plan_expires_at": new_exp.isoformat(),
-        "credit_balance": credits
+        "credit_balance": credits,
+        "pending_plan": None # HAPUS REQUEST
     }).eq("id", payload.account_id).execute()
 
     db.schema("threads").from_("credit_ledger").insert({
@@ -108,21 +100,14 @@ async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin))
 @router.post("/adjust-credits")
 async def adjust_credits(payload: AdjustCreditRequest, user = Depends(verify_admin)):
     db = get_supabase()
-    # FIX: Ganti maybeSingle() jadi limit(1).execute()
     acc = db.schema("threads").from_("threads_accounts").select("credit_balance").eq("id", payload.account_id).limit(1).execute()
-    if not acc.data: 
-        raise HTTPException(404, "Account not found")
-
-    current_bal = acc.data[0].get("credit_balance", 0)
-    new_bal = current_bal + payload.delta
-    if new_bal < 0: 
-        raise HTTPException(400, "Balance cannot be negative")
-
+    if not acc.data: raise HTTPException(404, "Account not found")
+    new_bal = acc.data[0].get("credit_balance", 0) + payload.delta
+    if new_bal < 0: raise HTTPException(400, "Balance cannot be negative")
     db.schema("threads").from_("threads_accounts").update({"credit_balance": new_bal}).eq("id", payload.account_id).execute()
     db.schema("threads").from_("credit_ledger").insert({
         "account_id": payload.account_id, "delta": payload.delta, "reason": "admin_adjust", "note": payload.note
     }).execute()
-
     return {"success": True, "new_balance": new_bal}
 
 @router.get("/ledger/{account_id}")
@@ -130,28 +115,3 @@ async def get_ledger(account_id: str, user = Depends(verify_admin)):
     db = get_supabase()
     res = db.schema("threads").from_("credit_ledger").select("*").eq("account_id", account_id).order("created_at", desc=True).limit(50).execute()
     return {"success": True, "ledger": res.data or []}
-
-@router.post("/grant-trial/{account_id}")
-async def grant_trial(account_id: str):
-    # Endpoint ini dipanggil internal (misal dari OAuth callback) buat kasih Trial otomatis
-    db = get_supabase()
-    acc = db.schema("threads").from_("threads_accounts").select("plan").eq("id", account_id).limit(1).execute()
-    
-    if not acc.data: return {"status": "ignored"}
-    
-    # Kalau plan masih none, kasih Trial
-    if acc.data[0].get("plan") in [None, 'none']:
-        now = datetime.now(timezone.utc)
-        db.schema("threads").from_("threads_accounts").update({
-            "plan": "trial",
-            "plan_started_at": now.isoformat(),
-            "plan_expires_at": (now + timedelta(days=TRIAL_DAYS)).isoformat(),
-            "credit_balance": TRIAL_CREDITS
-        }).eq("id", account_id).execute()
-
-        db.schema("threads").from_("credit_ledger").insert({
-            "account_id": account_id, "delta": TRIAL_CREDITS, "reason": "trial_grant", "note": "Auto-granted on first connect"
-        }).execute()
-        return {"status": "granted"}
-    
-    return {"status": "already_has_plan"}
