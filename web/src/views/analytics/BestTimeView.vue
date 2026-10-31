@@ -4,7 +4,10 @@
       <template #header>
         <div class="flex items-center justify-between">
           <div>
-            <h2 class="text-sm font-bold">{{ $t('analytics.best_title') }}</h2>
+            <h2 class="text-sm font-bold flex items-center gap-2">
+              <Clock class="w-4 h-4 theme-text-muted" />
+              {{ $t('analytics.best_title') }}
+            </h2>
             <p class="text-xs theme-text-muted mt-0.5">{{ $t('analytics.best_subtitle') }}</p>
           </div>
           <Badge :variant="confidenceVariant">{{ confidenceLabel }}</Badge>
@@ -16,8 +19,9 @@
         <div class="h-64 skeleton"></div>
       </div>
 
-      <div v-else-if="error" class="text-center py-8">
-        <p class="text-sm theme-text-muted mb-4">{{ error }}</p>
+      <div v-else-if="error" class="text-center py-8 flex flex-col items-center gap-3">
+        <AlertCircle class="w-8 h-8 text-red-500 opacity-50" />
+        <p class="text-sm theme-text-muted">{{ error }}</p>
         <Button variant="secondary" size="sm" @click="loadData">{{ $t('common.retry') }}</Button>
       </div>
 
@@ -38,22 +42,25 @@
       <template #header>
         <div class="flex items-center justify-between">
           <div>
-            <h2 class="text-sm font-bold">{{ $t('analytics.top_slots') }}</h2>
+            <h2 class="text-sm font-bold flex items-center gap-2">
+              <TrendingUp class="w-4 h-4 theme-text-muted" />
+              {{ $t('analytics.top_slots') }}
+            </h2>
             <p class="text-xs theme-text-muted mt-0.5">{{ $t('analytics.top_slots_sub') }}</p>
           </div>
         </div>
       </template>
 
       <div class="space-y-2">
-        <div v-for="(slot, idx) in topSlots" :key="idx" class="flex items-center justify-between p-3 rounded-lg theme-bg-sec border theme-border">
+        <div v-for="(slot, idx) in topSlots" :key="idx" class="flex items-center justify-between p-3 rounded-lg theme-bg-sec border theme-border hover:border-[var(--border-strong)] transition-colors">
           <div class="flex items-center gap-3">
-            <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black theme-accent">{{ idx + 1 }}</div>
-            <div>
-              <div class="text-sm font-bold">{{ slot.weekday }}, {{ slot.hour }}</div>
+            <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black theme-accent shrink-0">{{ idx + 1 }}</div>
+            <div class="min-w-0">
+              <div class="text-sm font-bold truncate">{{ slot.weekday }}, {{ slot.hour }}</div>
               <div class="text-[11px] theme-text-muted">{{ $t('analytics.sample', { n: slot.sample_size }) }}</div>
             </div>
           </div>
-          <div class="text-right">
+          <div class="text-right shrink-0">
             <div class="text-lg font-black">{{ (slot.er_pct || 0).toFixed(2) }}%</div>
             <div class="text-[10px] theme-text-muted uppercase font-bold">{{ $t('analytics.avg_er') }}</div>
           </div>
@@ -69,6 +76,7 @@ import { supabase } from '../../lib/supabase'
 import { useI18n } from 'vue-i18n'
 import { Card, Badge, Button, EmptyState } from '../../components/ui'
 import BestTimeHeatmap from '../../components/BestTimeHeatmap.vue'
+import { Clock, TrendingUp, AlertCircle } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const loading = ref(true)
