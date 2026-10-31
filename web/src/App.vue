@@ -28,8 +28,9 @@
         </button>
       </header>
 
+      <!-- Perbaikan: pb-4 md:pb-8 biar gak kelewat panjang, min-h-full biar rapi -->
       <main class="flex-1 overflow-y-auto p-4 md:p-8">
-        <div class="max-w-5xl mx-auto pb-10">
+        <div class="max-w-5xl mx-auto pb-4 md:pb-8 min-h-full flex flex-col">
           <RouterView />
         </div>
       </main>

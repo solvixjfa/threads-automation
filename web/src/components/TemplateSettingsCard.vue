@@ -13,10 +13,12 @@
     </template>
 
     <div v-if="loading" class="space-y-3">
-      <div v-for="i in 5" :key="i" class="h-20 skeleton"></div>
+      <!-- Perbaikan: h-32 biar tinggi skeleton mirip konten asli -->
+      <div v-for="i in 5" :key="i" class="h-32 skeleton"></div>
     </div>
 
-    <div v-else class="space-y-4">
+    <!-- Perbaikan: min-h-[400px] biar tinggi halaman gak melompat pas data masuk -->
+    <div v-else class="space-y-4 min-h-[400px]">
       <div v-for="cat in categories" :key="cat.value" class="p-4 rounded-xl theme-bg-sec border theme-border space-y-3">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div class="min-w-0 flex-1">
@@ -26,7 +28,7 @@
             </div>
             <p class="text-xs theme-text-muted mt-0.5">{{ $t('settings.templates.' + cat.value + '_desc') }}</p>
           </div>
-          
+
           <div class="flex items-center gap-3 shrink-0">
             <div class="w-40">
               <Select 
