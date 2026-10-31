@@ -1,15 +1,17 @@
 <template>
-  <div>
+  <div class="w-full">
     <div class="mb-6">
       <h1 class="text-2xl font-bold tracking-tight">Content</h1>
       <p class="text-sm theme-text-muted mt-1">Create, remix, and schedule your threads</p>
     </div>
 
-    <div class="border-b theme-border mb-6">
-      <nav class="flex gap-1 -mb-px overflow-x-auto">
-        <RouterLink to="/content/create" class="px-4 py-2.5 text-sm font-medium border-b-2 transition whitespace-nowrap" :class="tabClass('/content/create')">Create</RouterLink>
-        <RouterLink to="/content/variant" class="px-4 py-2.5 text-sm font-medium border-b-2 transition whitespace-nowrap" :class="tabClass('/content/variant')">Variant</RouterLink>
-        <RouterLink to="/content/queue" class="px-4 py-2.5 text-sm font-medium border-b-2 transition whitespace-nowrap" :class="tabClass('/content/queue')">Queue</RouterLink>
+    <div class="border-b theme-border mb-6 w-full overflow-hidden">
+      <!-- FIX: w-full, overflow-x-auto, hide-scrollbar -->
+      <nav class="flex gap-1 -mb-px overflow-x-auto hide-scrollbar w-full">
+        <!-- FIX: flex-shrink-0 di setiap Link -->
+        <RouterLink to="/content/create" class="px-4 py-2.5 text-sm font-medium border-b-2 transition whitespace-nowrap flex-shrink-0" :class="tabClass('/content/create')">Create</RouterLink>
+        <RouterLink to="/content/variant" class="px-4 py-2.5 text-sm font-medium border-b-2 transition whitespace-nowrap flex-shrink-0" :class="tabClass('/content/variant')">Variant</RouterLink>
+        <RouterLink to="/content/queue" class="px-4 py-2.5 text-sm font-medium border-b-2 transition whitespace-nowrap flex-shrink-0" :class="tabClass('/content/queue')">Queue</RouterLink>
       </nav>
     </div>
 

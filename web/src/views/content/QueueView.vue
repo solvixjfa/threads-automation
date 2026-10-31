@@ -1,7 +1,7 @@
 <template>
-  <div class="space-y-4 relative pb-24">                                                                                                        
+  <div class="space-y-4 relative pb-24 w-full">
     <Card padding="false">
-      <div class="p-5 divider flex justify-between items-center theme-bg-sec">                                                                
+      <div class="p-5 divider flex justify-between items-center theme-bg-sec">
         <div class="flex items-center gap-2">
           <span class="text-xs font-bold uppercase tracking-wide">{{ $t('content.queue.title') }}</span>
           <Badge>{{ filteredPosts.length }} groups</Badge>
@@ -9,12 +9,13 @@
         <button @click="loadPosts" class="text-xs font-bold hover:underline">{{ $t('common.refresh') }}</button>
       </div>
 
-      <div class="flex gap-2 px-5 pt-4 pb-3 overflow-x-auto">
+      <!-- FIX: Tambah w-full, hide-scrollbar, dan pastikan tombol flex-shrink-0 -->
+      <div class="flex gap-2 px-5 pt-4 pb-3 overflow-x-auto hide-scrollbar w-full">
         <button
           v-for="tab in tabs"
-          :key="tab.value"                                                   
+          :key="tab.value"
           @click="activeFilter = tab.value"
-          class="px-3 py-1.5 text-xs font-bold rounded-lg transition whitespace-nowrap"
+          class="px-3 py-1.5 text-xs font-bold rounded-lg transition whitespace-nowrap flex-shrink-0"
           :class="activeFilter === tab.value ? 'theme-accent' : 'theme-bg-sec theme-text-muted hover:theme-text'"
         >
           {{ $t(tab.labelKey) }} ({{ countByStatus(tab.value) }})
@@ -30,75 +31,72 @@
       </div>
 
       <div v-else class="list-divided">
-        <!-- LOOPING PER GROUP TANGGAL -->
         <div v-for="dateGroup in groupedByDate" :key="dateGroup.key" class="border-b theme-border last:border-0">
-          
-          <!-- DATE SEPARATOR -->
           <div class="px-5 py-3 theme-bg-sec text-xs font-bold uppercase tracking-wide theme-text-muted sticky top-0 z-10">
             {{ $t('content.queue.' + dateGroup.key) }}
           </div>
 
           <div class="divide-y theme-border">
-            <!-- LOOPING POSTS DALAM TANGGAL -->
             <div v-for="group in dateGroup.items" :key="group.id" class="p-5 space-y-3">
-              
               <div v-if="group.isThread" class="flex items-center justify-between pb-2 border-b theme-border">
                 <div class="flex items-center gap-3">
-                  <input 
-                    type="checkbox" 
-                    :checked="isGroupSelected(group)" 
+                  <input
+                    type="checkbox"
+                    :checked="isGroupSelected(group)"
                     @change="toggleGroupSelection(group)"
-                    class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 flex-shrink-0"
                   />
                   <Badge variant="accent">Thread</Badge>
                   <span class="text-xs font-bold theme-text-muted">{{ $t('content.queue.thread_parts', { n: group.parts.length }) }}</span>
                 </div>
-                <button @click="toggleExpand(group.id)" class="text-xs font-bold hover:underline">
+                <button @click="toggleExpand(group.id)" class="text-xs font-bold hover:underline flex-shrink-0">
                   {{ expandedThreads.has(group.id) ? $t('content.queue.hide_parts') : $t('content.queue.show_parts') }}
                 </button>
               </div>
 
-              <div v-for="post in (group.isThread && !expandedThreads.has(group.id) ? [group.parts[0]] : group.parts)" 
-                   :key="post.id" 
-                   class="space-y-3 pt-2"
+              <div v-for="post in (group.isThread && !expandedThreads.has(group.id) ? [group.parts[0]] : group.parts)"
+                   :key="post.id"
+                   class="space-y-3 pt-2 w-full"
                    :class="{ 'opacity-50 pointer-events-none': group.isThread && !expandedThreads.has(group.id) && post.sequence_number > 1 }">
-                
-                <div class="flex items-start gap-3">                 
-                  <input 
+
+                <div class="flex items-start gap-3 w-full">
+                  <input
                     v-if="!group.isThread"
-                    type="checkbox" 
-                    :checked="selectedPosts.has(post.id)" 
+                    type="checkbox"
+                    :checked="selectedPosts.has(post.id)"
                     @change="togglePostSelection(post.id)"
-                    class="w-4 h-4 mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    class="w-4 h-4 mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500 flex-shrink-0"
                   />
-                  <div class="flex-1 space-y-1">
+                  <!-- FIX: min-w-0 wajib biar teks panjang gak maksa melebarin div -->
+                  <div class="flex-1 space-y-1 min-w-0">
                     <div class="flex items-center gap-2 flex-wrap">
                       <Badge :variant="statusVariant(post.status)">{{ post.status }}</Badge>
                       <span v-if="post.sequence_number > 1" class="text-[10px] font-bold theme-text-muted">Part {{ post.sequence_number }}</span>
                     </div>
-                    <p class="text-sm font-medium whitespace-pre-wrap">{{ post.text }}</p>
+                    <!-- FIX: break-words biar teks panjang turun ke bawah -->
+                    <p class="text-sm font-medium whitespace-pre-wrap break-words">{{ post.text }}</p>
                   </div>
                 </div>
 
-                <div class="flex items-center justify-between pt-1 text-xs gap-3 flex-wrap">
+                <div class="flex items-center justify-between pt-1 text-xs gap-3 flex-wrap w-full">
                   <span class="theme-text-muted font-medium">{{ formatTime(post.scheduled_for) }}</span>
-                  
-                  <div v-if="post.status === 'scheduled'" class="flex items-center gap-2">                                                                
-                    <Button variant="secondary" size="sm" @click="openEditModal(post)">{{ $t('content.queue.edit') }}</Button>                                                      
-                    <Button variant="danger" size="sm" @click="confirmDeletePost(post.id)">{{ $t('content.queue.delete') }}</Button>                                               
-                  </div>                                                             
-                  <div v-else-if="['error', 'failed', 'quota_exceeded'].includes(post.status)" class="flex items-center gap-2">
+
+                  <div v-if="post.status === 'scheduled'" class="flex items-center gap-2 flex-wrap">
+                    <Button variant="secondary" size="sm" @click="openEditModal(post)">{{ $t('content.queue.edit') }}</Button>
+                    <Button variant="danger" size="sm" @click="confirmDeletePost(post.id)">{{ $t('content.queue.delete') }}</Button>
+                  </div>
+                  <div v-else-if="['error', 'failed', 'quota_exceeded'].includes(post.status)" class="flex items-center gap-2 flex-wrap">
                     <Button size="sm" @click="handleRetryPost(post.id)" :loading="retryingId === post.id">{{ $t('content.queue.retry') }}</Button>
                   </div>
                   <a v-else-if="post.published_media_id" :href="'https://www.threads.net/post/' + post.published_media_id" target="_blank" class="text-xs font-bold hover:underline">
                     {{ $t('content.queue.view_threads') }}
-                  </a>                                                             
+                  </a>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>                                                           
+      </div>
     </Card>
 
     <!-- FLOATING BULK ACTION BAR -->
@@ -114,10 +112,9 @@
     </Transition>
 
     <!-- EDIT MODAL -->
-    <Teleport to="body">                                                 
+    <Teleport to="body">
       <div v-if="editingPost" class="fixed inset-0 backdrop-blur-sm z-[100] flex items-center justify-center p-4" style="background: rgba(0,0,0,0.6);">
         <div class="card max-w-lg w-full p-6 space-y-4 shadow-2xl flex flex-col max-h-[90vh]" style="background: var(--bg);">
-          
           <div class="flex justify-between items-center pb-2 border-b theme-border shrink-0">
             <div class="flex gap-4">
               <button @click="modalTab = 'edit'" class="text-base font-bold transition" :class="modalTab === 'edit' ? 'theme-text border-b-2 border-current' : 'theme-text-muted hover:theme-text'">{{ $t('content.queue.edit_tab_edit') }}</button>
@@ -129,28 +126,26 @@
               <span>{{ isRewriting ? $t('content.queue.magic_rewriting') : $t('content.queue.magic_rewrite') }}</span>
             </button>
           </div>
-          
+
           <div class="overflow-y-auto pr-2 flex-1">
-            <!-- TAB EDIT -->
             <div v-if="modalTab === 'edit'" class="space-y-4">
               <Textarea v-model="editForm.text" :rows="6" :max-length="500" />
               <div class="space-y-1">
                 <label class="label theme-text">{{ $t('content.queue.new_time') }}</label>
                 <input v-model="editForm.scheduled_for" type="datetime-local" class="input" />
-              </div>  
+              </div>
             </div>
 
-            <!-- TAB PREVIEW -->
             <div v-else class="py-4">
               <div class="flex gap-3">
                 <div class="w-10 h-10 rounded-full theme-bg-sec border theme-border shrink-0 flex items-center justify-center font-bold text-xs">IX</div>
-                <div class="flex-1">
+                <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-1">
                     <span class="font-bold text-sm theme-text">ixiera.id</span>
                     <span class="text-xs theme-text-muted">· now</span>
                   </div>
-                  <p class="text-sm whitespace-pre-wrap mt-1 leading-relaxed theme-text">{{ editForm.text }}</p>
-                  
+                  <p class="text-sm whitespace-pre-wrap break-words mt-1 leading-relaxed theme-text">{{ editForm.text }}</p>
+
                   <div class="flex items-center gap-4 mt-4 text-gray-500">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
@@ -167,17 +162,17 @@
             <Button @click="saveEdit" :disabled="isUpdating || modalTab === 'preview'" :loading="isUpdating">
               {{ isUpdating ? $t('common.processing') : $t('content.queue.save_changes') }}
             </Button>
-          </div>                                                           
+          </div>
         </div>
       </div>
     </Teleport>
   </div>
 </template>
-                                                                   
+
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
-import { useNotify } from '../../composables/useNotify'            
+import { useNotify } from '../../composables/useNotify'
 import { useI18n } from 'vue-i18n'
 import { Card, Button, Textarea, Badge } from '../../components/ui'
 
@@ -185,13 +180,13 @@ const { showToast, askConfirm } = useNotify()
 const { t } = useI18n()
 
 const loading = ref(true)
-const isUpdating = ref(false)  
+const isUpdating = ref(false)
 const isRewriting = ref(false)
-const isBulkDeleting = ref(false)                                    
+const isBulkDeleting = ref(false)
 const posts = ref<any[]>([])
 const retryingId = ref<string | null>(null)
 const activeFilter = ref<'all' | 'scheduled' | 'published' | 'failed'>('scheduled')
-const editingPost = ref<any>(null)                                 
+const editingPost = ref<any>(null)
 const editForm = ref({ text: '', scheduled_for: '' })
 const modalTab = ref<'edit' | 'preview'>('edit')
 const expandedThreads = ref<Set<string>>(new Set())
@@ -203,7 +198,7 @@ const selectedPosts = ref<Set<string>>(new Set())
 const selectedThreads = ref<Set<string>>(new Set())
 
 const tabs = [
-  { labelKey: 'content.queue.tab_scheduled', value: 'scheduled' as const },                 
+  { labelKey: 'content.queue.tab_scheduled', value: 'scheduled' as const },
   { labelKey: 'content.queue.tab_published', value: 'published' as const },
   { labelKey: 'content.queue.tab_failed', value: 'failed' as const },
   { labelKey: 'content.queue.tab_all', value: 'all' as const },
@@ -283,7 +278,7 @@ function isGroupSelected(group: any) {
 
 async function handleBulkDelete() {
   const allIds: string[] = []
-  
+
   filteredPosts.value.forEach(group => {
     if (selectedThreads.value.has(group.id)) {
       group.parts.forEach((p: any) => allIds.push(p.id))
@@ -310,7 +305,7 @@ async function handleBulkDelete() {
         })
         if (!res.ok) throw new Error('Bulk delete failed')
         showToast(`${allIds.length} posts deleted.`, 'info')
-        
+
         selectedPosts.value.clear()
         selectedThreads.value.clear()
         await loadPosts()
@@ -325,10 +320,10 @@ async function handleBulkDelete() {
 
 const emptyMessage = computed(() => {
   if (activeFilter.value === 'scheduled') return t('content.queue.empty_scheduled')
-  if (activeFilter.value === 'published') return t('content.queue.empty_published')                                                     
+  if (activeFilter.value === 'published') return t('content.queue.empty_published')
   if (activeFilter.value === 'failed') return t('content.queue.empty_failed')
   return t('content.queue.empty_all')
-})                                                                 
+})
 
 function countByStatus(status: string) {
   if (status === 'all') return posts.value.length
@@ -341,38 +336,38 @@ function toggleExpand(groupId: string) {
   else expandedThreads.value.add(groupId)
 }
 
-function formatTime(isoString: string) {                             
+function formatTime(isoString: string) {
   if (!isoString) return ''
   const d = new Date(isoString)
   return d.toLocaleString(undefined, { timeStyle: 'short' })
-}                                                                  
+}
 function statusVariant(status: string) {
-  if (status === 'published') return 'accent'                        
-  if (['error', 'failed', 'quota_exceeded'].includes(status)) return 'danger'                                                           
+  if (status === 'published') return 'accent'
+  if (['error', 'failed', 'quota_exceeded'].includes(status)) return 'danger'
   return 'default'
 }
 
 async function loadPosts() {
   loading.value = true
-  posts.value = []                                                 
+  posts.value = []
   selectedPosts.value.clear()
   selectedThreads.value.clear()
-  
-  const { data: { user } } = await supabase.auth.getUser()           
+
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) { loading.value = false; return }
 
-  const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id, ai_provider').eq('user_id', user.id).maybeSingle()                                                 
+  const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id, ai_provider').eq('user_id', user.id).maybeSingle()
   if (!account) { loading.value = false; return }
-  
+
   currentAccountId.value = account.id
   if (account.ai_provider) aiProvider.value = account.ai_provider
 
-  const { data } = await supabase.schema('threads').from('scheduled_posts').select('*').eq('account_id', account.id).order('scheduled_for', { ascending: true }).limit(100)                                                                     
-  if (data) posts.value = data                                       
+  const { data } = await supabase.schema('threads').from('scheduled_posts').select('*').eq('account_id', account.id).order('scheduled_for', { ascending: true }).limit(100)
+  if (data) posts.value = data
   loading.value = false
 }
-                                                                   
-function openEditModal(post: any) {                                  
+
+function openEditModal(post: any) {
   editingPost.value = post
   modalTab.value = 'edit'
   editForm.value.text = post.text
@@ -398,12 +393,12 @@ async function saveEdit() {
     if (!res.ok) throw new Error('Update failed')
     editingPost.value = null
     showToast('Post updated successfully.', 'success')
-    await loadPosts()                                                
+    await loadPosts()
   } catch (err: any) {
-    showToast('Update failed: ' + err.message, 'error')               
+    showToast('Update failed: ' + err.message, 'error')
   } finally {
     isUpdating.value = false
-  }                                                                
+  }
 }
 
 async function magicRewrite() {
@@ -433,15 +428,15 @@ async function magicRewrite() {
 
 function confirmDeletePost(id: string) {
   askConfirm({
-    title: 'Delete Scheduled Post',                                
-    message: 'Are you sure you want to delete this post?',       
+    title: 'Delete Scheduled Post',
+    message: 'Are you sure you want to delete this post?',
     confirmText: 'Delete Post',
-    onConfirm: () => deletePost(id)                                  
-  })                                                               
+    onConfirm: () => deletePost(id)
+  })
 }
 
-async function deletePost(id: string) {                              
-  try {                                                                
+async function deletePost(id: string) {
+  try {
     const res = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/queue/${id}`, { method: 'DELETE' })
     if (!res.ok) throw new Error('Failed to delete')
     showToast('Post deleted.', 'info')
@@ -470,4 +465,4 @@ async function handleRetryPost(id: string) {
 }
 
 onMounted(() => loadPosts())
-</script>                                                          
+</script>
