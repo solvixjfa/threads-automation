@@ -20,7 +20,7 @@ def verify_admin(authorization: Optional[str] = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing auth token")
     
-    token = authorization.replace("Bearer ", "")
+    token = authorization.replace("Bearer ", "").strip()
     db = get_supabase()
     
     try:
@@ -28,11 +28,15 @@ def verify_admin(authorization: Optional[str] = Header(None)):
         if not user_res or not user_res.user:
             raise HTTPException(status_code=401, detail="Invalid token")
         
-        acc = db.schema("threads").from_("threads_accounts").select("role").eq("user_id", user_res.user.id).maybeSingle().execute()
-        if not acc.data or acc.data.get("role") != "admin":
+        # FIX: Ganti maybeSingle() jadi limit(1).execute()
+        acc = db.schema("threads").from_("threads_accounts").select("role").eq("user_id", user_res.user.id).limit(1).execute()
+        
+        if not acc.data or acc.data[0].get("role") != "admin":
             raise HTTPException(status_code=403, detail="Admin access required")
         
         return user_res.user
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Auth failed: {str(e)}")
 
@@ -68,11 +72,13 @@ async def get_users(user = Depends(verify_admin)):
 @router.post("/extend")
 async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin)):
     db = get_supabase()
-    acc = db.schema("threads").from_("threads_accounts").select("plan_expires_at").eq("id", payload.account_id).maybeSingle().execute()
-    if not acc.data: raise HTTPException(404, "Account not found")
+    # FIX: Ganti maybeSingle() jadi limit(1).execute()
+    acc = db.schema("threads").from_("threads_accounts").select("plan_expires_at").eq("id", payload.account_id).limit(1).execute()
+    if not acc.data: 
+        raise HTTPException(404, "Account not found")
     
     now = datetime.now(timezone.utc)
-    current_exp = acc.data.get("plan_expires_at")
+    current_exp = acc.data[0].get("plan_expires_at")
     
     if current_exp:
         try:
@@ -102,11 +108,15 @@ async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin))
 @router.post("/adjust-credits")
 async def adjust_credits(payload: AdjustCreditRequest, user = Depends(verify_admin)):
     db = get_supabase()
-    acc = db.schema("threads").from_("threads_accounts").select("credit_balance").eq("id", payload.account_id).maybeSingle().execute()
-    if not acc.data: raise HTTPException(404, "Account not found")
+    # FIX: Ganti maybeSingle() jadi limit(1).execute()
+    acc = db.schema("threads").from_("threads_accounts").select("credit_balance").eq("id", payload.account_id).limit(1).execute()
+    if not acc.data: 
+        raise HTTPException(404, "Account not found")
 
-    new_bal = acc.data.get("credit_balance", 0) + payload.delta
-    if new_bal < 0: raise HTTPException(400, "Balance cannot be negative")
+    current_bal = acc.data[0].get("credit_balance", 0)
+    new_bal = current_bal + payload.delta
+    if new_bal < 0: 
+        raise HTTPException(400, "Balance cannot be negative")
 
     db.schema("threads").from_("threads_accounts").update({"credit_balance": new_bal}).eq("id", payload.account_id).execute()
     db.schema("threads").from_("credit_ledger").insert({
