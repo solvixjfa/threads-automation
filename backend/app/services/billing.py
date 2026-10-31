@@ -3,6 +3,7 @@ import logging
 from app.core.config import CREDIT_COSTS
 from app.services.rag import get_supabase
 from fastapi import HTTPException
+from datetime import datetime, timezone
 
 class BillingError(Exception):
     def __init__(self, message, code):
@@ -14,27 +15,29 @@ def check_and_spend(account_id: str, action_type: str) -> str:
     """Mengecek plan dan memotong kredit. Return ref_id untuk refund."""
     db = get_supabase()
     
-    # 1. Cek Plan (Bisa expired atau habis)
-    acc = db.schema("threads").from_("threads_accounts").select("plan, plan_expires_at, credit_balance, custom_gemini_key, custom_groq_key").eq("id", account_id).maybeSingle().execute()
+    # FIX: Ganti maybeSingle() jadi limit(1).execute()
+    acc = db.schema("threads").from_("threads_accounts").select("plan, plan_expires_at, credit_balance, custom_gemini_key, custom_groq_key").eq("id", account_id).limit(1).execute()
+    
     if not acc.data:
         raise BillingError("Account not found", "NOT_FOUND")
 
-    plan = acc.data.get("plan", "none")
-    expires_at = acc.data.get("plan_expires_at")
-    balance = acc.data.get("credit_balance", 0)
+    # FIX: Ambil index [0] karena data berupa list
+    acc_data = acc.data[0]
+    plan = acc_data.get("plan", "none")
+    expires_at = acc_data.get("plan_expires_at")
+    balance = acc_data.get("credit_balance", 0)
     
     if plan == "none":
         raise BillingError("Plan kamu sudah berakhir. Perpanjang untuk memakai fitur AI.", "PLAN_EXPIRED")
 
     # Cek expiry (Supabase returns ISO string)
     if expires_at:
-        from datetime import datetime, timezone
         try:
             exp_dt = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
             if exp_dt < datetime.now(timezone.utc):
                 raise BillingError("Plan kamu sudah berakhir. Perpanjang untuk memakai fitur AI.", "PLAN_EXPIRED")
         except ValueError:
-            pass # Abaikan error parsing tanggal jika ada
+            pass 
 
     # 2. Dapatkan Cost
     cost = CREDIT_COSTS.get(action_type, 1)
