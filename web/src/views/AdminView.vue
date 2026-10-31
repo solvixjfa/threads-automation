@@ -10,6 +10,7 @@
 
     <div class="flex flex-wrap gap-2">
       <button @click="filter = 'all'" class="px-3 py-1.5 text-xs font-bold rounded-lg transition" :class="filter === 'all' ? 'bg-black text-white dark:bg-white dark:text-black' : 'theme-bg-sec theme-text-muted'">All Users</button>
+      <button @click="filter = 'free'" class="px-3 py-1.5 text-xs font-bold rounded-lg transition" :class="filter === 'free' ? 'bg-black text-white dark:bg-white dark:text-black' : 'theme-bg-sec theme-text-muted'">Free</button>
       <button @click="filter = 'trial'" class="px-3 py-1.5 text-xs font-bold rounded-lg transition" :class="filter === 'trial' ? 'bg-black text-white dark:bg-white dark:text-black' : 'theme-bg-sec theme-text-muted'">Active Trial</button>
       <button @click="filter = 'expiring'" class="px-3 py-1.5 text-xs font-bold rounded-lg transition" :class="filter === 'expiring' ? 'bg-black text-white dark:bg-white dark:text-black' : 'theme-bg-sec theme-text-muted'">Expiring Soon</button>
       <button @click="filter = 'zero_credits'" class="px-3 py-1.5 text-xs font-bold rounded-lg transition" :class="filter === 'zero_credits' ? 'bg-black text-white dark:bg-white dark:text-black' : 'theme-bg-sec theme-text-muted'">0 Credits</button>
@@ -38,11 +39,14 @@
                 <div class="text-xs theme-text-muted">@{{ u.username || 'unlinked' }}</div>
               </td>
               <td class="p-4"><Badge :variant="u.connection_status === 'connected' ? 'success' : 'default'">{{ u.connection_status }}</Badge></td>
-              <td class="p-4"><Badge :variant="u.plan !== 'none' ? 'accent' : 'danger'">{{ u.plan }}</Badge></td>
+              <td class="p-4">
+                <!-- Ubah label none jadi Free, dan warnain beda buat Pro -->
+                <Badge :variant="getPlanVariant(u.plan)">{{ getPlanLabel(u.plan) }}</Badge>
+              </td>
               <td class="p-4 text-xs">{{ u.plan_expires_at ? formatDate(u.plan_expires_at) : '-' }}</td>
               <td class="p-4 font-bold text-lg">{{ u.credit_balance }}</td>
               <td class="p-4 text-right space-x-2">
-                <button @click="openExtendModal(u)" class="text-xs font-bold underline hover:theme-text-muted">Extend</button>
+                <button @click="openExtendModal(u)" class="text-xs font-bold underline hover:theme-text-muted">Upgrade</button>
                 <button @click="openCreditModal(u)" class="text-xs font-bold underline hover:theme-text-muted">Adjust</button>
                 <button @click="openLedgerModal(u)" class="text-xs font-bold underline hover:theme-text-muted">Ledger</button>
               </td>
@@ -55,13 +59,16 @@
       </div>
     </div>
 
-    <!-- MODALS (SAMA KAYA SEBELUMNYA, CUMA PINDAH FUNGSI FETCH) -->
+    <!-- MODAL EXTEND PLAN -->
     <Teleport to="body">
       <div v-if="selectedUser && modalType === 'extend'" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="card max-w-sm w-full p-6 space-y-4 bg-[var(--bg)]">
-          <h3 class="text-lg font-bold">Extend Plan: {{ selectedUser.email }}</h3>
-          <Select v-model="extendType" label="Plan Type" :options="[{label: 'Paid Credit (Rp49k)', value: 'paid_credit'}, {label: 'Paid BYOK (Rp29k)', value: 'paid_byok'}]" />
-          <p class="text-xs theme-text-muted">Akan menambah 30 hari dan me-reset kredit.</p>
+          <h3 class="text-lg font-bold">Upgrade Plan: {{ selectedUser.email }}</h3>
+          <Select v-model="extendType" label="Plan Type" :options="[
+            {label: 'Pro Credit (Rp49k - 100 Credits)', value: 'paid_credit'}, 
+            {label: 'Pro BYOK (Rp29k - Unlimited)', value: 'paid_byok'}
+          ]" />
+          <p class="text-xs theme-text-muted">Menambah 30 hari dan me-reset kredit.</p>
           <div class="flex justify-end gap-3 pt-2">
             <Button variant="secondary" @click="selectedUser = null">Cancel</Button>
             <Button @click="handleExtend" :loading="isProcessing">Confirm</Button>
@@ -70,6 +77,7 @@
       </div>
     </Teleport>
 
+    <!-- MODAL ADJUST CREDITS -->
     <Teleport to="body">
       <div v-if="selectedUser && modalType === 'credits'" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="card max-w-sm w-full p-6 space-y-4 bg-[var(--bg)]">
@@ -90,6 +98,7 @@
       </div>
     </Teleport>
 
+    <!-- MODAL LEDGER -->
     <Teleport to="body">
       <div v-if="selectedUser && modalType === 'ledger'" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="card max-w-lg w-full p-6 space-y-4 bg-[var(--bg)] max-h-[80vh] flex flex-col">
@@ -133,8 +142,20 @@ const creditNote = ref('')
 const ledgerData = ref<any[]>([])
 const isProcessing = ref(false)
 
-// Ganti URL kalau backend lu beda
 const API_BASE = 'https://threads-automation-production-53ad.up.railway.app/api/v1/admin'
+
+function getPlanLabel(plan: string) {
+  if (plan === 'trial') return 'Trial'
+  if (plan === 'paid_credit') return 'Pro Credit'
+  if (plan === 'paid_byok') return 'Pro BYOK'
+  return 'Free'
+}
+
+function getPlanVariant(plan: string) {
+  if (plan === 'trial') return 'warning'
+  if (plan === 'paid_credit' || plan === 'paid_byok') return 'accent'
+  return 'default'
+}
 
 function formatDate(iso: string) {
   if (!iso) return ''
@@ -145,7 +166,9 @@ const filteredUsers = computed(() => {
   if (filter.value === 'all') return users.value
   const now = new Date()
   const threeDays = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
+
   return users.value.filter(u => {
+    if (filter.value === 'free') return u.plan === 'none' || !u.plan
     if (filter.value === 'trial') return u.plan === 'trial'
     if (filter.value === 'zero_credits') return u.credit_balance === 0 && u.plan !== 'paid_byok'
     if (filter.value === 'expiring') {
@@ -157,7 +180,6 @@ const filteredUsers = computed(() => {
   })
 })
 
-// Fungsi Helper buat dapetin header Auth dari Supabase
 async function getAuthHeader() {
   const { data: { session } } = await supabase.auth.getSession()
   return session ? { 'Authorization': `Bearer ${session.access_token}` } : {}

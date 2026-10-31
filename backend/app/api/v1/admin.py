@@ -130,3 +130,28 @@ async def get_ledger(account_id: str, user = Depends(verify_admin)):
     db = get_supabase()
     res = db.schema("threads").from_("credit_ledger").select("*").eq("account_id", account_id).order("created_at", desc=True).limit(50).execute()
     return {"success": True, "ledger": res.data or []}
+
+@router.post("/grant-trial/{account_id}")
+async def grant_trial(account_id: str):
+    # Endpoint ini dipanggil internal (misal dari OAuth callback) buat kasih Trial otomatis
+    db = get_supabase()
+    acc = db.schema("threads").from_("threads_accounts").select("plan").eq("id", account_id).limit(1).execute()
+    
+    if not acc.data: return {"status": "ignored"}
+    
+    # Kalau plan masih none, kasih Trial
+    if acc.data[0].get("plan") in [None, 'none']:
+        now = datetime.now(timezone.utc)
+        db.schema("threads").from_("threads_accounts").update({
+            "plan": "trial",
+            "plan_started_at": now.isoformat(),
+            "plan_expires_at": (now + timedelta(days=TRIAL_DAYS)).isoformat(),
+            "credit_balance": TRIAL_CREDITS
+        }).eq("id", account_id).execute()
+
+        db.schema("threads").from_("credit_ledger").insert({
+            "account_id": account_id, "delta": TRIAL_CREDITS, "reason": "trial_grant", "note": "Auto-granted on first connect"
+        }).execute()
+        return {"status": "granted"}
+    
+    return {"status": "already_has_plan"}
