@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, Depends
 from pydantic import BaseModel
 from app.services.rag import get_supabase
 from app.core.config import PAID_DAYS, PAID_CREDITS
@@ -16,7 +16,6 @@ class AdjustCreditRequest(BaseModel):
     delta: int
     note: str
 
-# FUNGSI VERIFIKASI ADMIN
 def verify_admin(authorization: Optional[str] = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing auth token")
@@ -24,13 +23,11 @@ def verify_admin(authorization: Optional[str] = Header(None)):
     token = authorization.replace("Bearer ", "")
     db = get_supabase()
     
-    # Verifikasi token ke Supabase
     try:
         user_res = db.auth.get_user(token)
         if not user_res or not user_res.user:
             raise HTTPException(status_code=401, detail="Invalid token")
         
-        # Cek role di database
         acc = db.schema("threads").from_("threads_accounts").select("role").eq("user_id", user_res.user.id).maybeSingle().execute()
         if not acc.data or acc.data.get("role") != "admin":
             raise HTTPException(status_code=403, detail="Admin access required")
