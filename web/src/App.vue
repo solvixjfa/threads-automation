@@ -1,19 +1,18 @@
 <template>
-  <div v-if="loading" class="h-[100dvh] w-screen flex items-center justify-center theme-bg overflow-hidden">
+  <div v-if="loading" class="h-screen w-screen flex items-center justify-center theme-bg">
     <p class="text-xs font-medium tracking-widest animate-pulse theme-text-muted">LOADING...</p>
   </div>
 
-  <div v-else-if="!session" class="min-h-[100dvh] w-full max-w-[100vw] overflow-x-hidden theme-bg">
+  <div v-else-if="!session" class="min-h-screen w-full overflow-x-hidden theme-bg">
     <RouterView />
   </div>
 
-  <!-- JIKA DI HALAMAN ADMIN -->
-  <div v-else-if="isAdminPage" class="h-[100dvh] w-full max-w-[100vw] overflow-hidden theme-bg theme-text">
+  <div v-else-if="isAdminPage" class="min-h-screen w-full overflow-x-hidden theme-bg theme-text">
     <RouterView />
   </div>
 
-  <!-- LAYOUT UTAMA (USER BIASA) -->
-  <div v-else class="flex h-[100dvh] w-full max-w-[100vw] overflow-hidden theme-bg theme-text">
+  <!-- LAYOUT UTAMA -->
+  <div v-else class="flex min-h-screen w-full theme-bg theme-text">
     <AppSidebar
       :open="sidebarOpen"
       :email="session.user.email"
@@ -22,9 +21,9 @@
       @logout="handleLogout"
     />
 
-    <!-- KUNCI 1: min-w-0 WAJIB ADA DISINI biar sidebar gak narik lebar layar -->
-    <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-      <header class="md:hidden flex items-center justify-between h-16 px-4 border-b theme-border theme-bg shrink-0 z-30">
+    <!-- min-w-0 wajib biar sidebar gak narik layar -->
+    <div class="flex-1 flex flex-col min-w-0 w-full">
+      <header class="md:hidden flex items-center justify-between h-16 px-4 border-b theme-border theme-bg shrink-0 z-30 sticky top-0">
         <div class="flex items-center gap-2">
           <div class="w-7 h-7 flex items-center justify-center rounded text-xs font-black theme-accent">IX</div>
           <span class="font-bold tracking-tight text-sm">ixiera.id</span>
@@ -36,10 +35,9 @@
         </button>
       </header>
 
-      <!-- KUNCI 2: main w-full overflow-x-hidden -->
-      <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 w-full">
-        <!-- KUNCI 3: max-w-full di wrapper RouterView -->
-        <div class="max-w-5xl mx-auto pb-4 md:pb-8 min-h-full flex flex-col w-full max-w-full">
+      <!-- p-4 disini biar ada jarak, flex-1 biar narik ke bawah -->
+      <main class="flex-1 p-4 md:p-8 w-full">
+        <div class="max-w-5xl mx-auto h-full flex flex-col w-full">
           <RouterView />
         </div>
       </main>

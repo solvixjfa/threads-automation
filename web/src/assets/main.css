@@ -174,3 +174,12 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
+
+/* --- KUNCI TINGGI LAYAR (ANTI AREA HITAM) --- */
+html, body, #app {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--bg-primary) !important;
+  margin: 0;
+  padding: 0;
+}
