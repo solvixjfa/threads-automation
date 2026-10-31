@@ -9,7 +9,15 @@
       <div v-for="i in 4" :key="i" class="h-28 skeleton"></div>
     </div>
 
-    <div v-else-if="stats" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <!-- STATE JIKA DATA GAGAL ATAU KOSONG -->
+    <div v-else-if="!stats" class="p-8 text-center border-2 border-dashed theme-border rounded-xl space-y-4">
+      <p class="text-sm font-bold text-red-500">Gagal memuat data statistik.</p>
+      <p class="text-xs theme-text-muted">Pastikan backend Railway sudah di-deploy dengan endpoint terbaru.</p>
+      <button @click="load" class="btn btn-secondary btn-sm">Coba Lagi</button>
+    </div>
+
+    <!-- STATE DATA BERHASIL -->
+    <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <!-- MRR -->
       <div class="card p-5 space-y-1 border-l-4" style="border-left-color: var(--success);">
         <span class="text-[10px] font-bold uppercase theme-text-muted">Est. MRR</span>
@@ -51,13 +59,20 @@ async function getAuthHeader() {
 }
 
 async function load() {
+  loading.value = true
   try {
     const headers = await getAuthHeader()
     const res = await fetch(`${API_BASE}/stats`, { headers })
     const data = await res.json()
-    if (data.success) stats.value = data.stats
+    
+    if (res.ok && data.success) {
+      stats.value = data.stats
+    } else {
+      throw new Error(data.detail || "Gagal mengambil data dari server")
+    }
   } catch (err: any) {
-    showToast('Failed load stats: ' + err.message, 'error')
+    showToast('Error: ' + err.message, 'error')
+    stats.value = null
   } finally {
     loading.value = false
   }
