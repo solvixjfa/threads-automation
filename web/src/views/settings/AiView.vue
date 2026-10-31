@@ -7,8 +7,8 @@
             <h2 class="text-sm font-bold">AI & Billing</h2>
             <p class="text-xs theme-text-muted mt-0.5">Manage your plan and API keys.</p>
           </div>
-          <Badge :variant="hasCustomKey ? 'success' : 'default'">
-            {{ hasCustomKey ? 'BYOK Active' : planName }}
+          <Badge :variant="plan !== 'none' ? 'success' : 'danger'">
+            {{ planName }}
           </Badge>
         </div>
       </template>
@@ -26,36 +26,53 @@
             <span v-if="planExpiresAt" class="text-xs theme-text-muted">Expires: {{ formatDate(planExpiresAt) }}</span>
           </div>
           
-          <div class="flex items-center gap-4">
-            <div class="flex-1">
-              <div class="text-2xl font-black">{{ hasCustomKey ? 'Unlimited' : planName }}</div>
-              <div v-if="!hasCustomKey && plan !== 'none'" class="text-sm theme-text-muted mt-1">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-2xl font-black">{{ planName }}</div>
+              <div v-if="plan === 'trial' || plan === 'paid_credit'" class="text-sm theme-text-muted mt-1">
                 {{ creditBalance }} Credits Remaining
               </div>
-              <div v-if="plan === 'none'" class="text-sm theme-text-muted mt-1">
-                Your plan has expired. Please renew to use AI features.
+              <div v-else-if="plan === 'paid_byok'" class="text-sm theme-text-muted mt-1">
+                Unlimited (BYOK Active)
               </div>
             </div>
-            <div class="text-right space-y-1">
-              <div class="text-xs theme-text-muted">Harga:</div>
-              <div class="font-bold">Rp49.000 (Kredit)</div>
-              <div class="font-bold text-xs">Rp29.000 (BYOK)</div>
-            </div>
+            <RouterLink to="/pricing" class="btn btn-primary btn-sm">Upgrade Plan</RouterLink>
           </div>
         </div>
 
         <!-- BYOK SECTION -->
         <div class="space-y-3">
-          <h3 class="text-sm font-bold">Use Your Own API Key (BYOK)</h3>
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold">API Keys (BYOK)</h3>
+            <Badge v-if="plan !== 'paid_byok'" variant="danger">Locked</Badge>
+          </div>
           <p class="text-xs theme-text-muted">
-            Using your own API key means AI actions won't deduct your credits.
+            Gunakan API Key sendiri agar tidak memotong kredit. Fitur ini khusus untuk paket <b>Pro BYOK</strong>.
           </p>
-          <div class="space-y-2">
-            <div class="flex gap-2">
-              <input v-model="customKey" type="password" placeholder="Paste your API Key here..." class="input flex-1" />
-              <Button @click="saveKey" :disabled="saving || !accountId" :loading="saving">Save</Button>
+          
+          <div v-if="plan !== 'paid_byok'" class="p-4 rounded-lg border border-red-500/20 bg-red-500/5 text-red-500 text-xs text-center">
+            Fitur ini terkunci. Silakan upgrade ke Pro BYOK untuk mengaktifkan.
+          </div>
+
+          <div v-else class="space-y-4">
+            <!-- GEMINI -->
+            <div class="space-y-1">
+              <label class="label">Gemini API Key</label>
+              <div class="flex gap-2">
+                <input v-model="geminiKey" type="password" placeholder="AIzaSy..." class="input flex-1" />
+                <Button @click="saveKey('gemini')" :disabled="saving" :loading="saving">Save</Button>
+              </div>
+              <p class="text-[10px] theme-text-muted">Digunakan untuk Embedding RAG & Generate Text.</p>
             </div>
-            <p class="text-[11px] theme-text-muted">Key is stored securely and never shown to others.</p>
+            <!-- GROQ -->
+            <div class="space-y-1">
+              <label class="label">Groq API Key</label>
+              <div class="flex gap-2">
+                <input v-model="groqKey" type="password" placeholder="gsk_..." class="input flex-1" />
+                <Button @click="saveKey('groq')" :disabled="saving" :loading="saving">Save</Button>
+              </div>
+              <p class="text-[10px] theme-text-muted">Digunakan untuk Generate Text super cepat.</p>
+            </div>
           </div>
         </div>
       </template>
@@ -77,14 +94,14 @@ const accountId = ref<string | null>(null)
 const plan = ref('none')
 const planExpiresAt = ref<string | null>(null)
 const creditBalance = ref(0)
-const customKey = ref('')
-const hasCustomKey = ref(false)
+const geminiKey = ref('')
+const groqKey = ref('')
 
 const planName = computed(() => {
   if (plan.value === 'trial') return 'Trial'
-  if (plan.value === 'paid_credit') return 'Paid (Credits)'
-  if (plan.value === 'paid_byok') return 'Paid (BYOK)'
-  return 'No Plan'
+  if (plan.value === 'paid_credit') return 'Pro Credit'
+  if (plan.value === 'paid_byok') return 'Pro BYOK'
+  return 'Free'
 })
 
 function formatDate(iso: string) {
@@ -100,7 +117,7 @@ async function load() {
 
     const { data: account, error } = await supabase
       .schema('threads').from('threads_accounts')
-      .select('id, plan, plan_expires_at, credit_balance, custom_gemini_key')
+      .select('id, plan, plan_expires_at, credit_balance, custom_gemini_key, custom_groq_key')
       .eq('user_id', user.id).maybeSingle()
 
     if (error) throw error
@@ -110,8 +127,8 @@ async function load() {
       plan.value = account.plan || 'none'
       planExpiresAt.value = account.plan_expires_at
       creditBalance.value = account.credit_balance || 0
-      customKey.value = account.custom_gemini_key || ''
-      hasCustomKey.value = !!account.custom_gemini_key
+      geminiKey.value = account.custom_gemini_key || ''
+      groqKey.value = account.custom_groq_key || ''
     }
   } catch (err: any) {
     showToast('Failed to load settings: ' + err.message, 'error')
@@ -120,22 +137,41 @@ async function load() {
   }
 }
 
-async function saveKey() {
+async function saveKey(provider: 'gemini' | 'groq') {
   if (!accountId.value) return
+  const keyToSave = provider === 'gemini' ? geminiKey.value.trim() : groqKey.value.trim()
+  
+  if (!keyToSave) {
+    showToast('Key tidak boleh kosong', 'error')
+    return
+  }
+
   saving.value = true
   try {
-    // Simpan API Key (nanti backend yang urus enkripsi)
+    // Validasi API Key (Sederhana)
+    const url = provider === 'gemini' 
+      ? `https://generativelanguage.googleapis.com/v1beta/models?key=${keyToSave}`
+      : 'https://api.groq.com/openai/v1/models'
+    
+    const headers: any = provider === 'groq' ? { 'Authorization': `Bearer ${keyToSave}` } : {}
+    const res = await fetch(url, { headers })
+
+    if (!res.ok) throw new Error('API Key tidak valid atau limit tercapai.')
+
+    // Simpan ke DB
+    const updateData = provider === 'gemini' 
+      ? { custom_gemini_key: keyToSave }
+      : { custom_groq_key: keyToSave }
+
     const { error } = await supabase
       .schema('threads').from('threads_accounts')
-      .update({ custom_gemini_key: customKey.value.trim() || null })
+      .update(updateData)
       .eq('id', accountId.value)
 
     if (error) throw error
-    
-    hasCustomKey.value = !!customKey.value.trim()
-    showToast('API Key saved.', 'success')
+    showToast(`${provider.toUpperCase()} Key berhasil disimpan!`, 'success')
   } catch (err: any) {
-    showToast('Failed to save API Key: ' + err.message, 'error')
+    showToast('Gagal: ' + err.message, 'error')
   } finally {
     saving.value = false
   }
