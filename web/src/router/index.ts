@@ -17,8 +17,11 @@ import InboxView from '../views/InboxView.vue'
 import PrivacyView from '../views/PrivacyView.vue'
 import TermsView from '../views/TermsView.vue'
 import DataDeletionView from '../views/DataDeletionView.vue'
-import AdminView from '../views/AdminView.vue'
+
 import PricingView from '../views/PricingView.vue'
+import AdminLayout from '../views/admin/AdminLayout.vue'
+import AdminOverview from '../views/admin/AdminOverview.vue'
+import AdminUsers from '../views/admin/AdminUsers.vue'
 
 import ContentLayout from '../views/content/ContentLayout.vue'
 import QueueView from '../views/content/QueueView.vue'
@@ -38,7 +41,15 @@ const router = createRouter({
     { path: '/privacy', name: 'privacy', component: PrivacyView },
     { path: '/terms', name: 'terms', component: TermsView },
     { path: '/data-deletion', name: 'data-deletion', component: DataDeletionView },
-    { path: '/admin', name: 'admin', component: AdminView, meta: { requiresAuth: true } },
+    {
+      path: '/admin',
+      component: AdminLayout,
+      meta: { requiresAuth: true, requiresAdmin: true },
+      children: [
+        { path: '', name: 'admin-overview', component: AdminOverview },
+        { path: 'users', name: 'admin-users', component: AdminUsers },
+      ]
+    },
     { path: '/pricing', name: 'pricing', component: PricingView, meta: { requiresAuth: true } },
 
     { path: '/dashboard', name: 'dashboard', component: DashboardView, meta: { requiresAuth: true } },

@@ -154,3 +154,34 @@ async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin))
         logger.error(f"❌ Gagal ambil data user untuk email: {str(e)}")
 
     return {"success": True, "new_expires": new_exp.isoformat(), "credits": credits}
+
+@router.get("/stats")
+async def get_admin_stats(user = Depends(verify_admin)):
+    db = get_supabase()
+    
+    # Ambil semua data user
+    accs = db.schema("threads").from_("threads_accounts").select("plan, pending_plan, credit_balance").execute()
+    
+    total_users = len(accs.data or [])
+    total_pro_credit = 0
+    total_pro_byok = 0
+    total_pending = 0
+    
+    for acc in (accs.data or []):
+        if acc.get("plan") == "paid_credit": total_pro_credit += 1
+        if acc.get("plan") == "paid_byok": total_pro_byok += 1
+        if acc.get("pending_plan"): total_pending += 1
+
+    # Hitung Estimasi Pendapatan (MRR)
+    mrr_est = (total_pro_credit * 49000) + (total_pro_byok * 29000)
+
+    return {
+        "success": True,
+        "stats": {
+            "total_users": total_users,
+            "pro_credit": total_pro_credit,
+            "pro_byok": total_pro_byok,
+            "pending_requests": total_pending,
+            "mrr_estimate": mrr_est
+        }
+    }
