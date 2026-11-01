@@ -382,7 +382,7 @@
     "how": {
       "title": "Start in 3 steps.",
       "s1_title": "Sign up and request access.",
-      "s1_desc": "Create an account, then send your Threads @username. Access is manually approved and you'll be notified by email.",
+      "s1_desc": "Create an account, then send your Threads {'@'}username. Access is manually approved and you'll be notified by email.",
       "s2_title": "Connect and teach your style.",
       "s2_desc": "Once approved, accept the tester invite on Threads and log in via Meta's official system. Write your style and rules in the Knowledge Base.",
       "s3_title": "Review and go.",

@@ -382,7 +382,7 @@
     "how": {
       "title": "Mulai dalam 3 langkah.",
       "s1_title": "Daftar dan minta akses.",
-      "s1_desc": "Buat akun, lalu kirim @username Threads kamu. Akses disetujui manual dan kamu dikabari lewat email.",
+      "s1_desc": "Buat akun, lalu kirim {'@'}username Threads kamu. Akses disetujui manual dan kamu dikabari lewat email.",
       "s2_title": "Hubungkan dan ajari gayamu.",
       "s2_desc": "Setelah disetujui, terima undangan tester di Threads dan login lewat sistem resmi Meta. Tulis dokumen gaya dan aturanmu di Knowledge Base.",
       "s3_title": "Review dan jalan.",
