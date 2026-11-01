@@ -376,11 +376,11 @@ async def process_account(db, client, acc: dict) -> dict:
     acc_id = acc["id"]
     acc_username = acc.get("username", "")
     token = acc.get("settings", {}).get("access_token")
+
     # --- AUTO TRIAL LOGIC ---
     from app.core.config import TRIAL_DAYS, TRIAL_CREDITS
     plan = acc.get("plan")
     if (plan is None or plan == "none") and not acc.get("plan_started_at"):
-        from datetime import datetime, timezone, timedelta
         now = datetime.now(timezone.utc)
         expires = now + timedelta(days=TRIAL_DAYS)
         db.schema("threads").from_("threads_accounts").update({
@@ -403,9 +403,9 @@ async def process_account(db, client, acc: dict) -> dict:
 
     ai_provider = acc.get("ai_provider") or "groq"
 
-    # PANGGIL PROFIL & METRIK DULUAN
+    # Tarik Profile & Metrics dulu
     await sync_profile_and_metrics(db, client, acc_id, token)
-
+    
     new_posts = await sync_posts_from_meta(db, client, acc_id, token)
     account_stats["new_posts"] = new_posts
 
@@ -416,8 +416,38 @@ async def process_account(db, client, acc: dict) -> dict:
     auto_settings = settings_res.data[0] if settings_res.data else {}
     is_enabled = auto_settings.get("enabled", True)
     reply_mode = auto_settings.get("mode", "review")
+    category_rules = auto_settings.get("rules") or {}
 
-    # (Sisa kode auto reply biarin aja, kita cuma ganti bagian atasnya)
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=MAX_POST_AGE_DAYS)).isoformat()
+    posts_res = (
+        db.schema("threads").from_("posts")
+        .select("id, threads_media_id")
+        .eq("account_id", acc_id)
+        .gte("posted_at", cutoff)
+        .order("posted_at", desc=True)
+        .limit(MAX_POSTS_TO_FETCH)
+        .execute()
+    )
+    posts = posts_res.data or []
+    valid_posts = [p for p in posts if p.get("threads_media_id") and p.get("id")]
+    if not valid_posts:
+        return account_stats
+
+    sem = asyncio.Semaphore(SYNC_CONCURRENCY)
+    tasks = [
+        sync_post_with_semaphore(
+            sem, db, client, acc_id, p["id"], p["threads_media_id"],
+            token, acc_username, is_enabled, reply_mode, category_rules, ai_provider, auto_settings
+        ) for p in valid_posts
+    ]
+
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    for r in results:
+        if isinstance(r, dict):
+            merge_stats(account_stats, r)
+        elif isinstance(r, Exception):
+            logging.error(f"[Gather Exception] {str(r)}")
+
     return account_stats
 
 
