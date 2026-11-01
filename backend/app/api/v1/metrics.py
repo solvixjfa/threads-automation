@@ -17,19 +17,25 @@ def get_supabase():
 class SyncRequest(BaseModel):
     account_id: str
 
+def get_token_from_db(db, account_id):
+    # KUNCI PERBAIKAN: Ambil dari kolom 'settings'
+    res = db.schema('threads').from_('threads_accounts').select('settings').eq('id', f'"{account_id}"').maybe_single().execute()
+    
+    if not res.data:
+        return None
+        
+    settings = res.data.get('settings') or {}
+    return settings.get('access_token')
+
 @router.post("/sync")
 async def sync_metrics(payload: SyncRequest):
     account_id = payload.account_id
     db = get_supabase()
 
     try:
-        # KUNCI PERBAIKAN: Bungkus account_id pakai tanda kutip ganda biar dibaca UUID
-        acc_res = db.schema('threads').from_('threads_accounts').select('access_token').eq('id', f'"{account_id}"').maybe_single().execute()
-        
-        if not acc_res.data:
-            raise HTTPException(status_code=404, detail="Akun tidak ditemukan di database")
-        
-        token = acc_res.data['access_token']
+        token = get_token_from_db(db, account_id)
+        if not token:
+            raise HTTPException(status_code=400, detail="Access token tidak ditemukan di settings akun ini.")
 
         # Ambil post
         posts_res = db.schema('threads').from_('posts').select('id, threads_media_id').eq('account_id', f'"{account_id}"').execute()
@@ -83,13 +89,9 @@ async def sync_profile(payload: SyncRequest):
     db = get_supabase()
 
     try:
-        # KUNCI PERBAIKAN: Bungkus account_id pakai tanda kutip
-        acc_res = db.schema('threads').from_('threads_accounts').select('access_token').eq('id', f'"{account_id}"').maybe_single().execute()
-        
-        if not acc_res.data:
-            raise HTTPException(status_code=404, detail="Akun tidak ditemukan")
-
-        token = acc_res.data['access_token']
+        token = get_token_from_db(db, account_id)
+        if not token:
+            raise HTTPException(status_code=400, detail="Access token tidak ditemukan di settings akun ini.")
 
         url = f"https://graph.threads.net/v1.0/me?fields=id,username,threads_profile_picture_url,threads_biography&access_token={token}"
         
