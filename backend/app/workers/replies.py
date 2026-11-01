@@ -376,6 +376,35 @@ async def process_account(db, client, acc: dict) -> dict:
     acc_id = acc["id"]
     acc_username = acc.get("username", "")
     token = acc.get("settings", {}).get("access_token")
+
+    # --- AUTO TRIAL LOGIC ---
+    plan = acc.get("plan")
+    if (plan is None or plan == "none") and not acc.get("plan_started_at"):
+        from datetime import datetime, timezone, timedelta
+        now = datetime.now(timezone.utc)
+        expires = now + timedelta(days=7)
+
+        db.schema('threads').from_('threads_accounts').update({
+            "plan": "trial",
+            "plan_started_at": now.isoformat(),
+            "plan_expires_at": expires.isoformat(),
+            "credit_balance": 20
+        }).eq("id", acc_id).execute()
+
+        try:
+            db.schema('threads').from_('credit_ledger').insert({
+                "account_id": acc_id,
+                "delta": 20,
+                "reason": "trial_start",
+                "note": "Auto granted 7-day trial upon first connection"
+            }).execute()
+        except Exception as e:
+            logging.warning(f"[Auto Trial] Gagal insert ledger: {e}")
+
+        logging.info(f"[Auto Trial] Granted 7-day trial & 20 credits to {acc_id}")
+    # -------------------------
+
+    if not token:
     if not token:
         return account_stats
 
