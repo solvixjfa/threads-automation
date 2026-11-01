@@ -41,11 +41,9 @@ def verify_admin(authorization: Optional[str] = Header(None)):
 async def send_approval_email(email: str, plan_name: str):
     api_key = os.getenv("RESEND_API_KEY")
     from_email = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
-    
     if not api_key:
         logger.error("❌ RESEND_API_KEY tidak ditemukan di env Railway!")
         return
-
     html_content = f"""
     <div style="font-family: sans-serif; color: #111; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
         <h2 style="color: #000;">Pembayaran Berhasil! 🎉</h2>
@@ -58,18 +56,12 @@ async def send_approval_email(email: str, plan_name: str):
         <p style="font-size: 12px; color: #666;">Jika ada kendala, balas email ini atau hubungi WhatsApp Admin.</p>
     </div>
     """
-
     try:
         async with httpx.AsyncClient() as client:
             res = await client.post(
                 "https://api.resend.com/emails",
                 headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-                json={
-                    "from": f"Ixiera <{from_email}>",
-                    "to": [email],
-                    "subject": "Upgrade Berhasil! Akun Ixiera Kamu Sudah Aktif",
-                    "html": html_content
-                },
+                json={"from": f"Ixiera <{from_email}>", "to": [email], "subject": "Upgrade Berhasil! Akun Ixiera Kamu Sudah Aktif", "html": html_content},
                 timeout=10.0
             )
             if res.status_code == 200:
@@ -89,7 +81,6 @@ async def get_users(user = Depends(verify_admin)):
         user_map = {u.id: u.email for u in users_list}
     except Exception:
         user_map = {}
-
     results = []
     for acc in (accs.data or []):
         results.append({
@@ -114,11 +105,18 @@ async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin))
     db = get_supabase()
     acc = db.schema("threads").from_("threads_accounts").select("plan_expires_at, user_id").eq("id", payload.account_id).limit(1).execute()
     if not acc.data: raise HTTPException(404, "Account not found")
-    
+
+    if payload.plan_type == 'trial':
+        days = 7
+        credits = 20
+    else:
+        days = PAID_DAYS
+        credits = PAID_CREDITS if payload.plan_type == 'paid_credit' else 0
+
     now = datetime.now(timezone.utc)
     current_exp = acc.data[0].get("plan_expires_at")
     target_user_id = acc.data[0].get("user_id")
-    
+
     if current_exp:
         try:
             exp_dt = datetime.fromisoformat(current_exp.replace("Z", "+00:00"))
@@ -128,13 +126,6 @@ async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin))
     else:
         new_exp = now + timedelta(days=days)
 
-    if payload.plan_type == 'trial':
-        days = 7
-        credits = 20
-    else:
-        days = PAID_DAYS
-        credits = PAID_CREDITS if payload.plan_type == 'paid_credit' else 0
-    
     db.schema("threads").from_("threads_accounts").update({
         "plan": payload.plan_type,
         "plan_started_at": now.isoformat(),
@@ -148,28 +139,44 @@ async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin))
         "note": f"Admin extended to {payload.plan_type}"
     }).execute()
 
-    # KIRIM EMAIL
     try:
         user_res = db.auth.admin.get_user_by_id(target_user_id)
         if user_res and user_res.user and user_res.user.email:
-            plan_name = "Pro Credit" if payload.plan_type == 'paid_credit' else "Pro BYOK"
+            plan_name = "Pro Credit" if payload.plan_type == 'paid_credit' else "Pro BYOK" if payload.plan_type == 'paid_byok' else "Trial"
             await send_approval_email(user_res.user.email, plan_name)
-        else:
-            logger.warning(f"⚠️ Email user tidak ditemukan untuk ID {target_user_id}")
     except Exception as e:
         logger.error(f"❌ Gagal ambil data user untuk email: {str(e)}")
 
     return {"success": True, "new_expires": new_exp.isoformat(), "credits": credits}
 
+@router.post("/adjust-credits")
+async def adjust_credits(payload: AdjustCreditRequest, user = Depends(verify_admin)):
+    db = get_supabase()
+    acc = db.schema("threads").from_("threads_accounts").select("credit_balance").eq("id", payload.account_id).limit(1).execute()
+    if not acc.data: raise HTTPException(404, "Account not found")
+    
+    current = acc.data[0].get("credit_balance", 0)
+    new_bal = current + payload.delta
+    if new_bal < 0: new_bal = 0
+
+    db.schema("threads").from_("threads_accounts").update({"credit_balance": new_bal}).eq("id", payload.account_id).execute()
+    db.schema("threads").from_("credit_ledger").insert({
+        "account_id": payload.account_id, "delta": payload.delta, "reason": "manual_adjust", "note": payload.note
+    }).execute()
+
+    return {"success": True, "new_balance": new_bal}
+
+@router.get("/ledger/{account_id}")
+async def get_ledger(account_id: str, user = Depends(verify_admin)):
+    db = get_supabase()
+    res = db.schema("threads").from_("credit_ledger").select("*").eq("account_id", account_id).order("created_at", desc=True).execute()
+    return {"success": True, "ledger": res.data or []}
 
 @router.post("/downgrade")
 async def downgrade_plan(payload: AdminActionRequest, user = Depends(verify_admin)):
     db = get_supabase()
     db.schema("threads").from_("threads_accounts").update({
-        "plan": "none",
-        "plan_expires_at": None,
-        "credit_balance": 0,
-        "pending_plan": None
+        "plan": "none", "plan_expires_at": None, "credit_balance": 0, "pending_plan": None
     }).eq("id", payload.account_id).execute()
     return {"success": True, "message": "Downgraded to free"}
 
@@ -177,48 +184,29 @@ async def downgrade_plan(payload: AdminActionRequest, user = Depends(verify_admi
 async def force_sync_user(payload: AdminActionRequest, user = Depends(verify_admin)):
     db = get_supabase()
     acc_res = db.schema('threads').from_('threads_accounts').select('settings, id').eq('id', payload.account_id).maybe_single().execute()
-    if not acc_res.data: 
-        raise HTTPException(404, "Account not found")
-    
+    if not acc_res.data: raise HTTPException(404, "Account not found")
     token = (acc_res.data.get('settings') or {}).get('access_token')
-    if not token: 
-        raise HTTPException(400, "No access token")
-    
+    if not token: raise HTTPException(400, "No access token")
     from app.workers.replies import sync_profile_and_metrics
     import httpx
     async with httpx.AsyncClient() as client:
         await sync_profile_and_metrics(db, client, payload.account_id, token)
-        
     return {"success": True, "message": "Profile & Metrics synced manually"}
 
 @router.get("/stats")
-
 async def get_admin_stats(user = Depends(verify_admin)):
     db = get_supabase()
-    
-    # Ambil semua data user
     accs = db.schema("threads").from_("threads_accounts").select("plan, pending_plan, credit_balance").execute()
-    
     total_users = len(accs.data or [])
     total_pro_credit = 0
     total_pro_byok = 0
     total_pending = 0
-    
     for acc in (accs.data or []):
         if acc.get("plan") == "paid_credit": total_pro_credit += 1
         if acc.get("plan") == "paid_byok": total_pro_byok += 1
         if acc.get("pending_plan"): total_pending += 1
-
-    # Hitung Estimasi Pendapatan (MRR)
     mrr_est = (total_pro_credit * 29000) + (total_pro_byok * 19000)
-
     return {
         "success": True,
-        "stats": {
-            "total_users": total_users,
-            "pro_credit": total_pro_credit,
-            "pro_byok": total_pro_byok,
-            "pending_requests": total_pending,
-            "mrr_estimate": mrr_est
-        }
+        "stats": {"total_users": total_users, "pro_credit": total_pro_credit, "pro_byok": total_pro_byok, "pending_requests": total_pending, "mrr_estimate": mrr_est}
     }
