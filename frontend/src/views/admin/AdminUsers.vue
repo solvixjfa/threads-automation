@@ -42,6 +42,8 @@
                 <button @click="openExtendModal(u)" class="text-xs font-bold underline hover:theme-text-muted">Approve / Extend</button>
                 <button @click="openCreditModal(u)" class="text-xs font-bold underline hover:theme-text-muted">Adjust</button>
                 <button @click="openLedgerModal(u)" class="text-xs font-bold underline hover:theme-text-muted">Ledger</button>
+                <button @click="handleForceSync(u)" class="text-xs font-bold text-blue-500 underline hover:text-blue-700">Sync</button>
+                <button @click="handleDowngrade(u)" class="text-xs font-bold text-red-500 underline hover:text-red-700">Downgrade</button>
               </td>
             </tr>
           </tbody>

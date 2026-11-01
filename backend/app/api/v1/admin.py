@@ -103,6 +103,7 @@ async def get_users(user = Depends(verify_admin)):
             "pending_plan": acc.get("pending_plan"),
             "plan_expires_at": acc.get("plan_expires_at"),
             "credit_balance": acc.get("credit_balance", 0),
+            "last_error": acc.get("last_error"),
             "created_at": acc.get("created_at")
         })
     results.sort(key=lambda x: x["created_at"] or "", reverse=True)
@@ -155,7 +156,38 @@ async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin))
 
     return {"success": True, "new_expires": new_exp.isoformat(), "credits": credits}
 
+
+@router.post("/downgrade")
+async def downgrade_plan(payload: AdminActionRequest, user = Depends(verify_admin)):
+    db = get_supabase()
+    db.schema("threads").from_("threads_accounts").update({
+        "plan": "none",
+        "plan_expires_at": None,
+        "credit_balance": 0,
+        "pending_plan": None
+    }).eq("id", payload.account_id).execute()
+    return {"success": True, "message": "Downgraded to free"}
+
+@router.post("/force-sync")
+async def force_sync_user(payload: AdminActionRequest, user = Depends(verify_admin)):
+    db = get_supabase()
+    acc_res = db.schema('threads').from_('threads_accounts').select('settings, id').eq('id', payload.account_id).maybe_single().execute()
+    if not acc_res.data: 
+        raise HTTPException(404, "Account not found")
+    
+    token = (acc_res.data.get('settings') or {}).get('access_token')
+    if not token: 
+        raise HTTPException(400, "No access token")
+    
+    from app.workers.replies import sync_profile_and_metrics
+    import httpx
+    async with httpx.AsyncClient() as client:
+        await sync_profile_and_metrics(db, client, payload.account_id, token)
+        
+    return {"success": True, "message": "Profile & Metrics synced manually"}
+
 @router.get("/stats")
+
 async def get_admin_stats(user = Depends(verify_admin)):
     db = get_supabase()
     
