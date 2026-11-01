@@ -9,7 +9,6 @@
           <span class="font-bold text-xl tracking-tight">Ixiera</span>
         </div>
         
-        <!-- Desktop Nav -->
         <div class="hidden md:flex items-center gap-8">
           <a href="#fitur" class="text-sm font-medium text-[var(--muted)] hover:text-[var(--text)] transition-colors">{{ $t('landing.nav.features') }}</a>
           <a href="#cara-kerja" class="text-sm font-medium text-[var(--muted)] hover:text-[var(--text)] transition-colors">{{ $t('landing.nav.how_it_works') }}</a>
@@ -17,7 +16,6 @@
         </div>
 
         <div class="hidden md:flex items-center gap-4">
-          <!-- Toggle Dark/Light Mode -->
           <button @click="toggleTheme" class="p-2 rounded-full hover:bg-[var(--surface-2)] transition-colors">
             <Sun v-if="theme === 'dark'" class="w-5 h-5 text-[var(--text)]" />
             <Moon v-else class="w-5 h-5 text-[var(--text)]" />
@@ -25,23 +23,19 @@
           
           <button @click="toggleLang" class="text-sm font-bold border border-[var(--line)] px-3 py-1.5 rounded-full hover:bg-[var(--surface-2)] transition">{{ locale.toUpperCase() }}</button>
           
-          <!-- Cuma 1 Tombol: Minta Akses / Masuk -->
           <a href="https://app.ixiera.id/login" class="text-sm font-bold bg-[var(--text)] text-[var(--bg)] px-6 py-2 rounded-full hover:opacity-90 transition">{{ $t('landing.nav.start_free') }}</a>
         </div>
 
-        <!-- Mobile Hamburger -->
         <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2">
           <svg v-if="!mobileMenuOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
           <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
 
-      <!-- Mobile Menu -->
       <div v-if="mobileMenuOpen" class="md:hidden border-t border-[var(--line)] bg-[var(--bg)] px-6 py-4 space-y-4 shadow-xl">
         <a href="#fitur" @click="mobileMenuOpen=false" class="block text-sm font-medium">{{ $t('landing.nav.features') }}</a>
         <a href="#cara-kerja" @click="mobileMenuOpen=false" class="block text-sm font-medium">{{ $t('landing.nav.how_it_works') }}</a>
         <a href="#faq" @click="mobileMenuOpen=false" class="block text-sm font-medium">{{ $t('landing.nav.faq') }}</a>
-        
         <div class="pt-4 border-t border-[var(--line)] flex flex-col gap-4">
           <div class="flex items-center justify-between">
             <button @click="toggleTheme" class="flex items-center gap-2 text-sm font-medium text-[var(--muted)]">
@@ -77,20 +71,26 @@
             <span class="flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> {{ $t('landing.hero.trust_3') }}</span>
           </div>
         </div>
+        
+        <!-- MOCKUP: Hook Chart (Hero) -->
         <div class="flex-1 w-full max-w-md mx-auto fade-in">
-          <!-- MOCKUP: Hook Chart (Hero) -->
           <div class="border border-dashed border-[var(--line)] rounded-xl overflow-hidden bg-[var(--surface)]">
             <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[var(--line)]">
               <div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div>
               <span class="ml-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Hook Performance</span>
             </div>
             <div class="p-6 space-y-4">
-              <div class="space-y-1"><div class="flex justify-between text-xs font-bold"><span>Question</span><span>2.92%</span></div><div class="w-full bg-[var(--surface-2)] h-2 rounded-full"><div class="h-full bg-[var(--text)] rounded-full bar-grow" style="width: 100%"></div></div><div class="text-[10px] text-[var(--muted)] text-right">n=6</div></div>
-              <div class="space-y-1"><div class="flex justify-between text-xs font-bold"><span>Story</span><span>1.36%</span></div><div class="w-full bg-[var(--surface-2)] h-2 rounded-full"><div class="h-full bg-[var(--bar-dim)] rounded-full bar-grow" style="width: 46%"></div></div><div class="text-[10px] text-[var(--muted)] text-right">n=32</div></div>
-              <div class="space-y-1"><div class="flex justify-between text-xs font-bold"><span>Statement</span><span>0.90%</span></div><div class="w-full bg-[var(--surface-2)] h-2 rounded-full"><div class="h-full bg-[var(--bar-dim)] rounded-full bar-grow" style="width: 30%"></div></div><div class="text-[10px] text-[var(--muted)] text-right">n=10</div></div>
-              <div class="space-y-1"><div class="flex justify-between text-xs font-bold"><span>List</span><span>0.00%</span></div><div class="w-full bg-[var(--surface-2)] h-2 rounded-full"><div class="h-full bg-[var(--bar-dim)] rounded-full bar-grow" style="width: 0%"></div></div><div class="text-[10px] text-[var(--muted)] text-right">n=2</div></div>
+              <div v-for="(item, index) in hookData" :key="item.label" class="space-y-1">
+                <div class="flex justify-between text-xs font-bold"><span>{{ item.label }}</span><span>{{ item.er }}%</span></div>
+                <div class="w-full bg-[var(--surface-2)] h-2 rounded-full">
+                  <div class="h-full rounded-full bar-grow" :class="index === 0 ? 'bg-[var(--text)]' : 'bg-[var(--bar-dim)]'" :style="{ width: getBarWidth(item.er) }"></div>
+                </div>
+                <div class="text-[10px] text-[var(--muted)] text-right">n={{ item.n }}</div>
+              </div>
             </div>
-            <div class="bg-[var(--surface-2)] text-center py-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Contoh tampilan</div>
+            <div class="bg-[var(--surface-2)] text-center py-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">
+              Data nyata
+            </div>
           </div>
         </div>
       </section>
@@ -223,8 +223,13 @@
                 <span class="text-[10px] font-bold bg-[var(--text)] text-[var(--bg)] px-2 py-1 rounded-full">{{ $t('landing.realData.hook_label') }}</span>
               </div>
               <div class="p-6 space-y-4">
-                <div class="space-y-1"><div class="flex justify-between text-xs font-bold"><span>Question</span><span>2.92%</span></div><div class="w-full bg-[var(--surface-2)] h-2 rounded-full"><div class="h-full bg-[var(--text)] rounded-full" style="width: 100%"></div></div><div class="text-[10px] text-[var(--muted)] text-right">n=6</div></div>
-                <div class="space-y-1"><div class="flex justify-between text-xs font-bold"><span>Story</span><span>1.36%</span></div><div class="w-full bg-[var(--surface-2)] h-2 rounded-full"><div class="h-full bg-[var(--bar-dim)] rounded-full" style="width: 46%"></div></div><div class="text-[10px] text-[var(--muted)] text-right">n=32</div></div>
+                <div v-for="(item, index) in hookData.slice(0, 2)" :key="item.label" class="space-y-1">
+                  <div class="flex justify-between text-xs font-bold"><span>{{ item.label }}</span><span>{{ item.er }}%</span></div>
+                  <div class="w-full bg-[var(--surface-2)] h-2 rounded-full">
+                    <div class="h-full rounded-full bar-grow" :class="index === 0 ? 'bg-[var(--text)]' : 'bg-[var(--bar-dim)]'" :style="{ width: getBarWidth(item.er) }"></div>
+                  </div>
+                  <div class="text-[10px] text-[var(--muted)] text-right">n={{ item.n }}</div>
+                </div>
               </div>
               <div class="px-6 pb-6 text-sm text-[var(--muted)] border-t border-[var(--line)] pt-4">{{ $t('landing.realData.hook_desc') }}</div>
             </div>
@@ -235,8 +240,13 @@
                 <span class="text-[10px] font-bold bg-[var(--text)] text-[var(--bg)] px-2 py-1 rounded-full">{{ $t('landing.realData.len_label') }}</span>
               </div>
               <div class="p-6 space-y-4">
-                <div class="space-y-1"><div class="flex justify-between text-xs font-bold"><span>300–500 char</span><span>2.96%</span></div><div class="w-full bg-[var(--surface-2)] h-2 rounded-full"><div class="h-full bg-[var(--text)] rounded-full" style="width: 100%"></div></div><div class="text-[10px] text-[var(--muted)] text-right">n=10</div></div>
-                <div class="space-y-1"><div class="flex justify-between text-xs font-bold"><span>100–300 char</span><span>1.12%</span></div><div class="w-full bg-[var(--surface-2)] h-2 rounded-full"><div class="h-full bg-[var(--bar-dim)] rounded-full" style="width: 37%"></div></div><div class="text-[10px] text-[var(--muted)] text-right">n=25</div></div>
+                <div v-for="(item, index) in lengthData.slice(0, 2)" :key="item.label" class="space-y-1">
+                  <div class="flex justify-between text-xs font-bold"><span>{{ item.label }}</span><span>{{ item.er }}%</span></div>
+                  <div class="w-full bg-[var(--surface-2)] h-2 rounded-full">
+                    <div class="h-full rounded-full bar-grow" :class="index === 0 ? 'bg-[var(--text)]' : 'bg-[var(--bar-dim)]'" :style="{ width: getBarWidth(item.er) }"></div>
+                  </div>
+                  <div class="text-[10px] text-[var(--muted)] text-right">n={{ item.n }}</div>
+                </div>
               </div>
               <div class="px-6 pb-6 text-sm text-[var(--muted)] border-t border-[var(--line)] pt-4">{{ $t('landing.realData.len_desc') }}</div>
             </div>
@@ -335,7 +345,7 @@
 
     </main>
 
-    <!-- FOOTER (UDAH BISA DIKLIK) -->
+    <!-- FOOTER -->
     <footer class="py-12 border-t border-[var(--line)] text-center text-sm text-[var(--muted)]">
       <div class="flex flex-wrap justify-center items-center gap-4 mb-4">
         <a href="mailto:contact@ixiera.id" class="hover:text-[var(--text)] transition-colors">Email</a>
@@ -364,13 +374,32 @@ const { theme, toggle: toggleTheme } = useTheme()
 const mobileMenuOpen = ref(false)
 const faqOpen = ref<number | null>(1)
 
+// STATE DATA HARDCODE (GANTI ANGKA INI PAKAI DATA ASLI LU)
+const hookData = ref([
+  { label: 'Question', er: 2.92, n: 6 },
+  { label: 'Story', er: 1.36, n: 32 },
+  { label: 'Statement', er: 0.90, n: 10 },
+  { label: 'List', er: 0.00, n: 2 }
+])
+const lengthData = ref([
+  { label: '300–500 char', er: 2.96, n: 10 },
+  { label: '100–300 char', er: 1.12, n: 25 },
+])
+
+// Fungsi hitung lebar bar (max 3.5%)
+function getBarWidth(er: number) {
+  const maxER = 3.5
+  const pct = (er / maxER) * 100
+  return `${Math.min(pct, 100)}%`
+}
+
 function toggleLang() {
   locale.value = locale.value === 'id' ? 'en' : 'id'
   localStorage.setItem('app_lang', locale.value)
 }
 
 onMounted(() => {
-  // Fade-in Animation using Intersection Observer
+  // Fade-in Animation
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
@@ -410,7 +439,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Animation */
 .fade-in {
   opacity: 0;
   transform: translateY(8px);
@@ -420,12 +448,9 @@ body {
   opacity: 1;
   transform: translateY(0);
 }
-
-/* Chart Bar Animation */
 .bar-grow {
   transition: width 800ms cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 @media (prefers-reduced-motion: reduce) {
   .fade-in, .bar-grow {
     transition: none !important;
