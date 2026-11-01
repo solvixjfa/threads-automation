@@ -25,7 +25,10 @@
     <div class="flex-1 flex flex-col min-w-0 w-full">
       <header class="md:hidden flex items-center justify-between h-16 px-4 border-b theme-border theme-bg shrink-0 z-30 sticky top-0">
         <div class="flex items-center gap-2">
-          <div class="w-7 h-7 flex items-center justify-center rounded text-xs font-black theme-accent">IX</div>
+          <div v-if="userAvatar" class="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-[var(--border)]">
+            <img :src="userAvatar" class="w-full h-full object-cover" />
+          </div>
+          <div v-else class="w-7 h-7 flex items-center justify-center rounded text-xs font-black theme-accent shrink-0">IX</div>
           <span class="font-bold tracking-tight text-sm">ixiera.id</span>
         </div>
         <button @click="sidebarOpen = true" class="p-2 rounded-md theme-bg-hover">
@@ -57,6 +60,7 @@ import { useTheme } from './composables/useTheme'
 const router = useRouter()
 const route = useRoute()
 const session = ref<any>(null)
+const userAvatar = ref('')
 const loading = ref(true)
 const sidebarOpen = ref(false)
 

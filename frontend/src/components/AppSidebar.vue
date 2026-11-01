@@ -6,13 +6,19 @@
     class="md:translate-x-0 fixed md:static inset-y-0 left-0 z-50 w-64 flex flex-col transition-transform duration-300 ease-in-out border-r theme-border theme-bg h-[100dvh] md:h-full"
   >
     <div class="h-16 hidden md:flex items-center px-5 border-b theme-border shrink-0">
-      <div class="w-7 h-7 flex items-center justify-center rounded text-xs font-black theme-accent">IX</div>
+      <div v-if="avatarUrl" class="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-[var(--border)]">
+        <img :src="avatarUrl" class="w-full h-full object-cover" />
+      </div>
+      <div v-else class="w-7 h-7 flex items-center justify-center rounded text-xs font-black theme-accent shrink-0">IX</div>
       <span class="ml-3 font-bold tracking-tight">ixiera.id</span>
     </div>
 
     <div class="md:hidden h-16 flex items-center justify-between px-4 border-b theme-border shrink-0">
       <div class="flex items-center gap-2">
-        <div class="w-7 h-7 flex items-center justify-center rounded text-xs font-black theme-accent">IX</div>
+        <div v-if="avatarUrl" class="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-[var(--border)]">
+          <img :src="avatarUrl" class="w-full h-full object-cover" />
+        </div>
+        <div v-else class="w-7 h-7 flex items-center justify-center rounded text-xs font-black theme-accent shrink-0">IX</div>
         <span class="font-bold tracking-tight text-sm">ixiera.id</span>
       </div>
       <button @click="$emit('close')" class="p-2 rounded-md theme-bg-hover">
@@ -63,7 +69,15 @@
         <span>{{ theme === 'light' ? $t('common.dark_mode') : $t('common.light_mode') }}</span>
       </button>
 
-      <div class="px-3 py-2 text-xs truncate theme-text-muted">{{ email }}</div>
+      <div class="px-3 py-2 flex items-center gap-2">
+        <div v-if="avatarUrl" class="w-6 h-6 rounded-full overflow-hidden shrink-0 border border-[var(--border)]">
+          <img :src="avatarUrl" class="w-full h-full object-cover" />
+        </div>
+        <div class="text-xs truncate theme-text-muted flex-1">
+          <div v-if="username" class="font-bold theme-text truncate text-[11px]">@{{ username }}</div>
+          <div class="truncate text-[10px]">{{ email }}</div>
+        </div>
+      </div>
 
       <button @click="$emit('logout')" class="w-full text-left px-3 py-2 rounded-lg text-sm font-semibold transition" style="color: var(--danger);">
         {{ $t('common.sign_out') }}
@@ -73,11 +87,12 @@
 </template>
 
 <script setup lang="ts">
-import { h, ref } from 'vue'
+import { h, ref, onMounted } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useTheme } from '../composables/useTheme'
 import { Select } from './ui'
+import { supabase } from '../lib/supabase'
 import { Sun, Moon } from 'lucide-vue-next'
 
 defineProps<{ open: boolean; email?: string; isAdmin?: boolean }>()
@@ -88,6 +103,8 @@ const { theme, toggle: toggleTheme } = useTheme()
 
 const { locale } = useI18n()
 const currentLang = ref(locale.value)
+const avatarUrl = ref('')
+const username = ref('')
 
 function changeLang(val: string) {
   locale.value = val
@@ -127,4 +144,15 @@ const items = [
   { labelKey: 'menu.analytics', path: '/analytics', icon: IconAnalytics },
   { labelKey: 'menu.settings', path: '/settings', icon: IconSettings },
 ]
+
+onMounted(async () => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+  const { data } = await supabase.schema('threads').from('threads_accounts').select('profile_picture_url, username').eq('user_id', user.id).maybeSingle()
+  if (data) {
+    avatarUrl.value = data.profile_picture_url || ''
+    username.value = data.username || ''
+  }
+})
+
 </script>
