@@ -173,7 +173,7 @@ async def get_admin_stats(user = Depends(verify_admin)):
         if acc.get("pending_plan"): total_pending += 1
 
     # Hitung Estimasi Pendapatan (MRR)
-    mrr_est = (total_pro_credit * 49000) + (total_pro_byok * 29000)
+    mrr_est = (total_pro_credit * 29000) + (total_pro_byok * 19000)
 
     return {
         "success": True,

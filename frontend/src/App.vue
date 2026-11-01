@@ -29,7 +29,7 @@
             <img :src="userAvatar" class="w-full h-full object-cover" />
           </div>
           <div v-else class="w-7 h-7 flex items-center justify-center rounded text-xs font-black theme-accent shrink-0">IX</div>
-          <span class="font-bold tracking-tight text-sm">ixiera.id</span>
+          <span class="font-bold tracking-tight text-sm">@{{ threadsUsername || "" }}</span>
         </div>
         <button @click="sidebarOpen = true" class="p-2 rounded-md theme-bg-hover">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,6 +61,7 @@ const router = useRouter()
 const route = useRoute()
 const session = ref<any>(null)
 const userAvatar = ref('')
+const threadsUsername = ref('')
 const loading = ref(true)
 const sidebarOpen = ref(false)
 
