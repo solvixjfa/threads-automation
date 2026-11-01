@@ -383,7 +383,7 @@ async def process_account(db, client, acc: dict) -> dict:
     if plan is None or plan in ("none", "free", ""):
         already = (
             db.schema("threads").from_("credit_ledger")
-            .select("id").eq("account_id", acc_id).eq("reason", "trial_start")
+            .select("id").eq("account_id", acc_id).in_("reason", ["trial_start", "trial_grant", "admin_downgrade"])
             .limit(1).execute()
         )
         if not (already.data or []):
