@@ -401,9 +401,9 @@
       "p1_title": "7-Day Trial",
       "p1_desc": "7 days · 20 free credits · all features",
       "p2_title": "30-day plan",
-      "p2_desc": "Rp49,000 · 100 credits/month · no auto-renew",
+      "p2_desc": "Rp29,000 · 100 credits/month · no auto-renew",
       "p3_title": "30-day plan + own API key",
-      "p3_desc": "Rp29,000 · use your own API key · no credits",
+      "p3_desc": "Rp19,000 · use your own API key · no credits",
       "note": "1 credit = 1 AI action (generate, AI reply, repurpose, advanced analysis). Reply templates and Quick Score are free. Own API key is only available in paid plans.",
       "cta": "Request Access"
     },

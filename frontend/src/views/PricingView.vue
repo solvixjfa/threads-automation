@@ -22,7 +22,7 @@
         <div class="card p-6 border-2 theme-border space-y-4 flex flex-col justify-between">
           <div>
             <h2 class="text-xl font-bold">Pro Credit</h2>
-            <p class="text-2xl font-black mt-2">Rp 49.000 <span class="text-sm font-normal theme-text-muted">/ bulan</span></p>
+            <p class="text-2xl font-black mt-2">Rp 29.000 <span class="text-sm font-normal theme-text-muted">/ bulan</span></p>
             <ul class="mt-4 space-y-2 text-sm theme-text-muted">
               <li class="flex items-center gap-2">✓ 100 Kredit AI per bulan</li>
               <li class="flex items-center gap-2">✓ Akses semua fitur AI</li>
@@ -39,7 +39,7 @@
           <div class="absolute top-0 right-0 bg-black text-white dark:bg-white dark:text-black text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">Paling Hemat</div>
           <div>
             <h2 class="text-xl font-bold">Pro BYOK</h2>
-            <p class="text-2xl font-black mt-2">Rp 29.000 <span class="text-sm font-normal theme-text-muted">/ bulan</span></p>
+            <p class="text-2xl font-black mt-2">Rp 19.000 <span class="text-sm font-normal theme-text-muted">/ bulan</span></p>
             <ul class="mt-4 space-y-2 text-sm theme-text-muted">
               <li class="flex items-center gap-2">✓ Unlimited AI (pakai API Key sendiri)</li>
               <li class="flex items-center gap-2">✓ Support Gemini & Groq</li>
@@ -51,12 +51,14 @@
           </button>
         </div>
       </div>
-    </template>
+    <p class="text-xs text-center theme-text-muted mt-6 italic">Harga beta, terkunci selama kamu berlangganan.</p>
+</template>
 
     <div class="text-center pt-6">
       <RouterLink to="/settings/ai" class="text-sm font-bold underline hover:theme-text-muted">Kembali ke Pengaturan</RouterLink>
     </div>
   </div>
+<p class="text-xs text-center theme-text-muted mt-6 italic">Harga beta, terkunci selama kamu berlangganan.</p>
 </template>
 
 <script setup lang="ts">
@@ -90,7 +92,7 @@ onMounted(async () => {
 })
 
 function getPlanName(plan: string) {
-  return plan === 'paid_credit' ? 'Pro Credit (Rp 49.000)' : 'Pro BYOK (Rp 29.000)'
+  return plan === 'paid_credit' ? 'Pro Credit (Rp 29.000)' : 'Pro BYOK (Rp 19.000)'
 }
 
 function getWaLink(message: string) {

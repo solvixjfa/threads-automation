@@ -398,6 +398,7 @@
             </div>
           </div>
           <p class="text-xs text-[var(--muted)] mt-8 max-w-3xl mx-auto">{{ $t('landing.pricing.note') }}</p>
+          <p class="text-[11px] text-[var(--muted)] text-center mt-3 font-semibold">Harga beta, terkunci selama kamu berlangganan.</p>
           <a href="https://app.ixiera.id/login" class="inline-block mt-8 px-10 py-4 rounded-full text-lg font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">{{ $t('landing.pricing.cta') }}</a>
         </div>
       </section>
