@@ -433,7 +433,10 @@
       "btn": "Minta Akses"
     },
     "footer": {
-      "copy": "© 2026 Ixiera · Email · Kebijakan Privasi · Syarat & Ketentuan · Hapus Data",
+      "email": "Email",
+      "privacy": "Kebijakan Privasi",
+      "terms": "Syarat & Ketentuan",
+      "delete": "Hapus Data",
       "disclaimer": "Ixiera adalah produk independen dan tidak berafiliasi dengan Meta Platforms. Threads adalah merek dagang Meta."
     }
   }

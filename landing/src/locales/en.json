@@ -433,7 +433,10 @@
       "btn": "Request Access"
     },
     "footer": {
-      "copy": "© 2026 Ixiera · Email · Privacy Policy · Terms & Conditions · Data Deletion",
+      "email": "Email",
+      "privacy": "Privacy Policy",
+      "terms": "Terms & Conditions",
+      "delete": "Data Deletion",
       "disclaimer": "Ixiera is an independent product and is not affiliated with Meta Platforms. Threads is a trademark of Meta."
     }
   }

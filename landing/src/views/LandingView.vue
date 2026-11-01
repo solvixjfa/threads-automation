@@ -153,7 +153,7 @@
               </div>
             </div>
 
-            <!-- Fitur 2 -->
+            <!-- Fitur 2: KOmentar Mockup (UDAH BISA DIKLIK) -->
             <div class="flex flex-col md:flex-row-reverse items-center gap-12">
               <div class="flex-1 space-y-4 fade-in">
                 <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">02 · Komentar</span>
@@ -164,23 +164,23 @@
                 <div class="border border-dashed border-[var(--line)] rounded-xl overflow-hidden bg-[var(--surface)]">
                   <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[var(--line)]"><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div></div>
                   <div class="p-6 space-y-4">
-                    <div class="flex rounded-md border border-[var(--line)] p-1">
-                      <button class="flex-1 py-1.5 text-xs font-bold bg-[var(--text)] text-[var(--bg)] rounded shadow-sm">Review Manual</button>
-                      <button class="flex-1 py-1.5 text-xs font-bold text-[var(--muted)]">Full Auto</button>
+                    <div class="flex rounded-md border border-[var(--line)] p-1 bg-[var(--bg)]">
+                      <button @click="mockReplyMode = 'manual'" :class="mockReplyMode === 'manual' ? 'bg-[var(--text)] text-[var(--bg)] shadow-sm' : 'text-[var(--muted)] hover:text-[var(--text)]'" class="flex-1 py-1.5 text-xs font-bold rounded transition-colors">Review Manual</button>
+                      <button @click="mockReplyMode = 'auto'" :class="mockReplyMode === 'auto' ? 'bg-[var(--text)] text-[var(--bg)] shadow-sm' : 'text-[var(--muted)] hover:text-[var(--text)]'" class="flex-1 py-1.5 text-xs font-bold rounded transition-colors">Full Auto</button>
                     </div>
                     <div class="text-xs text-[var(--muted)] flex justify-between"><span>Maks balasan per jam:</span><span class="font-bold text-[var(--text)]">5</span></div>
                     <div class="space-y-2 text-xs">
-                      <div class="flex justify-between p-2 bg-[var(--bg)] border border-[var(--line)] rounded"><span>Pertanyaan</span><span class="font-bold">Balasan AI</span></div>
-                      <div class="flex justify-between p-2 bg-[var(--bg)] border border-[var(--line)] rounded"><span>Pujian</span><span class="font-bold">Template</span></div>
-                      <div class="flex justify-between p-2 bg-[var(--bg)] border border-[var(--line)] rounded"><span>Spam / Toxic</span><span class="font-bold">Template</span></div>
+                      <div class="flex justify-between p-2 bg-[var(--bg)] border border-[var(--line)] rounded"><span>Pertanyaan</span><span class="font-bold">{{ mockReplyMode === 'auto' ? 'Langsung Balas' : 'Balasan AI' }}</span></div>
+                      <div class="flex justify-between p-2 bg-[var(--bg)] border border-[var(--line)] rounded"><span>Pujian</span><span class="font-bold">{{ mockReplyMode === 'auto' ? 'Langsung Balas' : 'Template' }}</span></div>
+                      <div class="flex justify-between p-2 bg-[var(--bg)] border border-[var(--line)] rounded"><span>Spam / Toxic</span><span class="font-bold">{{ mockReplyMode === 'auto' ? 'Langsung Balas' : 'Template' }}</span></div>
                     </div>
                   </div>
-                  <div class="bg-[var(--surface-2)] text-center py-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Contoh tampilan</div>
+                  <div class="bg-[var(--surface-2)] text-center py-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Contoh tampilan (Bisa diklik)</div>
                 </div>
               </div>
             </div>
 
-            <!-- Fitur 3 -->
+            <!-- Fitur 3: Analytics (UDAH ADA GRAFIKNYA) -->
             <div class="flex flex-col md:flex-row items-center gap-12">
               <div class="flex-1 space-y-4 fade-in">
                 <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">03 · Analytics</span>
@@ -196,8 +196,22 @@
                       <span class="text-[var(--muted)]">Hook</span>
                       <span class="text-[var(--muted)]">Length</span>
                     </div>
-                    <div class="grid grid-cols-12 gap-1 h-32">
-                      <div v-for="i in 48" :key="i" class="bg-[var(--surface-2)] rounded-sm" :style="{ opacity: Math.random() * 0.8 + 0.2 }"></div>
+                    <!-- HEATMAP GRID -->
+                    <div class="flex gap-2">
+                      <!-- Y Axis (Days) -->
+                      <div class="flex flex-col justify-between text-[9px] text-[var(--muted)] py-1">
+                        <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span>
+                      </div>
+                      <!-- Grid -->
+                      <div class="flex-1 grid grid-cols-12 gap-1">
+                        <div v-for="i in 84" :key="i" class="h-4 rounded-sm bg-[var(--line)]"
+                             :class="{
+                               'opacity-20': i % 5 === 0,
+                               'bg-[var(--text)] opacity-100': i === 12 || i === 25 || i === 38 || i === 51, /* Highlighted cells (dark) */
+                               'bg-[var(--bar-dim)] opacity-60': i % 3 === 0
+                             }">
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div class="bg-[var(--surface-2)] text-center py-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Contoh tampilan</div>
@@ -345,10 +359,10 @@
 
     </main>
 
-    <!-- FOOTER -->
+    <!-- FOOTER (BENERIN KEY-NYA) -->
     <footer class="py-12 border-t border-[var(--line)] text-center text-sm text-[var(--muted)]">
       <div class="flex flex-wrap justify-center items-center gap-4 mb-4">
-        <a href="mailto:contact@ixiera.id" class="hover:text-[var(--text)] transition-colors">Email</a>
+        <a href="mailto:contact@ixiera.id" class="hover:text-[var(--text)] transition-colors">{{ $t('landing.footer.email') }}</a>
         <span class="hidden sm:inline text-[var(--line)]">·</span>
         <RouterLink to="/privacy" class="hover:text-[var(--text)] transition-colors">{{ $t('landing.footer.privacy') }}</RouterLink>
         <span class="hidden sm:inline text-[var(--line)]">·</span>
@@ -357,7 +371,7 @@
         <RouterLink to="/data-deletion" class="hover:text-[var(--text)] transition-colors">{{ $t('landing.footer.delete') }}</RouterLink>
       </div>
       <p class="text-xs text-[var(--muted)]">&copy; 2026 Ixiera.</p>
-      <p class="text-[10px] max-w-2xl mx-auto px-4 mt-2">{{ $t('landing.footer.copy') }}</p>
+      <p class="text-[10px] max-w-2xl mx-auto px-4 mt-2">{{ $t('landing.footer.disclaimer') }}</p>
     </footer>
   </div>
 </template>
@@ -374,7 +388,10 @@ const { theme, toggle: toggleTheme } = useTheme()
 const mobileMenuOpen = ref(false)
 const faqOpen = ref<number | null>(1)
 
-// STATE DATA HARDCODE (GANTI ANGKA INI PAKAI DATA ASLI LU)
+// STATE BUAT MOCKUP INTERAKTIF
+const mockReplyMode = ref('manual') // Bisa 'manual' atau 'auto'
+
+// STATE DATA HARDCODE
 const hookData = ref([
   { label: 'Question', er: 2.92, n: 6 },
   { label: 'Story', er: 1.36, n: 32 },
