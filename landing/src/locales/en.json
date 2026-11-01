@@ -396,9 +396,9 @@
       "s4": "Turn off automation or disconnect anytime via the Kill Switch."
     },
     "pricing": {
-      "title": "Private beta, access rolled out gradually.",
-      "desc": "Access is rolled out gradually so each user can be guided and the product improved from real feedback. Still in beta, so some things aren't perfect, and your feedback is acted on directly.",
-      "p1_title": "Trial",
+      "title": "Start from here.",
+      "desc": "Choose a plan that fits. We are constantly improving based on your feedback.",
+      "p1_title": "7-Day Trial",
       "p1_desc": "7 days · 20 free credits · all features",
       "p2_title": "30-day plan",
       "p2_desc": "Rp49,000 · 100 credits/month · no auto-renew",
@@ -410,7 +410,7 @@
     "faq": {
       "title": "Frequently Asked Questions",
       "q1": "Why request access?",
-      "a1": "Ixiera is still in early access and the app is in Meta's developer mode, so each account is added manually and needs approval first. You'll be notified via email.",
+      "a1": "Ixiera is still in early access, so each account is added manually and needs approval first. You'll be notified via email.",
       "q2": "Is this free?",
       "a2": "There's a 7-day trial with 20 free credits, no upfront payment. After that, a 30-day plan with no auto-renew.",
       "q3": "What is a credit?",

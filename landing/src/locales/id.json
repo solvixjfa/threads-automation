@@ -396,9 +396,9 @@
       "s4": "Matikan otomatisasi atau putus koneksi kapan saja lewat Kill Switch."
     },
     "pricing": {
-      "title": "Private beta, akses dibuka bertahap.",
-      "desc": "Akses dibuka bertahap supaya tiap pengguna bisa didampingi dan produk diperbaiki dari masukan nyata. Masih beta, jadi ada yang belum sempurna, dan masukanmu langsung ditindaklanjuti.",
-      "p1_title": "Trial",
+      "title": "Mulai dari sini.",
+      "desc": "Pilih paket yang sesuai. Kami terus berbenah dari masukanmu.",
+      "p1_title": "Trial 7 Hari",
       "p1_desc": "7 hari · 20 kredit gratis · semua fitur",
       "p2_title": "Paket 30 hari",
       "p2_desc": "Rp49.000 · 100 kredit per bulan · tanpa auto-renew",
@@ -410,7 +410,7 @@
     "faq": {
       "title": "Pertanyaan Umum",
       "q1": "Kenapa harus minta akses?",
-      "a1": "Ixiera masih early access dan aplikasinya masih mode developer di Meta, jadi tiap akun ditambahkan manual dan perlu disetujui dulu. Kabar lewat email.",
+      "a1": "Ixiera masih dalam tahap early access, jadi tiap akun ditambahkan manual dan perlu disetujui dulu. Kabar lewat email.",
       "q2": "Apakah ini gratis?",
       "a2": "Ada trial 7 hari dengan 20 kredit gratis, tanpa bayar di awal. Setelah itu berlangganan paket 30 hari tanpa auto-renew.",
       "q3": "Apa itu kredit?",
