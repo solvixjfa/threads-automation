@@ -34,16 +34,19 @@
                   Request: {{ getPlanLabel(u.pending_plan) }}
                 </div>
               </td>
-              <td class="p-4"><Badge :variant="u.connection_status === 'connected' ? 'success' : 'default'">{{ u.connection_status }}</Badge></td>
+              <td class="p-4">
+                <Badge :variant="u.connection_status === 'connected' ? 'success' : 'default'">{{ u.connection_status }}</Badge>
+                <div v-if="u.last_error" class="text-[10px] text-red-500 font-bold mt-1" :title="u.last_error">⚠️ Error</div>
+              </td>
               <td class="p-4"><Badge :variant="u.plan !== 'none' ? 'accent' : 'default'">{{ getPlanLabel(u.plan) }}</Badge></td>
               <td class="p-4 text-xs">{{ u.plan_expires_at ? formatDate(u.plan_expires_at) : '-' }}</td>
               <td class="p-4 font-bold text-lg">{{ u.credit_balance }}</td>
-              <td class="p-4 text-right space-x-2">
+              <td class="p-4 text-right space-x-2 whitespace-nowrap">
                 <button @click="openExtendModal(u)" class="text-xs font-bold underline hover:theme-text-muted">Approve / Extend</button>
                 <button @click="openCreditModal(u)" class="text-xs font-bold underline hover:theme-text-muted">Adjust</button>
                 <button @click="openLedgerModal(u)" class="text-xs font-bold underline hover:theme-text-muted">Ledger</button>
-                <button @click="handleForceSync(u)" class="text-xs font-bold text-blue-500 underline hover:text-blue-700">Sync</button>
-                <button @click="handleDowngrade(u)" class="text-xs font-bold text-red-500 underline hover:text-red-700">Downgrade</button>
+                <button @click="handleForceSync(u)" :disabled="isProcessing" class="text-xs font-bold text-blue-500 underline hover:text-blue-700 disabled:opacity-50">Sync</button>
+                <button @click="handleDowngrade(u)" :disabled="isProcessing" class="text-xs font-bold text-red-500 underline hover:text-red-700 disabled:opacity-50">Downgrade</button>
               </td>
             </tr>
           </tbody>
@@ -58,8 +61,8 @@
           <h3 class="text-lg font-bold">Approve / Extend Plan</h3>
           <p class="text-xs theme-text-muted">{{ selectedUser.email }}</p>
           <Select v-model="extendType" label="Plan Type" :options="[
-            {label: 'Pro Credit (Rp49k)', value: 'paid_credit'}, 
-            {label: 'Pro BYOK (Rp29k)', value: 'paid_byok'}
+            {label: 'Pro Credit (Rp29k)', value: 'paid_credit'},
+            {label: 'Pro BYOK (Rp19k)', value: 'paid_byok'}
           ]" />
           <p class="text-xs theme-text-muted">Menambah 30 hari dan me-reset kredit.</p>
           <div class="flex justify-end gap-3 pt-2">
@@ -70,7 +73,7 @@
       </div>
     </Teleport>
 
-    <!-- MODAL ADJUST CREDITS & LEDGER (SAMA SEPERTI SEBELUMNYA) -->
+    <!-- MODAL ADJUST CREDITS -->
     <Teleport to="body">
       <div v-if="selectedUser && modalType === 'credits'" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="card max-w-sm w-full p-6 space-y-4 bg-[var(--bg)]">
@@ -81,7 +84,8 @@
         </div>
       </div>
     </Teleport>
-    
+
+    <!-- MODAL LEDGER -->
     <Teleport to="body">
       <div v-if="selectedUser && modalType === 'ledger'" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="card max-w-lg w-full p-6 space-y-4 bg-[var(--bg)] max-h-[80vh] flex flex-col">
@@ -155,7 +159,6 @@ async function loadData() {
 
 function openExtendModal(user: any) {
   selectedUser.value = user
-  // Kalau ada pending plan, otomatis pilih itu
   extendType.value = user.pending_plan || (user.plan === 'paid_byok' ? 'paid_byok' : 'paid_credit')
   modalType.value = 'extend'
 }
@@ -209,6 +212,40 @@ async function handleAdjustCredits() {
     if (!res.ok) throw new Error(data.detail)
     showToast('Credits adjusted.', 'success')
     selectedUser.value = null
+    await loadData()
+  } catch (err: any) { showToast('Failed: ' + err.message, 'error') } finally { isProcessing.value = false }
+}
+
+// FUNGSI BARU 1: FORCE SYNC
+async function handleForceSync(user: any) {
+  if (!confirm(`Tarik data Meta (Avatar & Username) manual untuk ${user.email}?`)) return
+  isProcessing.value = true
+  try {
+    const headers = await getAuthHeader()
+    const res = await fetch(`${API_BASE}/force-sync`, {
+      method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ account_id: user.id, plan_type: 'sync' })
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.detail)
+    showToast('Sync berhasil! Cek avatar/username di tabel.', 'success')
+    await loadData()
+  } catch (err: any) { showToast('Failed: ' + err.message, 'error') } finally { isProcessing.value = false }
+}
+
+// FUNGSI BARU 2: DOWNGRADE
+async function handleDowngrade(user: any) {
+  if (!confirm(`Yakin mau downgrade ${user.email} ke Free? Kredit bakal di-reset ke 0.`)) return
+  isProcessing.value = true
+  try {
+    const headers = await getAuthHeader()
+    const res = await fetch(`${API_BASE}/downgrade`, {
+      method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ account_id: user.id, plan_type: 'none' })
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.detail)
+    showToast('User berhasil di-downgrade ke Free.', 'success')
     await loadData()
   } catch (err: any) { showToast('Failed: ' + err.message, 'error') } finally { isProcessing.value = false }
 }
