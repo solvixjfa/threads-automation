@@ -1,6 +1,21 @@
 <template>
   <div class="space-y-6">
     <Card>
+<div v-if="account" class="space-y-4">
+        <!-- AVATAR DISINI -->
+        <div class="flex items-center gap-4 p-4 border theme-border rounded-xl theme-bg-sec">
+          <div v-if="avatarUrl" class="w-16 h-16 rounded-full overflow-hidden border theme-border shrink-0">
+            <img :src="avatarUrl" alt="Profile" class="w-full h-full object-cover" />
+          </div>
+          <div v-else class="w-16 h-16 rounded-full flex items-center justify-center bg-[var(--text)] text-[var(--bg)] text-xl font-bold shrink-0">
+            {{ threadsUsername ? threadsUsername.charAt(0).toUpperCase() : 'IX' }}
+          </div>
+          <div>
+            <h3 class="font-bold text-lg">@{{ threadsUsername || 'Connected' }}</h3>
+            <p class="text-xs theme-text-muted">{{ $t('settings.account.ready') }}</p>
+          </div>
+        </div>
+
       <template #header>
         <div class="flex items-center justify-between">
           <div>
@@ -41,6 +56,8 @@ import { Card, Button, Badge } from '../../components/ui'
 
 const { showToast } = useNotify()
 const loading = ref(true)
+const avatarUrl = ref('')
+const threadsUsername = ref('')
 const accountConnected = ref(false)
 const accountUsername = ref('')
 
