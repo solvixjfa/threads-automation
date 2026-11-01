@@ -127,8 +127,8 @@
             <p class="text-lg text-[var(--muted)] mt-4">{{ $t('landing.features.subtitle') }}</p>
           </div>
 
-          <div class="space-y-24">
-            <!-- Fitur 1: Content (INTERAKTIF) -->
+          <div class="space-y-32">
+            <!-- Fitur 1: Content (UI BARU, MIRIP SCREENSHOT) -->
             <div class="flex flex-col md:flex-row items-center gap-12">
               <div class="flex-1 space-y-4 fade-in">
                 <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">01 · Content</span>
@@ -137,22 +137,54 @@
               </div>
               <div class="flex-1 w-full">
                 <div class="border border-dashed border-[var(--line)] rounded-xl overflow-hidden bg-[var(--surface)]">
-                  <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[var(--line)]"><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div></div>
-                  <div class="p-6 space-y-4">
-                    <div class="space-y-2"><label class="text-xs font-bold text-[var(--muted)]">Topik</label><div class="border border-[var(--line)] rounded-md p-3 text-sm bg-[var(--bg)]">Kenapa RAG sederhana sering sudah cukup</div></div>
-                    <div class="space-y-2"><label class="text-xs font-bold text-[var(--muted)]">Gaya</label><div class="border border-[var(--line)] rounded-md p-3 text-sm bg-[var(--bg)]">Educational & Insight</div></div>
-                    <button @click="simulateGenerate" :disabled="isGenerating" class="w-full py-3 bg-[var(--text)] text-[var(--bg)] rounded-md font-bold text-sm flex items-center justify-center gap-2 transition-opacity hover:opacity-90">
-                      <span v-if="isGenerating" class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
-                      <span>{{ isGenerating ? 'Menyusun rencana...' : 'Generate Rencana 3 Hari' }}</span>
-                      <span v-if="!isGenerating" class="text-[10px] opacity-70 border border-[var(--bg)]/20 px-2 py-0.5 rounded-full">1 kredit</span>
-                    </button>
-                    <div v-if="generatedPlan" class="pt-4 space-y-2 animate-[fade-in_0.5s_ease-out]">
-                      <div class="flex items-center gap-2 text-sm"><span class="font-bold text-[var(--muted)]">Hari 1:</span> <span>Rahasia dibalik RAG yang efisien</span></div>
-                      <div class="flex items-center gap-2 text-sm"><span class="font-bold text-[var(--muted)]">Hari 2:</span> <span>Kapan harus pakai Fine-tuning?</span></div>
-                      <div class="flex items-center gap-2 text-sm"><span class="font-bold text-[var(--muted)]">Hari 3:</span> <span>Studi kasus implementasi sederhana</span></div>
+                  <!-- Window Header -->
+                  <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[var(--line)]"><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><span class="ml-2 text-[10px] text-[var(--muted)] font-bold">AI CONTENT PLANNER</span></div>
+                  
+                  <!-- Form Input Area -->
+                  <div class="p-4 border-b border-[var(--line)] bg-[var(--bg)] space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                      <div class="space-y-1"><label class="text-[10px] font-bold text-[var(--muted)]">Topik / Short Idea</label><div class="border border-[var(--line)] rounded-md p-2 text-xs bg-[var(--surface)]">AI</div></div>
+                      <div class="space-y-1"><label class="text-[10px] font-bold text-[var(--muted)]">Tone / Style</label><div class="border border-[var(--line)] rounded-md p-2 text-xs bg-[var(--surface)]">Storytelling</div></div>
+                    </div>
+                    <div class="flex justify-between items-center pt-2">
+                      <span class="text-[10px] font-bold text-[var(--muted)]">94 Credits</span>
+                      <button @click="simulateGenerate" :disabled="isGenerating" class="px-4 py-1.5 bg-[var(--text)] text-[var(--bg)] rounded-md font-bold text-xs flex items-center gap-2 transition-opacity hover:opacity-90">
+                        <span v-if="isGenerating" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
+                        <span>{{ isGenerating ? 'Memproses...' : 'Generate 3-Day Plan' }}</span>
+                      </button>
                     </div>
                   </div>
-                  <div class="bg-[var(--surface-2)] text-center py-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Contoh tampilan</div>
+
+                  <!-- Generated Cards -->
+                  <div v-if="generatedPlan" class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 bg-[var(--surface-2)] animate-[fade-in_0.5s_ease-out]">
+                    <!-- Card 1 -->
+                    <div class="bg-[var(--bg)] border border-[var(--line)] rounded-md p-3 flex flex-col justify-between">
+                      <div>
+                        <div class="bg-[var(--text)] text-[var(--bg)] text-[9px] font-bold px-2 py-1 rounded-sm mb-2 text-center">DAY 1: KOMPLEKSITAS MODEL VS KEBUTUHAN NYATA</div>
+                        <p class="text-[9px] text-[var(--muted)] leading-tight">Awal-awal ngulik AI, bawaannya pengen bikin arsitektur yang keliatan paling rumit. Pas nemu masalah nyata di lapangan...</p>
+                      </div>
+                      <button class="mt-3 w-full py-1 border border-[var(--line)] rounded text-[9px] font-bold hover:bg-[var(--surface-2)]">Use This Draft</button>
+                    </div>
+                    <!-- Card 2 -->
+                    <div class="bg-[var(--bg)] border border-[var(--line)] rounded-md p-3 flex flex-col justify-between">
+                      <div>
+                        <div class="bg-[var(--text)] text-[var(--bg)] text-[9px] font-bold px-2 py-1 rounded-sm mb-2 text-center">DAY 2: EVALUASI METRIK MACHINE LEARNING</div>
+                        <p class="text-[9px] text-[var(--muted)] leading-tight">Lagi ngejelasin hasil eksperimen model kemarin. AUC dapet 0,84, tapi pas dicek F1 Score-nya masih di angka...</p>
+                      </div>
+                      <button class="mt-3 w-full py-1 border border-[var(--line)] rounded text-[9px] font-bold hover:bg-[var(--surface-2)]">Use This Draft</button>
+                    </div>
+                    <!-- Card 3 -->
+                    <div class="bg-[var(--bg)] border border-[var(--line)] rounded-md p-3 flex flex-col justify-between">
+                      <div>
+                        <div class="bg-[var(--text)] text-[var(--bg)] text-[9px] font-bold px-2 py-1 rounded-sm mb-2 text-center">DAY 3: DILEMA AI ENGINEERING</div>
+                        <p class="text-[9px] text-[var(--muted)] leading-tight">Kadang mikir, kerjaan AI engineer itu porsinya lebih banyak di bagian machine learning-nya atau data engineering-nya...</p>
+                      </div>
+                      <button class="mt-3 w-full py-1 border border-[var(--line)] rounded text-[9px] font-bold hover:bg-[var(--surface-2)]">Use This Draft</button>
+                    </div>
+                  </div>
+                  <div v-else class="p-10 text-center text-xs text-[var(--muted)]">Klik "Generate" untuk melihat hasil.</div>
+
+                  <div class="bg-[var(--surface-2)] border-t border-[var(--line)] text-center py-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Contoh tampilan</div>
                 </div>
               </div>
             </div>
@@ -184,7 +216,7 @@
               </div>
             </div>
 
-            <!-- Fitur 3: Analytics (INTERAKTIF & GRAFIK JELAS) -->
+            <!-- Fitur 3: Analytics (INTERAKTIF) -->
             <div class="flex flex-col md:flex-row items-center gap-12">
               <div class="flex-1 space-y-4 fade-in">
                 <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">03 · Analytics</span>
@@ -201,7 +233,6 @@
                       <button @click="activeMockTab = 'length'" :class="activeMockTab === 'length' ? 'border-b-2 border-[var(--text)] pb-2 text-[var(--text)]' : 'text-[var(--muted)] pb-2 hover:text-[var(--text)] transition-colors'">Length</button>
                     </div>
                     
-                    <!-- Best Time Heatmap -->
                     <div v-if="activeMockTab === 'best'" class="flex gap-2">
                       <div class="flex flex-col justify-between text-[9px] text-[var(--muted)] py-1">
                         <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span>
@@ -210,25 +241,50 @@
                         <div v-for="i in 84" :key="i" class="h-4 rounded-sm bg-[var(--line)]"
                              :class="{
                                'opacity-20': i % 5 === 0,
-                               'bg-[var(--text)] opacity-100': i === 12 || i === 25 || i === 38 || i === 51, /* Highlighted cells (dark) */
+                               'bg-[var(--text)] opacity-100': i === 12 || i === 25 || i === 38 || i === 51,
                                'bg-[var(--bar-dim)] opacity-60': i % 3 === 0
                              }">
                         </div>
                       </div>
                     </div>
-
-                    <!-- Hook Bars -->
                     <div v-if="activeMockTab === 'hook'" class="space-y-3 py-2">
                        <div class="space-y-1"><div class="flex justify-between text-[10px] font-bold"><span>Question</span><span>2.92%</span></div><div class="w-full bg-[var(--surface-2)] h-1.5 rounded-full"><div class="h-full bg-[var(--text)] w-[80%] rounded-full"></div></div></div>
                        <div class="space-y-1"><div class="flex justify-between text-[10px] font-bold"><span>Story</span><span>1.36%</span></div><div class="w-full bg-[var(--surface-2)] h-1.5 rounded-full"><div class="h-full bg-[var(--bar-dim)] w-[40%] rounded-full"></div></div></div>
                     </div>
-
-                    <!-- Length Bars -->
                     <div v-if="activeMockTab === 'length'" class="space-y-3 py-2">
                        <div class="space-y-1"><div class="flex justify-between text-[10px] font-bold"><span>300-500 char</span><span>2.96%</span></div><div class="w-full bg-[var(--surface-2)] h-1.5 rounded-full"><div class="h-full bg-[var(--text)] w-[90%] rounded-full"></div></div></div>
                        <div class="space-y-1"><div class="flex justify-between text-[10px] font-bold"><span>100-300 char</span><span>1.12%</span></div><div class="w-full bg-[var(--surface-2)] h-1.5 rounded-full"><div class="h-full bg-[var(--bar-dim)] w-[35%] rounded-full"></div></div></div>
                     </div>
+                  </div>
+                  <div class="bg-[var(--surface-2)] text-center py-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Contoh tampilan</div>
+                </div>
+              </div>
+            </div>
 
+            <!-- Fitur 4: Knowledge Base (SECTION BARU) -->
+            <div class="flex flex-col md:flex-row-reverse items-center gap-12">
+              <div class="flex-1 space-y-4 fade-in">
+                <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">04 · Pengetahuan</span>
+                <h3 class="text-2xl font-bold">{{ $t('landing.features.f4_title') }}</h3>
+                <p class="text-[var(--muted)] leading-relaxed">{{ $t('landing.features.f4_desc') }}</p>
+              </div>
+              <div class="flex-1 w-full">
+                <div class="border border-dashed border-[var(--line)] rounded-xl overflow-hidden bg-[var(--surface)]">
+                  <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[var(--line)]"><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div></div>
+                  <div class="p-6 space-y-4">
+                    <div class="flex items-center gap-2">
+                       <span class="px-2 py-1 bg-[var(--text)] text-[var(--bg)] text-[9px] font-bold rounded">Gaya Bahasa</span>
+                       <span class="text-[10px] text-[var(--muted)]">Dokumen Tersimpan</span>
+                    </div>
+                    <div class="border border-[var(--line)] rounded-md p-3 bg-[var(--bg)] space-y-2">
+                      <h4 class="text-xs font-bold border-b border-[var(--line)] pb-2">Panduan gaya bahasa</h4>
+                      <p class="text-[10px] text-[var(--muted)] leading-relaxed">Santai, singkat, hindari jargon. Selalu sapa dengan "kak".</p>
+                      <div class="flex justify-end pt-2">
+                        <span class="text-[9px] font-bold border border-[var(--line)] px-2 py-1 rounded-full flex items-center gap-1">
+                          <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Dipakai AI
+                        </span>
+                      </div>
+                    </div>
                   </div>
                   <div class="bg-[var(--surface-2)] text-center py-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Contoh tampilan</div>
                 </div>
@@ -246,7 +302,6 @@
             <p class="text-lg text-[var(--muted)] mt-4 max-w-2xl mx-auto">{{ $t('landing.realData.subtitle') }}</p>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <!-- Hook Card -->
             <div class="border border-solid border-[var(--line)] rounded-xl overflow-hidden bg-[var(--bg)] fade-in">
               <div class="flex justify-between items-center px-4 py-3 border-b border-[var(--line)]">
                 <span class="text-xs font-bold uppercase tracking-widest">Hook Performance</span>
@@ -263,7 +318,6 @@
               </div>
               <div class="px-6 pb-6 text-sm text-[var(--muted)] border-t border-[var(--line)] pt-4">{{ $t('landing.realData.hook_desc') }}</div>
             </div>
-            <!-- Length Card -->
             <div class="border border-solid border-[var(--line)] rounded-xl overflow-hidden bg-[var(--bg)] fade-in" style="transition-delay: 100ms">
               <div class="flex justify-between items-center px-4 py-3 border-b border-[var(--line)]">
                 <span class="text-xs font-bold uppercase tracking-widest">Post Length</span>
@@ -331,7 +385,6 @@
           
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-5xl mx-auto">
             <div class="border-2 border-[var(--text)] rounded-xl p-8 space-y-4 bg-[var(--bg)] relative">
-              <!-- Badge dihapus, diganti border tebal aja -->
               <h3 class="text-lg font-bold">{{ $t('landing.pricing.p1_title') }}</h3>
               <p class="text-sm text-[var(--muted)]">{{ $t('landing.pricing.p1_desc') }}</p>
             </div>
@@ -404,13 +457,13 @@ const { theme, toggle: toggleTheme } = useTheme()
 const mobileMenuOpen = ref(false)
 const faqOpen = ref<number | null>(1)
 
-// STATE BUAT MOCKUP INTERAKTIF
+// STATE MOCKUP INTERAKTIF
 const mockReplyMode = ref('manual') 
 const activeMockTab = ref('best')
 const isGenerating = ref(false)
-const generatedPlan = ref(false)
+const generatedPlan = ref(true) // Set true biar langsung muncul di awal, atau false kalau mau diklik dulu
 
-// Fungsi simulasi loading generate content
+// Fungsi simulasi generate content
 function simulateGenerate() {
   isGenerating.value = true
   generatedPlan.value = false
@@ -420,7 +473,6 @@ function simulateGenerate() {
   }, 1000)
 }
 
-// STATE DATA HARDCODE
 const hookData = ref([
   { label: 'Question', er: 2.92, n: 6 },
   { label: 'Story', er: 1.36, n: 32 },
@@ -432,7 +484,6 @@ const lengthData = ref([
   { label: '100–300 char', er: 1.12, n: 25 },
 ])
 
-// Fungsi hitung lebar bar (max 3.5%)
 function getBarWidth(er: number) {
   const maxER = 3.5
   const pct = (er / maxER) * 100
@@ -445,7 +496,6 @@ function toggleLang() {
 }
 
 onMounted(() => {
-  // Fade-in Animation
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
