@@ -378,7 +378,11 @@ async function handleManualRefresh() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ account_id: currentAccountId.value })
     })
-    if (!response.ok) throw new Error('Gagal sinkronisasi: Endpoint backend belum siap (404)')
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.detail || 'Gagal sinkronisasi data dari Meta.')
+    }
     toastMessage.value = t('dashboard.toast_sync_started')
     
     // Set cooldown for 60 seconds
