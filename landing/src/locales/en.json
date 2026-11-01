@@ -333,103 +333,108 @@
       "how_it_works": "How it Works",
       "faq": "FAQ",
       "login": "Log in",
-      "start_free": "Claim 1 of 25 Slots"
+      "start_free": "Request Access"
     },
     "hero": {
-      "badge": "Private Beta \u00b7 25 slots",
+      "badge": "PRIVATE BETA",
       "title_1": "Posts that learn from",
       "title_2": "your own account.",
-      "subtitle": "Ixiera reads your best-performing posts (time, hooks, topics) and helps you plan content and reply to comments in your own voice.",
-      "cta_primary": "Claim 1 of 25 Slots",
+      "subtitle": "Ixiera reads your best-performing posts (time, hook, length, topic), then helps you plan content and reply to comments in your style.",
+      "cta_primary": "Request Access",
       "cta_secondary": "See examples",
-      "trust_1": "Official Meta login, we never store passwords",
-      "trust_2": "You are in control, with a Kill Switch",
-      "trust_3": "Your data is isolated from other users"
+      "microcopy": "7-day trial · 20 free credits · No upfront payment",
+      "trust_1": "Official Meta login, no password saved",
+      "trust_2": "Kill Switch anytime",
+      "trust_3": "Data isolated per user"
     },
     "problems": {
       "title": "Being your own account admin is exhausting.",
-      "p1_title": "Stuck on what to post.",
-      "p1_desc": "Running out of ideas while trying to stay consistent.",
+      "p1_title": "Don't know what to post.",
+      "p1_desc": "Out of ideas but need to stay consistent.",
       "p2_title": "Comments pile up.",
-      "p2_desc": "Replying late kills engagement and momentum.",
-      "p3_title": "Flying blind.",
-      "p3_desc": "Which posts, what time, what hooks\u2014it is all just a feeling."
+      "p2_desc": "Late replies, lost interaction and momentum.",
+      "p3_title": "Don't know what works.",
+      "p3_desc": "Which post, what time, what hook, all just a feeling."
     },
     "features": {
       "title": "More than just a scheduler.",
-      "f1_title": "A 3-day content plan from one topic.",
-      "f1_desc": "Give one topic, get a full post plan in your writing style.",
-      "f2_title": "Comments replied in your voice.",
-      "f2_desc": "Choose Manual Review (you approve first) or Full Auto. Set a hourly reply limit.",
-      "f3_title": "Know what works.",
-      "f3_desc": "Best times, engaging hook types, and audience-favorite topics\u2014straight from your account data.",
-      "f4_title": "Turn one viral post into three.",
-      "f4_desc": "Convert an old high-performing post into a Listicle, Opinion, or Story with one click.",
-      "small_1": "Visual growth, views, and engagement reports",
-      "small_2": "Brand voice Knowledge Base",
-      "small_3": "ID/EN Interface"
+      "subtitle": "Five menus, one flow: plan, post, reply, learn.",
+      "f1_title": "Turn one topic into a 3-day plan.",
+      "f1_desc": "Write a topic and pick a style, Ixiera drafts a post plan. Check the free Quick Score before scheduling, and turn old high-performing posts into Listicles, Opinions, or Stories.",
+      "f2_title": "Comments come in, already sorted.",
+      "f2_desc": "Every comment is categorized: question, praise, neutral, spam, toxic. Set each category: AI reply or template. Choose Manual Review or Full Auto, with a reply limit per hour.",
+      "f3_title": "Know what works, not just a feeling.",
+      "f3_desc": "Highest engagement hours, hook types, post lengths, and topics, all calculated from your own account data.",
+      "f4_title": "Teach once, used in all replies.",
+      "f4_desc": "Write your facts, rules, and tone of voice. AI uses them every time it drafts a reply.",
+      "f5_title": "Everything monitored on one screen.",
+      "f5_desc": "Your views, likes, replies, and top posts. The queue shows what's scheduled, published, or failed."
     },
-    "examples": {
-      "title": "Real Examples",
-      "label": "Illustration examples, not real data.",
-      "insight_title": "Insight",
-      "insight_desc": "\"Posts opening with a question get more replies than statements. Your best time: Tuesday, 19:30.\"",
-      "reply_title": "Reply",
-      "reply_incoming": "Comment: \"How do you write hooks like this?\"",
-      "reply_outgoing": "Reply: \"Thanks! Start with a question that makes people want to answer. I will cover it in detail in my next post \ud83d\udc40\"",
-      "repurpose_title": "Repurpose",
-      "repurpose_desc": "1 old post \u2192 Listicle \u00b7 Opinion \u00b7 Story version"
-    },
-    "proof": {
-      "text": "[{'@'}username founder] has used Ixiera since [date]. [Real result]"
+    "realData": {
+      "title": "Examples from real data.",
+      "subtitle": "Analytics results from 50 posts on the creator's account. Small sample, and results will vary per account.",
+      "hook_label": "Real data",
+      "hook_desc": "On this account, posts with question hooks get more than double the engagement of story-style posts.",
+      "len_label": "Real data",
+      "len_desc": "Posts of 300–500 characters get more than triple the engagement of posts under 100 characters.",
+      "note": "ER = engagement rate. Number of posts per category is shown on each bar."
     },
     "how": {
-      "title": "Start in 3 simple steps.",
-      "s1_title": "Register and request access.",
-      "s1_desc": "Create an account, then send your Threads {'@'}username. I review it manually and email you back.",
+      "title": "Start in 3 steps.",
+      "s1_title": "Sign up and request access.",
+      "s1_desc": "Create an account, then send your Threads @username. Access is manually approved and you'll be notified by email.",
       "s2_title": "Connect and teach your style.",
-      "s2_desc": "Once approved, accept the tester invite on Threads and log in via Meta. Upload sample posts or set style rules, then choose an AI engine: use free credits, or plug in your own API key (Gemini/Groq).",
+      "s2_desc": "Once approved, accept the tester invite on Threads and log in via Meta's official system. Write your style and rules in the Knowledge Base.",
       "s3_title": "Review and go.",
-      "s3_desc": "Approve drafts, set reply modes, and check Analytics over the weekend."
+      "s3_desc": "Approve drafts, set reply modes, and monitor Analytics weekly."
     },
     "security": {
-      "title": "Security",
-      "s1": "Threads passwords are never stored. Login is strictly via official Meta OAuth.",
+      "title": "You're in control.",
+      "s1": "Threads passwords are never saved. Login is only via official Meta OAuth.",
       "s2": "Your analytics and style documents are isolated from other users.",
-      "s3": "Turn off automation or disconnect anytime with the Kill Switch, no middleman."
+      "s3": "Text processed by AI is sent to model providers (Gemini/Groq). Details in the Privacy Policy.",
+      "s4": "Turn off automation or disconnect anytime via the Kill Switch."
     },
-    "beta": {
-      "title": "Private beta, limited slots.",
-      "desc": "I am opening 25 slots so I can guide you directly and improve the product with you. During beta, core features are free. After that, it will be paid, with early-bird pricing for beta users.",
-      "cta": "Claim 1 of 25 Slots"
+    "pricing": {
+      "title": "Private beta, access rolled out gradually.",
+      "desc": "Access is rolled out gradually so each user can be guided and the product improved from real feedback. Still in beta, so some things aren't perfect, and your feedback is acted on directly.",
+      "p1_title": "Trial",
+      "p1_desc": "7 days · 20 free credits · all features",
+      "p2_title": "30-day plan",
+      "p2_desc": "Rp49,000 · 100 credits/month · no auto-renew",
+      "p3_title": "30-day plan + own API key",
+      "p3_desc": "Rp29,000 · use your own API key · no credits",
+      "note": "1 credit = 1 AI action (generate, AI reply, repurpose, advanced analysis). Reply templates and Quick Score are free. Own API key is only available in paid plans.",
+      "cta": "Request Access"
     },
     "faq": {
-      "title": "FAQ",
-      "q1": "Why do I need to request access?",
-      "a1": "Ixiera is in early access and the app is still in Meta developer mode. I manually add each account.",
-      "q2": "Is it free?",
-      "a2": "During beta, core features are free for the first 25 users. After that, it will be paid.",
-      "q3": "Does it post without my permission?",
-      "a3": "No, unless you enable it. Replies have two modes: Manual Review and Full Auto. The Kill Switch stops everything at any time.",
-      "q4": "Can my account get blocked?",
-      "a4": "You can set hourly reply limits to comply with Meta API policies.",
-      "q5": "Can the AI reply rudely?",
-      "a5": "Set the \"Tone Prompt\" in Settings. The AI is directed to be polite and match your style.",
-      "q6": "How is this different from a scheduler?",
-      "a6": "Schedulers just schedule. Ixiera learns from your account data.",
-      "q7": "Do I need technical skills?",
-      "a7": "No. There is a step-by-step guide and a credit option with no API key required."
+      "title": "Frequently Asked Questions",
+      "q1": "Why request access?",
+      "a1": "Ixiera is still in early access and the app is in Meta's developer mode, so each account is added manually and needs approval first. You'll be notified via email.",
+      "q2": "Is this free?",
+      "a2": "There's a 7-day trial with 20 free credits, no upfront payment. After that, a 30-day plan with no auto-renew.",
+      "q3": "What is a credit?",
+      "a3": "One credit is used for one AI action. Reply templates and Quick Score don't use credits.",
+      "q4": "Will it post without my permission?",
+      "a4": "No, unless you enable it. Replies have two modes: Manual Review and Full Auto. Kill Switch turns everything off anytime.",
+      "q5": "Can my account get blocked?",
+      "a5": "The reply limit per hour can be set to comply with Meta API policies. The final decision is Meta's, so start with a low limit.",
+      "q6": "Can replies be rude?",
+      "a6": "Set the \"Tone Prompt\" in Settings, AI is directed to be polite, brief, and match your style.",
+      "q7": "How is this different from a regular scheduler?",
+      "a7": "A scheduler only schedules. Ixiera learns from your account data to decide what, when, and how you post.",
+      "q8": "Who uses the data?",
+      "a8": "Text processed by AI is sent to model providers (Gemini/Groq) to generate drafts and replies. Details in the Privacy Policy.",
+      "q9": "Do I need to be technical?",
+      "a9": "No. There's a step-by-step guide."
     },
-    "cta": {
+    "cta_end": {
       "title": "Ready to stop guessing?",
-      "button": "Claim 1 of 25 Slots"
+      "btn": "Request Access"
     },
     "footer": {
-      "copy": "Ixiera is an independent product and is not affiliated with Meta Platforms. Threads is a trademark of Meta.",
-      "contact": "Email",
-      "privacy": "Privacy Policy",
-      "terms": "Terms & Conditions",
-      "delete": "Data Deletion"
+      "copy": "© 2026 Ixiera · Email · Privacy Policy · Terms & Conditions · Data Deletion",
+      "disclaimer": "Ixiera is an independent product and is not affiliated with Meta Platforms. Threads is a trademark of Meta."
     }
   }
 }
