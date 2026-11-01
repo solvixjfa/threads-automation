@@ -322,6 +322,14 @@ async function loadAllDashboardData() {
     if (account) {
       currentAccountId.value = account.id
       lastSyncedAt.value = account.last_synced_at
+      
+      // Tembak sinkron profile & metrics secara paralel
+      fetch('https://threads-automation-r9so.onrender.com/api/v1/metrics/sync-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account_id: account.id })
+      }).catch(err => console.log('Profile sync error:', err))
+
       await Promise.all([fetchQueueMetricsAndFailed(account.id), fetchDailyInsights(account.id)])
     }
     const { data: analyticsData, error: analyticsErr } = await supabase.functions.invoke('get-analytics')
@@ -365,7 +373,11 @@ async function handleManualRefresh() {
   refreshing.value = true
   toastMessage.value = ''
   try {
-    const response = await fetch('https://threads-automation-r9so.onrender.com/api/v1/metrics/sync', { method: 'POST' })
+    const response = await fetch('https://threads-automation-r9so.onrender.com/api/v1/metrics/sync', { 
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ account_id: currentAccountId.value })
+    })
     if (!response.ok) throw new Error('Gagal sinkronisasi: Endpoint backend belum siap (404)')
     toastMessage.value = t('dashboard.toast_sync_started')
     
