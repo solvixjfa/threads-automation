@@ -327,6 +327,49 @@ async def sync_post_with_semaphore(
             return empty_stats()
 
 
+
+async def sync_profile_and_metrics(db, client, acc_id: str, token: str):
+    # --- 1. Sync Profile (Avatar & Bio) ---
+    try:
+        prof_url = f"https://graph.threads.net/v1.0/me?fields=id,username,threads_profile_picture_url,threads_biography&access_token={token}"
+        res = await client.get(prof_url, timeout=10.0)
+        if res.status_code == 200:
+            data = res.json()
+            db.schema('threads').from_('threads_accounts').update({
+                "username": data.get("username"),
+                "profile_picture_url": data.get("threads_profile_picture_url"),
+                "biography": data.get("threads_biography")
+            }).eq("id", acc_id).execute()
+    except Exception as e:
+        logging.error(f"[Sync Profile] Error {acc_id}: {e}")
+
+    # --- 2. Sync Metrics (Views, Likes, dll) ---
+    try:
+        posts_res = db.schema('threads').from_('posts').select('id, threads_media_id').eq('account_id', acc_id).execute()
+        if posts_res.data:
+            for post in posts_res.data:
+                media_id = post['threads_media_id']
+                insight_url = f"https://graph.threads.net/v1.0/{media_id}/insights?metric=views,likes,replies,reposts,quotes&access_token={token}"
+                ins_res = await client.get(insight_url, timeout=10.0)
+                if ins_res.status_code == 200:
+                    ins_data = ins_res.json()
+                    if "data" in ins_data:
+                        metrics = {item["name"]: item["values"][0]["value"] for item in ins_data["data"] if "values" in item}
+                        db.schema("threads").from_("post_metrics").delete().eq("post_id", post['id']).eq("snapshot_label", "latest").execute()
+                        db.schema("threads").from_("post_metrics").insert({
+                            "post_id": post['id'],
+                            "snapshot_label": "latest",
+                            "views": metrics.get("views", 0),
+                            "likes": metrics.get("likes", 0),
+                            "replies": metrics.get("replies", 0),
+                            "reposts": metrics.get("reposts", 0),
+                            "quotes": metrics.get("quotes", 0),
+                            "captured_at": datetime.now(timezone.utc).isoformat()
+                        }).execute()
+    except Exception as e:
+        logging.error(f"[Sync Metrics] Error {acc_id}: {e}")
+
+
 async def process_account(db, client, acc: dict) -> dict:
     account_stats = {"new_posts": 0, **empty_stats()}
 
@@ -338,6 +381,9 @@ async def process_account(db, client, acc: dict) -> dict:
 
     ai_provider = acc.get("ai_provider") or "groq"
 
+    # Tarik Profile & Metrics dulu
+    await sync_profile_and_metrics(db, client, acc_id, token)
+    
     new_posts = await sync_posts_from_meta(db, client, acc_id, token)
     account_stats["new_posts"] = new_posts
 

@@ -364,43 +364,15 @@ async function handleRetryPost(postId: string) {
 }
 
 async function handleManualRefresh() {
-  if (syncCooldown.value > 0) return // Prevent click if on cooldown
-
-  if (!currentAccountId.value) {
-    await loadAllDashboardData()
-    return
-  }
   refreshing.value = true
-  toastMessage.value = ''
+  toastMessage.value = 'Memuat ulang data dari database...'
   try {
-    const response = await fetch('https://threads-automation-r9so.onrender.com/api/v1/metrics/sync', { 
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ account_id: currentAccountId.value })
-    })
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.detail || 'Gagal sinkronisasi data dari Meta.')
-    }
-    toastMessage.value = t('dashboard.toast_sync_started')
-    
-    // Set cooldown for 60 seconds
-    syncCooldown.value = 60
-    if (cooldownInterval) clearInterval(cooldownInterval)
-    cooldownInterval = setInterval(() => {
-      syncCooldown.value--
-      if (syncCooldown.value <= 0) {
-        if (cooldownInterval) clearInterval(cooldownInterval)
-      }
-    }, 1000)
-
-    setTimeout(async () => {
-      await loadAllDashboardData()
-      refreshing.value = false
-    }, 3000)
+    await loadAllDashboardData()
+    toastMessage.value = 'Data berhasil dimuat ulang dari cache.'
+    setTimeout(() => { toastMessage.value = '' }, 3000)
   } catch (err: any) {
-    toastMessage.value = err.message
+    toastMessage.value = 'Gagal memuat data: ' + err.message
+  } finally {
     refreshing.value = false
   }
 }
