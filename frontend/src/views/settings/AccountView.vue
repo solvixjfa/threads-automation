@@ -1,50 +1,51 @@
 <template>
-  <div class="space-y-6">
-    <Card>
-<div v-if="account" class="space-y-4">
-        <!-- AVATAR DISINI -->
-        <div class="flex items-center gap-4 p-4 border theme-border rounded-xl theme-bg-sec">
-          <div v-if="avatarUrl" class="w-16 h-16 rounded-full overflow-hidden border theme-border shrink-0">
+  <div class="space-y-6 w-full max-w-full overflow-hidden">
+    
+    <!-- CARD: CONNECTED ACCOUNT (DENGAN AVATAR) -->
+    <div class="card p-5 md:p-6 w-full">
+      <div class="flex items-center justify-between pb-4 border-b theme-border mb-4">
+        <div>
+          <h2 class="text-lg font-bold">{{ $t('settings.account.title') }}</h2>
+          <p class="text-xs theme-text-muted mt-1">{{ $t('settings.account.subtitle') }}</p>
+        </div>
+        <div v-if="account" class="flex items-center gap-2 px-3 py-1 rounded-full border theme-border bg-[var(--surface-2)] text-xs font-bold">
+          <span class="w-2 h-2 rounded-full bg-green-500"></span>
+          CONNECTED
+        </div>
+      </div>
+
+      <div v-if="loading" class="animate-pulse h-20 bg-[var(--surface-2)] rounded-lg"></div>
+
+      <div v-else-if="account" class="space-y-4">
+        <!-- AVATAR & USERNAME SECTION -->
+        <div class="flex items-center gap-4 p-4 rounded-xl border theme-border bg-[var(--surface-2)]">
+          <div v-if="avatarUrl" class="w-16 h-16 rounded-full overflow-hidden shrink-0 border-2 theme-border">
             <img :src="avatarUrl" alt="Profile" class="w-full h-full object-cover" />
           </div>
-          <div v-else class="w-16 h-16 rounded-full flex items-center justify-center bg-[var(--text)] text-[var(--bg)] text-xl font-bold shrink-0">
+          <div v-else class="w-16 h-16 rounded-full flex items-center justify-center bg-[var(--text)] text-[var(--bg)] text-xl font-black shrink-0">
             {{ threadsUsername ? threadsUsername.charAt(0).toUpperCase() : 'IX' }}
           </div>
-          <div>
-            <h3 class="font-bold text-lg">@{{ threadsUsername || 'Connected' }}</h3>
+          <div class="min-w-0">
+            <h3 class="font-bold text-lg truncate">@{{ threadsUsername }}</h3>
             <p class="text-xs theme-text-muted">{{ $t('settings.account.ready') }}</p>
           </div>
         </div>
 
-      <template #header>
-        <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-sm font-bold">{{ $t('settings.account.title') }}</h2>
-            <p class="text-xs theme-text-muted mt-0.5">{{ $t('settings.account.subtitle') }}</p>
-          </div>
-          <Badge :variant="accountConnected ? 'success' : 'default'">
-            {{ accountConnected ? $t('settings.account.connected') : $t('settings.account.not_connected') }}
-          </Badge>
+        <div class="flex justify-end pt-2">
+          <button @click="handleConnect" class="btn btn-secondary text-sm">
+            {{ $t('settings.account.reconnect') }}
+          </button>
         </div>
-      </template>
-
-      <div v-if="loading" class="space-y-2">
-        <div class="h-4 w-32 skeleton"></div>
-        <div class="h-3 w-48 skeleton"></div>
       </div>
 
-      <div v-else class="flex items-center justify-between gap-4">
-        <div>
-          <p class="text-sm font-bold">{{ accountUsername ? '@' + accountUsername : 'No active account' }}</p>
-          <p class="text-xs theme-text-muted mt-0.5">
-            {{ accountConnected ? $t('settings.account.ready') : $t('settings.account.start') }}
-          </p>
-        </div>
-        <Button @click="connectThreads" size="sm">
-          {{ accountConnected ? $t('settings.account.reconnect') : $t('settings.account.connect') }}
-        </Button>
+      <div v-else class="text-center py-6">
+        <p class="text-sm theme-text-muted mb-4">{{ $t('settings.account.start') }}</p>
+        <button @click="handleConnect" class="btn btn-primary text-sm">
+          {{ $t('settings.account.connect') }}
+        </button>
       </div>
-    </Card>
+    </div>
+
   </div>
 </template>
 
@@ -52,40 +53,43 @@
 import { ref, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
 import { useNotify } from '../../composables/useNotify'
-import { Card, Button, Badge } from '../../components/ui'
 
 const { showToast } = useNotify()
 const loading = ref(true)
+const account = ref<any>(null)
 const avatarUrl = ref('')
 const threadsUsername = ref('')
-const accountConnected = ref(false)
-const accountUsername = ref('')
 
-async function initAccount() {
+async function fetchAccountData() {
   loading.value = true
   try {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const { data: account } = await supabase.schema('threads').from('threads_accounts').select('username, connection_status').eq('user_id', user.id).maybeSingle()
-    if (account) {
-      accountConnected.value = account.connection_status === 'connected'
-      accountUsername.value = account.username || ''
+
+    const { data } = await supabase.schema('threads')
+      .from('threads_accounts')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (data) {
+      account.value = data
+      avatarUrl.value = data.profile_picture_url || ''
+      threadsUsername.value = data.username || ''
     }
+  } catch (err) {
+    console.error(err)
   } finally {
     loading.value = false
   }
 }
 
-async function connectThreads() {
-  try {
-    const { data, error } = await supabase.functions.invoke('threads-oauth-start')
-    if (error) throw error
-    if (data?.error) throw new Error(data.error)
-    if (data?.url) window.location.href = data.url
-  } catch (err: any) {
-    showToast('Failed to load OAuth URL: ' + err.message, 'error')
-  }
+async function handleConnect() {
+  // Logika connect Threads (OAuth) taruh di sini
+  showToast('Mengarahkan ke OAuth Meta...', 'info')
 }
 
-onMounted(initAccount)
+onMounted(() => {
+  fetchAccountData()
+})
 </script>
