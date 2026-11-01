@@ -1,20 +1,34 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    
+    <!-- Inter Font Preload -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+    <!-- SEO -->
     <title>Ixiera, Asisten AI untuk Kreator Threads</title>
-    <meta name="description" content="Rencana konten, balasan komentar, dan analitik dari data akun Threads kamu sendiri. Private beta, 25 slot." />
+    <meta name="description" content="Rencana konten, balasan komentar, dan analitik dari data akun Threads kamu sendiri. Private beta." />
+    
+    <!-- Open Graph (Buat Share ke WA/Threads/Twitter/FB) -->
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://ixiera.id/" />
     <meta property="og:title" content="Ixiera, Asisten AI untuk Kreator Threads" />
-    <meta property="og:description" content="Rencana konten, balasan komentar, dan analitik dari data akun Threads kamu sendiri. Private beta, 25 slot." />
+    <meta property="og:description" content="Rencana konten, balasan komentar, dan analitik dari data akun Threads kamu sendiri. Private beta." />
+    <meta property="og:image" content="https://ixiera.id/og-image.png" />
+    
+    <!-- Twitter Card -->
     <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://ixiera.id/" />
     <meta property="twitter:title" content="Ixiera, Asisten AI untuk Kreator Threads" />
-    <meta property="twitter:description" content="Rencana konten, balasan komentar, dan analitik dari data akun Threads kamu sendiri. Private beta, 25 slot." />
+    <meta property="twitter:description" content="Rencana konten, balasan komentar, dan analitik dari data akun Threads kamu sendiri. Private beta." />
+    <meta property="twitter:image" content="https://ixiera.id/og-image.png" />
   </head>
-  <!-- HAPUS bg-slate-950 DISINI -->
-  <body class="antialiased">
+  <body class="bg-black text-white antialiased">
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
