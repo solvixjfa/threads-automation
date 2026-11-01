@@ -61,6 +61,7 @@
           <h3 class="text-lg font-bold">Approve / Extend Plan</h3>
           <p class="text-xs theme-text-muted">{{ selectedUser.email }}</p>
           <Select v-model="extendType" label="Plan Type" :options="[
+            {label: 'Free Trial (20 Kredit, 7 Hari)', value: 'trial'},
             {label: 'Pro Credit (Rp29k)', value: 'paid_credit'},
             {label: 'Pro BYOK (Rp19k)', value: 'paid_byok'}
           ]" />
@@ -126,7 +127,7 @@ const API_BASE = 'https://threads-automation-r9so.onrender.com/api/v1/admin'
 
 function getPlanLabel(plan: string) {
   if (!plan || plan === 'none') return 'Free'
-  if (plan === 'trial') return 'Trial'
+  if (plan === 'trial') return 'Trial (20 Kredit)'
   if (plan === 'paid_credit') return 'Pro Credit'
   if (plan === 'paid_byok') return 'Pro BYOK'
   return plan

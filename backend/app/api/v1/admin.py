@@ -122,13 +122,18 @@ async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin))
     if current_exp:
         try:
             exp_dt = datetime.fromisoformat(current_exp.replace("Z", "+00:00"))
-            new_exp = exp_dt + timedelta(days=PAID_DAYS) if exp_dt > now else now + timedelta(days=PAID_DAYS)
+            new_exp = exp_dt + timedelta(days=days) if exp_dt > now else now + timedelta(days=days)
         except ValueError:
-            new_exp = now + timedelta(days=PAID_DAYS)
+            new_exp = now + timedelta(days=days)
     else:
-        new_exp = now + timedelta(days=PAID_DAYS)
+        new_exp = now + timedelta(days=days)
 
-    credits = PAID_CREDITS if payload.plan_type == 'paid_credit' else 0
+    if payload.plan_type == 'trial':
+        days = 7
+        credits = 20
+    else:
+        days = PAID_DAYS
+        credits = PAID_CREDITS if payload.plan_type == 'paid_credit' else 0
     
     db.schema("threads").from_("threads_accounts").update({
         "plan": payload.plan_type,
