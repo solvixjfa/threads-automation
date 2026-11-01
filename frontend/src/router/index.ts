@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { supabase } from '../lib/supabase'
 
-import LandingView from '../views/LandingView.vue'
+// LandingView udah nggak di-import disini karena udah pindah ke project landing
 import DashboardView from '../views/DashboardView.vue'
 import SettingsLayout from '../views/settings/SettingsLayout.vue'
 import AccountView from '../views/settings/AccountView.vue'
@@ -35,7 +35,8 @@ import TopicView from '../views/analytics/TopicView.vue'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', name: 'landing', component: LandingView },
+    // UBAH DISINI: Path '/' langsung redirect ke dashboard
+    { path: '/', redirect: '/dashboard' }, 
     { path: '/login', name: 'login', component: LoginView },
     { path: '/update-password', name: 'update-password', component: UpdatePasswordView },
     { path: '/privacy', name: 'privacy', component: PrivacyView },
@@ -95,11 +96,9 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, _from, next) => {
-  // 1. Cek apakah ini baru balik dari OAuth (ada token di URL)
   const isOAuthCallback = window.location.hash.includes('access_token') || window.location.search.includes('code=')
 
   if (isOAuthCallback) {
-    // Kasih waktu Supabase JS buat nyedot token dari URL (0.5 detik)
     await new Promise(resolve => setTimeout(resolve, 500))
   }
 
