@@ -3,6 +3,7 @@ from app.services.rag import get_supabase
 from datetime import datetime, timedelta
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
+import json
 
 router = APIRouter()
 
@@ -36,7 +37,7 @@ def fetch_posts_with_metrics(account_id: str):
         if row.get("published_media_id"):
             sp_map[str(row["published_media_id"])] = row
 
-    posts_res = db.schema("threads").from_("posts").select("id, threads_media_id, posted_at, created_at, post_metrics(views, likes, replies, reposts, snapshot_label)").eq("account_id", account_id).execute()
+    posts_res = db.schema("threads").from_("posts").select("id, threads_media_id, posted_at, created_at, hook_type, topic_cluster, length_bucket, sentiment, ai_analyzed_at, post_metrics(views, likes, replies, reposts, snapshot_label)").eq("account_id", account_id).execute()
     
     formatted = []
     for p in (posts_res.data or []):
@@ -52,7 +53,7 @@ def fetch_posts_with_metrics(account_id: str):
         engagement = ((latest.get("likes", 0) + latest.get("replies", 0) + latest.get("reposts", 0)) / latest["views"]) * 100
         ts = sp.get("scheduled_for") or p.get("posted_at") or p.get("created_at")
         
-        formatted.append({"text": sp.get("text", ""), "er": engagement, "views": latest["views"], "timestamp": ts})
+        formatted.append({"id": p.get("id"), "text": sp.get("text", ""), "er": engagement, "views": latest["views"], "timestamp": ts, "hook_type": p.get("hook_type"), "topic_cluster": p.get("topic_cluster"), "length_bucket": p.get("length_bucket"), "sentiment": p.get("sentiment"), "ai_analyzed_at": p.get("ai_analyzed_at")})
     return formatted
 
 @router.get("/best-time/{account_id}")
@@ -141,37 +142,38 @@ async def get_hook_performance(account_id: str):
     try:
         import re as _re
         posts = fetch_posts_with_metrics(account_id)
-        HOOK_CATEGORIES = {
-            "Data-Point": [], "Contrarian": [], "Confession": [],
-            "Curiosity": [], "Listicle": [], "Question": [], "Statement": [],
-        }
-        for p in posts:
-            text = p["text"].strip()
-            if not text: continue
-            first_line = text.split("\n")[0].strip()
+        HOOK_CATS = ["Data-Point", "Contrarian", "Confession", "Curiosity", "Listicle", "Question", "Statement"]
+        buckets = {c: [] for c in HOOK_CATS}
+
+        def classify_regex(first_line: str) -> str:
             fl = first_line.lower()
+            if _re.search(r'\d+\.\d+[a-zA-Z%]|\d{2,}%|\d+x\b|Rp\s*\d|[\d.]+\s*(ribu|juta|rb|jt)', fl): return "Data-Point"
+            if any(m in fl for m in ["kebanyakan orang salah","sebenarnya","jangan percaya","unpopular opinion","hot take","salah kaprah","mitos","overrated","underrated"]): return "Contrarian"
+            if any(m in fl for m in ["gw baru sadar","aku baru sadar","gw salah","aku salah","i was wrong","i lost","we failed","gw gagal","aku gagal","jujur gw","confession"]): return "Confession"
+            if any(m in fl for m in ["nggak ada yang bilang","tidak ada yang bilang","rahasia","trik","hack","gak banyak yang tau","jarang yang tau","sebelum lo tau"]): return "Curiosity"
+            if _re.match(r'^\d+[\.\):]\s', first_line) or any(m in fl for m in ["tips","cara ","thread:","berikut","hal yang","alasan"]): return "Listicle"
+            if "?" in first_line: return "Question"
+            return "Statement"
 
-            has_data = bool(_re.search(r'\d+\.\d+[a-zA-Z%]|\d{2,}%|\d+x\b|Rp\s*\d|[\d.]+\s*(ribu|juta|rb|jt)', fl))
-            is_contrarian = any(m in fl for m in ["kebanyakan orang salah","sebenarnya","jangan percaya","unpopular opinion","hot take","salah kaprah","mitos","overrated","underrated"])
-            is_confession = any(m in fl for m in ["gw baru sadar","aku baru sadar","gw salah","aku salah","i was wrong","i lost","we failed","gw gagal","aku gagal","jujur gw","confession"])
-            is_curiosity = any(m in fl for m in ["nggak ada yang bilang","tidak ada yang bilang","rahasia","trik","hack","gak banyak yang tau","jarang yang tau","sebelum lo tau"])
-            is_listicle = bool(_re.match(r'^\d+[\.\):]\s', first_line)) or any(m in fl for m in ["tips","cara ","thread:","berikut","hal yang","alasan"])
-            is_question = "?" in first_line
-
-            if has_data: HOOK_CATEGORIES["Data-Point"].append(p["er"])
-            elif is_contrarian: HOOK_CATEGORIES["Contrarian"].append(p["er"])
-            elif is_confession: HOOK_CATEGORIES["Confession"].append(p["er"])
-            elif is_curiosity: HOOK_CATEGORIES["Curiosity"].append(p["er"])
-            elif is_listicle: HOOK_CATEGORIES["Listicle"].append(p["er"])
-            elif is_question: HOOK_CATEGORIES["Question"].append(p["er"])
-            else: HOOK_CATEGORIES["Statement"].append(p["er"])
+        for p in posts:
+            text = (p.get("text") or "").strip()
+            if not text: continue
+            cached = p.get("hook_type")
+            if cached:
+                normalized = cached.replace("_", "-").title()
+                if normalized in buckets: buckets[normalized].append(p["er"])
+                else: buckets["Statement"].append(p["er"])
+            else:
+                cat = classify_regex(text.split("\n")[0])
+                buckets[cat].append(p["er"])
 
         results = []
-        for h_type, ers in HOOK_CATEGORIES.items():
+        for cat, ers in buckets.items():
             if len(ers) > 0:
-                results.append({"type": h_type, "avg_er": round(sum(ers)/len(ers),2), "count": len(ers)})
+                results.append({"type": cat, "avg_er": round(sum(ers)/len(ers),2), "count": len(ers)})
         results.sort(key=lambda x: (x["type"] == "Statement", -x["avg_er"]))
 
+        analyzed = sum(1 for p in posts if p.get("ai_analyzed_at"))
         confidence = "low"
         if len(posts) >= 50: confidence = "high"
         elif len(posts) >= 20: confidence = "medium"
@@ -186,41 +188,74 @@ async def get_hook_performance(account_id: str):
 
         benchmark = None
         if confidence == "low":
-            benchmark = {
-                "best_hook": "Data-Point",
-                "avg_er": "4.5%",
-                "note": "Benchmark industri Threads: hook dengan angka spesifik (contoh: '2.4x', '87%') rata-rata 1.8x lebih tinggi dari hook pertanyaan."
-            }
+            benchmark = {"best_hook": "Data-Point", "avg_er": "4.5%"}
 
         return {
-            "success": True, "data": results,
-            "best_insight": best_insight, "benchmark": benchmark,
-            "total_posts": len(posts), "confidence": confidence,
+            "success": True, "data": results, "best_insight": best_insight,
+            "benchmark": benchmark, "total_posts": len(posts),
+            "analyzed_posts": analyzed, "confidence": confidence,
+            "mode": "llm" if analyzed > 0 else "regex",
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/length-performance/{account_id}")
 async def get_length_performance(account_id: str):
     try:
         posts = fetch_posts_with_metrics(account_id)
-        lengths = {"<100 chars": [], "100-300 chars": [], "300-500 chars": [], ">500 chars": []}
+        BUCKETS = ["<100", "100-200", "200-300", "300-500", ">500"]
+        buckets = {b: [] for b in BUCKETS}
+
+        def get_bucket(text_len: int, cached: str = None) -> str:
+            if cached:
+                c = cached.replace("_", "-").replace("100-300","100-200") if cached == "100_300" else cached.replace("_", "-")
+                if c in buckets: return c
+            if text_len < 100: return "<100"
+            if text_len < 200: return "100-200"
+            if text_len < 300: return "200-300"
+            if text_len < 500: return "300-500"
+            return ">500"
 
         for p in posts:
-            l = len(p["text"])
-            if l < 100: lengths["<100 chars"].append(p["er"])
-            elif l <= 300: lengths["100-300 chars"].append(p["er"])
-            elif l <= 500: lengths["300-500 chars"].append(p["er"])
-            else: lengths[">500 chars"].append(p["er"])
+            text = p.get("text") or ""
+            if not text: continue
+            bucket = get_bucket(len(text), p.get("length_bucket"))
+            buckets[bucket].append(p["er"])
 
         results = []
-        for l_type, ers in lengths.items():
-            if len(ers) > 0:
-                results.append({"range": l_type, "avg_er": round(sum(ers) / len(ers), 2), "count": len(ers)})
+        for b, ers in buckets.items():
+            results.append({
+                "bucket": b, "avg_er": round(sum(ers)/len(ers),2) if ers else 0.0,
+                "count": len(ers),
+            })
+        results.sort(key=lambda x: BUCKETS.index(x["bucket"]))
 
-        return {"success": True, "data": results}
+        analyzed = sum(1 for p in posts if p.get("ai_analyzed_at"))
+        confidence = "low"
+        if len(posts) >= 50: confidence = "high"
+        elif len(posts) >= 20: confidence = "medium"
+
+        best_bucket = None
+        if confidence != "low":
+            valid = [r for r in results if r["count"] >= 3]
+            if valid:
+                valid.sort(key=lambda x: x["avg_er"], reverse=True)
+                best_bucket = valid[0]
+
+        benchmark = None
+        if confidence == "low":
+            benchmark = {"best_bucket": "150-250", "avg_er": "4.0%", "note": "Threads optimal: 150-250 karakter"}
+
+        return {
+            "success": True, "data": results, "best_bucket": best_bucket,
+            "benchmark": benchmark, "total_posts": len(posts),
+            "analyzed_posts": analyzed, "confidence": confidence,
+            "mode": "llm" if analyzed > 0 else "regex",
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/topic-clusters/{account_id}")
 async def get_topic_clusters(account_id: str):
@@ -309,3 +344,144 @@ async def get_topic_clusters(account_id: str):
         return {"success": True, "data": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/sentiment-performance/{account_id}")
+async def get_sentiment_performance(account_id: str):
+    try:
+        posts = fetch_posts_with_metrics(account_id)
+        cats = {"positive": [], "neutral": [], "negative": []}
+        for p in posts:
+            sent = (p.get("sentiment") or "").lower()
+            if sent in cats: cats[sent].append(p["er"])
+        results = [{"sentiment": k, "avg_er": round(sum(v)/len(v),2) if v else 0.0, "count": len(v)} for k, v in cats.items()]
+        analyzed = sum(1 for p in posts if p.get("ai_analyzed_at"))
+        return {"success": True, "data": results, "total_posts": len(posts), "analyzed_posts": analyzed, "mode": "llm" if analyzed > 0 else "none"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/analysis-status/{account_id}")
+async def get_analysis_status(account_id: str):
+    try:
+        db = get_supabase()
+        posts_res = db.schema("threads").from_("posts").select("id, ai_analyzed_at").eq("account_id", account_id).execute()
+        posts = posts_res.data or []
+        analyzed = sum(1 for p in posts if p.get("ai_analyzed_at"))
+        acc_res = db.schema("threads").from_("threads_accounts").select("last_deep_analyze_at, plan").eq("id", account_id).limit(1).execute()
+        acc = acc_res.data[0] if acc_res.data else {}
+        return {"success": True, "total_posts": len(posts), "analyzed_posts": analyzed,
+                "needs_analyze": analyzed < len(posts), "last_analyzed_at": acc.get("last_deep_analyze_at"),
+                "plan": acc.get("plan"), "is_cached": analyzed > 0 and analyzed == len(posts)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/deep-analyze/{account_id}")
+async def run_deep_analyze(account_id: str):
+    from app.services.billing import check_and_spend, refund_credits, BillingError
+    from app.core.config import GEMINI_KEY
+    from google import genai
+    from google.genai import types
+    from datetime import datetime, timezone
+
+    db = get_supabase()
+    acc_res = db.schema("threads").from_("threads_accounts").select("plan, credit_balance, custom_gemini_key").eq("id", account_id).limit(1).execute()
+    if not acc_res.data: raise HTTPException(404, "Account not found")
+    acc = acc_res.data[0]
+    plan = acc.get("plan", "none")
+    is_paid = plan in ("paid_credit", "paid_byok")
+
+    ref_id = None
+    if is_paid:
+        try: ref_id = check_and_spend(account_id, "deep_analyze")
+        except BillingError as e: raise HTTPException(403, e.message)
+
+    try:
+        sp_res = db.schema("threads").from_("scheduled_posts").select("published_media_id, text").eq("account_id", account_id).eq("status", "published").execute()
+        sp_map = {str(r["published_media_id"]): r.get("text","") for r in (sp_res.data or []) if r.get("published_media_id")}
+
+        posts_res = db.schema("threads").from_("posts").select("id, threads_media_id, ai_analyzed_at").eq("account_id", account_id).execute()
+        all_posts = posts_res.data or []
+
+        to_analyze = []
+        for p in all_posts:
+            text = (sp_map.get(str(p.get("threads_media_id"))) or "").strip()
+            if len(text) < 20: continue
+            if p.get("ai_analyzed_at"): continue
+            to_analyze.append({"id": p["id"], "text": text[:1000]})
+
+        if not to_analyze:
+            if ref_id:
+                try: refund_credits(account_id, "deep_analyze", ref_id)
+                except: pass
+            return {"success": True, "analyzed_count": 0, "message": "Nothing new to analyze"}
+
+        gemini_key = acc.get("custom_gemini_key") or GEMINI_KEY
+        if not gemini_key:
+            if ref_id:
+                try: refund_credits(account_id, "deep_analyze", ref_id)
+                except: pass
+            raise HTTPException(400, "Gemini API Key required")
+
+        client = genai.Client(api_key=gemini_key)
+        all_results = []
+        CHUNK = 50
+        for i in range(0, len(to_analyze), CHUNK):
+            chunk = to_analyze[i:i+CHUNK]
+            prompt = f"""Classify each Threads post below. Return ONLY valid JSON array.
+
+Fields per post:
+- id: same as input
+- hook_type: data_point|contrarian|confession|curiosity|listicle|question|statement
+- topic_cluster: 2-4 words (e.g. "AI Startup Tips", "Personal Finance")
+- length_bucket: <100|100_300|300_500|>500
+- sentiment: positive|neutral|negative
+
+POSTS:
+{json.dumps(chunk, ensure_ascii=False)}
+
+Return JSON array only, no markdown."""
+
+            resp = None
+            last_err = ""
+            for m in ["gemini-3.5-flash","gemini-flash-latest","gemini-2.5-flash"]:
+                try:
+                    resp = client.models.generate_content(
+                        model=m, contents=prompt,
+                        config=types.GenerateContentConfig(response_mime_type="application/json", max_output_tokens=8000)
+                    )
+                    break
+                except Exception as e:
+                    last_err = str(e)
+
+            if not resp:
+                raise Exception(f"LLM failed: {last_err}")
+
+            raw = resp.text.strip()
+            if raw.startswith("```json"): raw = raw.replace("```json","",1).rstrip("`").strip()
+            batch = json.loads(raw)
+            all_results.extend(batch if isinstance(batch, list) else batch.get("results", []))
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        updated = 0
+        for r in all_results:
+            pid = r.get("id")
+            if not pid: continue
+            db.schema("threads").from_("posts").update({
+                "hook_type": r.get("hook_type"),
+                "topic_cluster": r.get("topic_cluster"),
+                "length_bucket": r.get("length_bucket"),
+                "sentiment": r.get("sentiment"),
+                "ai_analyzed_at": now_iso,
+            }).eq("id", pid).execute()
+            updated += 1
+
+        db.schema("threads").from_("threads_accounts").update({"last_deep_analyze_at": now_iso}).eq("id", account_id).execute()
+
+        return {"success": True, "analyzed_count": updated, "total_posts": len(all_posts), "requested": len(to_analyze)}
+    except Exception as e:
+        if ref_id:
+            try: refund_credits(account_id, "deep_analyze", ref_id)
+            except: pass
+        raise HTTPException(500, detail=str(e))
