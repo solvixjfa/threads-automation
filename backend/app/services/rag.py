@@ -28,6 +28,17 @@ def get_all_raw_models() -> list[str]:
         logging.error(f"Failed to list models: {str(e)}")
     return models
 
+GEMINI_NON_TEXT_MARKERS = (
+    "tts", "image", "embedding", "transcribe", "robotics",
+    "computer-use", "antigravity", "deep-research", "lyria",
+    "nano-banana", "omni"
+)
+GROQ_NON_TEXT_MARKERS = ("whisper", "tts", "guard")
+
+def _is_text_model(model_id: str, markers: tuple) -> bool:
+    lower = (model_id or "").lower()
+    return not any(m in lower for m in markers)
+
 async def get_available_models(account_id: str, provider: str) -> list[dict]:
     db = get_supabase()
     acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key").eq("id", account_id).limit(1).execute()
@@ -41,7 +52,14 @@ async def get_available_models(account_id: str, provider: str) -> list[dict]:
                 res = await client.get("https://api.groq.com/openai/v1/models", headers={"Authorization": f"Bearer {api_key}"})
                 if res.status_code == 200:
                     data = res.json().get("data", [])
-                    return [{"id": m["id"], "name": m["id"]} for m in data if m.get("active", True)]
+                    filtered = [
+                        {"id": m["id"], "name": m["id"]}
+                        for m in data
+                        if m.get("active", True)
+                        and m.get("context_window", 0) > 0
+                        and _is_text_model(m["id"], GROQ_NON_TEXT_MARKERS)
+                    ]
+                    if filtered: return filtered
         except Exception: pass
         return [{"id": m, "name": m} for m in DEFAULT_GROQ_MODELS]
     else:
@@ -53,10 +71,15 @@ async def get_available_models(account_id: str, provider: str) -> list[dict]:
                 if res.status_code == 200:
                     data = res.json().get("models", [])
                     valid = []
+                    seen = set()
                     for m in data:
-                        if "generateContent" in m.get("supportedGenerationMethods", []):
-                            name = m["name"].replace("models/", "")
-                            valid.append({"id": name, "name": name})
+                        if "generateContent" not in m.get("supportedGenerationMethods", []):
+                            continue
+                        name = m["name"].replace("models/", "")
+                        if name in seen: continue
+                        if not _is_text_model(name, GEMINI_NON_TEXT_MARKERS): continue
+                        seen.add(name)
+                        valid.append({"id": name, "name": name})
                     if valid: return valid
         except Exception: pass
         return [{"id": m, "name": m} for m in DEFAULT_GEMINI_MODELS]
