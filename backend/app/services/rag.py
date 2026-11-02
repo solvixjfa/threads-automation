@@ -116,6 +116,13 @@ async def search_knowledge(account_id: str, query: str, limit: int = 3, api_key:
     }).execute()
     return res.data or []
 
+
+
+async def list_knowledge_docs(account_id: str) -> list[dict]:
+    db = get_supabase()
+    res = db.schema("threads").from_("brand_knowledge").select("id, title, category").eq("account_id", account_id).order("created_at", desc=True).execute()
+    return res.data or []
+
 async def generate_rag_post(account_id: str, topic: str, tone: str = "Edukasi & Insight Kasual", custom_prompt: str = None, provider: str = "gemini", model_name: str = None) -> list[dict]:
     db = get_supabase()
     acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key, credit_balance").eq("id", account_id).limit(1).execute()

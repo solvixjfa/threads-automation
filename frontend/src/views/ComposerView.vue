@@ -57,6 +57,18 @@
             <span v-else>Out of Credits</span>
           </div>
 
+          
+          <div v-if="availableKnowledge.length > 0" class="mt-4 mb-3 p-3 rounded-lg border border-gray-700">
+            <label class="text-xs font-bold mb-2 block uppercase tracking-wider">Pilih Knowledge (Opsional)</label>
+            <div class="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+              <label v-for="k in availableKnowledge" :key="k.id" class="flex items-center gap-1.5 text-xs cursor-pointer px-2 py-1 rounded border border-gray-600 hover:bg-gray-800">
+                <input type="checkbox" :value="k.id" v-model="selectedKnowledgeIds" />
+                <span>{{ k.title }}</span>
+              </label>
+            </div>
+            <p class="text-[10px] opacity-60 mt-1">Kosongkan untuk pakai semua knowledge (auto RAG).</p>
+          </div>
+          
           <Button @click="generateAiIdeas" :disabled="isGenerating || !aiTopic || (aiTone === 'Custom Prompt' && !customPrompt) || (!isUsingOwnKey && aiCredits <= 0) || !aiModel" :loading="isGenerating">
             {{ isGenerating ? $t('content.composer.generating') : $t('content.composer.generate_plan') }}
           </Button>
@@ -250,6 +262,16 @@ onMounted(() => {
   }
 })
 
+
+async function fetchKnowledge() {
+  if (!currentAccountId.value) return
+  try {
+    const res = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/rag/knowledge?account_id=${currentAccountId.value}`)
+    const data = await res.json()
+    if (data.knowledge) availableKnowledge.value = data.knowledge
+  } catch (err) { console.error('Failed to fetch knowledge:', err) }
+}
+
 async function fetchModels() {
   if (!currentAccountId.value) return
   isLoadingModels.value = true
@@ -287,7 +309,8 @@ async function generateAiIdeas() {
         tone: aiTone.value, 
         provider: aiProvider.value,
         model_name: aiModel.value,
-        custom_prompt: aiTone.value === 'Custom Prompt' ? customPrompt.value : undefined 
+        custom_prompt: aiTone.value === 'Custom Prompt' ? customPrompt.value : undefined,
+        selected_knowledge_ids: selectedKnowledgeIds.value 
       })
     })
 

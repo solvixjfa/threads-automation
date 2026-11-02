@@ -11,6 +11,13 @@ from app.services.billing import check_and_spend, refund_credits, BillingError
 
 router = APIRouter()
 
+@router.get("/knowledge")
+async def list_knowledge_endpoint(account_id: str):
+    from app.services.rag import list_knowledge_docs
+    docs = await list_knowledge_docs(account_id)
+    return {"knowledge": docs}
+
+
 class KnowledgeRequest(BaseModel):
     account_id: str
     title: str
@@ -34,6 +41,7 @@ class GeneratePostRequest(BaseModel):
     custom_prompt: Optional[str] = None
     provider: Optional[str] = "gemini"
     model_name: Optional[str] = None
+    selected_knowledge_ids: Optional[list[str]] = None
 
 class RepurposeRequest(BaseModel):
     account_id: str
