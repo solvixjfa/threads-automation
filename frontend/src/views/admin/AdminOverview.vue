@@ -53,18 +53,62 @@
           <p class="text-2xl font-black">{{ tokenStats.total_completion.toLocaleString('id-ID') }}</p>
         </div>
       </div>
+      <!-- PER USER TOKEN TABLE -->
+      <div v-if="tokenStats" class="col-span-full mt-4">
+        <button @click="showPerUser = !showPerUser" class="btn btn-secondary btn-sm mb-4">
+          {{ showPerUser ? 'Sembunyikan Per User' : 'Lihat Detail Per User' }}
+        </button>
+        
+        <div v-if="showPerUser" class="card p-5 space-y-4">
+          <input v-model="searchQuery" type="text" placeholder="Cari username..." class="input w-full text-sm" />
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm whitespace-nowrap">
+              <thead>
+                <tr class="border-b border-gray-700">
+                  <th class="pb-2 pr-4">Username</th>
+                  <th class="pb-2 px-4 text-center">Generates</th>
+                  <th class="pb-2 px-4 text-right">Prompt Tokens</th>
+                  <th class="pb-2 pl-4 text-right">Completion Tokens</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="u in filteredUsers" :key="u.account_id" class="border-b border-gray-800 hover:bg-gray-800/50">
+                  <td class="py-2 pr-4">{{ u.username || u.account_id.slice(0, 8) }}</td>
+                  <td class="py-2 px-4 text-center">{{ u.generates }}</td>
+                  <td class="py-2 px-4 text-right">{{ u.prompt.toLocaleString('id-ID') }}</td>
+                  <td class="py-2 pl-4 text-right">{{ u.completion.toLocaleString('id-ID') }}</td>
+                </tr>
+                <tr v-if="filteredUsers.length === 0">
+                  <td colspan="4" class="py-4 text-center text-gray-500">User tidak ditemukan.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { supabase } from '../../lib/supabase'
 
 const loading = ref(true)
 const stats = ref<any>(null)
 const tokenStats = ref<any>(null)
+const perUserStats = ref<any[]>([])
+const showPerUser = ref(false)
+const searchQuery = ref('')
 const errorMessage = ref('')
+
+const filteredUsers = computed(() => {
+  if (!searchQuery.value) return perUserStats.value
+  const q = searchQuery.value.toLowerCase()
+  return perUserStats.value.filter(u => (u.username || '').toLowerCase().includes(q))
+})
+
 const API_BASE = 'https://threads-automation-r9so.onrender.com/api/v1/admin'
 
 async function getAuthHeader() {
@@ -98,7 +142,7 @@ async function load() {
     try {
       const tokenRes = await fetch(`${API_BASE}/token-stats`, { headers })
       const tokenData = await tokenRes.json()
-      if (tokenData.success) tokenStats.value = tokenData.stats
+      if (tokenData.success) { tokenStats.value = tokenData.stats; perUserStats.value = tokenData.per_user || [] }
     } catch (e) { console.error('Failed to fetch token stats', e) }
 
     if (jsonData.success) {

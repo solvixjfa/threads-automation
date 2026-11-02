@@ -215,20 +215,43 @@ async def get_admin_stats(user = Depends(verify_admin)):
 @router.get("/token-stats")
 async def get_token_stats(user = Depends(verify_admin)):
     db = get_supabase()
-    # Ambil log dalam 30 hari terakhir
     from datetime import datetime, timezone, timedelta
     thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
     
-    res = db.schema("threads").from_("api_call_logs") \
-        .select("prompt_tokens, completion_tokens, created_at") \
+    # Ambil logs
+    res_logs = db.schema("threads").from_("api_call_logs") \
+        .select("account_id, prompt_tokens, completion_tokens") \
         .eq("endpoint", "generate_post") \
         .gte("created_at", thirty_days_ago) \
         .execute()
+        
+    logs = res_logs.data or []
     
-    logs = res.data or []
+    # Ambil username
+    res_users = db.schema("threads").from_("threads_accounts").select("id, username").execute()
+    users = {u['id']: u.get('username', 'Unknown') for u in (res_users.data or [])}
     
-    total_prompt = sum(l.get("prompt_tokens", 0) for l in logs)
-    total_comp = sum(l.get("completion_tokens", 0) for l in logs)
+    per_user_dict = {}
+    total_prompt = 0
+    total_comp = 0
+    
+    for l in logs:
+        acc_id = l.get('account_id')
+        pt = l.get('prompt_tokens', 0) or 0
+        ct = l.get('completion_tokens', 0) or 0
+        
+        total_prompt += pt
+        total_comp += ct
+        
+        if acc_id not in per_user_dict:
+            per_user_dict[acc_id] = {"account_id": acc_id, "username": users.get(acc_id, 'Unknown'), "generates": 0, "prompt": 0, "completion": 0}
+            
+        per_user_dict[acc_id]["generates"] += 1
+        per_user_dict[acc_id]["prompt"] += pt
+        per_user_dict[acc_id]["completion"] += ct
+        
+    per_user_list = list(per_user_dict.values())
+    per_user_list.sort(key=lambda x: x["prompt"] + x["completion"], reverse=True)
     
     return {
         "success": True,
@@ -237,5 +260,6 @@ async def get_token_stats(user = Depends(verify_admin)):
             "total_completion": total_comp,
             "total_tokens": total_prompt + total_comp,
             "total_generates": len(logs)
-        }
+        },
+        "per_user": per_user_list
     }
