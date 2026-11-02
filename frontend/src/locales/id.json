@@ -245,7 +245,23 @@
     "topic_posts": "{n} post di topik ini",
     "no_data": "Data belum cukup buat dianalisa. Rajin posting dulu!",
     "sample_posts": "Contoh Postingan",
-    "keywords": "Kata Kunci"
+    "keywords": "Kata Kunci",
+    "hook_best_label": "Hook Terbaik Anda",
+    "hook_best_desc": "Tipe hook ini performa terbaik di akun Anda. Coba tulis post baru dengan pola ini.",
+    "hook_lowdata_title": "Data Masih Sedikit",
+    "hook_lowdata_desc": "Terus posting minimal 2 minggu untuk unlock insight personal. Sementara, ini benchmark industri Threads:",
+    "hook_industry_best": "Hook Industri Terbaik:",
+    "hook_benchmark_note": "Benchmark industri Threads: hook dengan angka spesifik (contoh: 2.4x, 87%) rata-rata 1.8x lebih tinggi dari hook pertanyaan.",
+    "hook_compare_sub": "Bandingkan performa tipe hook berdasarkan {n} post",
+    "hook_visual": "Perbandingan Visual",
+    "sample_thin": "sample tipis",
+    "hook_cat_data_point": "Data-Point",
+    "hook_cat_contrarian": "Kontrarian",
+    "hook_cat_confession": "Pengakuan",
+    "hook_cat_curiosity": "Penasaran",
+    "hook_cat_listicle": "Listicle",
+    "hook_cat_question": "Pertanyaan",
+    "hook_cat_statement": "Pernyataan"
   },
   "settings": {
     "title": "Pengaturan",
@@ -336,7 +352,7 @@
       "start_free": "Ambil 1 dari 25 Slot"
     },
     "hero": {
-      "badge": "Private Beta \u00b7 25 slot",
+      "badge": "Private Beta · 25 slot",
       "title_1": "Posting yang belajar dari",
       "title_2": "akun kamu sendiri.",
       "subtitle": "Ixiera membaca post kamu yang paling jalan (jam, hook, topik), lalu membantu bikin rencana konten dan membalas komentar dengan gayamu.",
@@ -376,9 +392,9 @@
       "insight_desc": "\"Post yang dibuka dengan pertanyaan dapat lebih banyak reply daripada pembuka pernyataan. Jam terbaikmu: Selasa, 19.30.\"",
       "reply_title": "Balasan",
       "reply_incoming": "Komentar: \"Kak, tips bikin hook kayak gini gimana?\"",
-      "reply_outgoing": "Balasan: \"Makasih kak! Mulai dari satu pertanyaan yang bikin orang pengin jawab. Nanti aku bahas lengkap di post berikutnya \ud83d\udc40\"",
+      "reply_outgoing": "Balasan: \"Makasih kak! Mulai dari satu pertanyaan yang bikin orang pengin jawab. Nanti aku bahas lengkap di post berikutnya 👀\"",
       "repurpose_title": "Repurpose",
-      "repurpose_desc": "1 post lama \u2192 versi Listicle \u00b7 Opini \u00b7 Cerita"
+      "repurpose_desc": "1 post lama → versi Listicle · Opini · Cerita"
     },
     "proof": {
       "text": "Akun [{'@'}username founder] memakai Ixiera sejak [tanggal]. [Hasil nyata]"

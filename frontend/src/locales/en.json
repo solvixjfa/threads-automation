@@ -245,7 +245,23 @@
     "topic_posts": "{n} posts in this topic",
     "no_data": "Not enough data to analyze. Publish more posts!",
     "sample_posts": "Sample Posts",
-    "keywords": "Keywords"
+    "keywords": "Keywords",
+    "hook_best_label": "Your Best Hook",
+    "hook_best_desc": "This hook type performs best on your account. Try writing new posts using this pattern.",
+    "hook_lowdata_title": "Not Enough Data Yet",
+    "hook_lowdata_desc": "Keep posting for at least 2 weeks to unlock personal insights. Meanwhile, here is the Threads industry benchmark:",
+    "hook_industry_best": "Industry Best Hook:",
+    "hook_benchmark_note": "Threads industry benchmark: hooks with specific numbers (e.g., 2.4x, 87%) average 1.8x higher than question hooks.",
+    "hook_compare_sub": "Compare hook types based on {n} posts",
+    "hook_visual": "Visual Comparison",
+    "sample_thin": "thin sample",
+    "hook_cat_data_point": "Data-Point",
+    "hook_cat_contrarian": "Contrarian",
+    "hook_cat_confession": "Confession",
+    "hook_cat_curiosity": "Curiosity",
+    "hook_cat_listicle": "Listicle",
+    "hook_cat_question": "Question",
+    "hook_cat_statement": "Statement"
   },
   "settings": {
     "title": "Settings",
@@ -336,7 +352,7 @@
       "start_free": "Claim 1 of 25 Slots"
     },
     "hero": {
-      "badge": "Private Beta \u00b7 25 slots",
+      "badge": "Private Beta · 25 slots",
       "title_1": "Posts that learn from",
       "title_2": "your own account.",
       "subtitle": "Ixiera reads your best-performing posts (time, hooks, topics) and helps you plan content and reply to comments in your own voice.",
@@ -353,7 +369,7 @@
       "p2_title": "Comments pile up.",
       "p2_desc": "Replying late kills engagement and momentum.",
       "p3_title": "Flying blind.",
-      "p3_desc": "Which posts, what time, what hooks\u2014it is all just a feeling."
+      "p3_desc": "Which posts, what time, what hooks—it is all just a feeling."
     },
     "features": {
       "title": "More than just a scheduler.",
@@ -362,7 +378,7 @@
       "f2_title": "Comments replied in your voice.",
       "f2_desc": "Choose Manual Review (you approve first) or Full Auto. Set a hourly reply limit.",
       "f3_title": "Know what works.",
-      "f3_desc": "Best times, engaging hook types, and audience-favorite topics\u2014straight from your account data.",
+      "f3_desc": "Best times, engaging hook types, and audience-favorite topics—straight from your account data.",
       "f4_title": "Turn one viral post into three.",
       "f4_desc": "Convert an old high-performing post into a Listicle, Opinion, or Story with one click.",
       "small_1": "Visual growth, views, and engagement reports",
@@ -376,9 +392,9 @@
       "insight_desc": "\"Posts opening with a question get more replies than statements. Your best time: Tuesday, 19:30.\"",
       "reply_title": "Reply",
       "reply_incoming": "Comment: \"How do you write hooks like this?\"",
-      "reply_outgoing": "Reply: \"Thanks! Start with a question that makes people want to answer. I will cover it in detail in my next post \ud83d\udc40\"",
+      "reply_outgoing": "Reply: \"Thanks! Start with a question that makes people want to answer. I will cover it in detail in my next post 👀\"",
       "repurpose_title": "Repurpose",
-      "repurpose_desc": "1 old post \u2192 Listicle \u00b7 Opinion \u00b7 Story version"
+      "repurpose_desc": "1 old post → Listicle · Opinion · Story version"
     },
     "proof": {
       "text": "[{'@'}username founder] has used Ixiera since [date]. [Real result]"
