@@ -192,14 +192,22 @@ Create a 3-DAY CONTENT PLAN based on the TOPIC below. Avoid repeating recent pos
                 model=model_to_run,
                 response_format={"type": "json_object"},
                 temperature=0.7,
+                max_tokens=2500,
             )
+            logging.info(f"[Token] Groq Prompt: {chat_completion.usage.prompt_tokens}, Completion: {chat_completion.usage.completion_tokens}")
+            prompt_t = chat_completion.usage.prompt_tokens
+            comp_t = chat_completion.usage.completion_tokens
+            logging.info(f"[Token] Groq Prompt: {prompt_t}, Completion: {comp_t}")
+            try:
+                db.schema("threads").from_("api_call_logs").insert({"account_id": account_id, "endpoint": "generate_post", "status": 200, "prompt_tokens": prompt_t, "completion_tokens": comp_t}).execute()
+            except: pass
             parsed = json.loads(chat_completion.choices[0].message.content)
             result_options = parsed.get("options", [])
         except Exception as e:
             raise Exception(f"Groq Generation Failed: {str(e)}")
     else:
         client = genai.Client(api_key=api_key_to_use)
-        gen_config = types.GenerateContentConfig(response_mime_type="application/json")
+        gen_config = types.GenerateContentConfig(response_mime_type="application/json", max_output_tokens=2500)
         response = None
         models_to_try = [model_name] if model_name else DEFAULT_GEMINI_MODELS
 
@@ -214,6 +222,13 @@ Create a 3-DAY CONTENT PLAN based on the TOPIC below. Avoid repeating recent pos
         
         if not response: raise Exception(f"Gemini failed. Last error: {last_error}")
         
+        logging.info(f"[Token] Gemini Prompt: {response.usage_metadata.prompt_token_count}, Completion: {response.usage_metadata.candidates_token_count}")
+        prompt_t = getattr(response.usage_metadata, 'prompt_token_count', 0)
+        comp_t = getattr(response.usage_metadata, 'candidates_token_count', 0)
+        logging.info(f"[Token] Gemini Prompt: {prompt_t}, Completion: {comp_t}")
+        try:
+            db.schema("threads").from_("api_call_logs").insert({"account_id": account_id, "endpoint": "generate_post", "status": 200, "prompt_tokens": prompt_t, "completion_tokens": comp_t}).execute()
+        except: pass
         raw_text = response.text.strip()
         if raw_text.startswith("```json"): raw_text = raw_text.replace("```json", "", 1).rstrip("`").strip()
         parsed = json.loads(raw_text)

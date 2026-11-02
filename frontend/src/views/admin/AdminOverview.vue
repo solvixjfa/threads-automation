@@ -37,6 +37,22 @@
         <span class="text-[10px] font-bold uppercase theme-text-muted">Pending Requests</span>
         <p class="text-2xl font-black">{{ stats.pending_requests }}</p>
       </div>
+
+      <!-- TOKEN USAGE CARD -->
+      <div v-if="tokenStats" class="col-span-full grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+        <div class="card p-5 space-y-1 border-l-4 border-blue-500">
+          <span class="text-[10px] font-bold uppercase theme-text-muted">Total Generates</span>
+          <p class="text-2xl font-black">{{ tokenStats.total_generates }}</p>
+        </div>
+        <div class="card p-5 space-y-1 border-l-4 border-purple-500">
+          <span class="text-[10px] font-bold uppercase theme-text-muted">Prompt Tokens (30d)</span>
+          <p class="text-2xl font-black">{{ tokenStats.total_prompt.toLocaleString('id-ID') }}</p>
+        </div>
+        <div class="card p-5 space-y-1 border-l-4 border-green-500">
+          <span class="text-[10px] font-bold uppercase theme-text-muted">Completion Tokens (30d)</span>
+          <p class="text-2xl font-black">{{ tokenStats.total_completion.toLocaleString('id-ID') }}</p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -47,6 +63,7 @@ import { supabase } from '../../lib/supabase'
 
 const loading = ref(true)
 const stats = ref<any>(null)
+const tokenStats = ref<any>(null)
 const errorMessage = ref('')
 const API_BASE = 'https://threads-automation-r9so.onrender.com/api/v1/admin'
 
@@ -75,6 +92,14 @@ async function load() {
       if (res.status === 404) throw new Error("404: Endpoint /stats belum ada di Railway.")
       throw new Error(`[${res.status}] ${jsonData.detail || textData.slice(0, 100)}`)
     }
+
+    
+    // Fetch Token Stats
+    try {
+      const tokenRes = await fetch(`${API_BASE}/token-stats`, { headers })
+      const tokenData = await tokenRes.json()
+      if (tokenData.success) tokenStats.value = tokenData.stats
+    } catch (e) { console.error('Failed to fetch token stats', e) }
 
     if (jsonData.success) {
       stats.value = jsonData.stats

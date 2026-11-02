@@ -210,3 +210,32 @@ async def get_admin_stats(user = Depends(verify_admin)):
         "success": True,
         "stats": {"total_users": total_users, "pro_credit": total_pro_credit, "pro_byok": total_pro_byok, "pending_requests": total_pending, "mrr_estimate": mrr_est}
     }
+
+
+@router.get("/token-stats")
+async def get_token_stats(user = Depends(verify_admin)):
+    db = get_supabase()
+    # Ambil log dalam 30 hari terakhir
+    from datetime import datetime, timezone, timedelta
+    thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+    
+    res = db.schema("threads").from_("api_call_logs") \
+        .select("prompt_tokens, completion_tokens, created_at") \
+        .eq("endpoint", "generate_post") \
+        .gte("created_at", thirty_days_ago) \
+        .execute()
+    
+    logs = res.data or []
+    
+    total_prompt = sum(l.get("prompt_tokens", 0) for l in logs)
+    total_comp = sum(l.get("completion_tokens", 0) for l in logs)
+    
+    return {
+        "success": True,
+        "stats": {
+            "total_prompt": total_prompt,
+            "total_completion": total_comp,
+            "total_tokens": total_prompt + total_comp,
+            "total_generates": len(logs)
+        }
+    }
