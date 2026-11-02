@@ -43,11 +43,27 @@
             :placeholder="isLoadingModels ? 'Loading...' : 'Select a model'"
           />
         </div>
+          <div v-if="availableKnowledge.length > 0" class="mb-4 relative">
+            <label class="text-sm font-medium mb-1 block">Pilih Knowledge (Opsional)</label>
+            <!-- Trigger Dropdown -->
+            <div @click="isKnowledgeDropdownOpen = !isKnowledgeDropdownOpen" class="input w-full cursor-pointer flex justify-between items-center text-sm">
+              <span class="truncate" :class="selectedKnowledgeIds.length === 0 ? 'opacity-50' : ''">
+                {{ selectedKnowledgeIds.length > 0 ? selectedKnowledgeIds.length + ' Knowledge dipilih' : 'Kosongkan untuk auto RAG' }}
+              </span>
+              <svg class="w-4 h-4 transition-transform" :class="{'rotate-180': isKnowledgeDropdownOpen}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+            <!-- Menu Dropdown Melayang -->
+            <div v-if="isKnowledgeDropdownOpen" class="absolute z-50 w-full mt-1 bg-[#1a1a1a] border border-gray-700 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+              <label v-for="k in availableKnowledge" :key="k.id" class="flex items-center gap-3 px-4 py-3 hover:bg-gray-800 cursor-pointer border-b border-gray-800 last:border-0">
+                <input type="checkbox" :value="k.id" v-model="selectedKnowledgeIds" class="w-4 h-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500" />
+                <!-- PASTI KAN YANG DIAMBIL ADALAH k.title (DOCUMENT TITLE) -->
+                <span class="text-sm text-gray-200 truncate">{{ k.title }}</span>
+              </label>
+            </div>
+          </div>
           <div v-if="availableKnowledge.length > 0" class="mb-4">
             <label class="text-sm font-medium mb-1 block">Pilih Knowledge (Opsional)</label>
-            <select multiple v-model="selectedKnowledgeIds" class="input w-full h-24 text-sm">
-              <option v-for="k in availableKnowledge" :key="k.id" :value="k.id">{{ k.title }}</option>
-            </select>
+            
             <p class="text-[10px] opacity-60 mt-1">Pilih satu atau lebih. Kosongkan untuk pakai auto RAG.</p>
           </div>
 
@@ -186,6 +202,7 @@ const isGenerating = ref(false)
 const aiResults = ref<any[]>([])
 const availableKnowledge = ref<{id: string, title: string, category: string}[]>([])
 const selectedKnowledgeIds = ref<string[]>([])
+const isKnowledgeDropdownOpen = ref(false)
 const scoreResult = ref<any>(null)                                 
 const aiCredits = ref(20)
 const currentAccountId = ref<string | null>(null)
