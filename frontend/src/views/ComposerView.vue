@@ -165,7 +165,7 @@
 </template>
 
 <script setup lang="ts">                                           
-import { ref, watch, onMounted, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { supabase } from '../lib/supabase'                         
 import { useNotify } from '../composables/useNotify'
 import { useI18n } from 'vue-i18n'
@@ -187,6 +187,8 @@ const aiTone = ref('Educational & Casual Insight')
 const customPrompt = ref('')
 const isGenerating = ref(false)
 const aiResults = ref<any[]>([])
+const availableKnowledge = ref<{id: string, title: string, category: string}[]>([])
+const selectedKnowledgeIds = ref<string[]>([])
 const scoreResult = ref<any>(null)                                 
 const aiCredits = ref(20)
 const currentAccountId = ref<string | null>(null)
@@ -260,6 +262,7 @@ onMounted(() => {
       if (Array.isArray(parsed) && parsed.length > 0) aiResults.value = parsed
     } catch (e) { console.error('Failed to parse AI draft', e) }
   }
+  fetchKnowledge()
 })
 
 
