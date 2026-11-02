@@ -2,16 +2,16 @@
   <div class="space-y-6">
     <Card v-if="!loading && !error && nextBest" style="border-color: #e5e5e5; border-width: 2px;">
       <div class="p-5">
-        <div class="text-[10px] font-bold uppercase tracking-wider theme-text-muted mb-2">🎯 Waktu Terbaik Berikutnya</div>
+        <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider theme-text-muted mb-2"><Target class="w-3 h-3" /><span>Waktu Terbaik Berikutnya</span></div>
         <div class="text-2xl font-black mb-1">{{ nextBest.weekday }}, {{ nextBest.hour_start }}–{{ nextBest.hour_end }} WIB</div>
         <div class="text-sm theme-text-muted mb-3">{{ (nextBest.er_pct || 0).toFixed(2) }}% avg ER · {{ nextBest.sample_size }} posts ({{ nextBest.name }})</div>
-        <Button size="sm" @click="scheduleAt(nextBest)">📅 Jadwalkan Sekarang</Button>
+        <Button size="sm" @click="scheduleAt(nextBest)"><Calendar class="w-4 h-4" /><span>Jadwalkan Sekarang</span></Button>
       </div>
     </Card>
 
     <Card v-if="!loading && !error && benchmark">
       <div class="p-5">
-        <div class="text-sm font-bold mb-2">📊 Data Masih Sedikit</div>
+        <div class="flex items-center gap-2 text-sm font-bold mb-2"><BarChart3 class="w-4 h-4 theme-text-muted" /><span>Data Masih Sedikit</span></div>
         <p class="text-xs theme-text-muted mb-3">Terus posting minimal 2 minggu untuk unlock rekomendasi personal. Sementara, ini benchmark industri Threads:</p>
         <div class="text-xs space-y-1 mb-2">
           <div class="font-bold mt-2 mb-1">Weekday (Selasa–Kamis):</div>
@@ -90,7 +90,7 @@
                 <template v-else><span class="theme-text-muted font-normal text-xs italic"> · Belum ada data</span></template>
               </div>
               <div class="text-[11px] theme-text-muted" v-if="block.has_data">
-                {{ block.sample_size }} posts · {{ block.sample_size < 2 ? '⚠️ sample tipis' : '✓ cukup' }}
+                {{ block.sample_size }} posts · {{ block.sample_size < 2 ? 'Sample tipis' : 'Cukup' }}
               </div>
             </div>
           </div>
@@ -113,7 +113,7 @@ import { supabase } from '../../lib/supabase'
 import { useI18n } from 'vue-i18n'
 import { Card, Badge, Button, EmptyState } from '../../components/ui'
 import BestTimeHeatmap from '../../components/BestTimeHeatmap.vue'
-import { Clock, TrendingUp, AlertCircle } from 'lucide-vue-next'
+import { Clock, TrendingUp, AlertCircle, Target, Calendar, BarChart3 } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const loading = ref(true)
@@ -166,7 +166,8 @@ function scheduleAt(slot: any) {
   const pad = (n: number) => String(n).padStart(2, '0')
   const isoLocal = `${target.getFullYear()}-${pad(target.getMonth()+1)}-${pad(target.getDate())}T${pad(h)}:00`
   localStorage.setItem('ixiera_draft_time', isoLocal)
-  window.location.href = '/content/create'
+  // Kirim lewat URL param juga (lebih reliable)
+  window.location.href = `/content/create?scheduled=${encodeURIComponent(isoLocal)}`
 }
 
 onMounted(loadData)

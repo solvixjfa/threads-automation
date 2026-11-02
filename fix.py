@@ -1,34 +1,20 @@
-import os
-os.system("git checkout HEAD~1 backend/app/workers/replies.py backend/app/api/v1/admin.py")
-with open('backend/app/api/v1/admin.py', 'r') as f:
-    admin_c = f.read()
-old_admin = '''    now = datetime.now(timezone.utc)
-    current_exp = acc.data[0].get("plan_expires_at")
-    target_user_id = acc.data[0].get("user_id")'''
-new_admin = '''    if payload.plan_type == 'trial':
-        days = 7
-        credits = 20
-    else:
-        days = PAID_DAYS
-        credits = PAID_CREDITS if payload.plan_type == 'paid_credit' else 0
+import re
 
-    now = datetime.now(timezone.utc)
-    current_exp = acc.data[0].get("plan_expires_at")
-    target_user_id = acc.data[0].get("user_id")'''
-if old_admin in admin_c: admin_c = admin_c.replace(old_admin, new_admin)
-old_credits = '''    if payload.plan_type == 'trial':
-        days = 7
-        credits = 20
-    else:
-        days = PAID_DAYS
-        credits = PAID_CREDITS if payload.plan_type == 'paid_credit' else 0
+file_path = 'backend/app/workers/replies.py'
+with open(file_path, 'r') as f:
+    content = f.read()
 
-    db.schema'''
-new_credits = '''    db.schema'''
-if old_credits in admin_c: admin_c = admin_c.replace(old_credits, new_credits)
-with open('backend/app/api/v1/admin.py', 'w', newline='\n') as f: f.write(admin_c)
-with open('backend/app/workers/replies.py', 'r') as f: rep_c = f.read()
-trial_block = '''
+# 1. Bersihin karakter aneh \r kalau ada
+content = content.replace('\r\n', '\n').replace('\r', '\n')
+
+# 2. Blok fungsi baru yang 100% rapi (tanpa error indentasi)
+clean_func = """async def process_account(db, client, acc: dict) -> dict:
+    account_stats = {"new_posts": 0, **empty_stats()}
+
+    acc_id = acc["id"]
+    acc_username = acc.get("username", "")
+    token = acc.get("settings", {}).get("access_token")
+
     # --- AUTO TRIAL LOGIC ---
     from app.core.config import TRIAL_DAYS, TRIAL_CREDITS
     plan = acc.get("plan")
@@ -56,9 +42,14 @@ trial_block = '''
 
         logging.info(f"[Auto Trial] Granted {TRIAL_CREDITS} credits to {acc_id}")
     # ------------------------
-'''
-target = '    token = acc.get("settings", {}).get("access_token")\n'
-if target in rep_c and 'AUTO TRIAL LOGIC' not in rep_c:
-    rep_c = rep_c.replace(target, target + trial_block)
-with open('backend/app/workers/replies.py', 'w', newline='\n') as f: f.write(rep_c)
-print('✅ FIX SUCCESS')
+
+    if not token:"""
+
+# 3. Ganti total dari awal fungsi sampai sebelum 'if not token:'
+content = re.sub(r'async def process_account\(db, client, acc: dict\) -> dict:.*?if not token:', clean_func, content, flags=re.DOTALL)
+
+# 4. Tulis ulang paksa format Linux
+with open(file_path, 'w', newline='\n') as f:
+    f.write(content)
+
+print("✅ SUKSES: File replies.py berhasil di-fix total dengan indentasi yang rapi!")

@@ -475,13 +475,25 @@ onMounted(async () => {
   if (savedRepurpose) { postText.value = savedRepurpose; localStorage.removeItem('draft_repurpose') }
   else { const localDraftText = localStorage.getItem('ixiera_draft_text'); if (localDraftText) postText.value = localDraftText }
 
-  const localDraftTime = localStorage.getItem('ixiera_draft_time')
-  if (localDraftTime) scheduledDate.value = localDraftTime
-  else {
-    const d = new Date()
-    d.setHours(d.getHours() + 1); d.setMinutes(0)
-    const tzOffset = d.getTimezoneOffset() * 60000
-    scheduledDate.value = (new Date(d.getTime() - tzOffset)).toISOString().slice(0, 16)
+    // Priority 1: URL param (?scheduled=YYYY-MM-DDTHH:mm)
+  const urlParams = new URLSearchParams(window.location.search)
+  const urlScheduled = urlParams.get('scheduled')
+  if (urlScheduled) {
+    scheduledDate.value = urlScheduled
+    localStorage.removeItem('ixiera_draft_time')
+  } else {
+    // Priority 2: localStorage
+    const localDraftTime = localStorage.getItem('ixiera_draft_time')
+    if (localDraftTime) {
+      scheduledDate.value = localDraftTime
+    } else {
+      // Default: 1 jam dari sekarang
+      const d = new Date()
+      d.setHours(d.getHours() + 1)
+      d.setMinutes(0)
+      const tzOffset = d.getTimezoneOffset() * 60000
+      scheduledDate.value = (new Date(d.getTime() - tzOffset)).toISOString().slice(0, 16)
+    }
   }
 })
 </script>
