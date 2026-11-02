@@ -43,6 +43,13 @@
             :placeholder="isLoadingModels ? 'Loading...' : 'Select a model'"
           />
         </div>
+          <div v-if="availableKnowledge.length > 0" class="mb-4">
+            <label class="text-sm font-medium mb-1 block">Pilih Knowledge (Opsional)</label>
+            <select multiple v-model="selectedKnowledgeIds" class="input w-full h-24 text-sm">
+              <option v-for="k in availableKnowledge" :key="k.id" :value="k.id">{{ k.title }}</option>
+            </select>
+            <p class="text-[10px] opacity-60 mt-1">Pilih satu atau lebih. Kosongkan untuk pakai auto RAG.</p>
+          </div>
 
         <div v-if="aiTone === 'Custom Prompt'">
           <Textarea v-model="customPrompt" :label="$t('content.composer.custom_instruction')" :rows="3" :placeholder="$t('content.composer.custom_ph')" />
@@ -58,16 +65,6 @@
           </div>
 
           
-          <div v-if="availableKnowledge.length > 0" class="mt-4 mb-3 p-3 rounded-lg border border-gray-700">
-            <label class="text-xs font-bold mb-2 block uppercase tracking-wider">Pilih Knowledge (Opsional)</label>
-            <div class="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
-              <label v-for="k in availableKnowledge" :key="k.id" class="flex items-center gap-1.5 text-xs cursor-pointer px-2 py-1 rounded border border-gray-600 hover:bg-gray-800">
-                <input type="checkbox" :value="k.id" v-model="selectedKnowledgeIds" />
-                <span>{{ k.title }}</span>
-              </label>
-            </div>
-            <p class="text-[10px] opacity-60 mt-1">Kosongkan untuk pakai semua knowledge (auto RAG).</p>
-          </div>
           
           <Button @click="generateAiIdeas" :disabled="isGenerating || !aiTopic || (aiTone === 'Custom Prompt' && !customPrompt) || (!isUsingOwnKey && aiCredits <= 0) || !aiModel" :loading="isGenerating">
             {{ isGenerating ? $t('content.composer.generating') : $t('content.composer.generate_plan') }}
