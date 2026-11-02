@@ -77,7 +77,12 @@ async def get_available_models(account_id: str, provider: str) -> list[dict]:
                             continue
                         name = m["name"].replace("models/", "")
                         if name in seen: continue
-                        if not _is_text_model(name, GEMINI_NON_TEXT_MARKERS): continue
+                        
+                        name_lower = name.lower()
+                        if not ("flash" in name_lower or "gemma" in name_lower):
+                            continue
+                        if any(x in name_lower for x in ["2.5-flash", "2.5-pro", "2.5-flash-lite"]):
+                            continue
                         seen.add(name)
                         valid.append({"id": name, "name": name})
                     if valid: return valid
