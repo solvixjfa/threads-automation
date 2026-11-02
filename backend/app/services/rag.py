@@ -123,7 +123,7 @@ async def list_knowledge_docs(account_id: str) -> list[dict]:
     res = db.schema("threads").from_("brand_knowledge").select("id, title, category").eq("account_id", account_id).order("created_at", desc=True).execute()
     return res.data or []
 
-async def generate_rag_post(account_id: str, topic: str, tone: str = "Edukasi & Insight Kasual", custom_prompt: str = None, provider: str = "gemini", model_name: str = None) -> list[dict]:
+async def generate_rag_post(account_id: str, topic: str, tone: str = "Edukasi & Insight Kasual", custom_prompt: str = None, provider: str = "gemini", model_name: str = None, selected_knowledge_ids: list[str] = None) -> list[dict]:
     db = get_supabase()
     acc_res = db.schema("threads").from_("threads_accounts").select("custom_gemini_key, custom_groq_key, credit_balance").eq("id", account_id).limit(1).execute()
     
@@ -146,10 +146,13 @@ async def generate_rag_post(account_id: str, topic: str, tone: str = "Edukasi & 
     if is_using_saas and credits <= 0:
         raise Exception("Insufficient AI Credits. Please add your own API Key for this provider in Settings or top up.")
 
-    gemini_embed_key = custom_gemini if custom_gemini else GEMINI_KEY
-    if not gemini_embed_key: raise Exception("Gemini API Key is required for RAG embeddings. Please add it in Settings.")
-        
-    knowledge = await search_knowledge(account_id, topic, limit=3, api_key=gemini_embed_key)
+    if selected_knowledge_ids and len(selected_knowledge_ids) > 0:
+        knowledge_res = db.schema("threads").from_("brand_knowledge").select("category, title, content").in_("id", selected_knowledge_ids).eq("account_id", account_id).execute()
+        knowledge = knowledge_res.data or []
+    else:
+        gemini_embed_key = custom_gemini if custom_gemini else GEMINI_KEY
+        if not gemini_embed_key: raise Exception("Gemini API Key is required for RAG embeddings. Please add it in Settings.")
+        knowledge = await search_knowledge(account_id, topic, limit=3, api_key=gemini_embed_key)
     context_text = "\n".join([f"- [{k.get('category', 'Fakta')} - {k.get('title')}]: {k.get('content')}" for k in knowledge])
 
     recent_res = db.schema("threads").from_("scheduled_posts").select("text, status, scheduled_for").eq("account_id", account_id).order("scheduled_for", desc=True).limit(5).execute()

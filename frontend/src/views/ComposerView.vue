@@ -275,6 +275,11 @@ async function fetchKnowledge() {
   } catch (err) { console.error('Failed to fetch knowledge:', err) }
 }
 
+
+watch(currentAccountId, (newVal) => {
+  if (newVal) fetchKnowledge()
+})
+
 async function fetchModels() {
   if (!currentAccountId.value) return
   isLoadingModels.value = true
