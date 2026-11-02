@@ -124,7 +124,8 @@ async def generate_post(payload: GeneratePostRequest):
             tone=payload.tone or "Edukasi & Insight Kasual",
             custom_prompt=payload.custom_prompt,
             provider=payload.provider or "gemini",
-            model_name=payload.model_name
+            model_name=payload.model_name,
+            selected_knowledge_ids=payload.selected_knowledge_ids
         )
         return {"status": "success", "options": options}
     except Exception as e:
@@ -142,7 +143,8 @@ async def repurpose(payload: RepurposeRequest):
             source_text=payload.source_text,
             angle=payload.angle,
             provider=payload.provider or "gemini",
-            model_name=payload.model_name
+            model_name=payload.model_name,
+            selected_knowledge_ids=payload.selected_knowledge_ids
         )
         return {"status": "success", "options": options}
     except Exception as e:
@@ -159,7 +161,8 @@ async def score_draft(payload: ScoreDraftRequest):
             account_id=payload.account_id,
             text=payload.text,
             provider=payload.provider or "groq",
-            model_name=payload.model_name
+            model_name=payload.model_name,
+            selected_knowledge_ids=payload.selected_knowledge_ids
         )
         return {"status": "success", "data": result}
     except Exception as e:
@@ -172,7 +175,8 @@ async def improve_draft(payload: ImproveDraftRequest):
             account_id=payload.account_id,
             text=payload.text,
             provider=payload.provider or "groq",
-            model_name=payload.model_name
+            model_name=payload.model_name,
+            selected_knowledge_ids=payload.selected_knowledge_ids
         )
         return {"status": "success", "improved_text": text}
     except Exception as e:
@@ -185,7 +189,8 @@ async def label_topics(payload: LabelTopicsRequest):
             account_id=payload.account_id,
             clusters=payload.clusters,
             provider=payload.provider or "groq",
-            model_name=payload.model_name
+            model_name=payload.model_name,
+            selected_knowledge_ids=payload.selected_knowledge_ids
         )
         return {"status": "success", "topics": names}
     except Exception as e:

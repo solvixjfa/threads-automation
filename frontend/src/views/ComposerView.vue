@@ -153,7 +153,7 @@
 </template>
 
 <script setup lang="ts">                                           
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, onMounted, computed } from 'vue'
 import { supabase } from '../lib/supabase'                         
 import { useNotify } from '../composables/useNotify'
 import { useI18n } from 'vue-i18n'
@@ -234,7 +234,21 @@ watch(postText, (newVal) => {
   localStorage.setItem('ixiera_draft_text', newVal)                
 })
 
-watch(scheduledDate, (newVal) => { localStorage.setItem('ixiera_draft_time', newVal) })                                                                 
+watch(scheduledDate, (newVal) => { localStorage.setItem('ixiera_draft_time', newVal) })
+
+watch(aiResults, (newVal) => {
+  localStorage.setItem('ixiera_draft_ai_results', JSON.stringify(newVal))
+}, { deep: true })                                                                 
+
+onMounted(() => {
+  const savedAi = localStorage.getItem('ixiera_draft_ai_results')
+  if (savedAi) {
+    try {
+      const parsed = JSON.parse(savedAi)
+      if (Array.isArray(parsed) && parsed.length > 0) aiResults.value = parsed
+    } catch (e) { console.error('Failed to parse AI draft', e) }
+  }
+})
 
 async function fetchModels() {
   if (!currentAccountId.value) return
