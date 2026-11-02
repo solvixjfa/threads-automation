@@ -31,9 +31,9 @@ def get_all_raw_models() -> list[str]:
 GEMINI_NON_TEXT_MARKERS = (
     "tts", "image", "embedding", "transcribe", "robotics",
     "computer-use", "antigravity", "deep-research", "lyria",
-    "nano-banana", "omni"
+    "nano-banana", "omni", "preview"
 )
-GROQ_NON_TEXT_MARKERS = ("whisper", "tts", "guard")
+GROQ_NON_TEXT_MARKERS = ("whisper", "tts", "guard", "canopylabs", "saudi", "english")
 
 def _is_text_model(model_id: str, markers: tuple) -> bool:
     lower = (model_id or "").lower()
@@ -79,9 +79,14 @@ async def get_available_models(account_id: str, provider: str) -> list[dict]:
                         if name in seen: continue
                         
                         name_lower = name.lower()
+                        # 1. Hanya izinkan Flash & Gemma
                         if not ("flash" in name_lower or "gemma" in name_lower):
                             continue
+                        # 2. Buang yang expired (2.5)
                         if any(x in name_lower for x in ["2.5-flash", "2.5-pro", "2.5-flash-lite"]):
+                            continue
+                        # 3. Buang sampah (tts, preview, image, omni, dll)
+                        if not _is_text_model(name, GEMINI_NON_TEXT_MARKERS):
                             continue
                         seen.add(name)
                         valid.append({"id": name, "name": name})
