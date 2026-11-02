@@ -86,12 +86,22 @@ async def get_best_time(account_id: str):
                 if count_matrix[d][h] > 0:
                     slots.append({"weekday": WEEKDAY_NAMES[d], "hour": f"{h:02d}:00", "er_pct": matrix[d][h], "sample_size": count_matrix[d][h]})
         
-        slots.sort(key=lambda x: x["er_pct"], reverse=True)
+        # Ubah logika: Ambil 1 jam terbaik per hari (Senin-Minggu)
+        best_slots_per_day = []
+        for d in range(7):
+            day_name = WEEKDAY_NAMES[d]
+            day_slots = [s for s in slots if s["weekday"] == day_name]
+            if day_slots:
+                # Urutkan jam di hari tersebut berdasarkan ER tertinggi
+                day_slots.sort(key=lambda x: x["er_pct"], reverse=True)
+                # Ambil jam terbaik (index 0)
+                best_slots_per_day.append(day_slots[0])
+
         confidence = "low"
         if total_posts >= 50: confidence = "high"
         elif total_posts >= 20: confidence = "medium"
 
-        return {"success": True, "matrix": matrix, "top_slots": slots[:5], "total_posts": total_posts, "confidence": confidence}
+        return {"success": True, "matrix": matrix, "top_slots": best_slots_per_day, "total_posts": total_posts, "confidence": confidence}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
