@@ -58,6 +58,30 @@ const checking = ref(true)
 const errorMsg = ref('')
 
 onMounted(async () => {
+  // === PKCE flow handler (?code=xxx — Supabase v2 default) ===
+  {
+    const searchParams = new URLSearchParams(window.location.search)
+    const errorDesc = searchParams.get('error_description')
+    if (errorDesc) {
+      errorMsg.value = 'Link reset password tidak valid atau sudah kedaluwarsa. Silakan minta link baru.'
+      checking.value = false
+      return
+    }
+    const code = searchParams.get('code')
+    if (code) {
+      await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
+      const { error: codeErr } = await supabase.auth.exchangeCodeForSession(code)
+      if (codeErr) {
+        errorMsg.value = 'Link reset password tidak valid atau sudah kedaluwarsa. Silakan minta link baru.'
+      } else {
+        window.history.replaceState(null, '', window.location.pathname)
+      }
+      checking.value = false
+      return
+    }
+  }
+  // === End PKCE handler ===
+
   // Supabase otomatis ngasih session "recovery" pas URL punya #access_token...
   // === Recovery token handler ===
   const hashParams = new URLSearchParams(window.location.hash.substring(1))
