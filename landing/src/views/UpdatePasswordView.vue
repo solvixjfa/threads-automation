@@ -25,11 +25,11 @@
         <div v-else class="space-y-4">
           <div class="space-y-1">
             <label class="label">Password Baru</label>
-            <input v-model="newPassword" type="password" placeholder="Minimal 6 karakter" class="input w-full" />
+            <PasswordInput v-model="newPassword" placeholder="Minimal 6 karakter" />
           </div>
           <div class="space-y-1">
             <label class="label">Konfirmasi Password</label>
-            <input v-model="confirmPassword" type="password" placeholder="Ulangi password baru" class="input w-full" />
+            <PasswordInput v-model="confirmPassword" placeholder="Ulangi password baru" />
           </div>
 
           <button @click="handleUpdate" :disabled="loading" class="btn btn-primary w-full flex justify-center items-center h-10">
@@ -47,6 +47,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
+import PasswordInput from '../components/PasswordInput.vue'
 
 const router = useRouter()
 const { showToast } = useNotify()
