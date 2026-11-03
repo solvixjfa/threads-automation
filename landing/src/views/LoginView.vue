@@ -100,7 +100,7 @@ async function loginWithGoogle() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`
+        redirectTo: `https://app.ixiera.id/dashboard`
       }
     })
     if (error) throw error
@@ -120,14 +120,14 @@ async function handleSubmit() {
     if (mode.value === 'login') {
       const { error } = await supabase.auth.signInWithPassword({ email: email.value, password: password.value })
       if (error) throw error
-      router.push('/dashboard')
+      window.location.href = 'https://app.ixiera.id/dashboard'
     } else if (mode.value === 'signup') {
       const { error } = await supabase.auth.signUp({ email: email.value, password: password.value })
       if (error) throw error
       showToast('Pendaftaran berhasil! Silakan cek email Anda untuk verifikasi.', 'success')
       mode.value = 'login'
     } else if (mode.value === 'forgot') {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.value, { redirectTo: `${window.location.origin}/update-password` })
+      const { error } = await supabase.auth.resetPasswordForEmail(email.value, { redirectTo: `https://app.ixiera.id/update-password` })
       if (error) throw error
       showToast(t('login.reset_link_sent'), 'success')
       mode.value = 'login'
