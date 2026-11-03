@@ -177,11 +177,15 @@
   </div>
   <!-- LengthTarget Banner -->
   <Teleport to="body">
-    <div v-if="targetLength" style="position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); z-index: 9999; background: #0f0f0f; border: 2px solid #e5e5e5; border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.5); max-width: 90vw;">
-      <div style="color: #e5e5e5; font-size: 13px; font-weight: 600;">
-        Target panjang: {{ targetLength }} karakter
+    <div v-if="targetLength" style="position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); z-index: 9999; background: #0f0f0f; border: 1px solid #262626; border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; gap: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); color: #e5e5e5; max-width: calc(100vw - 2rem); min-width: 220px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; opacity: 0.6;"><line x1="21" x2="3" y1="6" y2="6"/><line x1="15" x2="3" y1="12" y2="12"/><line x1="17" x2="3" y1="18" y2="18"/></svg>
+      <div style="flex: 1; min-width: 0;">
+        <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.5; margin-bottom: 2px;">Target panjang</div>
+        <div style="font-size: 13px; font-weight: 600;">{{ targetLength }} karakter</div>
       </div>
-      <button @click="targetLength = ''" style="background: transparent; border: none; color: #8a8a8a; cursor: pointer; padding: 4px 8px; font-size: 18px; line-height: 1;">×</button>
+      <button @click="targetLength = ''" style="background: transparent; border: none; color: #8a8a8a; cursor: pointer; padding: 6px; display: flex; align-items: center; border-radius: 6px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+      </button>
     </div>
   </Teleport>
 </template>

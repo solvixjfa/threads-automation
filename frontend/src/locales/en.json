@@ -270,7 +270,10 @@
     "length_create_btn": "Create Post",
     "chars": "chars",
     "topic_best_label": "Your Best Topic",
-    "topic_create_btn": "Create Post"
+    "topic_create_btn": "Create Post",
+    "enhancing": "Enhancing...",
+    "enhance_free": "Enhance with AI",
+    "enhance_credit": "Enhance (1 Credit)"
   },
   "settings": {
     "title": "Settings",

@@ -26,6 +26,7 @@
         </div>
         <div class="flex items-center gap-2 flex-wrap">
           <Badge variant="accent">{{ $t('analytics.smart_analysis') }}</Badge>
+          <Badge :variant="confidenceVariant">{{ confidenceLabel }}</Badge>
           <button 
             v-if="!enhanced" 
             @click="enhanceNames" 
@@ -33,8 +34,8 @@
             class="text-xs font-bold px-3 py-1.5 rounded-lg border theme-border hover:theme-bg-sec transition flex items-center gap-1.5"
           >
             <span v-if="isEnhancing" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
-            <span v-else>✨</span>
-            {{ isEnhancing ? 'Enhancing...' : (isUsingOwnKey ? 'Enhance with AI (Free)' : 'Enhance Names (1 Credit)') }}
+            <Sparkles v-else class="w-3 h-3" />
+            {{ isEnhancing ? $t('analytics.enhancing') : (isUsingOwnKey ? $t('analytics.enhance_free') : $t('analytics.enhance_credit')) }}
           </button>
         </div>
       </div>
@@ -47,11 +48,24 @@
     </div>
     
     <div v-else class="space-y-4">
+      <div class="pb-4 border-b theme-border">
+        <div class="text-xs font-bold theme-text-muted mb-3 uppercase tracking-wider">{{ $t('analytics.hook_visual') }}</div>
+        <div class="space-y-2">
+          <div v-for="(item, cidx) in sortedForChart" :key="'chart-' + cidx" class="flex items-center gap-3">
+            <div class="w-24 text-[11px] font-bold truncate">{{ item.topic }}</div>
+            <div class="flex-1 h-5 rounded-sm overflow-hidden" style="background: #0f0f0f;">
+              <div class="h-full transition-all" :style="{ width: (item.avg_er / maxEr * 100) + '%', background: '#e5e5e5' }"></div>
+            </div>
+            <div class="w-16 text-right text-[11px] font-black">{{ item.avg_er.toFixed(1) }}%</div>
+          </div>
+        </div>
+      </div>
+
       <div v-for="(item, idx) in data" :key="idx" class="p-5 rounded-xl theme-bg-sec border theme-border space-y-3">
         <div class="flex justify-between items-start gap-3">
           <div class="flex-1 min-w-0">
             <h3 class="text-sm font-bold theme-text">{{ item.topic }}</h3>
-            <p class="text-xs theme-text-muted mt-0.5">{{ $t('analytics.topic_posts', { n: item.count }) }}</p>
+            <p class="text-xs theme-text-muted mt-0.5">{{ $t('analytics.topic_posts', { n: item.count }) }}<span v-if='item.count < 3' class='ml-1'>&mdash; {{ $t("analytics.sample_thin") }}</span></p>
           </div>
           <div class="text-right shrink-0">
             <p class="text-xl font-black theme-text">{{ item.avg_er }}%</p>
@@ -101,6 +115,19 @@ const customGeminiKey = ref('')
 const customGroqKey = ref('')
 const currentAccountId = ref<string | null>(null)
 const aiProvider = ref('groq')
+
+const confidence = computed<'low' | 'medium' | 'high'>(() => {
+  const total = data.value.reduce((s, d) => s + (d.count || 0), 0)
+  if (total >= 50) return 'high'
+  if (total >= 20) return 'medium'
+  return 'low'
+})
+const confidenceLabel = computed(() => ({
+  low: t('analytics.conf_low'), medium: t('analytics.conf_med'), high: t('analytics.conf_high'),
+}[confidence.value]))
+const confidenceVariant = computed(() => ({ low: 'default', medium: 'default', high: 'accent' }[confidence.value] as any))
+const sortedForChart = computed(() => [...data.value].sort((a, b) => b.avg_er - a.avg_er))
+const maxEr = computed(() => data.value.length ? Math.max(...data.value.map(d => d.avg_er), 1) : 1)
 
 const isUsingOwnKey = computed(() => {
   if (aiProvider.value === 'groq') return !!customGroqKey.value

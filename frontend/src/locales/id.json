@@ -270,7 +270,10 @@
     "length_create_btn": "Buat Post",
     "chars": "karakter",
     "topic_best_label": "Topic Terbaik Anda",
-    "topic_create_btn": "Buat Post"
+    "topic_create_btn": "Buat Post",
+    "enhancing": "Memperbagus...",
+    "enhance_free": "Perbagus dengan AI",
+    "enhance_credit": "Perbagus (1 Kredit)"
   },
   "settings": {
     "title": "Pengaturan",
