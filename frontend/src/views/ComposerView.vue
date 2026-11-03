@@ -175,6 +175,15 @@
       </div>                                                           
     </Teleport>
   </div>
+  <!-- LengthTarget Banner -->
+  <Teleport to="body">
+    <div v-if="targetLength" style="position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); z-index: 9999; background: #0f0f0f; border: 2px solid #e5e5e5; border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 24px rgba(0,0,0,0.5); max-width: 90vw;">
+      <div style="color: #e5e5e5; font-size: 13px; font-weight: 600;">
+        Target panjang: {{ targetLength }} karakter
+      </div>
+      <button @click="targetLength = ''" style="background: transparent; border: none; color: #8a8a8a; cursor: pointer; padding: 4px 8px; font-size: 18px; line-height: 1;">×</button>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">                                           
@@ -200,6 +209,7 @@ const aiTone = ref('Educational & Casual Insight')
 const customPrompt = ref('')
 const isGenerating = ref(false)
 const aiResults = ref<any[]>([])
+const targetLength = ref('')
 const availableKnowledge = ref<{id: string, title: string, category: string}[]>([])
 const selectedKnowledgeIds = ref<string[]>([])
 const isKnowledgeDropdownOpen = ref(false)
@@ -331,7 +341,11 @@ async function generateAiIdeas() {
         tone: aiTone.value, 
         provider: aiProvider.value,
         model_name: aiModel.value,
-        custom_prompt: aiTone.value === 'Custom Prompt' ? customPrompt.value : undefined,
+        custom_prompt: (() => {
+          let base = aiTone.value === 'Custom Prompt' ? (customPrompt.value || '') : '';
+          if (targetLength.value) base = `[TARGET LENGTH: ${targetLength.value} characters. Each post MUST fit within this range.]\n\n` + base;
+          return base || undefined;
+        })(),
         selected_knowledge_ids: selectedKnowledgeIds.value 
       })
     })
@@ -479,6 +493,8 @@ onMounted(async () => {
   const urlParams = new URLSearchParams(window.location.search)
   const urlScheduled = urlParams.get('scheduled')
   const urlTopic = urlParams.get('topic')
+  const urlLength = urlParams.get('length')
+  if (urlLength) targetLength.value = urlLength
   if (urlTopic) aiTopic.value = urlTopic
   if (urlScheduled) {
     scheduledDate.value = urlScheduled
