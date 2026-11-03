@@ -24,16 +24,6 @@
 
     <!-- min-w-0 wajib biar sidebar gak narik layar -->
     <div class="flex-1 flex flex-col min-w-0 w-full">
-      <header class="md:hidden flex items-center h-16 px-4 border-b theme-border theme-bg shrink-0 z-30 sticky top-0">
-        <div class="flex items-center gap-2 -ml-2 px-2 py-1.5">
-          <div v-if="userAvatar" class="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-[var(--border)]">
-            <img :src="userAvatar" class="w-full h-full object-cover" />
-          </div>
-          <div v-else class="w-7 h-7 flex items-center justify-center rounded text-xs font-black theme-accent shrink-0">IX</div>
-          <span v-if="threadsUsername" class="font-bold tracking-tight text-sm">@{{ threadsUsername }}</span>
-        </div>
-      </header>
-
       <!-- p-4 disini biar ada jarak, flex-1 biar narik ke bawah -->
       <main class="flex-1 p-4 md:p-8 w-full pb-20 md:pb-8">
         <div class="max-w-5xl mx-auto h-full flex flex-col w-full">

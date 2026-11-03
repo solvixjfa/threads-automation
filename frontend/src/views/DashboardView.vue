@@ -32,6 +32,57 @@
       <button @click="toastMessage = ''" class="font-bold theme-text-muted hover:theme-text ml-2">{{ $t('common.close') }}</button>
     </div>
 
+    <!-- TRIAL ALERT -->
+    <div v-if="trialInfo" class="card p-4 w-full border-l-4 flex flex-col md:flex-row md:items-center justify-between gap-3"
+         :style="{ borderLeftColor: trialInfo.daysLeft <= 3 ? 'var(--danger)' : 'var(--warning)' }">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center theme-bg-sec border theme-border shrink-0">
+          <AlertCircle class="w-4 h-4" :style="{ color: trialInfo.daysLeft <= 3 ? 'var(--danger)' : 'var(--warning)' }" />
+        </div>
+        <div class="min-w-0">
+          <p class="text-sm font-bold">
+            {{ trialInfo.daysLeft === 0 ? 'Trial berakhir hari ini' : `Trial berakhir dalam ${trialInfo.daysLeft} hari` }}
+          </p>
+          <p class="text-[11px] theme-text-muted">{{ trialInfo.credits }} credits tersisa</p>
+        </div>
+      </div>
+      <RouterLink to="/profile/ai" class="btn btn-secondary btn-sm whitespace-nowrap shrink-0">
+        Lihat Plan →
+      </RouterLink>
+    </div>
+
+    <!-- PENDING REPLIES -->
+    <div v-if="pendingRepliesCount > 0" class="card p-4 w-full border-l-4 flex flex-col md:flex-row md:items-center justify-between gap-3" style="border-left-color: var(--warning);">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center theme-bg-sec border theme-border shrink-0">
+          <MessageCircle class="w-4 h-4 theme-text-muted" />
+        </div>
+        <div class="min-w-0">
+          <p class="text-sm font-bold">{{ pendingRepliesCount }} komentar menunggu balasan</p>
+          <p class="text-[11px] theme-text-muted">Balas sekarang biar engagement naik</p>
+        </div>
+      </div>
+      <RouterLink to="/comment" class="btn btn-primary btn-sm whitespace-nowrap shrink-0">
+        Balas →
+      </RouterLink>
+    </div>
+
+    <!-- NEXT BEST TIME -->
+    <div v-if="nextBestTime" class="card p-4 w-full border-l-4 flex flex-col md:flex-row md:items-center justify-between gap-3" style="border-left-color: var(--text-primary);">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center theme-bg-sec border theme-border shrink-0">
+          <Clock class="w-4 h-4 theme-text-muted" />
+        </div>
+        <div class="min-w-0">
+          <p class="text-sm font-bold">Waktu terbaik hari ini: {{ nextBestTime.hour_start }}–{{ nextBestTime.hour_end }}</p>
+          <p class="text-[11px] theme-text-muted">{{ nextBestTime.er_pct.toFixed(2) }}% avg ER · {{ nextBestTime.sample_size }} post</p>
+        </div>
+      </div>
+      <RouterLink :to="`/content/create`" class="btn btn-secondary btn-sm whitespace-nowrap shrink-0">
+        Buat Post →
+      </RouterLink>
+    </div>
+
     <!-- ADMIN HEALTH -->
     <div v-if="adminHealth" class="card p-4 flex flex-wrap justify-between items-center gap-3 text-xs w-full">
       <div class="flex items-center gap-3">
@@ -235,6 +286,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { RouterLink } from 'vue-router'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
 import { useI18n } from 'vue-i18n'
@@ -260,6 +312,9 @@ const syncCooldown = ref(0)
 let cooldownInterval: ReturnType<typeof setInterval> | null = null
 
 const queueMetrics = ref({ scheduled: 0, published: 0, failed: 0 })
+const trialInfo = ref<any>(null)
+const pendingRepliesCount = ref(0)
+const nextBestTime = ref<any>(null)
 const overview = ref({ total_posts: 0, total_views: 0, total_likes: 0, total_replies: 0, total_reposts: 0, avg_engagement_rate: 0 })
 const allPosts = ref<any[]>([])
 const dailyInsights = ref<any[]>([])
@@ -331,6 +386,41 @@ async function loadAllDashboardData() {
       }).catch(err => console.log('Profile sync error:', err))
 
       await Promise.all([fetchQueueMetricsAndFailed(account.id), fetchDailyInsights(account.id)])
+
+      // Trial info
+      try {
+        const { data: accInfo } = await supabase.schema('threads').from('threads_accounts')
+          .select('plan, plan_expires_at, credit_balance')
+          .eq('id', account.id).maybeSingle()
+        if (accInfo && accInfo.plan === 'trial' && accInfo.plan_expires_at) {
+          const daysLeft = Math.ceil((new Date(accInfo.plan_expires_at).getTime() - Date.now()) / 86400000)
+          if (daysLeft >= 0 && daysLeft <= 7) {
+            trialInfo.value = { daysLeft, credits: accInfo.credit_balance || 0 }
+          }
+        }
+      } catch (e) { console.warn('[dashboard] trial info', e) }
+
+      // Pending replies count
+      try {
+        const { count } = await supabase.schema('threads').from('auto_reply_logs')
+          .select('id', { count: 'exact', head: true })
+          .eq('account_id', account.id)
+          .eq('status', 'pending_review')
+        pendingRepliesCount.value = count || 0
+      } catch (e) { console.warn('[dashboard] pending count', e) }
+
+      // Next best time today
+      try {
+        const btRes = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/analytics/best-time/${account.id}`)
+        const btData = await btRes.json()
+        if (btData.success && Array.isArray(btData.best_block_per_day)) {
+          const todayIdx = new Date().getDay()
+          const todayBlock = btData.best_block_per_day[todayIdx]
+          if (todayBlock && todayBlock.has_data && todayBlock.sample_size >= 1) {
+            nextBestTime.value = todayBlock
+          }
+        }
+      } catch (e) { console.warn('[dashboard] best time', e) }
     }
     const { data: analyticsData, error: analyticsErr } = await supabase.functions.invoke('get-analytics')
     if (!analyticsErr && analyticsData?.success) {
