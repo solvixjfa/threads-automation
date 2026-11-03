@@ -59,7 +59,6 @@ const router = createRouter({
       component: ContentLayout,
       meta: { requiresAuth: true },
       children: [
-        { path: '', redirect: '/content/create' },
         { path: 'create', name: 'content-create', component: ComposerView },
         { path: 'variant', name: 'content-variant', component: RepurposeView },
         { path: 'queue', name: 'content-queue', component: QueueView },
@@ -71,7 +70,6 @@ const router = createRouter({
       component: AnalyticsLayout,
       meta: { requiresAuth: true },
       children: [
-        { path: '', redirect: '/analytics/best-time' },
         { path: 'best-time', name: 'analytics-best-time', component: BestTimeView },
         { path: 'hook', name: 'analytics-hook', component: HookView },
         { path: 'length', name: 'analytics-length', component: LengthView },

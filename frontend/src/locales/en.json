@@ -173,6 +173,16 @@
       "new_time": "New Schedule Time",
       "cancel": "Cancel",
       "save_changes": "Save Changes"
+    },
+    "desc_create": "Write or AI-generate new post",
+    "desc_variant": "Remix posts into variations",
+    "desc_queue": "Scheduled & published posts",
+    "title": "Content",
+    "subtitle": "Create, remix, and schedule your threads",
+    "tabs": {
+      "create": "Create",
+      "variant": "Variant",
+      "queue": "Queue"
     }
   },
   "comments": {
@@ -274,7 +284,11 @@
     "topic_create_btn": "Create Post",
     "enhancing": "Enhancing...",
     "enhance_free": "Enhance with AI",
-    "enhance_credit": "Enhance (1 Credit)"
+    "enhance_credit": "Enhance (1 Credit)",
+    "desc_best": "Best posting time per day",
+    "desc_hook": "Hook type performance",
+    "desc_length": "Optimal post length",
+    "desc_topic": "Top topic clusters"
   },
   "settings": {
     "title": "Settings",

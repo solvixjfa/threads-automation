@@ -173,6 +173,16 @@
       "new_time": "Waktu Tayang Baru",
       "cancel": "Batal",
       "save_changes": "Simpan Perubahan"
+    },
+    "desc_create": "Tulis atau generate post baru",
+    "desc_variant": "Ubah post jadi variasi",
+    "desc_queue": "Post terjadwal & terpublikasi",
+    "title": "Konten",
+    "subtitle": "Buat, remix, dan jadwalkan thread kamu",
+    "tabs": {
+      "create": "Buat",
+      "variant": "Variant",
+      "queue": "Antrian"
     }
   },
   "comments": {
@@ -274,7 +284,11 @@
     "topic_create_btn": "Buat Post",
     "enhancing": "Memperbagus...",
     "enhance_free": "Perbagus dengan AI",
-    "enhance_credit": "Perbagus (1 Kredit)"
+    "enhance_credit": "Perbagus (1 Kredit)",
+    "desc_best": "Waktu posting terbaik per hari",
+    "desc_hook": "Performa tipe hook",
+    "desc_length": "Panjang post optimal",
+    "desc_topic": "Topik paling performan"
   },
   "settings": {
     "title": "Pengaturan",
