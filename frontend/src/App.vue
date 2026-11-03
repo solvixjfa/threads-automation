@@ -24,21 +24,13 @@
     <!-- min-w-0 wajib biar sidebar gak narik layar -->
     <div class="flex-1 flex flex-col min-w-0 w-full">
       <header class="md:hidden flex items-center h-16 px-4 border-b theme-border theme-bg shrink-0 z-30 sticky top-0">
-        <button
-          type="button"
-          @click="sidebarOpen = true"
-          class="-ml-2 flex items-center gap-2 px-2 py-1.5 rounded-md active:scale-95 transition"
-          aria-label="Open menu"
-        >
+        <div class="flex items-center gap-2 -ml-2 px-2 py-1.5">
           <div v-if="userAvatar" class="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-[var(--border)]">
             <img :src="userAvatar" class="w-full h-full object-cover" />
           </div>
           <div v-else class="w-7 h-7 flex items-center justify-center rounded text-xs font-black theme-accent shrink-0">IX</div>
           <span v-if="threadsUsername" class="font-bold tracking-tight text-sm">@{{ threadsUsername }}</span>
-          <svg class="w-4 h-4 theme-text-muted opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
+        </div>
       </header>
 
       <!-- p-4 disini biar ada jarak, flex-1 biar narik ke bawah -->

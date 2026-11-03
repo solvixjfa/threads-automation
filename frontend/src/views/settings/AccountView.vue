@@ -46,6 +46,50 @@
       </div>
     </div>
 
+    <!-- APPEARANCE CARD -->
+    <div class="card p-5 md:p-6 w-full">
+      <h2 class="text-lg font-bold mb-4">Appearance</h2>
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-bold">Dark Mode</p>
+            <p class="text-xs theme-text-muted mt-0.5">Ubah tema gelap atau terang</p>
+          </div>
+          <button
+            @click="toggleTheme"
+            type="button"
+            class="relative w-12 h-6 rounded-full transition-colors"
+            :class="theme === 'dark' ? 'bg-white' : 'bg-gray-400'"
+            :aria-label="theme === 'dark' ? 'Switch to light' : 'Switch to dark'"
+          >
+            <span
+              class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full shadow transition-transform"
+              :class="theme === 'dark' ? 'translate-x-6 bg-black' : 'translate-x-0 bg-white'"
+            ></span>
+          </button>
+        </div>
+        <div class="flex items-center justify-between pt-4 border-t theme-border">
+          <div>
+            <p class="text-sm font-bold">Language</p>
+            <p class="text-xs theme-text-muted mt-0.5">Pilih bahasa aplikasi</p>
+          </div>
+          <LanguageSwitcher />
+        </div>
+      </div>
+    </div>
+
+    <!-- ACCOUNT ACTIONS CARD -->
+    <div class="card p-5 md:p-6 w-full">
+      <h2 class="text-lg font-bold mb-4">Account Actions</h2>
+      <button
+        @click="handleLogout"
+        type="button"
+        class="w-full py-2.5 px-4 rounded-lg border border-red-500/40 text-red-500 hover:bg-red-500/10 transition font-bold text-sm"
+      >
+        Logout
+      </button>
+    </div>
+
   </div>
 </template>
 
@@ -53,8 +97,16 @@
 import { ref, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
 import { useNotify } from '../../composables/useNotify'
+import { useTheme } from '../../composables/useTheme'
+import LanguageSwitcher from '../../components/LanguageSwitcher.vue'
 
 const { showToast } = useNotify()
+const { theme, toggle: toggleTheme } = useTheme()
+
+async function handleLogout() {
+  await supabase.auth.signOut()
+  window.location.href = '/login'
+}
 const loading = ref(true)
 const account = ref<any>(null)
 const avatarUrl = ref('')
