@@ -57,60 +57,43 @@ const loading = ref(false)
 const checking = ref(true)
 const errorMsg = ref('')
 
-onMounted(async () => {
-  // === PKCE flow handler (?code=xxx — Supabase v2 default) ===
-  {
-    const searchParams = new URLSearchParams(window.location.search)
-    const errorDesc = searchParams.get('error_description')
-    if (errorDesc) {
-      errorMsg.value = 'Link reset password tidak valid atau sudah kedaluwarsa. Silakan minta link baru.'
+onMounted(() => {
+  // Supabase mendeteksi #access_token secara otomatis (Implicit Flow).
+  // Kita cukup mendengarkan event PASSWORD_RECOVERY atau cek session yang ada.
+
+  const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
       checking.value = false
-      return
-    }
-    const code = searchParams.get('code')
-    if (code) {
-      await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
-      const { error: codeErr } = await supabase.auth.exchangeCodeForSession(code)
-      if (codeErr) {
-        errorMsg.value = 'Link reset password tidak valid atau sudah kedaluwarsa. Silakan minta link baru.'
-      } else {
-        window.history.replaceState(null, '', window.location.pathname)
+      errorMsg.value = ''
+      // Bersihkan hash dari URL
+      if (window.location.hash) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search)
       }
+    }
+  })
+
+  // Cek kalau session sudah otomatis dibaca oleh Supabase dari URL
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session) {
       checking.value = false
-      return
+      if (window.location.hash) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search)
+      }
     }
-  }
-  // === End PKCE handler ===
+  })
 
-  // Supabase otomatis ngasih session "recovery" pas URL punya #access_token...
-  // === Recovery token handler ===
-  const hashParams = new URLSearchParams(window.location.hash.substring(1))
-  const accessToken = hashParams.get('access_token')
-  const refreshToken = hashParams.get('refresh_token')
-  const tokenType = hashParams.get('type')
-
-  if (accessToken && refreshToken && (tokenType === 'recovery' || tokenType === null)) {
-    await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
-    const { error: setErr } = await supabase.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    })
-    if (setErr) {
+  // Timeout 4 detik: Kalau tidak ada session sama sekali, link beneran invalid/expired
+  setTimeout(() => {
+    if (checking.value) {
       errorMsg.value = 'Link reset password tidak valid atau sudah kedaluwarsa. Silakan minta link baru.'
-    } else {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search)
+      checking.value = false
     }
-    checking.value = false
-    return
-  }
-  // === End recovery token handler ===
-
-  const { data: { session }, error } = await supabase.auth.getSession()
+  }, 4000)
   
-  if (error || !session) {
-    errorMsg.value = 'Link reset password tidak valid atau sudah kedaluwarsa. Silakan minta link baru.'
-  }
-  checking.value = false
+  // Cleanup listener saat komponen unmount
+  onUnmounted(() => {
+    authListener.subscription.unsubscribe()
+  })
 })
 
 async function handleUpdate() {
