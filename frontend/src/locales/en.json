@@ -361,14 +361,14 @@
       "how_it_works": "How it Works",
       "faq": "FAQ",
       "login": "Log in",
-      "start_free": "Claim 1 of 25 Slots"
+      "start_free": "Claim Free Access"
     },
     "hero": {
-      "badge": "Private Beta · 25 slots",
+      "badge": "Public Beta",
       "title_1": "Posts that learn from",
       "title_2": "your own account.",
       "subtitle": "Ixiera reads your best-performing posts (time, hooks, topics) and helps you plan content and reply to comments in your own voice.",
-      "cta_primary": "Claim 1 of 25 Slots",
+      "cta_primary": "Claim Free Access",
       "cta_secondary": "See examples",
       "trust_1": "Official Meta login, we never store passwords",
       "trust_2": "You are in control, with a Kill Switch",
@@ -427,9 +427,9 @@
       "s3": "Turn off automation or disconnect anytime with the Kill Switch, no middleman."
     },
     "beta": {
-      "title": "Private beta, limited slots.",
-      "desc": "I am opening 25 slots so I can guide you directly and improve the product with you. During beta, core features are free. After that, it will be paid, with early-bird pricing for beta users.",
-      "cta": "Claim 1 of 25 Slots"
+      "title": "Public beta.",
+      "desc": "Join the beta so I can guide you directly and improve the product with you. During beta, core features are free. After that, it will be paid, with early-bird pricing for beta users.",
+      "cta": "Claim Free Access"
     },
     "faq": {
       "title": "FAQ",
@@ -450,7 +450,7 @@
     },
     "cta": {
       "title": "Ready to stop guessing?",
-      "button": "Claim 1 of 25 Slots"
+      "button": "Claim Free Access"
     },
     "footer": {
       "copy": "Ixiera is an independent product and is not affiliated with Meta Platforms. Threads is a trademark of Meta.",

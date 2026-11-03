@@ -361,14 +361,14 @@
       "how_it_works": "Cara Kerja",
       "faq": "FAQ",
       "login": "Masuk",
-      "start_free": "Ambil 1 dari 25 Slot"
+      "start_free": "Ambil Akses Gratis"
     },
     "hero": {
-      "badge": "Private Beta · 25 slot",
+      "badge": "Public Beta",
       "title_1": "Posting yang belajar dari",
       "title_2": "akun kamu sendiri.",
       "subtitle": "Ixiera membaca post kamu yang paling jalan (jam, hook, topik), lalu membantu bikin rencana konten dan membalas komentar dengan gayamu.",
-      "cta_primary": "Ambil 1 dari 25 Slot",
+      "cta_primary": "Ambil Akses Gratis",
       "cta_secondary": "Lihat contohnya",
       "trust_1": "Login resmi Meta, tanpa simpan password",
       "trust_2": "Kamu yang kendalikan, ada Kill Switch",
@@ -427,9 +427,9 @@
       "s3": "Matikan otomatisasi atau putus koneksi kapan saja lewat Kill Switch, tanpa perantara."
     },
     "beta": {
-      "title": "Private beta, slot terbatas.",
-      "desc": "Aku buka 25 slot supaya bisa mendampingi langsung dan memperbaiki produk bareng kamu. Selama beta, fitur inti gratis. Setelah itu berbayar, dengan harga awal untuk pengguna beta.",
-      "cta": "Ambil 1 dari 25 Slot"
+      "title": "Public beta.",
+      "desc": "Gabung beta supaya aku bisa dampingin langsung dan perbaiki produk bareng kamu. Selama beta, fitur inti gratis. Setelah itu berbayar, dengan harga awal untuk pengguna beta.",
+      "cta": "Ambil Akses Gratis"
     },
     "faq": {
       "title": "FAQ",
@@ -450,7 +450,7 @@
     },
     "cta": {
       "title": "Siap berhenti nebak-nebak?",
-      "button": "Ambil 1 dari 25 Slot"
+      "button": "Ambil Akses Gratis"
     },
     "footer": {
       "copy": "Ixiera adalah produk independen dan tidak berafiliasi dengan Meta Platforms. Threads adalah merek dagang Meta.",
