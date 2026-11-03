@@ -137,8 +137,18 @@ async function fetchAccountData() {
 }
 
 async function handleConnect() {
-  // Logika connect Threads (OAuth) taruh di sini
-  showToast('Mengarahkan ke OAuth Meta...', 'info')
+  try {
+    showToast('Mengarahkan ke Threads...', 'info')
+    const { data, error } = await supabase.functions.invoke('threads-oauth-start', {
+      body: {}
+    })
+    if (error) throw new Error(error.message || 'Gagal memulai OAuth')
+    if (!data?.url) throw new Error('URL OAuth tidak diterima dari server')
+    window.location.href = data.url
+  } catch (err: any) {
+    console.error('[oauth]', err)
+    showToast('Gagal koneksi Threads: ' + (err.message || 'Unknown error'), 'error')
+  }
 }
 
 onMounted(() => {
