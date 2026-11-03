@@ -1,21 +1,29 @@
 <template>
-  <div class="flex items-center gap-2">
-    <select v-model="currentLang" @change="changeLang" class="input text-xs py-1 px-2">
-      <option value="en">English</option>
-      <option value="id">Indonesia</option>
-    </select>
+  <div class="inline-flex rounded-lg overflow-hidden border theme-border">
+    <button
+      v-for="l in langs"
+      :key="l.code"
+      type="button"
+      @click="changeLang(l.code)"
+      class="px-3 py-1.5 text-xs font-bold transition"
+      :class="locale === l.code ? 'bg-[var(--text)] text-[var(--bg)]' : 'theme-text-muted hover:theme-text'"
+    >
+      {{ l.label }}
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { locale } = useI18n()
-const currentLang = ref(locale.value)
+const langs = [
+  { code: 'en', label: 'EN' },
+  { code: 'id', label: 'ID' },
+]
 
-function changeLang() {
-  locale.value = currentLang.value
-  localStorage.setItem('app_lang', currentLang.value)
+function changeLang(code: string) {
+  locale.value = code
+  localStorage.setItem('app_lang', code)
 }
 </script>

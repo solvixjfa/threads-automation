@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 
 // LandingView udah nggak di-import disini karena udah pindah ke project landing
 import DashboardView from '../views/DashboardView.vue'
-import SettingsLayout from '../views/settings/SettingsLayout.vue'
+import ProfileLayout from '../views/settings/ProfileLayout.vue'
 import AccountView from '../views/settings/AccountView.vue'
 import AutoReplyView from '../views/settings/AutoReplyView.vue'
 import TemplateView from '../views/settings/TemplateView.vue'
@@ -78,17 +78,19 @@ const router = createRouter({
         { path: 'topic', name: 'analytics-topic', component: TopicView },
       ],
     },
+    { path: '/settings', redirect: '/profile' },
+    { path: '/settings/:pathMatch(.*)*', redirect: '/profile' },
     {
-      path: '/settings',
-      component: SettingsLayout,
+      path: '/profile',
+      component: ProfileLayout,
       meta: { requiresAuth: true },
       children: [
-        { path: '', redirect: '/settings/account' },
-        { path: 'account', name: 'settings-account', component: AccountView },
-        { path: 'auto-reply', name: 'settings-auto-reply', component: AutoReplyView },
-        { path: 'templates', name: 'settings-templates', component: TemplateView },
-        { path: 'knowledge', name: 'settings-knowledge', component: KnowledgeView },
-        { path: 'ai', name: 'settings-ai', component: AiView },
+        { path: '', redirect: '/profile/account' },
+        { path: 'account', name: 'profile-account', component: AccountView },
+        { path: 'auto-reply', name: 'profile-auto-reply', component: AutoReplyView },
+        { path: 'templates', name: 'profile-templates', component: TemplateView },
+        { path: 'knowledge', name: 'profile-knowledge', component: KnowledgeView },
+        { path: 'ai', name: 'profile-ai', component: AiView },
       ],
     },
     { path: '/:pathMatch(.*)*', redirect: '/' },

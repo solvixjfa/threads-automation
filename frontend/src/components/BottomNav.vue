@@ -33,7 +33,7 @@ const items = [
   { labelKey: 'menu.content', path: '/content', icon: FileText },
   { labelKey: 'menu.comments', path: '/comment', icon: MessageCircle },
   { labelKey: 'menu.analytics', path: '/analytics', icon: BarChart3 },
-  { labelKey: 'menu.settings', path: '/settings', icon: Settings },
+  { labelKey: 'menu.profile', path: '/profile', icon: Settings },
 ]
 
 function isActive(path: string) {

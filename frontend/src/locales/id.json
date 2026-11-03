@@ -4,7 +4,8 @@
     "content": "Konten",
     "comments": "Komentar",
     "analytics": "Analytics",
-    "settings": "Pengaturan"
+    "settings": "Pengaturan",
+    "profile": "Profil"
   },
   "common": {
     "save": "Save",
@@ -459,5 +460,12 @@
       "terms": "Syarat & Ketentuan",
       "delete": "Hapus Data"
     }
+  },
+  "profile": {
+    "desc_account": "Akun Threads & tampilan",
+    "desc_auto_reply": "Atur aturan auto-reply AI",
+    "desc_templates": "Edit template balasan",
+    "desc_knowledge": "Knowledge base brand untuk RAG",
+    "desc_ai": "Setting AI & billing"
   }
 }

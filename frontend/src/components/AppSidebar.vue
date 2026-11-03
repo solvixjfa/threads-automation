@@ -142,7 +142,7 @@ const items = [
   { labelKey: 'menu.content', path: '/content', icon: IconContent },
   { labelKey: 'menu.comments', path: '/comment', icon: IconComment },
   { labelKey: 'menu.analytics', path: '/analytics', icon: IconAnalytics },
-  { labelKey: 'menu.settings', path: '/settings', icon: IconSettings },
+  { labelKey: 'menu.profile', path: '/profile', icon: IconSettings },
 ]
 
 onMounted(async () => {

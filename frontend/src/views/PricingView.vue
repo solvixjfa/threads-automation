@@ -55,7 +55,7 @@
 </template>
 
     <div class="text-center pt-6">
-      <RouterLink to="/settings/ai" class="text-sm font-bold underline hover:theme-text-muted">Kembali ke Pengaturan</RouterLink>
+      <RouterLink to="/profile/ai" class="text-sm font-bold underline hover:theme-text-muted">Kembali ke Pengaturan</RouterLink>
     </div>
   </div>
 <p class="text-xs text-center theme-text-muted mt-6 italic">Harga beta, terkunci selama kamu berlangganan.</p>
