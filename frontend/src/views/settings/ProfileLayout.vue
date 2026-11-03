@@ -64,6 +64,7 @@ const router = useRouter()
 const isRoot = computed(() => route.path === '/profile' || route.path === '/profile/')
 
 const menuItems = [
+  { path: '/tutorial', icon: BookOpen, labelKey: 'menu.tutorial', descKey: 'profile.desc_tutorial' },
   { path: '/profile/account', icon: User, labelKey: 'settings.tabs.account', descKey: 'profile.desc_account' },
   { path: '/profile/auto-reply', icon: MessageSquare, labelKey: 'settings.tabs.auto_reply', descKey: 'profile.desc_auto_reply' },
   { path: '/profile/templates', icon: LayoutTemplate, labelKey: 'settings.tabs.templates', descKey: 'profile.desc_templates' },

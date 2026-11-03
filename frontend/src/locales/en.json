@@ -5,7 +5,8 @@
     "comments": "Comments",
     "analytics": "Analytics",
     "settings": "Settings",
-    "profile": "Profile"
+    "profile": "Profile",
+    "tutorial": "Tutorial"
   },
   "common": {
     "save": "Save",
@@ -480,6 +481,7 @@
     "desc_auto_reply": "Manage AI auto-reply rules",
     "desc_templates": "Edit reply templates",
     "desc_knowledge": "Brand knowledge base for RAG",
-    "desc_ai": "AI provider & billing settings"
+    "desc_ai": "AI provider & billing settings",
+    "desc_tutorial": "Full guide for every feature"
   }
 }

@@ -5,7 +5,8 @@
     "comments": "Komentar",
     "analytics": "Analytics",
     "settings": "Pengaturan",
-    "profile": "Profil"
+    "profile": "Profil",
+    "tutorial": "Panduan"
   },
   "common": {
     "save": "Save",
@@ -480,6 +481,7 @@
     "desc_auto_reply": "Atur aturan auto-reply AI",
     "desc_templates": "Edit template balasan",
     "desc_knowledge": "Knowledge base brand untuk RAG",
-    "desc_ai": "Setting AI & billing"
+    "desc_ai": "Setting AI & billing",
+    "desc_tutorial": "Panduan lengkap semua fitur"
   }
 }

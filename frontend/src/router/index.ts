@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { supabase } from '../lib/supabase'
 
 // LandingView udah nggak di-import disini karena udah pindah ke project landing
+import TutorialView from '../views/TutorialView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import ProfileLayout from '../views/settings/ProfileLayout.vue'
 import AccountView from '../views/settings/AccountView.vue'
@@ -53,6 +54,7 @@ const router = createRouter({
     },
     { path: '/pricing', name: 'pricing', component: PricingView, meta: { requiresAuth: true } },
 
+    { path: '/tutorial', name: 'tutorial', component: TutorialView, meta: { requiresAuth: true } },
     { path: '/dashboard', name: 'dashboard', component: DashboardView, meta: { requiresAuth: true } },
     {
       path: '/content',
