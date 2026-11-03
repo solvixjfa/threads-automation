@@ -19,6 +19,7 @@
       :isAdmin="session.user.email === 'jepri097@gmail.com'"
       @close="sidebarOpen = false"
       @logout="handleLogout"
+      class="hidden md:flex"
     />
 
     <!-- min-w-0 wajib biar sidebar gak narik layar -->

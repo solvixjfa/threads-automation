@@ -85,7 +85,6 @@ const router = createRouter({
       component: ProfileLayout,
       meta: { requiresAuth: true },
       children: [
-        { path: '', redirect: '/profile/account' },
         { path: 'account', name: 'profile-account', component: AccountView },
         { path: 'auto-reply', name: 'profile-auto-reply', component: AutoReplyView },
         { path: 'templates', name: 'profile-templates', component: TemplateView },
