@@ -59,6 +59,28 @@ const errorMsg = ref('')
 
 onMounted(async () => {
   // Supabase otomatis ngasih session "recovery" pas URL punya #access_token...
+  // === Recovery token handler ===
+  const hashParams = new URLSearchParams(window.location.hash.substring(1))
+  const accessToken = hashParams.get('access_token')
+  const refreshToken = hashParams.get('refresh_token')
+  const tokenType = hashParams.get('type')
+
+  if (accessToken && refreshToken && (tokenType === 'recovery' || tokenType === null)) {
+    await supabase.auth.signOut({ scope: 'local' }).catch(() => {})
+    const { error: setErr } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    })
+    if (setErr) {
+      errorMsg.value = 'Link reset password tidak valid atau sudah kedaluwarsa. Silakan minta link baru.'
+    } else {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search)
+    }
+    checking.value = false
+    return
+  }
+  // === End recovery token handler ===
+
   const { data: { session }, error } = await supabase.auth.getSession()
   
   if (error || !session) {
