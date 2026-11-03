@@ -39,12 +39,13 @@
       </header>
 
       <!-- p-4 disini biar ada jarak, flex-1 biar narik ke bawah -->
-      <main class="flex-1 p-4 md:p-8 w-full">
+      <main class="flex-1 p-4 md:p-8 w-full pb-20 md:pb-8">
         <div class="max-w-5xl mx-auto h-full flex flex-col w-full">
           <RouterView />
         </div>
       </main>
     </div>
+    <BottomNav />
   </div>
   <NotifyOverlay />
 </template>
@@ -55,6 +56,7 @@ import { RouterView, useRouter, useRoute } from 'vue-router'
 import { supabase } from './lib/supabase'
 import AppSidebar from './components/AppSidebar.vue'
 import NotifyOverlay from './components/NotifyOverlay.vue'
+import BottomNav from './components/BottomNav.vue'
 import { useTheme } from './composables/useTheme'
 
 const router = useRouter()
