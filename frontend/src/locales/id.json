@@ -261,7 +261,16 @@
     "hook_cat_curiosity": "Penasaran",
     "hook_cat_listicle": "Listicle",
     "hook_cat_question": "Pertanyaan",
-    "hook_cat_statement": "Pernyataan"
+    "hook_cat_statement": "Pernyataan",
+    "length_best_label": "Panjang Optimal Anda",
+    "length_best_desc": "Panjang post ini performa terbaik di akun Anda.",
+    "length_lowdata_title": "Data Masih Sedikit",
+    "length_lowdata_desc": "Terus posting untuk unlock insight personal. Sementara, ini benchmark industri:",
+    "length_benchmark_note": "Benchmark industri Threads: 150-250 karakter biasanya paling optimal.",
+    "length_create_btn": "Buat Post",
+    "chars": "karakter",
+    "topic_best_label": "Topic Terbaik Anda",
+    "topic_create_btn": "Buat Post"
   },
   "settings": {
     "title": "Pengaturan",

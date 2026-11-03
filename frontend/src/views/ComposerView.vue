@@ -478,6 +478,8 @@ onMounted(async () => {
     // Priority 1: URL param (?scheduled=YYYY-MM-DDTHH:mm)
   const urlParams = new URLSearchParams(window.location.search)
   const urlScheduled = urlParams.get('scheduled')
+  const urlTopic = urlParams.get('topic')
+  if (urlTopic) aiTopic.value = urlTopic
   if (urlScheduled) {
     scheduledDate.value = urlScheduled
     localStorage.removeItem('ixiera_draft_time')

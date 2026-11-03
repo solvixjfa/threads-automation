@@ -1,5 +1,23 @@
 <template>
-  <Card>
+  <div class="space-y-6">
+    <Card v-if="!loading && topTopic" style="border-color: #e5e5e5; border-width: 2px;">
+      <div class="p-5">
+        <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider theme-text-muted mb-2">
+          <Target class="w-3 h-3" />
+          <span>{{ $t('analytics.topic_best_label') }}</span>
+        </div>
+        <div class="text-2xl font-black mb-1">{{ topTopic.topic }}</div>
+        <div class="text-sm theme-text-muted mb-3">
+          {{ topTopic.avg_er }}% {{ $t('analytics.avg_er') }} &middot; {{ $t('analytics.topic_posts', { n: topTopic.count }) }}
+        </div>
+        <Button size="sm" @click="createWithTopic(topTopic.topic)">
+          <PenLine class="w-4 h-4" />
+          <span>{{ $t('analytics.topic_create_btn') }}</span>
+        </Button>
+      </div>
+    </Card>
+
+    <Card>
     <template #header>
       <div class="flex items-center justify-between flex-wrap gap-3">
         <div>
@@ -48,12 +66,20 @@
           </div>
         </div>
 
+        <div class="pt-2">
+          <Button size="sm" variant="secondary" @click="createWithTopic(item.topic)">
+            <PenLine class="w-4 h-4" />
+            <span>{{ $t('analytics.topic_create_btn') }}</span>
+          </Button>
+        </div>
+
         <div v-if="item.keywords && item.keywords.length > 0" class="flex flex-wrap gap-1.5 pt-1">
           <span v-for="(kw, i) in item.keywords" :key="i" class="px-2 py-0.5 text-[10px] font-medium rounded-md theme-bg border theme-border theme-text-muted">{{ kw }}</span>
         </div>
       </div>
     </div>
   </Card>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -61,7 +87,8 @@ import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
 import { useNotify } from '../../composables/useNotify'
 import { useI18n } from 'vue-i18n'
-import { Card, Badge, EmptyState } from '../../components/ui'
+import { Card, Badge, Button, EmptyState } from '../../components/ui'
+import { Target, PenLine } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const { showToast } = useNotify()
@@ -79,6 +106,17 @@ const isUsingOwnKey = computed(() => {
   if (aiProvider.value === 'groq') return !!customGroqKey.value
   return !!customGeminiKey.value
 })
+
+const topTopic = computed(() => {
+  if (!data.value.length) return null
+  const sorted = [...data.value].sort((a, b) => b.avg_er - a.avg_er)
+  return sorted[0]
+})
+
+function createWithTopic(topic: string) {
+  if (!topic) return
+  window.location.href = `/content/create?topic=${encodeURIComponent(topic)}`
+}
 
 async function loadData() {
   try {

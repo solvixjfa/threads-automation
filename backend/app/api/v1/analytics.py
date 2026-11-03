@@ -380,7 +380,7 @@ async def get_analysis_status(account_id: str):
 @router.post("/deep-analyze/{account_id}")
 async def run_deep_analyze(account_id: str):
     from app.services.billing import check_and_spend, refund_credits, BillingError
-    from app.core.config import GEMINI_KEY
+    from app.services.rag import GEMINI_KEY
     from google import genai
     from google.genai import types
     from datetime import datetime, timezone

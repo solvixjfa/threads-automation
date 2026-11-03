@@ -261,7 +261,16 @@
     "hook_cat_curiosity": "Curiosity",
     "hook_cat_listicle": "Listicle",
     "hook_cat_question": "Question",
-    "hook_cat_statement": "Statement"
+    "hook_cat_statement": "Statement",
+    "length_best_label": "Your Best Length",
+    "length_best_desc": "This post length performs best on your account.",
+    "length_lowdata_title": "Not Enough Data Yet",
+    "length_lowdata_desc": "Keep posting to unlock personal insights. Meanwhile, here is the industry benchmark:",
+    "length_benchmark_note": "Threads industry benchmark: 150-250 characters usually performs best.",
+    "length_create_btn": "Create Post",
+    "chars": "chars",
+    "topic_best_label": "Your Best Topic",
+    "topic_create_btn": "Create Post"
   },
   "settings": {
     "title": "Settings",
