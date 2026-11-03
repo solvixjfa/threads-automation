@@ -51,7 +51,7 @@
               {{ $t('login.forgot_password') }}
             </button>
           </div>
-          <input v-model="password" type="password" :placeholder="$t('login.password_placeholder')" class="input w-full" @keydown.enter="handleSubmit" />
+          <PasswordInput v-model="password" :placeholder="$t('login.password_placeholder')" @keydown.enter="handleSubmit" />
         </div>
 
         <!-- SUBMIT BUTTON -->
@@ -80,6 +80,7 @@ import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
 import { useI18n } from 'vue-i18n'
+import PasswordInput from '../components/PasswordInput.vue'
 
 const router = useRouter()
 const { showToast } = useNotify()
