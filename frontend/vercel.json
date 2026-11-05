@@ -2,7 +2,7 @@
   "version": 2,
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!manifest\\.json|sw\\.js|workbox-.*\\.js|pwa-.*\\.png|apple-touch-icon\\.png|assets/|vite\\.svg).*)",
       "destination": "/index.html"
     }
   ]
