@@ -193,6 +193,9 @@ async def sync_replies_for_post(
         return stats
 
     for meta_item in new_replies_meta:
+        # SKIP own reply: jangan process AI buat komentar sendiri (spam prevention)
+        if meta_item.get("is_own"):
+            continue
         reply_db = inserted_by_meta_id.get(meta_item["reply_id"])
         if not reply_db:
             continue

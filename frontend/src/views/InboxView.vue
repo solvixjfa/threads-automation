@@ -239,7 +239,7 @@ function isProcessed(r: any) { return r.log_status === 'sent' || r.log_status ==
 const reviewReplies = computed(() => repliesData.value.filter(r => !r.is_own && (r.log_status === 'pending_review' || r.log_status === 'approved')))
 const priorityReplies = computed(() => repliesData.value.filter(r => !r.is_own && (r.is_lead || r.classification === 'question') && !isProcessed(r)).sort((a, b) => new Date(b.replied_at).getTime() - new Date(a.replied_at).getTime()))
 const conversationReplies = computed(() => repliesData.value.filter(r => !r.is_own && !isProcessed(r)))
-const historyReplies = computed(() => repliesData.value.filter(r => r.is_own || r.log_status === 'sent' || r.log_status === 'skipped'))
+const historyReplies = computed(() => repliesData.value.filter(r => !r.is_own && (r.log_status === 'sent' || r.log_status === 'skipped')))
 
 const reviewCount = computed(() => reviewReplies.value.length)
 const priorityCount = computed(() => priorityReplies.value.length)
