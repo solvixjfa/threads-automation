@@ -122,7 +122,12 @@
         "hot_take": "Hot Take / Opini",
         "qa": "Tanya Jawab / Diskusi",
         "custom": "Instruksi Custom"
-      }
+      },
+      "draft_of": "Draft {n} dari {total}",
+      "prev": "Sebelumnya",
+      "next": "Selanjutnya",
+      "close": "Tutup",
+      "use_draft": "Pakai Draft Ini"
     },
     "repurpose": {
       "title": "Repurpose",

@@ -122,7 +122,12 @@
         "hot_take": "Hot Take / Opinion",
         "qa": "Q&A / Spark Discussion",
         "custom": "Custom / Free Instruction"
-      }
+      },
+      "draft_of": "Draft {n} of {total}",
+      "prev": "Previous",
+      "next": "Next",
+      "close": "Close",
+      "use_draft": "Use This Draft"
     },
     "repurpose": {
       "title": "Repurpose",

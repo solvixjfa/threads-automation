@@ -87,17 +87,45 @@
           </Button>
         </div>
 
-        <div v-if="aiResults.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3 divider">
-          <div v-for="item in aiResults" :key="item.id" class="card card-hover p-4 flex flex-col justify-between space-y-3 min-w-0">
-            <div class="space-y-2 min-w-0">
-              <!-- FIX DARK MODE: Ganti warna text jadi var(--accent-text) -->
-              <div class="inline-block px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[var(--accent)] text-[var(--accent-text)] leading-tight break-words whitespace-normal">
-                {{ item.title }}
-              </div>
-              <!-- FIX DARK MODE: Tambahin theme-text biar ngikutin tema -->
-              <p class="text-xs whitespace-pre-wrap leading-relaxed break-words theme-text">{{ item.content }}</p>
+        <div v-if="aiResults.length > 0" class="pt-3 divider">
+          <div class="card p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted">
+                {{ $t('content.composer.draft_of', { n: currentAiIndex + 1, total: aiResults.length }) }}
+              </span>
+              <button @click="closeAiResults" type="button" class="p-1.5 rounded-md hover:theme-bg-hover transition" :aria-label="$t('content.composer.close')">
+                <X class="w-4 h-4" />
+              </button>
             </div>
-            <Button variant="secondary" size="sm" @click="applyAiDraft(item.content)">Use This Draft</Button>
+
+            <div class="flex items-center justify-center gap-2">
+              <button v-for="(item, idx) in aiResults" :key="'dot-' + idx"
+                @click="currentAiIndex = idx"
+                type="button"
+                class="w-7 h-7 rounded-full text-xs font-bold transition"
+                :class="currentAiIndex === idx ? 'bg-[var(--text)] text-[var(--bg)]' : 'theme-bg-sec theme-text-muted border theme-border hover:theme-text'">
+                {{ idx + 1 }}
+              </button>
+            </div>
+
+            <div class="space-y-2 min-w-0">
+              <div class="inline-block px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-[var(--accent)] text-[var(--accent-text)] leading-tight break-words whitespace-normal">
+                {{ aiResults[currentAiIndex].title }}
+              </div>
+              <p class="text-xs whitespace-pre-wrap leading-relaxed break-words theme-text">{{ aiResults[currentAiIndex].content }}</p>
+            </div>
+
+            <div class="flex items-center justify-between gap-2 pt-1">
+              <Button variant="secondary" size="sm" @click="prevAi" :disabled="currentAiIndex === 0">
+                {{ $t('content.composer.prev') }}
+              </Button>
+              <Button size="sm" @click="applyCurrentAi">
+                {{ $t('content.composer.use_draft') }}
+              </Button>
+              <Button variant="secondary" size="sm" @click="nextAi" :disabled="currentAiIndex >= aiResults.length - 1">
+                {{ $t('content.composer.next') }}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -192,6 +220,7 @@
 
 <script setup lang="ts">                                           
 import { ref, watch, onMounted, computed } from 'vue'
+import { X } from 'lucide-vue-next'
 import { supabase } from '../lib/supabase'                         
 import { useNotify } from '../composables/useNotify'
 import { useI18n } from 'vue-i18n'
@@ -214,6 +243,32 @@ const customPrompt = ref('')
 const isGenerating = ref(false)
 const aiResults = ref<any[]>([])
 const targetLength = ref('')
+const currentAiIndex = ref(0)
+
+function closeAiResults() {
+  aiResults.value = []
+  currentAiIndex.value = 0
+}
+
+function nextAi() {
+  if (currentAiIndex.value < aiResults.value.length - 1) {
+    currentAiIndex.value++
+  }
+}
+
+function prevAi() {
+  if (currentAiIndex.value > 0) {
+    currentAiIndex.value--
+  }
+}
+
+function applyCurrentAi() {
+  const current = aiResults.value[currentAiIndex.value]
+  if (current) {
+    applyAiDraft(current.content)
+    closeAiResults()
+  }
+}
 const availableKnowledge = ref<{id: string, title: string, category: string}[]>([])
 const selectedKnowledgeIds = ref<string[]>([])
 const isKnowledgeDropdownOpen = ref(false)
@@ -279,7 +334,14 @@ watch(postText, (newVal) => {
 watch(scheduledDate, (newVal) => { localStorage.setItem('ixiera_draft_time', newVal) })
 
 watch(aiResults, (newVal) => {
-  localStorage.setItem('ixiera_draft_ai_results', JSON.stringify(newVal))
+  if (newVal.length === 0) {
+    localStorage.removeItem('ixiera_draft_ai_results')
+  } else {
+    localStorage.setItem('ixiera_draft_ai_results', JSON.stringify(newVal))
+  }
+  if (currentAiIndex.value >= newVal.length) {
+    currentAiIndex.value = 0
+  }
 }, { deep: true })                                                                 
 
 onMounted(() => {
