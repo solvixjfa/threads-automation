@@ -257,7 +257,7 @@
               <p class="text-xs font-medium line-clamp-2 break-words w-full">{{ post.text }}</p>
               <div class="flex items-center gap-3 text-[11px] theme-text-muted flex-wrap mt-1">
                 <span class="flex items-center gap-1"><Clock class="w-3 h-3" /> {{ formatDate(post.posted_at) }}</span>
-                <a v-if="post.permalink" :href="post.permalink" target="_blank" class="font-bold theme-text hover:underline flex items-center gap-1">
+                <a v-if="safePermalink(post.permalink)" :href="safePermalink(post.permalink)!" target="_blank" rel="noopener noreferrer" class="font-bold theme-text hover:underline flex items-center gap-1">
                   <ExternalLink class="w-3 h-3" /> Buka di Threads
                 </a>
               </div>
@@ -320,6 +320,13 @@ const allPosts = ref<any[]>([])
 const dailyInsights = ref<any[]>([])
 const failedPosts = ref<any[]>([])
 const adminHealth = ref<any>(null)
+
+function safePermalink(url: string | null | undefined): string | null {
+  if (!url) return null
+  return url.replace('://www.threads.net/', '://www.threads.com/')
+             .replace('://threads.net/', '://www.threads.com/')
+             .replace('://threads.com/', '://www.threads.com/')
+}
 
 const filteredTopPosts = computed(() => {
   let sorted = [...allPosts.value]
@@ -427,6 +434,15 @@ async function loadAllDashboardData() {
       if (analyticsData.overview) overview.value = analyticsData.overview
       if (analyticsData.all_posts) allPosts.value = analyticsData.all_posts
     }
+
+    // Override total_replies: exclude own replies (edge function gak filter)
+    try {
+      const { count } = await supabase.schema('threads').from('replies')
+        .select('id', { count: 'exact', head: true })
+        .eq('account_id', account.id)
+        .eq('is_own', false)
+      overview.value.total_replies = count || 0
+    } catch (e) { console.warn('[dashboard] total replies override', e) }
     const { data: healthData, error: healthErr } = await supabase.functions.invoke('admin-health')
     if (!healthErr && healthData?.success && healthData?.health) adminHealth.value = healthData.health
     else adminHealth.value = null

@@ -43,7 +43,10 @@ def fetch_posts_with_metrics(account_id: str):
     for p in (posts_res.data or []):
         media_id = str(p.get("threads_media_id"))
         sp = sp_map.get(media_id)
-        if not sp or not sp.get("text"): continue
+        # Fallback: pakai posts.text kalau gak ada scheduled_posts row
+        text = (sp.get("text") if sp else None) or (p.get("text") or "")
+        if not text or len(text.strip()) < 5:
+            continue
 
         metrics_arr = p.get("post_metrics", [])
         latest = next((m for m in metrics_arr if m.get("snapshot_label") == "latest"), None)
@@ -53,7 +56,7 @@ def fetch_posts_with_metrics(account_id: str):
         engagement = ((latest.get("likes", 0) + latest.get("replies", 0) + latest.get("reposts", 0)) / latest["views"]) * 100
         ts = sp.get("scheduled_for") or p.get("posted_at") or p.get("created_at")
         
-        formatted.append({"id": p.get("id"), "text": sp.get("text", ""), "er": engagement, "views": latest["views"], "timestamp": ts, "hook_type": p.get("hook_type"), "topic_cluster": p.get("topic_cluster"), "length_bucket": p.get("length_bucket"), "sentiment": p.get("sentiment"), "ai_analyzed_at": p.get("ai_analyzed_at")})
+        formatted.append({"id": p.get("id"), "text": text, "er": engagement, "views": latest["views"], "timestamp": ts, "hook_type": p.get("hook_type"), "topic_cluster": p.get("topic_cluster"), "length_bucket": p.get("length_bucket"), "sentiment": p.get("sentiment"), "ai_analyzed_at": p.get("ai_analyzed_at")})
     return formatted
 
 @router.get("/best-time/{account_id}")
