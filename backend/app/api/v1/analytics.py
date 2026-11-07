@@ -488,3 +488,60 @@ Return JSON array only, no markdown."""
             try: refund_credits(account_id, "deep_analyze", ref_id)
             except: pass
         raise HTTPException(500, detail=str(e))
+
+@router.post("/backfill-permalinks/{account_id}")
+async def backfill_permalinks(account_id: str):
+    """One-time: fetch missing permalinks from Meta API per-post"""
+    import httpx
+    db = get_supabase()
+
+    acc_res = db.schema("threads").from_("threads_accounts").select("settings").eq("id", account_id).limit(1).execute()
+    if not acc_res.data:
+        raise HTTPException(404, "Account not found")
+
+    token = (acc_res.data[0].get("settings") or {}).get("access_token")
+    if not token:
+        raise HTTPException(400, "No access token in account settings")
+
+    posts_res = db.schema("threads").from_("posts").select("id, threads_media_id, permalink").eq("account_id", account_id).execute()
+    posts = posts_res.data or []
+
+    to_fetch = []
+    for p in posts:
+        perm = p.get("permalink")
+        if not perm:
+            to_fetch.append(p)
+        elif "/post/" in perm and "/@" not in perm:
+            to_fetch.append(p)
+
+    updated = 0
+    still_null = []
+    failed = []
+
+    async with httpx.AsyncClient() as client:
+        for p in to_fetch:
+            media_id = p["threads_media_id"]
+            try:
+                url = f"https://graph.threads.net/v1.0/{media_id}?fields=permalink,shortcode&access_token={token}"
+                res = await client.get(url, timeout=15.0)
+                if res.status_code == 200:
+                    data = res.json()
+                    perm = data.get("permalink")
+                    if perm and perm.startswith("http"):
+                        db.schema("threads").from_("posts").update({"permalink": perm}).eq("id", p["id"]).execute()
+                        updated += 1
+                    else:
+                        still_null.append({"media_id": media_id, "reason": "API returned no permalink"})
+                else:
+                    failed.append({"media_id": media_id, "status": res.status_code, "error": res.text[:200]})
+            except Exception as e:
+                failed.append({"media_id": media_id, "error": str(e)})
+
+    return {
+        "success": True,
+        "total_scanned": len(posts),
+        "to_fetch": len(to_fetch),
+        "updated": updated,
+        "still_null": still_null,
+        "failed": failed,
+    }
