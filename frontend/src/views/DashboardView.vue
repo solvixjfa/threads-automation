@@ -107,6 +107,22 @@
 
     <!-- MAIN CONTENT -->
     <template v-else>
+      <!-- TIME RANGE TOGGLE -->
+      <div class="flex items-center justify-between flex-wrap gap-2 w-full">
+        <h2 class="text-xs font-bold uppercase tracking-wider theme-text-muted">Ringkasan</h2>
+        <div class="inline-flex rounded-lg border theme-border overflow-hidden">
+          <button
+            v-for="r in [7, 14, 30]"
+            :key="r"
+            @click="timeRange = r as 7 | 14 | 30"
+            class="px-3 py-1.5 text-[11px] font-bold transition"
+            :class="timeRange === r ? 'bg-[var(--text)] text-[var(--bg)]' : 'theme-text-muted hover:theme-text'"
+          >
+            {{ r }}D
+          </button>
+        </div>
+      </div>
+
       <!-- STATS ROW 1 -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 w-full max-w-full">
         <div class="card p-4 md:p-5 w-full min-w-0 overflow-hidden relative group transition-colors">
@@ -318,8 +334,22 @@ const nextBestTime = ref<any>(null)
 const overview = ref({ total_posts: 0, total_views: 0, total_likes: 0, total_replies: 0, total_reposts: 0, avg_engagement_rate: 0 })
 const allPosts = ref<any[]>([])
 const dailyInsights = ref<any[]>([])
+const timeRange = ref<7 | 14 | 30>(30)
 const failedPosts = ref<any[]>([])
 const adminHealth = ref<any>(null)
+
+function applyRangeTotals() {
+  if (!dailyInsights.value.length) return
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - timeRange.value)
+  cutoff.setHours(0, 0, 0, 0)
+  const filtered = dailyInsights.value.filter((d: any) => new Date(d.date) >= cutoff)
+  if (!filtered.length) return
+
+  overview.value.total_views = filtered.reduce((s: number, d: any) => s + (d.views || 0), 0)
+  overview.value.total_likes = filtered.reduce((s: number, d: any) => s + (d.likes || 0), 0)
+  overview.value.total_reposts = filtered.reduce((s: number, d: any) => s + (d.reposts || 0), 0)
+}
 
 function safePermalink(url: string | null | undefined): string | null {
   if (!url) return null
@@ -370,7 +400,7 @@ async function fetchQueueMetricsAndFailed(accountId: string) {
 }
 
 async function fetchDailyInsights(accountId: string) {
-  const { data } = await supabase.schema('threads').from('account_insights_daily').select('date, views, likes, replies, reposts').eq('account_id', accountId).order('date', { ascending: true }).limit(14)
+  const { data } = await supabase.schema('threads').from('account_insights_daily').select('date, views, likes, replies, reposts').eq('account_id', accountId).order('date', { ascending: true }).limit(90)
   if (data) dailyInsights.value = data
 }
 
@@ -442,6 +472,7 @@ async function loadAllDashboardData() {
         .eq('account_id', account.id)
         .eq('is_own', false)
       overview.value.total_replies = count || 0
+      applyRangeTotals()
     } catch (e) { console.warn('[dashboard] total replies override', e) }
     const { data: healthData, error: healthErr } = await supabase.functions.invoke('admin-health')
     if (!healthErr && healthData?.success && healthData?.health) adminHealth.value = healthData.health
@@ -482,6 +513,8 @@ async function handleManualRefresh() {
     refreshing.value = false
   }
 }
+
+watch(timeRange, () => applyRangeTotals())
 
 onMounted(() => loadAllDashboardData())
 onUnmounted(() => {
