@@ -266,7 +266,7 @@ function applyCurrentAi() {
   const current = aiResults.value[currentAiIndex.value]
   if (current) {
     applyAiDraft(current.content)
-    closeAiResults()
+    // Slider tetap tampil — user close manual via X
   }
 }
 const availableKnowledge = ref<{id: string, title: string, category: string}[]>([])
