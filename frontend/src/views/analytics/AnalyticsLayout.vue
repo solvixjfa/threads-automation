@@ -9,42 +9,6 @@
         <p class="text-sm theme-text-muted mt-1">{{ $t('analytics.subtitle') }}</p>
       </div>
 
-      <!-- Deep Analyze Banner -->
-      <div v-if="analysisStatus && !analysisStatus.is_cached" class="mb-4 p-4 rounded-xl border-2 border-[var(--border-strong)] theme-bg-sec">
-        <div class="flex items-start gap-3">
-          <div class="w-10 h-10 rounded-lg flex items-center justify-center bg-[var(--text)] text-[var(--bg)] shrink-0">
-            <Bot class="w-5 h-5" />
-          </div>
-          <div class="flex-1 min-w-0">
-            <h3 class="text-sm font-bold mb-1">
-              {{ analysisStatus.analyzed_posts === 0 ? $t('analytics.deep_notyet') : $t('analytics.deep_partial', { done: analysisStatus.analyzed_posts, total: analysisStatus.total_posts }) }}
-            </h3>
-            <p class="text-xs theme-text-muted mb-3">{{ $t('analytics.deep_desc') }}</p>
-
-            <div class="mb-3">
-              <select v-model="selectedModel" :disabled="isAnalyzing" class="text-xs px-2 py-1.5 rounded-md border theme-border bg-[var(--bg)] theme-text cursor-pointer">
-                <option value="">Otomatis (Pintar)</option>
-                <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
-                <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite (Hemat)</option>
-                <option value="gemini-flash-latest">Gemini Flash Latest</option>
-              </select>
-            </div>
-
-            <Button @click="runDeepAnalyze" :disabled="isAnalyzing" size="sm">
-              <span v-if="isAnalyzing" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin mr-1.5"></span>
-              <Bot v-else class="w-4 h-4 mr-1.5" />
-              {{ isAnalyzing ? $t('analytics.deep_loading') : (analysisStatus.plan === 'trial' ? $t('analytics.deep_btn_trial') : $t('analytics.deep_btn')) }}
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Deep Analyze Active Badge -->
-      <div v-else-if="analysisStatus && analysisStatus.is_cached" class="mb-4 flex items-center gap-2 text-xs theme-text-muted">
-        <CheckCircle2 class="w-4 h-4" style="color: #10b981;" />
-        <span>{{ $t('analytics.deep_active', { n: analysisStatus.analyzed_posts }) }}</span>
-      </div>
-
       <div class="space-y-2">
         <RouterLink
           v-for="item in menuItems"
@@ -81,54 +45,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
-import { supabase } from '../../lib/supabase'
-import { Button } from '../../components/ui'
+import { computed, ref } from 'vue'
 import { useRoute, RouterView, RouterLink } from 'vue-router'
-import { BarChart3, Clock, Anchor, AlignLeft, Hash, ChevronRight, ChevronLeft, Bot, CheckCircle2 } from 'lucide-vue-next'
+import { BarChart3, Clock, Anchor, AlignLeft, Hash, ChevronRight, ChevronLeft } from 'lucide-vue-next'
 
 const route = useRoute()
 
-const analysisStatus = ref<any>(null)
-const isAnalyzing = ref(false)
-const selectedModel = ref('')
-const currentAccountId = ref<string | null>(null)
 
-async function fetchAnalysisStatus() {
-  try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { data: acc } = await supabase.schema('threads').from('threads_accounts')
-      .select('id').eq('user_id', user.id).maybeSingle()
-    if (!acc) return
-    currentAccountId.value = acc.id
-    const res = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/analytics/analysis-status/${acc.id}`)
-    const data = await res.json()
-    if (data.success) analysisStatus.value = data
-  } catch (e) { console.warn('[analytics] status fetch', e) }
-}
 
-async function runDeepAnalyze() {
-  if (!currentAccountId.value || isAnalyzing.value) return
-  isAnalyzing.value = true
-  try {
-    const res = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/analytics/deep-analyze/${currentAccountId.value}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: selectedModel.value })
-    })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.detail || 'Failed')
-    await fetchAnalysisStatus()
-    window.location.reload()
-  } catch (e: any) {
-    alert('Gagal menganalisis data. Sistem sudah mencoba beberapa model AI, silakan coba beberapa saat lagi.')
-  } finally {
-    isAnalyzing.value = false
-  }
-}
 
-onMounted(() => fetchAnalysisStatus())
 const isRoot = computed(() => route.path === '/analytics' || route.path === '/analytics/')
 
 const menuItems = [
