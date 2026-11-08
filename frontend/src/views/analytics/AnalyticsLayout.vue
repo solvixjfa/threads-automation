@@ -21,27 +21,13 @@
             </h3>
             <p class="text-xs theme-text-muted mb-3">{{ $t('analytics.deep_desc') }}</p>
 
-            <div class="flex flex-wrap items-center gap-2 mb-3">
-              <div class="inline-flex rounded-lg border theme-border overflow-hidden text-xs">
-                <button
-                  type="button"
-                  @click="selectedModel = 'hemat'"
-                  class="px-3 py-1.5 font-bold transition"
-                  :class="selectedModel === 'hemat' ? 'bg-[var(--text)] text-[var(--bg)]' : 'theme-text-muted hover:theme-text'"
-                  :disabled="isAnalyzing"
-                >
-                  {{ $t('analytics.deep_model_hemat') }}
-                </button>
-                <button
-                  type="button"
-                  @click="selectedModel = 'akurat'"
-                  class="px-3 py-1.5 font-bold transition border-l theme-border"
-                  :class="selectedModel === 'akurat' ? 'bg-[var(--text)] text-[var(--bg)]' : 'theme-text-muted hover:theme-text'"
-                  :disabled="isAnalyzing"
-                >
-                  {{ $t('analytics.deep_model_akurat') }}
-                </button>
-              </div>
+            <div class="mb-3">
+              <select v-model="selectedModel" :disabled="isAnalyzing" class="text-xs px-2 py-1.5 rounded-md border theme-border bg-[var(--bg)] theme-text cursor-pointer">
+                <option value="">Otomatis (Pintar)</option>
+                <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
+                <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite (Hemat)</option>
+                <option value="gemini-flash-latest">Gemini Flash Latest</option>
+              </select>
             </div>
 
             <Button @click="runDeepAnalyze" :disabled="isAnalyzing" size="sm">
@@ -105,7 +91,7 @@ const route = useRoute()
 
 const analysisStatus = ref<any>(null)
 const isAnalyzing = ref(false)
-const selectedModel = ref<'hemat' | 'akurat'>('hemat')
+const selectedModel = ref('')
 const currentAccountId = ref<string | null>(null)
 
 async function fetchAnalysisStatus() {

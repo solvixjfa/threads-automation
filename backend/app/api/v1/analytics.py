@@ -444,17 +444,15 @@ Fields per post:
 POSTS:
 {json.dumps(chunk, ensure_ascii=False)}
 
-Return JSON array only, no markdown."""
+Return JSON array only. DO NOT write any introduction, explanation, or markdown code blocks. Just output the raw JSON array starting with [ and ending with ]."""
 
             resp = None
             last_err = ""
             _user_model = (payload or {}).get("model") if isinstance(payload, dict) else None
-            if _user_model == "hemat":
-                _models = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"]
-            elif _user_model == "akurat":
-                _models = ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-flash-latest"]
+            if _user_model:
+                _models = [_user_model, "gemini-3.8-flash", "gemini-3.5-flash-lite"]
             else:
-                _models = ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-flash-latest"]
+                _models = ["gemini-3.8-flash", "gemini-3.5-flash-lite"]
             for m in _models:
                 try:
                     resp = client.models.generate_content(
@@ -469,14 +467,15 @@ Return JSON array only, no markdown."""
                 raise Exception(f"LLM failed: {last_err}")
 
             raw = resp.text.strip()
-            if raw.startswith("```json"): raw = raw.replace("```json","",1).rstrip("`").strip()
-            if raw.startswith("```"): raw = raw.replace("```","",1).rstrip("`").strip()
+            # Hapus markdown blocks
+            raw = raw.replace("```json", "").replace("```", "").strip()
             
-            # Ekstrak hanya bagian array JSON (buang teks pengantar/penutup)
+            # Ekstrak paksa dari kurung siku pertama sampai terakhir
             import re as _re_local
-            match = _re_local.search(r'\[.*\]', raw, _re_local.DOTALL)
-            if match:
-                raw = match.group(0)
+            start_idx = raw.find('[')
+            end_idx = raw.rfind(']')
+            if start_idx != -1 and end_idx != -1:
+                raw = raw[start_idx:end_idx+1]
 
             try:
                 batch = json.loads(raw)
