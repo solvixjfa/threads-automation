@@ -37,7 +37,7 @@ def fetch_posts_with_metrics(account_id: str):
         if row.get("published_media_id"):
             sp_map[str(row["published_media_id"])] = row
 
-    posts_res = db.schema("threads").from_("posts").select("id, threads_media_id, posted_at, created_at, hook_type, topic_cluster, length_bucket, sentiment, ai_analyzed_at, post_metrics(views, likes, replies, reposts, snapshot_label)").eq("account_id", account_id).execute()
+    posts_res = db.schema("threads").from_("posts").select("id, text, threads_media_id, posted_at, created_at, hook_type, topic_cluster, length_bucket, sentiment, ai_analyzed_at, post_metrics(views, likes, replies, reposts, snapshot_label)").eq("account_id", account_id).execute()
     
     formatted = []
     for p in (posts_res.data or []):
