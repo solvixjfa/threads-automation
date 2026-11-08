@@ -84,7 +84,8 @@
     "toast_sync_failed": "Gagal sinkron ke backend",
     "toast_retry_success": "Post berhasil masuk antrean lagi.",
     "toast_retry_failed": "Gagal retry",
-    "error_generic": "Ada error"
+    "error_generic": "Ada error",
+    "followers": "Pengikut"
   },
   "content": {
     "composer": {

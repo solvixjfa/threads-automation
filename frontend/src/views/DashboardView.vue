@@ -187,6 +187,24 @@
         </div>
       </div>
 
+      <!-- FOLLOWERS CARD -->
+      <div class="card p-4 md:p-5 w-full flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <span class="text-[10px] font-bold uppercase tracking-wider theme-text-muted block">{{ $t('dashboard.followers') || 'Followers' }}</span>
+          <p class="text-2xl md:text-3xl font-black truncate">{{ (followers.current || 0).toLocaleString() }}</p>
+        </div>
+        <div class="text-right shrink-0">
+          <p class="text-xs font-bold flex items-center justify-end gap-1">
+            <span>{{ (followers.delta_7d || 0) >= 0 ? '↑' : '↓' }}</span>
+            <span>{{ (followers.delta_7d || 0) >= 0 ? '+' : '' }}{{ followers.delta_7d || 0 }}</span>
+            <span class="text-[10px] theme-text-muted font-normal">(7d)</span>
+          </p>
+          <p class="text-[10px] theme-text-muted mt-0.5">
+            {{ (followers.delta_30d || 0) >= 0 ? '+' : '' }}{{ followers.delta_30d || 0 }} (30d)
+          </p>
+        </div>
+      </div>
+
       <!-- CHART SECTION -->
       <div class="card p-4 md:p-6 space-y-4 w-full max-w-full overflow-hidden">
         <div class="flex flex-wrap justify-between items-center pb-3 divider gap-2">
@@ -331,6 +349,7 @@ const queueMetrics = ref({ scheduled: 0, published: 0, failed: 0 })
 const trialInfo = ref<any>(null)
 const pendingRepliesCount = ref(0)
 const nextBestTime = ref<any>(null)
+const followers = ref<any>({ current: 0, delta_7d: 0, delta_30d: 0 })
 const overview = ref({ total_posts: 0, total_views: 0, total_likes: 0, total_replies: 0, total_reposts: 0, avg_engagement_rate: 0 })
 const allPosts = ref<any[]>([])
 const dailyInsights = ref<any[]>([])
@@ -436,6 +455,13 @@ async function loadAllDashboardData() {
           }
         }
       } catch (e) { console.warn('[dashboard] trial info', e) }
+
+      // Followers stats
+      try {
+        const fRes = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/analytics/followers/${account.id}`)
+        const fData = await fRes.json()
+        if (fData.success) followers.value = fData
+      } catch (e) { console.warn('[dashboard] followers', e) }
 
       // Pending replies count
       try {

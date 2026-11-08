@@ -598,3 +598,36 @@ async def backfill_permalinks(account_id: str):
         "still_null": still_null,
         "failed": failed,
     }
+
+@router.get("/followers/{account_id}")
+async def get_followers_stats(account_id: str):
+    try:
+        db = get_supabase()
+        res = db.schema("threads").from_("account_insights_daily").select("date, followers_count").eq("account_id", account_id).order("date", desc=False).execute()
+        data = [r for r in (res.data or []) if r.get("followers_count") is not None]
+        
+        if not data:
+            return {"success": True, "current": 0, "delta_7d": 0, "delta_30d": 0, "history": []}
+        
+        current = data[-1].get("followers_count") or 0
+        
+        delta_7d = 0
+        if len(data) >= 2:
+            ref_7d = data[max(0, len(data) - 8)]
+            delta_7d = current - (ref_7d.get("followers_count") or 0)
+        
+        delta_30d = 0
+        if len(data) >= 2:
+            ref_30d = data[max(0, len(data) - 31)]
+            delta_30d = current - (ref_30d.get("followers_count") or 0)
+        
+        return {
+            "success": True,
+            "current": current,
+            "delta_7d": delta_7d,
+            "delta_30d": delta_30d,
+            "history": data[-30:],
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

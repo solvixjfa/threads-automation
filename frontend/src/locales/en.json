@@ -84,7 +84,8 @@
     "toast_sync_failed": "Failed to trigger backend sync",
     "toast_retry_success": "Post successfully re-queued for publishing.",
     "toast_retry_failed": "Failed to trigger retry",
-    "error_generic": "An error occurred"
+    "error_generic": "An error occurred",
+    "followers": "Followers"
   },
   "content": {
     "composer": {

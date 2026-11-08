@@ -373,6 +373,29 @@ async def sync_profile_and_metrics(db, client, acc_id: str, token: str):
         logging.error(f"[Sync Metrics] Error {acc_id}: {e}")
 
 
+async def sync_followers(db, client, acc_id: str, token: str):
+    """Fetch followers_count dari Meta API → update account_insights_daily hari ini"""
+    try:
+        url = f"https://graph.threads.net/v1.0/me?fields=followers_count&access_token={token}"
+        res = await client.get(url, timeout=10.0)
+        if res.status_code != 200:
+            return
+        followers = res.json().get("followers_count")
+        if followers is None:
+            return
+        
+        today = datetime.now(timezone.utc).date().isoformat()
+        existing = db.schema("threads").from_("account_insights_daily").select("id, followers_count").eq("account_id", acc_id).eq("date", today).limit(1).execute()
+        
+        if existing.data:
+            current = existing.data[0].get("followers_count") or 0
+            if current != followers:
+                db.schema("threads").from_("account_insights_daily").update({"followers_count": followers}).eq("id", existing.data[0]["id"]).execute()
+                logging.info(f"[Followers] {acc_id}: {current} -> {followers}")
+    except Exception as e:
+        logging.warning(f"[Followers Sync Error] {e}")
+
+
 async def process_account(db, client, acc: dict) -> dict:
     account_stats = {"new_posts": 0, **empty_stats()}
 
@@ -414,6 +437,7 @@ async def process_account(db, client, acc: dict) -> dict:
 
     # Tarik Profile & Metrics dulu
     await sync_profile_and_metrics(db, client, acc_id, token)
+    await sync_followers(db, client, acc_id, token)
     
     new_posts = await sync_posts_from_meta(db, client, acc_id, token)
     account_stats["new_posts"] = new_posts
