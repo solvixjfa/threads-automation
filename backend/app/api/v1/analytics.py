@@ -429,7 +429,7 @@ async def run_deep_analyze(account_id: str, payload: dict = None):
 
         client = genai.Client(api_key=gemini_key)
         all_results = []
-        CHUNK = 50
+        CHUNK = 20
         for i in range(0, len(to_analyze), CHUNK):
             chunk = to_analyze[i:i+CHUNK]
             prompt = f"""Classify each Threads post below. Return ONLY valid JSON array.
@@ -470,8 +470,22 @@ Return JSON array only, no markdown."""
 
             raw = resp.text.strip()
             if raw.startswith("```json"): raw = raw.replace("```json","",1).rstrip("`").strip()
-            batch = json.loads(raw)
-            all_results.extend(batch if isinstance(batch, list) else batch.get("results", []))
+            if raw.startswith("```"): raw = raw.replace("```","",1).rstrip("`").strip()
+            
+            # Ekstrak hanya bagian array JSON (buang teks pengantar/penutup)
+            import re as _re_local
+            match = _re_local.search(r'\[.*\]', raw, _re_local.DOTALL)
+            if match:
+                raw = match.group(0)
+
+            try:
+                batch = json.loads(raw)
+                all_results.extend(batch if isinstance(batch, list) else batch.get("results", []))
+            except json.JSONDecodeError as e:
+                print(f"[Deep Analyze] Model {m} gagal format JSON: {e}. Fallback ke model berikutnya.")
+                resp = None
+                last_err = str(e)
+                continue # Paksa loop lanjut ke model fallback berikutnya
 
         now_iso = datetime.now(timezone.utc).isoformat()
         updated = 0

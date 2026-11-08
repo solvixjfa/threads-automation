@@ -136,7 +136,7 @@ async function runDeepAnalyze() {
     await fetchAnalysisStatus()
     window.location.reload()
   } catch (e: any) {
-    alert('Deep Analyze gagal: ' + (e.message || 'Unknown error'))
+    alert('Gagal menganalisis data. Sistem sudah mencoba beberapa model AI, silakan coba beberapa saat lagi.')
   } finally {
     isAnalyzing.value = false
   }
