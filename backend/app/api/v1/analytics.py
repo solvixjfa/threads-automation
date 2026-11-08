@@ -352,17 +352,48 @@ async def get_topic_clusters(account_id: str):
 @router.get("/sentiment-performance/{account_id}")
 async def get_sentiment_performance(account_id: str):
     try:
+        import re as _re
         posts = fetch_posts_with_metrics(account_id)
+
+        POSITIVE_WORDS = ["mantap","keren","bagus","senang","sukses","berhasil","cinta","bangga","luar biasa","hebat","asyik","alhamdulillah","yes","yay","love","great","amazing","awesome","happy","win","good","excited","worth it","recommended","terima kasih","grateful","thank"]
+        NEGATIVE_WORDS = ["sedih","kecewa","gagal","capek","lelah","susah","sulit","bangsat","anjir","parah","jelek","buruk","nyesel","menyesal","marah","frustasi","stress","angry","sad","fail","terrible","worst","hate","bad","sorry","maaf","males","bosen","boring","payah"]
+
+        def classify_sentiment(text: str) -> str:
+            tl = text.lower()
+            pos_score = sum(1 for w in POSITIVE_WORDS if w in tl)
+            neg_score = sum(1 for w in NEGATIVE_WORDS if w in tl)
+            if pos_score > neg_score: return "positive"
+            if neg_score > pos_score: return "negative"
+            return "neutral"
+
         cats = {"positive": [], "neutral": [], "negative": []}
         for p in posts:
+            text = (p.get("text") or "").strip()
+            if not text: continue
+            # Pakai cached sentiment kalau ada (dari deep analyze), else fallback regex
             sent = (p.get("sentiment") or "").lower()
-            if sent in cats: cats[sent].append(p["er"])
-        results = [{"sentiment": k, "avg_er": round(sum(v)/len(v),2) if v else 0.0, "count": len(v)} for k, v in cats.items()]
+            if sent not in cats:
+                sent = classify_sentiment(text)
+            cats[sent].append(p["er"])
+
+        results = []
+        for k, v in cats.items():
+            results.append({
+                "sentiment": k,
+                "avg_er": round(sum(v)/len(v), 2) if v else 0.0,
+                "count": len(v)
+            })
+
         analyzed = sum(1 for p in posts if p.get("ai_analyzed_at"))
-        return {"success": True, "data": results, "total_posts": len(posts), "analyzed_posts": analyzed, "mode": "llm" if analyzed > 0 else "none"}
+        return {
+            "success": True,
+            "data": results,
+            "total_posts": len(posts),
+            "analyzed_posts": analyzed,
+            "mode": "llm" if analyzed > 0 else "regex",
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/analysis-status/{account_id}")
 async def get_analysis_status(account_id: str):
