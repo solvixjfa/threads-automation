@@ -48,13 +48,15 @@ def fetch_posts_with_metrics(account_id: str):
         if not text or len(text.strip()) < 5:
             continue
 
-        metrics_arr = p.get("post_metrics", [])
+        metrics_arr = p.get("post_metrics") or []
+            metrics_arr = [m for m in metrics_arr if m]
         latest = next((m for m in metrics_arr if m.get("snapshot_label") == "latest"), None)
         if not latest and metrics_arr: latest = metrics_arr[0]
         if not latest or not latest.get("views") or latest["views"] <= 0: continue
 
         engagement = ((latest.get("likes", 0) + latest.get("replies", 0) + latest.get("reposts", 0)) / latest["views"]) * 100
-        ts = sp.get("scheduled_for") or p.get("posted_at") or p.get("created_at")
+        ts = sp.get("scheduled_for") if sp else None
+            if not ts: ts = p.get("posted_at") or p.get("created_at")
         
         formatted.append({"id": p.get("id"), "text": text, "er": engagement, "views": latest["views"], "timestamp": ts, "hook_type": p.get("hook_type"), "topic_cluster": p.get("topic_cluster"), "length_bucket": p.get("length_bucket"), "sentiment": p.get("sentiment"), "ai_analyzed_at": p.get("ai_analyzed_at")})
     return formatted
