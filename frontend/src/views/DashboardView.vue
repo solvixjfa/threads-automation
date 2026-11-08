@@ -375,12 +375,6 @@ const filteredTopPosts = computed(() => {
   return sorted.slice(0, 5)
 })
 
-const maxDailyLikes = computed(() => {
-  if (dailyInsights.value.length === 0) return 10
-  const max = Math.max(...dailyInsights.value.map(d => d.likes || 0))
-  return max > 0 ? max : 10
-})
-
 const maxDailyViews = computed(() => {
   if (dailyInsights.value.length === 0) return 100
   const max = Math.max(...dailyInsights.value.map(d => d.views || 0))
