@@ -21,7 +21,7 @@
             </h3>
             <p class="text-xs theme-text-muted mb-3">{{ $t('analytics.deep_desc') }}</p>
 
-            <div class="flex flex-wrap items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2 mb-3">
               <div class="inline-flex rounded-lg border theme-border overflow-hidden text-xs">
                 <button
                   type="button"
@@ -42,6 +42,7 @@
                   {{ $t('analytics.deep_model_akurat') }}
                 </button>
               </div>
+            </div>
 
             <Button @click="runDeepAnalyze" :disabled="isAnalyzing" size="sm">
               <span v-if="isAnalyzing" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin mr-1.5"></span>
