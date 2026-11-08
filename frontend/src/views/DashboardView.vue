@@ -234,19 +234,19 @@
               <g v-for="(day, i) in dailyInsights" :key="day.date">
                 <!-- Bar Views -->
                 <rect
-                  :x="i * 16 + 1"
-                  :y="160 - getBarHeight(day.views, maxDailyViews) * 1.4"
-                  width="7"
-                  :height="getBarHeight(day.views, maxDailyViews) * 1.4"
+                  :x="i * 16 + 2"
+                  :y="160 - getSvgHeight(day.views, maxDailyViews)"
+                  width="6"
+                  :height="getSvgHeight(day.views, maxDailyViews)"
                   fill="var(--text)"
                   rx="1"
                 />
                 <!-- Bar Likes -->
                 <rect
                   :x="i * 16 + 9"
-                  :y="160 - getBarHeight(day.likes, maxDailyViews) * 1.4"
-                  width="7"
-                  :height="getBarHeight(day.likes, maxDailyViews) * 1.4"
+                  :y="160 - getSvgHeight(day.likes, maxDailyLikes)"
+                  width="6"
+                  :height="getSvgHeight(day.likes, maxDailyLikes)"
                   fill="var(--text-muted)"
                   rx="1"
                   opacity="0.6"
@@ -407,11 +407,22 @@ const filteredTopPosts = computed(() => {
   return sorted.slice(0, 5)
 })
 
+const maxDailyLikes = computed(() => {
+  if (dailyInsights.value.length === 0) return 10
+  const max = Math.max(...dailyInsights.value.map(d => d.likes || 0))
+  return max > 0 ? max : 10
+})
+
 const maxDailyViews = computed(() => {
   if (dailyInsights.value.length === 0) return 100
   const max = Math.max(...dailyInsights.value.map(d => d.views || 0))
   return max > 0 ? max : 100
 })
+
+function getSvgHeight(val: number, max: number) {
+  if (!val || !max) return 2;
+  return Math.max(Math.round((val / max) * 140), 2);
+}
 
 function getBarHeight(val: number, max: number) {
   if (!val || !max) return '4px'
