@@ -229,17 +229,39 @@
         </div>
 
         <div v-else class="space-y-2 pt-2 w-full max-w-full">
-          <div class="h-48 flex items-end gap-1 sm:gap-2 pt-12 pb-2 px-1 divider overflow-x-auto w-full hide-scrollbar">
-            <div v-for="day in dailyInsights" :key="day.date" class="flex-1 min-w-[20px] flex flex-col items-center gap-1.5 h-full justify-end group relative">
-              <div class="absolute -top-9 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity text-[9px] px-2 py-1 rounded-md whitespace-nowrap pointer-events-none z-20 theme-accent">
-                {{ day.views }} / {{ day.likes }}
-              </div>
-              <div class="w-full max-w-[16px] flex items-end gap-0.5 h-full justify-center">
-                <div class="w-full rounded-t transition-all" :style="{ height: getBarHeight(day.views, maxDailyViews), background: 'var(--accent)' }"></div>
-                <div class="w-full rounded-t transition-all" :style="{ height: getBarHeight(day.likes, maxDailyViews), background: 'var(--text-muted)' }"></div>
-              </div>
-              <span class="text-[9px] font-bold theme-text-muted truncate w-full text-center">{{ formatDayLabel(day.date) }}</span>
-            </div>
+          <div class="w-full h-48 pt-2 pb-2 overflow-x-auto">
+            <svg :viewBox="`0 0 ${dailyInsights.length * 16} 160`" class="w-full h-full" preserveAspectRatio="none" style="min-width: 300px;">
+              <g v-for="(day, i) in dailyInsights" :key="day.date">
+                <!-- Bar Views -->
+                <rect
+                  :x="i * 16 + 1"
+                  :y="160 - getBarHeight(day.views, maxDailyViews) * 1.4"
+                  width="7"
+                  :height="getBarHeight(day.views, maxDailyViews) * 1.4"
+                  fill="var(--text)"
+                  rx="1"
+                />
+                <!-- Bar Likes -->
+                <rect
+                  :x="i * 16 + 9"
+                  :y="160 - getBarHeight(day.likes, maxDailyViews) * 1.4"
+                  width="7"
+                  :height="getBarHeight(day.likes, maxDailyViews) * 1.4"
+                  fill="var(--text-muted)"
+                  rx="1"
+                  opacity="0.6"
+                />
+                <!-- Label tanggal -->
+                <text
+                  v-if="i % Math.max(1, Math.floor(dailyInsights.length / 6)) === 0"
+                  :x="i * 16 + 8"
+                  y="158"
+                  text-anchor="middle"
+                  class="text-[6px]"
+                  fill="var(--text-muted)"
+                >{{ formatDayLabel(day.date) }}</text>
+              </g>
+            </svg>
           </div>
         </div>
       </div>
@@ -419,8 +441,8 @@ async function fetchQueueMetricsAndFailed(accountId: string) {
 }
 
 async function fetchDailyInsights(accountId: string) {
-  const { data } = await supabase.schema('threads').from('account_insights_daily').select('date, views, likes, replies, reposts').eq('account_id', accountId).order('date', { ascending: true }).limit(90)
-  if (data) dailyInsights.value = data
+  const { data } = await supabase.schema('threads').from('account_insights_daily').select('date, views, likes, replies, reposts').eq('account_id', accountId).order('date', { ascending: false }).limit(90)
+  if (data) dailyInsights.value = [...data].reverse()
 }
 
 async function loadAllDashboardData() {

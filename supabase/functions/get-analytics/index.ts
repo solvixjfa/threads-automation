@@ -54,7 +54,7 @@ serve(async (req) => {
       };
     });
 
-    const { data: dailyInsights } = await supabase.schema("threads").from("account_insights_daily").select("*").eq("account_id", account.id).order("date", { ascending: true }).limit(30);
+    const { data: dailyInsights } = await supabase.schema("threads").from("account_insights_daily").select("*").eq("account_id", account.id).order("date", { ascending: false }).limit(90);
     if (totalViews === 0 && totalLikes === 0 && dailyInsights && dailyInsights.length > 0) {
       dailyInsights.forEach((d: any) => { totalViews += d.views || 0; totalLikes += d.likes || 0; totalReplies += d.replies || 0; totalReposts += d.reposts || 0; });
     }
@@ -66,7 +66,7 @@ serve(async (req) => {
       avg_engagement_rate: formattedPosts.length > 0 ? parseFloat((formattedPosts.reduce((acc, p) => acc + p.engagement_rate, 0) / formattedPosts.length).toFixed(2)) : 0
     };
 
-    return new Response(JSON.stringify({ success: true, overview, all_posts: sortedByDate.slice(0, 50), daily_trends: dailyInsights || [] }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ success: true, overview, all_posts: sortedByDate.slice(0, 50), daily_trends: (dailyInsights || []).slice().reverse() }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
