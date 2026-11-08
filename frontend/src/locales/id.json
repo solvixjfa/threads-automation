@@ -301,7 +301,9 @@
     "deep_btn": "Deep Analyze (1 kredit)",
     "deep_btn_trial": "Deep Analyze (Gratis Trial)",
     "deep_loading": "Menganalisis...",
-    "deep_active": "Analisis AI aktif ({n} post)"
+    "deep_active": "Analisis AI aktif ({n} post)",
+    "deep_model_hemat": "Hemat",
+    "deep_model_akurat": "Akurat"
   },
   "settings": {
     "title": "Pengaturan",

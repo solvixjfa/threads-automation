@@ -381,7 +381,7 @@ async def get_analysis_status(account_id: str):
 
 
 @router.post("/deep-analyze/{account_id}")
-async def run_deep_analyze(account_id: str):
+async def run_deep_analyze(account_id: str, payload: dict = None):
     from app.services.billing import check_and_spend, refund_credits, BillingError
     from app.services.rag import GEMINI_KEY
     from google import genai
@@ -448,7 +448,14 @@ Return JSON array only, no markdown."""
 
             resp = None
             last_err = ""
-            for m in ["gemini-3.5-flash","gemini-flash-latest","gemini-2.5-flash"]:
+            _user_model = (payload or {}).get("model") if isinstance(payload, dict) else None
+            if _user_model == "hemat":
+                _models = ["gemini-3.5-flash-lite", "gemini-3.8-flash", "gemini-flash-latest"]
+            elif _user_model == "akurat":
+                _models = ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-flash-latest"]
+            else:
+                _models = ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-flash-latest"]
+            for m in _models:
                 try:
                     resp = client.models.generate_content(
                         model=m, contents=prompt,

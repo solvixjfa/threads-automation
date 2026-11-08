@@ -20,6 +20,29 @@
               {{ analysisStatus.analyzed_posts === 0 ? $t('analytics.deep_notyet') : $t('analytics.deep_partial', { done: analysisStatus.analyzed_posts, total: analysisStatus.total_posts }) }}
             </h3>
             <p class="text-xs theme-text-muted mb-3">{{ $t('analytics.deep_desc') }}</p>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <div class="inline-flex rounded-lg border theme-border overflow-hidden text-xs">
+                <button
+                  type="button"
+                  @click="selectedModel = 'hemat'"
+                  class="px-3 py-1.5 font-bold transition"
+                  :class="selectedModel === 'hemat' ? 'bg-[var(--text)] text-[var(--bg)]' : 'theme-text-muted hover:theme-text'"
+                  :disabled="isAnalyzing"
+                >
+                  {{ $t('analytics.deep_model_hemat') }}
+                </button>
+                <button
+                  type="button"
+                  @click="selectedModel = 'akurat'"
+                  class="px-3 py-1.5 font-bold transition border-l theme-border"
+                  :class="selectedModel === 'akurat' ? 'bg-[var(--text)] text-[var(--bg)]' : 'theme-text-muted hover:theme-text'"
+                  :disabled="isAnalyzing"
+                >
+                  {{ $t('analytics.deep_model_akurat') }}
+                </button>
+              </div>
+
             <Button @click="runDeepAnalyze" :disabled="isAnalyzing" size="sm">
               <span v-if="isAnalyzing" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin mr-1.5"></span>
               <Bot v-else class="w-4 h-4 mr-1.5" />
@@ -81,6 +104,7 @@ const route = useRoute()
 
 const analysisStatus = ref<any>(null)
 const isAnalyzing = ref(false)
+const selectedModel = ref<'hemat' | 'akurat'>('hemat')
 const currentAccountId = ref<string | null>(null)
 
 async function fetchAnalysisStatus() {
@@ -101,7 +125,11 @@ async function runDeepAnalyze() {
   if (!currentAccountId.value || isAnalyzing.value) return
   isAnalyzing.value = true
   try {
-    const res = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/analytics/deep-analyze/${currentAccountId.value}`, { method: 'POST' })
+    const res = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/analytics/deep-analyze/${currentAccountId.value}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: selectedModel.value })
+    })
     const data = await res.json()
     if (!res.ok) throw new Error(data.detail || 'Failed')
     await fetchAnalysisStatus()
