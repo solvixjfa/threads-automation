@@ -294,7 +294,14 @@
     "desc_best": "Best posting time per day",
     "desc_hook": "Hook type performance",
     "desc_length": "Optimal post length",
-    "desc_topic": "Top topic clusters"
+    "desc_topic": "Top topic clusters",
+    "deep_notyet": "AI Analysis Not Active",
+    "deep_partial": "AI Analysis Partial ({done}/{total} posts)",
+    "deep_desc": "Analytics currently uses basic regex classification. Run AI analysis for higher accuracy.",
+    "deep_btn": "Deep Analyze (1 credit)",
+    "deep_btn_trial": "Deep Analyze (Free Trial)",
+    "deep_loading": "Analyzing...",
+    "deep_active": "AI Analysis active ({n} posts)"
   },
   "settings": {
     "title": "Settings",

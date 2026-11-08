@@ -294,7 +294,14 @@
     "desc_best": "Waktu posting terbaik per hari",
     "desc_hook": "Performa tipe hook",
     "desc_length": "Panjang post optimal",
-    "desc_topic": "Topik paling performan"
+    "desc_topic": "Topik paling performan",
+    "deep_notyet": "Analisis AI Belum Aktif",
+    "deep_partial": "Analisis AI Parsial ({done}/{total} post)",
+    "deep_desc": "Analytics masih pakai klasifikasi regex basic. Jalankan analisis AI untuk akurasi lebih tinggi.",
+    "deep_btn": "Deep Analyze (1 kredit)",
+    "deep_btn_trial": "Deep Analyze (Gratis Trial)",
+    "deep_loading": "Menganalisis...",
+    "deep_active": "Analisis AI aktif ({n} post)"
   },
   "settings": {
     "title": "Pengaturan",
