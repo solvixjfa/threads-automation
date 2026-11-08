@@ -303,7 +303,16 @@
     "deep_loading": "Analyzing...",
     "deep_active": "AI Analysis active ({n} posts)",
     "deep_model_hemat": "Hemat",
-    "deep_model_akurat": "Akurat"
+    "deep_model_akurat": "Akurat",
+    "tab_sentiment": "Sentiment",
+    "desc_sentiment": "Audience emotional tone",
+    "sentiment_title": "Audience Sentiment",
+    "sentiment_sub": "How tone affects engagement",
+    "sentiment_best_label": "Best Performing Tone",
+    "sentiment_best_desc": "Posts with this tone get the highest engagement from your audience.",
+    "sent_positive": "Positive",
+    "sent_neutral": "Neutral",
+    "sent_negative": "Negative"
   },
   "settings": {
     "title": "Settings",

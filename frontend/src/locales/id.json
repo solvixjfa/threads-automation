@@ -303,7 +303,16 @@
     "deep_loading": "Menganalisis...",
     "deep_active": "Analisis AI aktif ({n} post)",
     "deep_model_hemat": "Hemat",
-    "deep_model_akurat": "Akurat"
+    "deep_model_akurat": "Akurat",
+    "tab_sentiment": "Sentimen",
+    "desc_sentiment": "Nada emosi audiens",
+    "sentiment_title": "Sentimen Audiens",
+    "sentiment_sub": "Bagaimana nada mempengaruhi engagement",
+    "sentiment_best_label": "Nada Paling Performa",
+    "sentiment_best_desc": "Postingan dengan nada ini mendapat engagement tertinggi dari audiensmu.",
+    "sent_positive": "Positif",
+    "sent_neutral": "Netral",
+    "sent_negative": "Negatif"
   },
   "settings": {
     "title": "Pengaturan",

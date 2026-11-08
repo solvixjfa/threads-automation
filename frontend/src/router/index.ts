@@ -32,6 +32,7 @@ import BestTimeView from '../views/analytics/BestTimeView.vue'
 import HookView from '../views/analytics/HookView.vue'
 import LengthView from '../views/analytics/LengthView.vue'
 import TopicView from '../views/analytics/TopicView.vue'
+import SentimentView from '../views/analytics/SentimentView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -76,6 +77,7 @@ const router = createRouter({
         { path: 'hook', name: 'analytics-hook', component: HookView },
         { path: 'length', name: 'analytics-length', component: LengthView },
         { path: 'topic', name: 'analytics-topic', component: TopicView },
+        { path: 'sentiment', name: 'analytics-sentiment', component: SentimentView },
       ],
     },
     { path: '/settings', redirect: '/profile' },

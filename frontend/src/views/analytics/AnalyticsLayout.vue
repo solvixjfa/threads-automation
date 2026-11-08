@@ -47,7 +47,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute, RouterView, RouterLink } from 'vue-router'
-import { BarChart3, Clock, Anchor, AlignLeft, Hash, ChevronRight, ChevronLeft } from 'lucide-vue-next'
+import { BarChart3, Clock, Anchor, AlignLeft, Hash, ChevronRight, ChevronLeft, Smile } from 'lucide-vue-next'
 
 const route = useRoute()
 
@@ -61,5 +61,6 @@ const menuItems = [
   { path: '/analytics/hook', icon: Anchor, labelKey: 'analytics.tab_hook', descKey: 'analytics.desc_hook' },
   { path: '/analytics/length', icon: AlignLeft, labelKey: 'analytics.tab_length', descKey: 'analytics.desc_length' },
   { path: '/analytics/topic', icon: Hash, labelKey: 'analytics.tab_topic', descKey: 'analytics.desc_topic' },
+  { path: '/analytics/sentiment', icon: Smile, labelKey: 'analytics.tab_sentiment', descKey: 'analytics.desc_sentiment' },
 ]
 </script>
