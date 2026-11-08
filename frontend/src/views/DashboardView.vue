@@ -229,40 +229,7 @@
         </div>
 
         <div v-else class="space-y-2 pt-2 w-full max-w-full">
-          <div class="w-full h-48 pt-2 pb-2 overflow-x-auto">
-            <svg :viewBox="`0 0 ${dailyInsights.length * 16} 160`" class="w-full h-full" preserveAspectRatio="none" style="min-width: 300px;">
-              <g v-for="(day, i) in dailyInsights" :key="day.date">
-                <!-- Bar Views -->
-                <rect
-                  :x="i * 16 + 2"
-                  :y="160 - getSvgHeight(day.views, maxDailyViews)"
-                  width="6"
-                  :height="getSvgHeight(day.views, maxDailyViews)"
-                  fill="var(--text)"
-                  rx="1"
-                />
-                <!-- Bar Likes -->
-                <rect
-                  :x="i * 16 + 9"
-                  :y="160 - getSvgHeight(day.likes, maxDailyLikes)"
-                  width="6"
-                  :height="getSvgHeight(day.likes, maxDailyLikes)"
-                  fill="var(--text-muted)"
-                  rx="1"
-                  opacity="0.6"
-                />
-                <!-- Label tanggal -->
-                <text
-                  v-if="i % Math.max(1, Math.floor(dailyInsights.length / 6)) === 0"
-                  :x="i * 16 + 8"
-                  y="158"
-                  text-anchor="middle"
-                  class="text-[6px]"
-                  fill="var(--text-muted)"
-                >{{ formatDayLabel(day.date) }}</text>
-              </g>
-            </svg>
-          </div>
+          <GrowthChart :data="dailyInsights" />
         </div>
       </div>
 
@@ -343,6 +310,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch} from 'vue'
 import { RouterLink } from 'vue-router'
+import GrowthChart from '../components/GrowthChart.vue'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
 import { useI18n } from 'vue-i18n'
@@ -418,11 +386,6 @@ const maxDailyViews = computed(() => {
   const max = Math.max(...dailyInsights.value.map(d => d.views || 0))
   return max > 0 ? max : 100
 })
-
-function getSvgHeight(val: number, max: number) {
-  if (!val || !max) return 2;
-  return Math.max(Math.round((val / max) * 140), 2);
-}
 
 function getBarHeight(val: number, max: number) {
   if (!val || !max) return '4px'
