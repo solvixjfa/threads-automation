@@ -229,7 +229,10 @@
         </div>
 
         <div v-else class="space-y-2 pt-2 w-full max-w-full">
-          <GrowthChart :data="dailyInsights" />
+          <div class="flex items-center gap-2 mb-3">
+              <button v-for="r in [7, 14, 30]" :key="r" @click="chartRange = r as 7 | 14 | 30" class="px-2.5 py-1 text-[10px] font-bold rounded-md transition" :class="chartRange === r ? 'bg-[var(--text)] text-[var(--bg)]' : 'theme-text-muted hover:theme-text'">{{ r }}D</button>
+            </div>
+            <GrowthChart :data="filteredChartData" />
         </div>
       </div>
 
@@ -340,6 +343,7 @@ const trialInfo = ref<any>(null)
 const pendingRepliesCount = ref(0)
 const nextBestTime = ref<any>(null)
 const followers = ref<any>({ current: 0, delta_7d: 0, delta_30d: 0 })
+const chartRange = ref<7 | 14 | 30>(7)
 const overview = ref({ total_posts: 0, total_views: 0, total_likes: 0, total_replies: 0, total_reposts: 0, avg_engagement_rate: 0 })
 const allPosts = ref<any[]>([])
 const dailyInsights = ref<any[]>([])
@@ -359,6 +363,13 @@ function applyRangeTotals() {
   overview.value.total_likes = filtered.reduce((s: number, d: any) => s + (d.likes || 0), 0)
   overview.value.total_reposts = filtered.reduce((s: number, d: any) => s + (d.reposts || 0), 0)
 }
+
+const filteredChartData = computed(() => {
+  if (dailyInsights.value.length === 0) return []
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - chartRange.value)
+  return dailyInsights.value.filter((d: any) => new Date(d.date) >= cutoff)
+})
 
 function safePermalink(url: string | null | undefined): string | null {
   if (!url) return null
