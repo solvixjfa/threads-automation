@@ -167,7 +167,7 @@ const translatedBlocks = computed(() => {
     let blockName = (b.name || '').toLowerCase().replace(' ', '_')
     return {
       ...b,
-      weekdayLabel: t('days.' + dayKey),
+      weekdayLabel: `${t('days.' + dayKey)} (${s.hour})`,
       blockLabel: t('time_blocks.' + blockName)
     }
   })
