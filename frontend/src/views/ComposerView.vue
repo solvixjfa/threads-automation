@@ -140,6 +140,15 @@
         </div>
       </div>
 
+      <div v-if="mediaUrl && threadParts.length > 1" class="flex items-center gap-2 mb-3">
+        <span class="text-[11px] font-bold theme-text-muted">Lampirkan ke:</span>
+        <select v-model="targetImagePart" class="input text-xs py-1 px-2" style="width: auto;">
+          <option v-for="(part, idx) in threadParts" :key="idx" :value="idx">
+            Part {{ idx + 1 }}
+          </option>
+        </select>
+      </div>
+
       <div v-if="mediaUrl" class="relative w-full max-w-sm mb-3 rounded-lg overflow-hidden border theme-border">
         <img :src="mediaUrl" class="w-full h-auto object-cover" />
         <button @click="mediaUrl = ''; selectedFile = null" type="button" class="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black transition">
@@ -247,6 +256,7 @@ const { t } = useI18n()
                                                                   
 const postText = ref('')
 const mediaUrl = ref('')
+const targetImagePart = ref(0)
 const selectedFile = ref<File | null>(null)
 const isUploading = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -569,7 +579,7 @@ async function schedulePost() {
     let parentId = null
     for (let i = 0; i < partsToSchedule.length; i++) {                 
       const { data: insertedPart, error: insertError } = await supabase.schema('threads').from('scheduled_posts').insert({
-        account_id: targetAccountId, text: partsToSchedule[i], scheduled_for: localDate.toISOString(), media: mediaUrl.value ? { url: mediaUrl.value, type: 'IMAGE' } : null,
+        account_id: targetAccountId, text: partsToSchedule[i], scheduled_for: localDate.toISOString(), media: (i === targetImagePart.value && mediaUrl.value) ? { url: mediaUrl.value, type: 'IMAGE' } : null,
         status: 'scheduled', parent_id: parentId, sequence_number: i + 1, idempotency_key: crypto.randomUUID()                             
       }).select().single()                                                  
       if (insertError) throw insertError                                 
@@ -577,7 +587,7 @@ async function schedulePost() {
     }                                                              
     
     showToast(`Scheduled ${partsToSchedule.length} thread(s)!`, 'success')
-    postText.value = ''; mediaUrl.value = ''; selectedFile.value = null; if (fileInput.value) fileInput.value.value = '';
+    postText.value = ''; mediaUrl.value = ''; selectedFile.value = null; targetImagePart.value = 0; if (fileInput.value) fileInput.value.value = '';
     mediaUrl.value = ''
     selectedFile.value = null
     if (fileInput.value) fileInput.value.value = ''
