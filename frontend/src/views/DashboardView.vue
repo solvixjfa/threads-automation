@@ -112,9 +112,9 @@
         <h2 class="text-xs font-bold uppercase tracking-wider theme-text-muted">Ringkasan</h2>
         <div class="inline-flex rounded-lg border theme-border overflow-hidden">
           <button
-            v-for="r in [7, 14, 30]"
+            v-for="r in [7, 14, 30, 90]"
             :key="r"
-            @click="timeRange = r as 7 | 14 | 30"
+            @click="timeRange = r as 7 | 14 | 30 | 90"
             class="px-3 py-1.5 text-[11px] font-bold transition"
             :class="timeRange === r ? 'bg-[var(--text)] text-[var(--bg)]' : 'theme-text-muted hover:theme-text'"
           >
@@ -244,7 +244,7 @@
 
         <div v-else class="space-y-2 pt-2 w-full max-w-full">
           <div class="flex items-center gap-2 mb-3">
-              <button v-for="r in [7, 14, 30]" :key="r" @click="chartRange = r as 7 | 14 | 30" class="px-2.5 py-1 text-[10px] font-bold rounded-md transition" :class="chartRange === r ? 'bg-[var(--text)] text-[var(--bg)]' : 'theme-text-muted hover:theme-text'">{{ r }}D</button>
+              <button v-for="r in [7, 14, 30, 90]" :key="r" @click="chartRange = r as 7 | 14 | 30 | 90" class="px-2.5 py-1 text-[10px] font-bold rounded-md transition" :class="chartRange === r ? 'bg-[var(--text)] text-[var(--bg)]' : 'theme-text-muted hover:theme-text'">{{ r }}D</button>
             </div>
             <GrowthChart :data="filteredChartData" />
         </div>
