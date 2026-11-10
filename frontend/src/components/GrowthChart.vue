@@ -1,52 +1,45 @@
 <template>
-  <div>
-    <div class="w-full h-56 relative">
-      <Bar :data="chartData" :options="chartOptions" />
-    </div>
-    <div v-if="selectedBar" class="mt-3 flex items-center justify-between p-2.5 rounded-md theme-bg-sec border theme-border text-xs">
-      <div class="flex items-center gap-3">
-        <span class="font-bold">{{ selectedBar.date }}</span>
-        <span class="theme-text-muted">Views <strong class="theme-text">{{ selectedBar.views }}</strong></span>
-        <span class="theme-text-muted">Likes <strong class="theme-text">{{ selectedBar.likes }}</strong></span>
-      </div>
-      <button @click="selectedBar = null" class="theme-text-muted hover:theme-text text-lg leading-none">&times;</button>
-    </div>
+  <div class="w-full h-64 relative touch-pan-y">
+    <Line :data="chartData" :options="chartOptions" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { Bar } from 'vue-chartjs'
+import { computed } from 'vue'
+import { Line } from 'vue-chartjs'
 import {
-  Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend
+  Chart as ChartJS, CategoryScale, LinearScale, LineElement, PointElement,
+  Title, Tooltip, Legend, Filler
 } from 'chart.js'
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
+ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Title, Tooltip, Legend, Filler)
 
 const props = defineProps<{ data: any[] }>()
-
-const selectedBar = ref<any>(null)
 
 const chartData = computed(() => ({
   labels: props.data.map(d => d.date ? d.date.slice(5) : ''),
   datasets: [
     {
       label: 'Views',
-      backgroundColor: '#e5e5e5',
-      hoverBackgroundColor: '#ffffff',
       data: props.data.map(d => d.views || 0),
-      borderRadius: 2,
-      barPercentage: 0.85,
-      maxBarThickness: 24,
-    },
-    {
-      label: 'Likes',
-      backgroundColor: '#5c5c5c',
-      hoverBackgroundColor: '#8a8a8a',
-      data: props.data.map(d => d.likes || 0),
-      borderRadius: 2,
-      barPercentage: 0.85,
-      maxBarThickness: 24,
+      borderColor: '#e5e5e5',
+      backgroundColor: (ctx: any) => {
+        const chart = ctx.chart
+        if (!chart.chartArea) return 'rgba(229,229,229,0.1)'
+        const g = chart.ctx.createLinearGradient(0, chart.chartArea.top, 0, chart.chartArea.bottom)
+        g.addColorStop(0, 'rgba(229,229,229,0.35)')
+        g.addColorStop(1, 'rgba(229,229,229,0)')
+        return g
+      },
+      borderWidth: 2,
+      tension: 0.35,
+      fill: true,
+      pointRadius: 0,
+      pointHoverRadius: 6,
+      pointHoverBackgroundColor: '#ffffff',
+      pointHoverBorderColor: '#0f0f0f',
+      pointHoverBorderWidth: 2,
+      pointHitRadius: 25,
     }
   ]
 }))
@@ -54,19 +47,15 @@ const chartData = computed(() => ({
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
-  onClick: (event: any, elements: any[]) => {
-    if (elements.length > 0) {
-      const idx = elements[0].index
-      selectedBar.value = props.data[idx]
-    } else {
-      selectedBar.value = null
-    }
+  interaction: {
+    mode: 'index' as const,
+    intersect: false,
+    axis: 'x' as const,
   },
-  onHover: (event: any, elements: any[]) => {
-    const canvas = event.native?.target
-    if (canvas) canvas.style.cursor = elements.length > 0 ? 'pointer' : 'default'
+  hover: {
+    mode: 'index' as const,
+    intersect: false,
   },
-  animation: { duration: 400 },
   plugins: {
     legend: { display: false },
     tooltip: {
@@ -76,17 +65,25 @@ const chartOptions = {
       borderColor: '#262626',
       borderWidth: 1,
       padding: 10,
-      displayColors: true,
+      displayColors: false,
+      position: 'nearest' as const,
+      callbacks: {
+        label: (ctx: any) => `${(ctx.parsed.y || 0).toLocaleString()} views`,
+      }
     }
   },
   scales: {
     x: {
       grid: { display: false, drawBorder: false },
-      ticks: { color: '#8a8a8a', font: { size: 10 }, maxRotation: 0, autoSkipPadding: 20 }
+      ticks: { color: '#8a8a8a', font: { size: 10 }, maxRotation: 0, autoSkipPadding: 30 }
     },
     y: {
-      grid: { color: '#262626', drawBorder: false },
-      ticks: { color: '#8a8a8a', font: { size: 10 } },
+      grid: { color: '#1a1a1a', drawBorder: false },
+      ticks: {
+        color: '#8a8a8a',
+        font: { size: 10 },
+        callback: (v: any) => v >= 1000 ? (v/1000).toFixed(1) + 'K' : v,
+      },
       beginAtZero: true
     }
   }
