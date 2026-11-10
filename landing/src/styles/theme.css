@@ -53,3 +53,138 @@
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-weight: 500;
 }
+
+/* ============================================
+   BASEDASH STYLE EXTENSIONS
+   ============================================ */
+
+.font-display {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.accent-violet { color: #9984d8; }
+.accent-mint { color: #3fcb7f; }
+
+/* Basedash card: subtle recessed well */
+.card-bd {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+
+.dark .card-bd {
+  background: #050607;
+  border-color: #1a1a1a;
+}
+
+/* Pill badge */
+.pill-bd {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* Sidebar nav link */
+.nav-bd {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.nav-bd:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+/* Mobile drawer slide-in */
+@keyframes slideIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.drawer-slide {
+  animation: slideIn 0.25s ease-out forwards;
+}
+
+/* Button primary: white on black in dark, black on white in light */
+.btn-bd-primary {
+  display: inline-block;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  background: var(--accent);
+  color: var(--accent-text);
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+
+.btn-bd-primary:hover { opacity: 0.9; }
+
+/* Button ghost: outlined */
+.btn-bd-ghost {
+  display: inline-block;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.btn-bd-ghost:hover { background: var(--bg-hover); }
+
+/* Section spacing */
+.section-bd {
+  padding-top: 80px;
+  padding-bottom: 80px;
+  border-top: 1px solid var(--border);
+}
+
+@media (min-width: 768px) {
+  .section-bd {
+    padding-top: 120px;
+    padding-bottom: 120px;
+  }
+}
+
+/* Section container */
+.container-bd {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+/* H2 serif */
+.h2-bd {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 36px;
+  line-height: 1.1;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin-bottom: 24px;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+@media (min-width: 768px) {
+  .h2-bd { font-size: 48px; }
+}
