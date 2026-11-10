@@ -40,3 +40,16 @@
 .theme-text-muted { color: var(--text-muted); }
 .theme-border { border-color: var(--border); }
 .theme-accent { background: var(--accent); color: var(--accent-text); }
+
+
+/* Basedash Accent Colors */
+:root, .dark {
+  --accent-violet: #9984d8;
+  --accent-mint: #3fcb7f;
+}
+
+/* Serif font for display headlines */
+.font-display {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 500;
+}
