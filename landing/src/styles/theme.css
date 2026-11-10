@@ -188,3 +188,15 @@
 @media (min-width: 768px) {
   .h2-bd { font-size: 48px; }
 }
+
+/* Feature card hover polish */
+.feature-card {
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.feature-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+.dark .feature-card:hover {
+  border-color: #333;
+}
