@@ -620,6 +620,8 @@ onMounted(async () => {
 
   const savedRepurpose = localStorage.getItem('draft_repurpose')
   if (savedRepurpose) { postText.value = savedRepurpose; localStorage.removeItem('draft_repurpose') }
+  const savedRepurposeImg = localStorage.getItem('draft_repurpose_image')
+  if (savedRepurposeImg) { mediaUrl.value = savedRepurposeImg; localStorage.removeItem('draft_repurpose_image') }
   else { const localDraftText = localStorage.getItem('ixiera_draft_text'); if (localDraftText) postText.value = localDraftText }
 
     // Priority 1: URL param (?scheduled=YYYY-MM-DDTHH:mm)

@@ -17,6 +17,7 @@
           class="card p-4 w-72 shrink-0 snap-start flex flex-col justify-between space-y-3 hover:border-current transition-colors cursor-pointer group"
           @click="applyRecommendation(rec)"
         >
+          <img v-if="rec.media && rec.media.url" :src="rec.media.url" class="w-full h-32 object-cover rounded-lg mb-2" alt="Rec media" />
           <p class="text-xs leading-relaxed line-clamp-3 group-hover:theme-text transition-colors">{{ rec.text }}</p>
           <div class="flex items-center gap-4 text-xs">
             <div class="text-center"><span class="block text-[9px] theme-text-muted uppercase font-bold">Views</span><span class="font-bold">{{ rec.views }}</span></div>
@@ -31,6 +32,14 @@
     <Card>
       <div class="space-y-4">
         <Textarea v-model="sourceText" :label="$t('content.repurpose.original_text')" :rows="4" :placeholder="$t('content.repurpose.original_ph')" />
+
+        <div v-if="sourceMediaUrl" class="flex items-center gap-3 p-2 rounded-lg theme-bg-sec border theme-border">
+          <img :src="sourceMediaUrl" class="w-16 h-16 rounded object-cover" alt="Source media" />
+          <div class="text-xs">
+            <p class="font-bold">Post asli punya gambar</p>
+            <p class="theme-text-muted text-[10px]">Gambar ini akan tetap ada saat repurpose</p>
+          </div>
+        </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Select v-model="repurposeAngle" :label="$t('content.repurpose.angle')" :options="angleOptions" />
@@ -63,6 +72,25 @@
       </div>
     </Card>
 
+    <div v-if="results.length > 0" class="card p-4 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div v-if="mediaUrl" class="w-16 h-16 rounded overflow-hidden border theme-border shrink-0">
+          <img :src="mediaUrl" class="w-full h-full object-cover" />
+        </div>
+        <div class="text-sm">
+          <p class="font-bold">Tambahkan gambar (opsional)</p>
+          <p class="text-xs theme-text-muted">Gambar akan ikut ke Composer dan Threads</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <input type="file" accept="image/jpeg,image/png,image/webp" ref="fileInput" @change="handleFileUpload" class="hidden" />
+        <Button variant="secondary" size="sm" @click="fileInput?.click()" :loading="isUploading">
+          {{ isUploading ? 'Uploading...' : (mediaUrl ? 'Ganti Gambar' : '+ Tambah Gambar') }}
+        </Button>
+        <button v-if="mediaUrl" @click="mediaUrl = ''; selectedFile = null" class="text-xs theme-text-muted hover:theme-text px-2">Hapus</button>
+      </div>
+    </div>
+
     <div v-if="results.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div v-for="(item, idx) in results" :key="idx" class="card p-5 space-y-3 relative group overflow-hidden">
         <div class="flex justify-between items-center pb-2 divider">
@@ -94,6 +122,11 @@ const sourceText = ref('')
 const repurposeAngle = ref('Format Listicle (Poin-poin praktis)')
 const isGenerating = ref(false)
 const results = ref<any[]>([])
+const mediaUrl = ref('')
+const selectedFile = ref<File | null>(null)
+const isUploading = ref(false)
+const fileInput = ref<HTMLInputElement | null>(null)
+const sourceMediaUrl = ref('')
 
 const currentAccountId = ref<string | null>(null)
 const aiCredits = ref(20)
@@ -120,6 +153,7 @@ const isUsingOwnKey = computed(() => {
 
 function applyRecommendation(rec: any) {
   sourceText.value = rec.text
+  sourceMediaUrl.value = rec.media?.url || ''
   showToast('Post moved to text editor.', 'info')
   window.scrollTo({ top: 400, behavior: 'smooth' })
 }
@@ -175,6 +209,31 @@ async function generateRepurpose() {
   } finally { isGenerating.value = false }
 }
 
+async function handleFileUpload(event: Event) {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+  if (file.size > 8 * 1024 * 1024) {
+    showToast('Maksimal ukuran gambar 8MB', 'error')
+    return
+  }
+  isUploading.value = true
+  try {
+    const ext = file.name.split('.').pop() || 'jpg'
+    const fileName = `${currentAccountId.value}/${Date.now()}-${crypto.randomUUID()}.${ext}`
+    const { error } = await supabase.storage.from('threads-media').upload(fileName, file)
+    if (error) throw error
+    const { data } = await supabase.storage.from('threads-media').getPublicUrl(fileName)
+    mediaUrl.value = data.publicUrl
+    showToast('Gambar berhasil diupload', 'success')
+  } catch (err: any) {
+    showToast('Gagal upload: ' + err.message, 'error')
+  } finally {
+    isUploading.value = false
+    if (fileInput.value) fileInput.value.value = ''
+  }
+}
+
 function copyText(text: string) {
   navigator.clipboard.writeText(text)
   showToast('Copied to clipboard!', 'info')
@@ -182,6 +241,7 @@ function copyText(text: string) {
 
 function sendToComposer(text: string) {
   localStorage.setItem('draft_repurpose', text)
+  if (mediaUrl.value) localStorage.setItem('draft_repurpose_image', mediaUrl.value)
   router.push('/content/create')
 }
 
