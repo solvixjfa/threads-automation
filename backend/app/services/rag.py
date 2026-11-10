@@ -374,7 +374,7 @@ async def get_repurpose_recommendations(account_id: str) -> list[dict]:
 
     # 2. Ambil teks dari scheduled_posts
     sp_res = db.schema("threads").from_("scheduled_posts").select(
-        "text, published_media_id, scheduled_for"
+        "text, media, published_media_id, scheduled_for"
     ).eq("account_id", account_id).eq("status", "published").execute()
     
     sp_map = {str(sp.get("published_media_id")): sp for sp in (sp_res.data or []) if sp.get("published_media_id")}
@@ -401,6 +401,7 @@ async def get_repurpose_recommendations(account_id: str) -> list[dict]:
         formatted.append({
             "id": p["id"],
             "text": sp["text"],
+            "media": sp.get("media"),
             "views": views,
             "likes": likes,
             "er": round(er, 2),
