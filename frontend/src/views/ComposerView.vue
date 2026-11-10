@@ -577,7 +577,10 @@ async function schedulePost() {
     }                                                              
     
     showToast(`Scheduled ${partsToSchedule.length} thread(s)!`, 'success')
-    postText.value = ''
+    postText.value = ''; mediaUrl.value = ''; selectedFile.value = null; if (fileInput.value) fileInput.value.value = '';
+    mediaUrl.value = ''
+    selectedFile.value = null
+    if (fileInput.value) fileInput.value.value = ''
     localStorage.removeItem('ixiera_draft_text')                   
     
     const nextHour = new Date()

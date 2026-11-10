@@ -75,6 +75,12 @@
                     </div>
                     <!-- FIX: break-words biar teks panjang turun ke bawah -->
                     <p class="text-sm font-medium whitespace-pre-wrap break-words">{{ post.text }}</p>
+                  <img 
+                    v-if="post.media && post.media.url" 
+                    :src="post.media.url" 
+                    class="w-full max-w-[200px] rounded-lg border theme-border object-cover mt-2" 
+                    alt="Post media" 
+                  />
                   </div>
                 </div>
 
