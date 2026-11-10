@@ -87,42 +87,43 @@
       </template>
 
       <div class="mb-8 mt-4">
-        <BestTimeChart :data="translatedBlocks" />
+        <BestTimeChart :data="translatedBlocks" @select-block="(b) => selectedBlock = b" />
       </div>
 
-      <div class="space-y-2">
-        <div v-for="(block, idx) in translatedBlocks" :key="idx"
-             class="flex items-center justify-between p-3 rounded-lg theme-bg-sec border theme-border hover:border-[var(--border-strong)] transition-colors">
-          <div class="flex items-center gap-3 min-w-0 flex-1">
-            <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0"
-                 :style="{ background: '#e5e5e5', color: '#0f0f0f' }">
-              {{ idx + 1 }}
+      </Card>
+  </div>
+</template>
+  </div>
+
+    <!-- Modal Jadwalkan -->
+    <Teleport to="body">
+      <div v-if="selectedBlock" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="selectedBlock = null">
+        <div class="card p-5 w-full max-w-sm space-y-4 shadow-2xl relative">
+          <button @click="selectedBlock = null" class="absolute top-4 right-4 p-1.5 rounded-md hover:theme-bg-hover transition theme-text-muted">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+          
+          <div>
+            <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider theme-text-muted mb-1">
+              <Calendar class="w-3 h-3" />
+              {{ $t('analytics.schedule_popup_title') }}
             </div>
-            <div class="min-w-0">
-              <div class="text-sm font-bold truncate">
-                {{ block.weekdayLabel }} · {{ block.hour_start }}–{{ block.hour_end }} <span class="text-[10px] theme-text-muted">({{ block.blockLabel }})</span>
-              </div>
-              <div class="text-[11px] theme-text-muted">
-                {{ $t('analytics.hook_posts', { n: block.sample_size }) }} · 
-                <span :class="block.sample_size < 2 ? 'text-orange-500' : 'text-green-500'">
-                  {{ block.sample_size < 2 ? $t('analytics.sample_thin') : $t('analytics.sample_ok') }}
-                </span>
-              </div>
-            </div>
+            <h3 class="text-xl font-black">{{ selectedBlock.weekdayLabel }}, {{ selectedBlock.hour_start }}–{{ selectedBlock.hour_end }}</h3>
+            <p class="text-xs theme-text-muted mt-1">{{ selectedBlock.blockLabel }} · {{ $t('analytics.hook_posts', { n: selectedBlock.sample_size }) }}</p>
           </div>
-          <div class="flex items-center gap-3 shrink-0">
-            <div class="text-right">
-              <div class="text-lg font-black">{{ (block.er_pct || 0).toFixed(2) }}%</div>
-              <div class="text-[10px] theme-text-muted uppercase font-bold">{{ $t('analytics.avg_er') }}</div>
-            </div>
-            <Button size="sm" variant="secondary" @click="scheduleAt(block)">
-              {{ $t('analytics.schedule') }}
-            </Button>
+
+          <div class="flex items-center justify-between p-3 rounded-lg theme-bg-sec border theme-border">
+            <span class="text-xs font-bold theme-text-muted">{{ $t('analytics.avg_er') }}</span>
+            <span class="text-lg font-black">{{ (selectedBlock.er_pct || 0).toFixed(2) }}%</span>
           </div>
+
+          <Button class="w-full" @click="scheduleAt(selectedBlock); selectedBlock = null">
+            <Calendar class="w-4 h-4 mr-2" />
+            {{ $t('analytics.schedule_now') }}
+          </Button>
         </div>
       </div>
-    </Card>
-  </div>
+    </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -149,6 +150,8 @@ const confidenceLabel = computed(() => ({
 }[confidence.value]))
 
 const confidenceVariant = computed(() => ({ low: 'default', medium: 'default', high: 'accent' }[confidence.value] as any))
+
+const selectedBlock = ref<any>(null)
 
 const translatedBlocks = computed(() => {
   if (!bestBlockPerDay.value || bestBlockPerDay.value.length === 0) return []

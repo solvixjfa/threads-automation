@@ -335,7 +335,8 @@
     "heatmap_low": "Low",
     "heatmap_high": "High",
     "heatmap_day": "Day",
-    "hourly_trend_sub": "Engagement trend by hour (WIB)"
+    "hourly_trend_sub": "Engagement trend by hour (WIB)",
+    "schedule_popup_title": "Schedule Post At"
   },
   "settings": {
     "title": "Settings",

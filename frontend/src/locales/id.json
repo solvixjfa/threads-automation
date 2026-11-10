@@ -335,7 +335,8 @@
     "heatmap_low": "Rendah",
     "heatmap_high": "Tinggi",
     "heatmap_day": "Hari",
-    "hourly_trend_sub": "Tren engagement berdasarkan jam (WIB)"
+    "hourly_trend_sub": "Tren engagement berdasarkan jam (WIB)",
+    "schedule_popup_title": "Jadwalkan Postingan"
   },
   "settings": {
     "title": "Pengaturan",

@@ -14,6 +14,7 @@ import {
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
 const props = defineProps<{ data: any[] }>()
+const emit = defineEmits<{ selectBlock: [block: any] }>()
 
 const chartData = computed(() => ({
   labels: props.data.map(d => d.weekdayLabel),
@@ -32,6 +33,16 @@ const chartData = computed(() => ({
 const chartOptions = {
   indexAxis: 'y' as const,
   responsive: true,
+  onClick: (event: any, elements: any[]) => {
+    if (elements.length > 0) {
+      const idx = elements[0].index
+      emit('selectBlock', props.data[idx])
+    }
+  },
+  onHover: (event: any, elements: any[]) => {
+    const canvas = event.native?.target
+    if (canvas) canvas.style.cursor = elements.length > 0 ? 'pointer' : 'default'
+  },
   maintainAspectRatio: false,
   layout: {
     padding: { right: 20 } // Biar sumbu X ada ruang
