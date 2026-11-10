@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen font-sans selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black bg-[var(--bg)] text-[var(--text)] overflow-x-hidden">
+  <div class="min-h-screen font-sans selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black bg-[var(--bg)] text-[var(--text)]">
     
     <!-- SIDEBAR DESKTOP (KIRI) -->
     <aside class="hidden md:flex fixed left-0 top-0 h-screen w-60 border-r border-[var(--line)] bg-[var(--bg)] flex-col z-50">
@@ -157,354 +157,256 @@
         </div>
       </section>
 
-      <!-- MASALAH -->
-      <section class="border-t border-[var(--line)] bg-[var(--surface)] py-20 md:py-32">
-        <div class="max-w-[1120px] mx-auto px-6">
-          <h2 class="text-3xl md:text-5xl font-bold tracking-tight text-center mb-16 fade-in">{{ $t('landing.problems.title') }}</h2>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div class="space-y-4 fade-in">
-              <span class="text-5xl font-bold text-[var(--faint)]">01</span>
-              <h3 class="text-xl font-bold">{{ $t('landing.problems.p1_title') }}</h3>
-              <p class="text-[var(--muted)]">{{ $t('landing.problems.p1_desc') }}</p>
+      <!-- SECTION: MASALAH -->
+      <section class="py-20 md:py-32 bg-[var(--bg)] border-t border-[var(--line)]">
+        <div class="max-w-[1200px] mx-auto px-6">
+          <div class="text-center mb-16">
+            <h2 class="font-serif-display text-[36px] md:text-[48px] leading-[1.1] mb-4 text-[var(--text)]">
+              {{ $t('landing.problems.title') }}
+            </h2>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-8">
+              <span class="font-serif-display text-[32px] text-[#9984d8] block mb-4">01</span>
+              <h3 class="text-[18px] font-semibold tracking-[-0.03em] text-[var(--text)] mb-2">{{ $t('landing.problems.p1_title') }}</h3>
+              <p class="text-[15px] text-[var(--muted)] leading-[1.6] tracking-[-0.03em]">{{ $t('landing.problems.p1_desc') }}</p>
             </div>
-            <div class="space-y-4 fade-in" style="transition-delay: 100ms">
-              <span class="text-5xl font-bold text-[var(--faint)]">02</span>
-              <h3 class="text-xl font-bold">{{ $t('landing.problems.p2_title') }}</h3>
-              <p class="text-[var(--muted)]">{{ $t('landing.problems.p2_desc') }}</p>
+            <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-8">
+              <span class="font-serif-display text-[32px] text-[#9984d8] block mb-4">02</span>
+              <h3 class="text-[18px] font-semibold tracking-[-0.03em] text-[var(--text)] mb-2">{{ $t('landing.problems.p2_title') }}</h3>
+              <p class="text-[15px] text-[var(--muted)] leading-[1.6] tracking-[-0.03em]">{{ $t('landing.problems.p2_desc') }}</p>
             </div>
-            <div class="space-y-4 fade-in" style="transition-delay: 200ms">
-              <span class="text-5xl font-bold text-[var(--faint)]">03</span>
-              <h3 class="text-xl font-bold">{{ $t('landing.problems.p3_title') }}</h3>
-              <p class="text-[var(--muted)]">{{ $t('landing.problems.p3_desc') }}</p>
+            <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-8">
+              <span class="font-serif-display text-[32px] text-[#9984d8] block mb-4">03</span>
+              <h3 class="text-[18px] font-semibold tracking-[-0.03em] text-[var(--text)] mb-2">{{ $t('landing.problems.p3_title') }}</h3>
+              <p class="text-[15px] text-[var(--muted)] leading-[1.6] tracking-[-0.03em]">{{ $t('landing.problems.p3_desc') }}</p>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- FITUR -->
-      <section id="fitur" class="py-20 md:py-32 border-t border-[var(--line)]">
-        <div class="max-w-[1120px] mx-auto px-6">
-          <div class="text-center mb-20 fade-in">
-            <h2 class="text-3xl md:text-5xl font-bold tracking-tight">{{ $t('landing.features.title') }}</h2>
-            <p class="text-lg text-[var(--muted)] mt-4">{{ $t('landing.features.subtitle') }}</p>
+      <!-- SECTION: FITUR -->
+      <section id="fitur" class="py-20 md:py-32 bg-[var(--bg)] border-t border-[var(--line)]">
+        <div class="max-w-[1200px] mx-auto px-6">
+          <div class="text-center mb-16">
+            <h2 class="font-serif-display text-[36px] md:text-[48px] leading-[1.1] mb-4 text-[var(--text)]">
+              {{ $t('landing.features.title') }}
+            </h2>
+            <p class="text-[16px] md:text-[18px] text-[var(--muted)] max-w-2xl mx-auto tracking-[-0.03em]">
+              {{ $t('landing.features.subtitle') || 'Everything you need to automate and grow on Threads.' }}
+            </p>
           </div>
-
-          <div class="space-y-32">
-            <!-- Fitur 1: Content (UI BARU, MIRIP SCREENSHOT) -->
-            <div class="flex flex-col md:flex-row items-center gap-12">
-              <div class="flex-1 space-y-4 fade-in">
-                <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">01 · Content</span>
-                <h3 class="text-2xl font-bold">{{ $t('landing.features.f1_title') }}</h3>
-                <p class="text-[var(--muted)] leading-relaxed">{{ $t('landing.features.f1_desc') }}</p>
-              </div>
-              <div class="flex-1 w-full">
-                <div class="border border-dashed border-[var(--line)] rounded-xl overflow-hidden bg-[var(--surface)]">
-                  <!-- Window Header -->
-                  <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[var(--line)]"><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><span class="ml-2 text-[10px] text-[var(--muted)] font-bold">AI CONTENT PLANNER</span></div>
-                  
-                  <!-- Form Input Area -->
-                  <div class="p-4 border-b border-[var(--line)] bg-[var(--bg)] space-y-3">
-                    <div class="grid grid-cols-2 gap-3">
-                      <div class="space-y-1"><label class="text-[10px] font-bold text-[var(--muted)]">Topik / Short Idea</label><div class="border border-[var(--line)] rounded-md p-2 text-xs bg-[var(--surface)]">AI</div></div>
-                      <div class="space-y-1"><label class="text-[10px] font-bold text-[var(--muted)]">Tone / Style</label><div class="border border-[var(--line)] rounded-md p-2 text-xs bg-[var(--surface)]">Storytelling</div></div>
-                    </div>
-                    <div class="flex justify-between items-center pt-2">
-                      <span class="text-[10px] font-bold text-[var(--muted)]">94 Credits</span>
-                      <button @click="simulateGenerate" :disabled="isGenerating" class="px-4 py-1.5 bg-[var(--text)] text-[var(--bg)] rounded-md font-bold text-xs flex items-center gap-2 transition-opacity hover:opacity-90">
-                        <span v-if="isGenerating" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
-                        <span>{{ isGenerating ? 'Memproses...' : 'Generate 3-Day Plan' }}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- Generated Cards -->
-                  <div v-if="generatedPlan" class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 bg-[var(--surface-2)] animate-[fade-in_0.5s_ease-out]">
-                    <!-- Card 1 -->
-                    <div class="bg-[var(--bg)] border border-[var(--line)] rounded-md p-3 flex flex-col justify-between">
-                      <div>
-                        <div class="bg-[var(--text)] text-[var(--bg)] text-[9px] font-bold px-2 py-1 rounded-sm mb-2 text-center">DAY 1: KOMPLEKSITAS MODEL VS KEBUTUHAN NYATA</div>
-                        <p class="text-[9px] text-[var(--muted)] leading-tight">Awal-awal ngulik AI, bawaannya pengen bikin arsitektur yang keliatan paling rumit. Pas nemu masalah nyata di lapangan...</p>
-                      </div>
-                      <button class="mt-3 w-full py-1 border border-[var(--line)] rounded text-[9px] font-bold hover:bg-[var(--surface-2)]">Use This Draft</button>
-                    </div>
-                    <!-- Card 2 -->
-                    <div class="bg-[var(--bg)] border border-[var(--line)] rounded-md p-3 flex flex-col justify-between">
-                      <div>
-                        <div class="bg-[var(--text)] text-[var(--bg)] text-[9px] font-bold px-2 py-1 rounded-sm mb-2 text-center">DAY 2: EVALUASI METRIK MACHINE LEARNING</div>
-                        <p class="text-[9px] text-[var(--muted)] leading-tight">Lagi ngejelasin hasil eksperimen model kemarin. AUC dapet 0,84, tapi pas dicek F1 Score-nya masih di angka...</p>
-                      </div>
-                      <button class="mt-3 w-full py-1 border border-[var(--line)] rounded text-[9px] font-bold hover:bg-[var(--surface-2)]">Use This Draft</button>
-                    </div>
-                    <!-- Card 3 -->
-                    <div class="bg-[var(--bg)] border border-[var(--line)] rounded-md p-3 flex flex-col justify-between">
-                      <div>
-                        <div class="bg-[var(--text)] text-[var(--bg)] text-[9px] font-bold px-2 py-1 rounded-sm mb-2 text-center">DAY 3: DILEMA AI ENGINEERING</div>
-                        <p class="text-[9px] text-[var(--muted)] leading-tight">Kadang mikir, kerjaan AI engineer itu porsinya lebih banyak di bagian machine learning-nya atau data engineering-nya...</p>
-                      </div>
-                      <button class="mt-3 w-full py-1 border border-[var(--line)] rounded text-[9px] font-bold hover:bg-[var(--surface-2)]">Use This Draft</button>
-                    </div>
-                  </div>
-                  <div v-else class="p-10 text-center text-xs text-[var(--muted)]">Klik "Generate" untuk melihat hasil.</div>
-
-                  <div class="bg-[var(--surface-2)] border-t border-[var(--line)] text-center py-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Contoh tampilan</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Fitur 2: Komentar (INTERAKTIF) -->
-            <div class="flex flex-col md:flex-row-reverse items-center gap-12">
-              <div class="flex-1 space-y-4 fade-in">
-                <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">02 · Komentar</span>
-                <h3 class="text-2xl font-bold">{{ $t('landing.features.f2_title') }}</h3>
-                <p class="text-[var(--muted)] leading-relaxed">{{ $t('landing.features.f2_desc') }}</p>
-              </div>
-              <div class="flex-1 w-full">
-                <div class="border border-dashed border-[var(--line)] rounded-xl overflow-hidden bg-[var(--surface)]">
-                  <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[var(--line)]"><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div></div>
-                  <div class="p-6 space-y-4">
-                    <div class="flex rounded-md border border-[var(--line)] p-1 bg-[var(--bg)]">
-                      <button @click="mockReplyMode = 'manual'" :class="mockReplyMode === 'manual' ? 'bg-[var(--text)] text-[var(--bg)] shadow-sm' : 'text-[var(--muted)] hover:text-[var(--text)]'" class="flex-1 py-1.5 text-xs font-bold rounded transition-colors">Review Manual</button>
-                      <button @click="mockReplyMode = 'auto'" :class="mockReplyMode === 'auto' ? 'bg-[var(--text)] text-[var(--bg)] shadow-sm' : 'text-[var(--muted)] hover:text-[var(--text)]'" class="flex-1 py-1.5 text-xs font-bold rounded transition-colors">Full Auto</button>
-                    </div>
-                    <div class="text-xs text-[var(--muted)] flex justify-between"><span>Maks balasan per jam:</span><span class="font-bold text-[var(--text)]">5</span></div>
-                    <div class="space-y-2 text-xs">
-                      <div class="flex justify-between p-2 bg-[var(--bg)] border border-[var(--line)] rounded"><span>Pertanyaan</span><span class="font-bold">{{ mockReplyMode === 'auto' ? 'Langsung Balas' : 'Balasan AI' }}</span></div>
-                      <div class="flex justify-between p-2 bg-[var(--bg)] border border-[var(--line)] rounded"><span>Pujian</span><span class="font-bold">{{ mockReplyMode === 'auto' ? 'Langsung Balas' : 'Template' }}</span></div>
-                      <div class="flex justify-between p-2 bg-[var(--bg)] border border-[var(--line)] rounded"><span>Spam / Toxic</span><span class="font-bold">{{ mockReplyMode === 'auto' ? 'Langsung Balas' : 'Template' }}</span></div>
-                    </div>
-                  </div>
-                  <div class="bg-[var(--surface-2)] text-center py-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Contoh tampilan</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Fitur 3: Analytics (INTERAKTIF) -->
-            <div class="flex flex-col md:flex-row items-center gap-12">
-              <div class="flex-1 space-y-4 fade-in">
-                <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">03 · Analytics</span>
-                <h3 class="text-2xl font-bold">{{ $t('landing.features.f3_title') }}</h3>
-                <p class="text-[var(--muted)] leading-relaxed">{{ $t('landing.features.f3_desc') }}</p>
-              </div>
-              <div class="flex-1 w-full">
-                <div class="border border-dashed border-[var(--line)] rounded-xl overflow-hidden bg-[var(--surface)]">
-                  <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[var(--line)]"><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div></div>
-                  <div class="p-6 space-y-4">
-                    <div class="flex gap-4 border-b border-[var(--line)] pb-2 text-xs font-bold">
-                      <button @click="activeMockTab = 'best'" :class="activeMockTab === 'best' ? 'border-b-2 border-[var(--text)] pb-2 text-[var(--text)]' : 'text-[var(--muted)] pb-2 hover:text-[var(--text)] transition-colors'">Best Time</button>
-                      <button @click="activeMockTab = 'hook'" :class="activeMockTab === 'hook' ? 'border-b-2 border-[var(--text)] pb-2 text-[var(--text)]' : 'text-[var(--muted)] pb-2 hover:text-[var(--text)] transition-colors'">Hook</button>
-                      <button @click="activeMockTab = 'length'" :class="activeMockTab === 'length' ? 'border-b-2 border-[var(--text)] pb-2 text-[var(--text)]' : 'text-[var(--muted)] pb-2 hover:text-[var(--text)] transition-colors'">Length</button>
-                    </div>
-                    
-                    <div v-if="activeMockTab === 'best'" class="flex gap-2">
-                      <div class="flex flex-col justify-between text-[9px] text-[var(--muted)] py-1">
-                        <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span>
-                      </div>
-                      <div class="flex-1 grid grid-cols-12 gap-1">
-                        <div v-for="i in 84" :key="i" class="h-4 rounded-sm bg-[var(--line)]"
-                             :class="{
-                               'opacity-20': i % 5 === 0,
-                               'bg-[var(--text)] opacity-100': i === 12 || i === 25 || i === 38 || i === 51,
-                               'bg-[var(--bar-dim)] opacity-60': i % 3 === 0
-                             }">
-                        </div>
-                      </div>
-                    </div>
-                    <div v-if="activeMockTab === 'hook'" class="space-y-3 py-2">
-                       <div class="space-y-1"><div class="flex justify-between text-[10px] font-bold"><span>Question</span><span>2.92%</span></div><div class="w-full bg-[var(--surface-2)] h-1.5 rounded-full"><div class="h-full bg-[var(--text)] w-[80%] rounded-full"></div></div></div>
-                       <div class="space-y-1"><div class="flex justify-between text-[10px] font-bold"><span>Story</span><span>1.36%</span></div><div class="w-full bg-[var(--surface-2)] h-1.5 rounded-full"><div class="h-full bg-[var(--bar-dim)] w-[40%] rounded-full"></div></div></div>
-                    </div>
-                    <div v-if="activeMockTab === 'length'" class="space-y-3 py-2">
-                       <div class="space-y-1"><div class="flex justify-between text-[10px] font-bold"><span>300-500 char</span><span>2.96%</span></div><div class="w-full bg-[var(--surface-2)] h-1.5 rounded-full"><div class="h-full bg-[var(--text)] w-[90%] rounded-full"></div></div></div>
-                       <div class="space-y-1"><div class="flex justify-between text-[10px] font-bold"><span>100-300 char</span><span>1.12%</span></div><div class="w-full bg-[var(--surface-2)] h-1.5 rounded-full"><div class="h-full bg-[var(--bar-dim)] w-[35%] rounded-full"></div></div></div>
-                    </div>
-                  </div>
-                  <div class="bg-[var(--surface-2)] text-center py-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Contoh tampilan</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Fitur 4: Knowledge Base (SECTION BARU) -->
-            <div class="flex flex-col md:flex-row-reverse items-center gap-12">
-              <div class="flex-1 space-y-4 fade-in">
-                <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">04 · Pengetahuan</span>
-                <h3 class="text-2xl font-bold">{{ $t('landing.features.f4_title') }}</h3>
-                <p class="text-[var(--muted)] leading-relaxed">{{ $t('landing.features.f4_desc') }}</p>
-              </div>
-              <div class="flex-1 w-full">
-                <div class="border border-dashed border-[var(--line)] rounded-xl overflow-hidden bg-[var(--surface)]">
-                  <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[var(--line)]"><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div></div>
-                  <div class="p-6 space-y-4">
-                    <div class="flex items-center gap-2">
-                       <span class="px-2 py-1 bg-[var(--text)] text-[var(--bg)] text-[9px] font-bold rounded">Gaya Bahasa</span>
-                       <span class="text-[10px] text-[var(--muted)]">Dokumen Tersimpan</span>
-                    </div>
-                    <div class="border border-[var(--line)] rounded-md p-3 bg-[var(--bg)] space-y-2">
-                      <h4 class="text-xs font-bold border-b border-[var(--line)] pb-2">Panduan gaya bahasa</h4>
-                      <p class="text-[10px] text-[var(--muted)] leading-relaxed">Santai, singkat, hindari jargon. Selalu sapa dengan "kak".</p>
-                      <div class="flex justify-end pt-2">
-                        <span class="text-[9px] font-bold border border-[var(--line)] px-2 py-1 rounded-full flex items-center gap-1">
-                          <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Dipakai AI
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="bg-[var(--surface-2)] text-center py-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Contoh tampilan</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- DATA NYATA -->
-      <section id="contoh" class="py-20 md:py-32 bg-[var(--surface)] border-t border-[var(--line)]">
-        <div class="max-w-[1120px] mx-auto px-6">
-          <div class="text-center mb-16 fade-in">
-            <h2 class="text-3xl md:text-5xl font-bold tracking-tight">{{ $t('landing.realData.title') }}</h2>
-            <p class="text-lg text-[var(--muted)] mt-4 max-w-2xl mx-auto">{{ $t('landing.realData.subtitle') }}</p>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="border border-solid border-[var(--line)] rounded-xl overflow-hidden bg-[var(--bg)] fade-in">
-              <div class="flex justify-between items-center px-4 py-3 border-b border-[var(--line)]">
-                <span class="text-xs font-bold uppercase tracking-widest">Hook Performance</span>
-                <span class="text-[10px] font-bold bg-[var(--text)] text-[var(--bg)] px-2 py-1 rounded-full">{{ $t('landing.realData.hook_label') }}</span>
-              </div>
-              <div class="p-6 space-y-4">
-                <div v-for="(item, index) in hookData.slice(0, 2)" :key="item.label" class="space-y-1">
-                  <div class="flex justify-between text-xs font-bold"><span>{{ item.label }}</span><span>{{ item.er }}%</span></div>
-                  <div class="w-full bg-[var(--surface-2)] h-2 rounded-full">
-                    <div class="h-full rounded-full bar-grow" :class="index === 0 ? 'bg-[var(--text)]' : 'bg-[var(--bar-dim)]'" :style="{ width: getBarWidth(item.er) }"></div>
-                  </div>
-                  <div class="text-[10px] text-[var(--muted)] text-right">n={{ item.n }}</div>
-                </div>
-              </div>
-              <div class="px-6 pb-6 text-sm text-[var(--muted)] border-t border-[var(--line)] pt-4">{{ $t('landing.realData.hook_desc') }}</div>
-            </div>
-            <div class="border border-solid border-[var(--line)] rounded-xl overflow-hidden bg-[var(--bg)] fade-in" style="transition-delay: 100ms">
-              <div class="flex justify-between items-center px-4 py-3 border-b border-[var(--line)]">
-                <span class="text-xs font-bold uppercase tracking-widest">Post Length</span>
-                <span class="text-[10px] font-bold bg-[var(--text)] text-[var(--bg)] px-2 py-1 rounded-full">{{ $t('landing.realData.len_label') }}</span>
-              </div>
-              <div class="p-6 space-y-4">
-                <div v-for="(item, index) in lengthData.slice(0, 2)" :key="item.label" class="space-y-1">
-                  <div class="flex justify-between text-xs font-bold"><span>{{ item.label }}</span><span>{{ item.er }}%</span></div>
-                  <div class="w-full bg-[var(--surface-2)] h-2 rounded-full">
-                    <div class="h-full rounded-full bar-grow" :class="index === 0 ? 'bg-[var(--text)]' : 'bg-[var(--bar-dim)]'" :style="{ width: getBarWidth(item.er) }"></div>
-                  </div>
-                  <div class="text-[10px] text-[var(--muted)] text-right">n={{ item.n }}</div>
-                </div>
-              </div>
-              <div class="px-6 pb-6 text-sm text-[var(--muted)] border-t border-[var(--line)] pt-4">{{ $t('landing.realData.len_desc') }}</div>
-            </div>
-          </div>
-          <p class="text-center text-xs text-[var(--muted)] mt-8">{{ $t('landing.realData.note') }}</p>
-        </div>
-      </section>
-
-      <!-- CARA KERJA -->
-      <section id="cara-kerja" class="py-20 md:py-32 border-t border-[var(--line)]">
-        <div class="max-w-[1120px] mx-auto px-6">
-          <h2 class="text-3xl md:text-5xl font-bold tracking-tight text-center mb-16 fade-in">{{ $t('landing.how.title') }}</h2>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            <div class="hidden md:block absolute top-8 left-[15%] right-[15%] h-px bg-[var(--line)] z-0"></div>
-            <div class="relative z-10 text-center space-y-4 fade-in">
-              <div class="w-16 h-16 mx-auto rounded-full border border-[var(--line)] bg-[var(--bg)] flex items-center justify-center text-2xl font-bold">1</div>
-              <h3 class="font-bold text-lg">{{ $t('landing.how.s1_title') }}</h3>
-              <p class="text-sm text-[var(--muted)] px-4">{{ $t('landing.how.s1_desc') }}</p>
-            </div>
-            <div class="relative z-10 text-center space-y-4 fade-in" style="transition-delay: 100ms">
-              <div class="w-16 h-16 mx-auto rounded-full border border-[var(--line)] bg-[var(--bg)] flex items-center justify-center text-2xl font-bold">2</div>
-              <h3 class="font-bold text-lg">{{ $t('landing.how.s2_title') }}</h3>
-              <p class="text-sm text-[var(--muted)] px-4">{{ $t('landing.how.s2_desc') }}</p>
-            </div>
-            <div class="relative z-10 text-center space-y-4 fade-in" style="transition-delay: 200ms">
-              <div class="w-16 h-16 mx-auto rounded-full border border-[var(--line)] bg-[var(--bg)] flex items-center justify-center text-2xl font-bold">3</div>
-              <h3 class="font-bold text-lg">{{ $t('landing.how.s3_title') }}</h3>
-              <p class="text-sm text-[var(--muted)] px-4">{{ $t('landing.how.s3_desc') }}</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- KEAMANAN -->
-      <section class="py-20 md:py-32 bg-[var(--surface)] border-t border-[var(--line)]">
-        <div class="max-w-[1120px] mx-auto px-6 text-center fade-in">
-          <h2 class="text-3xl md:text-4xl font-bold tracking-tight mb-12">{{ $t('landing.security.title') }}</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-sm text-left">
-            <div class="flex gap-3"><svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg><p class="text-[var(--muted)]">{{ $t('landing.security.s1') }}</p></div>
-            <div class="flex gap-3"><svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg><p class="text-[var(--muted)]">{{ $t('landing.security.s2') }}</p></div>
-            <div class="flex gap-3"><svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><p class="text-[var(--muted)]">{{ $t('landing.security.s3') }}</p></div>
-            <div class="flex gap-3"><svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg><p class="text-[var(--muted)]">{{ $t('landing.security.s4') }}</p></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- HARGA -->
-      <section id="harga" class="py-20 md:py-32 border-t border-[var(--line)]">
-        <div class="max-w-[1120px] mx-auto px-6 text-center fade-in">
-          <h2 class="text-3xl md:text-5xl font-bold tracking-tight mb-4">{{ $t('landing.pricing.title') }}</h2>
-          <p class="text-[var(--muted)] max-w-2xl mx-auto mb-16">{{ $t('landing.pricing.desc') }}</p>
           
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-5xl mx-auto">
-            <div class="border-2 border-[var(--text)] rounded-xl p-8 space-y-4 bg-[var(--bg)] relative">
-              <h3 class="text-lg font-bold">{{ $t('landing.pricing.p1_title') }}</h3>
-              <p class="text-sm text-[var(--muted)]">{{ $t('landing.pricing.p1_desc') }}</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Feature 1 -->
+            <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-8 hover:border-[#333] transition-colors">
+              <div class="w-10 h-10 rounded-lg bg-[#111] border border-[var(--line)] flex items-center justify-center mb-6">
+                <span class="text-[#3fcb7f] text-lg font-bold">01</span>
+              </div>
+              <h3 class="text-[18px] font-semibold text-[var(--text)] mb-2 tracking-[-0.03em]">{{ $t('landing.features.f1_title') }}</h3>
+              <p class="text-[14px] text-[var(--muted)] leading-[1.6] tracking-[-0.03em]">{{ $t('landing.features.f1_desc') }}</p>
             </div>
-            <div class="border border-[var(--line)] rounded-xl p-8 space-y-4 bg-[var(--surface)]">
-              <h3 class="text-lg font-bold">{{ $t('landing.pricing.p2_title') }}</h3>
-              <p class="text-sm text-[var(--muted)]">{{ $t('landing.pricing.p2_desc') }}</p>
+            <!-- Feature 2 -->
+            <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-8 hover:border-[#333] transition-colors">
+              <div class="w-10 h-10 rounded-lg bg-[#111] border border-[var(--line)] flex items-center justify-center mb-6">
+                <span class="text-[#3fcb7f] text-lg font-bold">02</span>
+              </div>
+              <h3 class="text-[18px] font-semibold text-[var(--text)] mb-2 tracking-[-0.03em]">{{ $t('landing.features.f2_title') }}</h3>
+              <p class="text-[14px] text-[var(--muted)] leading-[1.6] tracking-[-0.03em]">{{ $t('landing.features.f2_desc') }}</p>
             </div>
-            <div class="border border-[var(--line)] rounded-xl p-8 space-y-4 bg-[var(--surface)]">
-              <h3 class="text-lg font-bold">{{ $t('landing.pricing.p3_title') }}</h3>
-              <p class="text-sm text-[var(--muted)]">{{ $t('landing.pricing.p3_desc') }}</p>
+            <!-- Feature 3 -->
+            <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-8 hover:border-[#333] transition-colors">
+              <div class="w-10 h-10 rounded-lg bg-[#111] border border-[var(--line)] flex items-center justify-center mb-6">
+                <span class="text-[#3fcb7f] text-lg font-bold">03</span>
+              </div>
+              <h3 class="text-[18px] font-semibold text-[var(--text)] mb-2 tracking-[-0.03em]">{{ $t('landing.features.f3_title') }}</h3>
+              <p class="text-[14px] text-[var(--muted)] leading-[1.6] tracking-[-0.03em]">{{ $t('landing.features.f3_desc') }}</p>
+            </div>
+            <!-- Feature 4 -->
+            <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-8 hover:border-[#333] transition-colors">
+              <div class="w-10 h-10 rounded-lg bg-[#111] border border-[var(--line)] flex items-center justify-center mb-6">
+                <span class="text-[#3fcb7f] text-lg font-bold">04</span>
+              </div>
+              <h3 class="text-[18px] font-semibold text-[var(--text)] mb-2 tracking-[-0.03em]">{{ $t('landing.features.f4_title') }}</h3>
+              <p class="text-[14px] text-[var(--muted)] leading-[1.6] tracking-[-0.03em]">{{ $t('landing.features.f4_desc') }}</p>
+            </div>
+            <!-- Feature 5 -->
+            <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-8 hover:border-[#333] transition-colors">
+              <div class="w-10 h-10 rounded-lg bg-[#111] border border-[var(--line)] flex items-center justify-center mb-6">
+                <span class="text-[#3fcb7f] text-lg font-bold">05</span>
+              </div>
+              <h3 class="text-[18px] font-semibold text-[var(--text)] mb-2 tracking-[-0.03em]">{{ $t('landing.features.f5_title') }}</h3>
+              <p class="text-[14px] text-[var(--muted)] leading-[1.6] tracking-[-0.03em]">{{ $t('landing.features.f5_desc') }}</p>
+            </div>
+            <!-- Feature 6 -->
+            <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-8 hover:border-[#333] transition-colors">
+              <div class="w-10 h-10 rounded-lg bg-[#111] border border-[var(--line)] flex items-center justify-center mb-6">
+                <span class="text-[#3fcb7f] text-lg font-bold">06</span>
+              </div>
+              <h3 class="text-[18px] font-semibold text-[var(--text)] mb-2 tracking-[-0.03em]">{{ $t('landing.features.f6_title') }}</h3>
+              <p class="text-[14px] text-[var(--muted)] leading-[1.6] tracking-[-0.03em]">{{ $t('landing.features.f6_desc') }}</p>
             </div>
           </div>
-          <p class="text-xs text-[var(--muted)] mt-8 max-w-3xl mx-auto">{{ $t('landing.pricing.note') }}</p>
-          <p class="text-[11px] text-[var(--muted)] text-center mt-3 font-semibold">Harga beta, terkunci selama kamu berlangganan.</p>
-          <a href="https://app.ixiera.id/login" class="inline-block mt-8 px-10 py-4 rounded-full text-lg font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">{{ $t('landing.pricing.cta') }}</a>
         </div>
       </section>
 
-      <!-- FAQ -->
-      <section id="faq" class="py-20 md:py-32 bg-[var(--surface)] border-t border-[var(--line)]">
-        <div class="max-w-3xl mx-auto px-6 fade-in">
-          <h2 class="text-3xl font-bold tracking-tight text-center mb-12">{{ $t('landing.faq.title') }}</h2>
-          <div class="space-y-2">
-            <div v-for="i in 9" :key="i" class="border border-[var(--line)] rounded-lg bg-[var(--bg)] overflow-hidden">
-              <button @click="faqOpen = faqOpen === i ? null : i" class="w-full px-6 py-4 text-left flex justify-between items-center font-bold hover:bg-[var(--surface-2)] transition">
-                <span>{{ $t('landing.faq.q' + i) }}</span>
-                <svg class="w-5 h-5 transition-transform duration-300" :class="{'rotate-180': faqOpen === i}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-              </button>
-              <div v-if="faqOpen === i" class="px-6 pb-4 text-sm text-[var(--muted)] leading-relaxed">{{ $t('landing.faq.a' + i) }}</div>
+      <!-- SECTION: CARA KERJA -->
+      <section id="cara-kerja" class="py-20 md:py-32 bg-[var(--bg)] border-t border-[var(--line)]">
+        <div class="max-w-[1200px] mx-auto px-6">
+          <div class="text-center mb-16">
+            <h2 class="font-serif-display text-[36px] md:text-[48px] leading-[1.1] mb-4 text-[var(--text)]">
+              {{ $t('landing.how.title') }}
+            </h2>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            <div class="text-center space-y-4">
+              <div class="w-12 h-12 mx-auto rounded-full bg-[#111] border border-[var(--line)] flex items-center justify-center font-bold text-[#9984d8] text-xl">1</div>
+              <h3 class="text-[18px] font-semibold">{{ $t('landing.how.s1_title') }}</h3>
+              <p class="text-[14px] text-[var(--muted)] px-4">{{ $t('landing.how.s1_desc') }}</p>
+            </div>
+            <div class="text-center space-y-4">
+              <div class="w-12 h-12 mx-auto rounded-full bg-[#111] border border-[var(--line)] flex items-center justify-center font-bold text-[#9984d8] text-xl">2</div>
+              <h3 class="text-[18px] font-semibold">{{ $t('landing.how.s2_title') }}</h3>
+              <p class="text-[14px] text-[var(--muted)] px-4">{{ $t('landing.how.s2_desc') }}</p>
+            </div>
+            <div class="text-center space-y-4">
+              <div class="w-12 h-12 mx-auto rounded-full bg-[#111] border border-[var(--line)] flex items-center justify-center font-bold text-[#9984d8] text-xl">3</div>
+              <h3 class="text-[18px] font-semibold">{{ $t('landing.how.s3_title') }}</h3>
+              <p class="text-[14px] text-[var(--muted)] px-4">{{ $t('landing.how.s3_desc') }}</p>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- CTA PENUTUP -->
-      <section class="py-24 text-center px-6 border-t border-[var(--line)]">
-        <div class="max-w-3xl mx-auto space-y-8 fade-in">
-          <h2 class="text-3xl md:text-5xl font-bold tracking-tight">{{ $t('landing.cta_end.title') }}</h2>
-          <a href="https://app.ixiera.id/login" class="inline-flex items-center gap-2 px-10 py-4 rounded-full text-lg font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">{{ $t('landing.cta_end.btn') }}</a>
+      <!-- SECTION: KEAMANAN -->
+      <section class="py-20 md:py-32 bg-[var(--surface)] border-t border-[var(--line)]">
+        <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div>
+            <h2 class="font-serif-display text-[36px] md:text-[48px] leading-[1.1] mb-6 text-[var(--text)]">
+              {{ $t('landing.security.title') }}
+            </h2>
+            <p class="text-[16px] text-[var(--muted)] leading-[1.6] mb-6 tracking-[-0.03em]">
+              {{ $t('landing.security.subtitle') || 'Your data is yours. We use official APIs and never store your passwords.' }}
+            </p>
+            <ul class="space-y-3">
+              <li class="flex items-center gap-3 text-[14px] text-[var(--text)] tracking-[-0.03em]">
+                <svg class="w-5 h-5 text-[#3fcb7f]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                Official Meta API integration
+              </li>
+              <li class="flex items-center gap-3 text-[14px] text-[var(--text)] tracking-[-0.03em]">
+                <svg class="w-5 h-5 text-[#3fcb7f]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                Data isolated per user
+              </li>
+              <li class="flex items-center gap-3 text-[14px] text-[var(--text)] tracking-[-0.03em]">
+                <svg class="w-5 h-5 text-[#3fcb7f]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                Kill switch anytime
+              </li>
+            </ul>
+          </div>
+          <div class="bg-[#050607] border border-[var(--line)] rounded-2xl p-8 aspect-square flex items-center justify-center relative overflow-hidden">
+             <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(153,132,216,0.1)_0,transparent_70%)]"></div>
+             <div class="w-24 h-24 rounded-full border-2 border-[#9984d8]/30 flex items-center justify-center">
+               <div class="w-16 h-16 rounded-full border-2 border-[#9984d8]/60 flex items-center justify-center">
+                 <div class="w-8 h-8 rounded-full bg-[#3fcb7f] shadow-[0_0_20px_#3fcb7f]"></div>
+               </div>
+             </div>
+          </div>
         </div>
       </section>
 
-    </main>
+      <!-- SECTION: HARGA -->
+      <section id="harga" class="py-20 md:py-32 bg-[var(--bg)] border-t border-[var(--line)]">
+        <div class="max-w-[1200px] mx-auto px-6">
+          <div class="text-center mb-16">
+            <h2 class="font-serif-display text-[36px] md:text-[48px] leading-[1.1] mb-4 text-[var(--text)]">
+              {{ $t('landing.pricing.title') }}
+            </h2>
+            <p class="text-[16px] md:text-[18px] text-[var(--muted)] max-w-2xl mx-auto tracking-[-0.03em]">
+              {{ $t('landing.pricing.subtitle') || 'Simple, transparent pricing.' }}
+            </p>
+          </div>
 
-    <!-- FOOTER -->
-    <footer class="py-12 border-t border-[var(--line)] text-center text-sm text-[var(--muted)]">
-      <div class="flex flex-wrap justify-center items-center gap-4 mb-4">
-        <a href="mailto:contact@ixiera.id" class="hover:text-[var(--text)] transition-colors">{{ $t('landing.footer.email') }}</a>
-        <span class="hidden sm:inline text-[var(--line)]">·</span>
-        <RouterLink to="/privacy" class="hover:text-[var(--text)] transition-colors">{{ $t('landing.footer.privacy') }}</RouterLink>
-        <span class="hidden sm:inline text-[var(--line)]">·</span>
-        <RouterLink to="/terms" class="hover:text-[var(--text)] transition-colors">{{ $t('landing.footer.terms') }}</RouterLink>
-        <span class="hidden sm:inline text-[var(--line)]">·</span>
-        <RouterLink to="/data-deletion" class="hover:text-[var(--text)] transition-colors">{{ $t('landing.footer.delete') }}</RouterLink>
-      </div>
-      <p class="text-xs text-[var(--muted)]">&copy; 2026 Ixiera.</p>
-      <p class="text-[10px] max-w-2xl mx-auto px-4 mt-2">{{ $t('landing.footer.disclaimer') }}</p>
-    </footer>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Tier 1 -->
+            <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-8 flex flex-col">
+              <h3 class="text-[20px] font-semibold text-[var(--text)] mb-2">{{ $t('landing.pricing.t1_name') || 'Trial' }}</h3>
+              <div class="text-[40px] font-bold text-[var(--text)] mb-6">Rp 0<span class="text-[14px] font-normal text-[var(--muted)]">/mo</span></div>
+              <ul class="space-y-3 mb-8 flex-1">
+                <li class="text-[14px] text-[var(--muted)] flex items-center gap-2"><div class="w-1 h-1 rounded-full bg-white"></div> 7-day trial</li>
+                <li class="text-[14px] text-[var(--muted)] flex items-center gap-2"><div class="w-1 h-1 rounded-full bg-white"></div> 20 AI credits</li>
+              </ul>
+              <a href="https://app.ixiera.id/login" class="block text-center w-full py-3 rounded-md border border-[var(--line)] text-[14px] font-medium hover:bg-[#111] transition">Start free</a>
+            </div>
+
+            <!-- Tier 2 (Highlight) -->
+            <div class="bg-[#050607] border border-[#9984d8] rounded-2xl p-8 flex flex-col relative shadow-[0_0_30px_rgba(153,132,216,0.15)]">
+              <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#9984d8] text-black text-[11px] font-bold uppercase tracking-widest py-1 px-3 rounded-full">Popular</div>
+              <h3 class="text-[20px] font-semibold text-white mb-2">{{ $t('landing.pricing.t2_name') || 'Pro' }}</h3>
+              <div class="text-[40px] font-bold text-white mb-6">Rp 29k<span class="text-[14px] font-normal text-[#b3b3b3]">/mo</span></div>
+              <ul class="space-y-3 mb-8 flex-1">
+                <li class="text-[14px] text-[#b3b3b3] flex items-center gap-2"><div class="w-1 h-1 rounded-full bg-white"></div> 100 AI credits</li>
+                <li class="text-[14px] text-[#b3b3b3] flex items-center gap-2"><div class="w-1 h-1 rounded-full bg-white"></div> Auto-reply engine</li>
+                <li class="text-[14px] text-[#b3b3b3] flex items-center gap-2"><div class="w-1 h-1 rounded-full bg-white"></div> Advanced analytics</li>
+              </ul>
+              <a href="https://app.ixiera.id/login" class="block text-center w-full py-3 rounded-md bg-white text-black text-[14px] font-medium hover:bg-gray-200 transition">Upgrade Pro</a>
+            </div>
+
+            <!-- Tier 3 -->
+            <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-8 flex flex-col">
+              <h3 class="text-[20px] font-semibold text-[var(--text)] mb-2">{{ $t('landing.pricing.t3_name') || 'Enterprise' }}</h3>
+              <div class="text-[40px] font-bold text-[var(--text)] mb-6">Custom</div>
+              <ul class="space-y-3 mb-8 flex-1">
+                <li class="text-[14px] text-[var(--muted)] flex items-center gap-2"><div class="w-1 h-1 rounded-full bg-white"></div> Unlimited accounts</li>
+                <li class="text-[14px] text-[var(--muted)] flex items-center gap-2"><div class="w-1 h-1 rounded-full bg-white"></div> Dedicated support</li>
+              </ul>
+              <a href="mailto:contact@ixiera.id" class="block text-center w-full py-3 rounded-md border border-[var(--line)] text-[14px] font-medium hover:bg-[#111] transition">Contact sales</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION: FAQ -->
+      <section id="faq" class="py-20 md:py-32 bg-[var(--bg)] border-t border-[var(--line)]">
+        <div class="max-w-[800px] mx-auto px-6">
+          <div class="text-center mb-16">
+            <h2 class="font-serif-display text-[36px] md:text-[48px] leading-[1.1] mb-4 text-[var(--text)]">
+              {{ $t('landing.faq.title') }}
+            </h2>
+          </div>
+          <div class="space-y-0 border-t border-[var(--line)]">
+            <details class="group border-b border-[var(--line)] py-5 cursor-pointer">
+              <summary class="flex items-center justify-between text-[16px] font-semibold text-[var(--text)] list-none">
+                {{ $t('landing.faq.q1') || 'Is this official?' }}
+                <span class="transition group-open:rotate-180">
+                  <svg class="w-5 h-5 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </span>
+              </summary>
+              <p class="text-[15px] text-[var(--muted)] mt-3 leading-relaxed">{{ $t('landing.faq.a1') }}</p>
+            </details>
+            <details class="group border-b border-[var(--line)] py-5 cursor-pointer">
+              <summary class="flex items-center justify-between text-[16px] font-semibold text-[var(--text)] list-none">
+                {{ $t('landing.faq.q2') || 'Is my data safe?' }}
+                <span class="transition group-open:rotate-180">
+                  <svg class="w-5 h-5 text-[var(--muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </span>
+              </summary>
+              <p class="text-[15px] text-[var(--muted)] mt-3 leading-relaxed">{{ $t('landing.faq.a2') }}</p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <!-- FINAL CTA -->
+      <section class="py-24 md:py-32 border-t border-[var(--line)] text-center px-6 bg-[var(--surface)]">
+        <h2 class="font-serif-display text-[40px] md:text-[56px] leading-[1.1] text-[var(--text)] mb-8 max-w-3xl mx-auto">
+          {{ $t('landing.cta_end.title') }}
+        </h2>
+        <a href="https://app.ixiera.id/login" class="inline-block px-8 py-4 rounded-md bg-white text-black text-[16px] font-bold hover:bg-gray-200 transition">
+          Request Access
+        </a>
+        <p class="text-[13px] text-[var(--muted)] mt-4 tracking-[-0.03em]">7-day trial - 20 free credits - No upfront payment</p>
+      </section>
+
   </div>
 </template>
 
