@@ -46,7 +46,7 @@
     <!-- MOBILE DRAWER (FIXED, INLINE) -->
     <div v-if="mobileMenuOpen" class="md:hidden fixed inset-0 z-[100]" style="display: flex;">
       <div class="absolute inset-0 bg-black/60" @click="mobileMenuOpen = false"></div>
-      <aside class="drawer-slide relative w-72 max-w-[80%] h-full flex flex-col shadow-2xl bg-[var(--bg-primary)] border-r border-[var(--border)]">
+      <aside class="drawer-slide relative w-72 max-w-[80%] h-full flex flex-col  bg-[var(--bg-primary)] border-r border-[var(--border)]">
         <div class="h-16 px-5 flex items-center justify-between border-b border-[var(--border)]">
           <div class="flex items-center gap-2">
             <div class="w-8 h-8 flex items-center justify-center rounded-md text-sm font-bold bg-[var(--accent)] text-[var(--accent-text)]">IX</div>
@@ -92,7 +92,7 @@
             PUBLIC BETA
           </div>
 
-          <h1 class="font-display text-[40px] md:text-[56px] leading-[1.1] mb-6 max-w-3xl mx-auto text-[var(--text-primary)]">
+          <h1 class="font-display text-[48px] md:text-[56px] leading-[1.0] mb-6 max-w-3xl mx-auto text-[var(--text-primary)]">
             Posting yang belajar dari <br class="hidden md:block">
             <span class="italic" style="color: #9984d8;">akun kamu sendiri.</span>
           </h1>
@@ -118,7 +118,7 @@
         <!-- HERO MOCKUP with GLOW -->
         <div class="container-bd pb-16 md:pb-24 relative">
           <div class="mockup-glow absolute inset-0 pointer-events-none" style="background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(153,132,216,0.35) 0%, transparent 70%);"></div>
-          <div class="relative rounded-2xl border border-[var(--border)] overflow-hidden bg-[#050607]" style="box-shadow: 0 0 80px rgba(153,132,216,0.15);">
+          <div class="relative rounded-2xl border border-[var(--border)] overflow-hidden bg-[#050607]" >
             <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[#1a1a1a]">
               <div class="w-2.5 h-2.5 rounded-full bg-[#1a1a1a]"></div>
               <div class="w-2.5 h-2.5 rounded-full bg-[#1a1a1a]"></div>
@@ -487,7 +487,7 @@
       <!-- FINAL CTA -->
       <section class="section-bd text-center">
         <div class="container-bd">
-          <h2 class="font-display text-[40px] md:text-[56px] leading-[1.1] mb-8 text-[var(--text-primary)]">Siap berhenti nebak-nebak?</h2>
+          <h2 class="font-display text-[48px] md:text-[56px] leading-[1.0] mb-8 text-[var(--text-primary)]">Siap berhenti nebak-nebak?</h2>
           <a href="https://app.ixiera.id/login" class="btn-bd-primary inline-block">Minta Akses</a>
         </div>
       </section>

@@ -18,13 +18,13 @@
 .dark {
   color-scheme: dark;
   --bg-primary: #000000;
-  --bg-secondary: #0a0a0a;
+  --bg-secondary: #050607;
   --bg-elevated: #141414;
   --bg-hover: #1a1a1a;
   --text-primary: #ffffff;
-  --text-secondary: #a0a0a0;
-  --text-muted: #666666;
-  --border: #1f1f1f;
+  --text-secondary: #b3b3b3;
+  --text-muted: #808080;
+  --border: #333333;
   --border-strong: #2a2a2a;
   --accent: #ffffff;
   --accent-text: #000000;
@@ -60,8 +60,8 @@
 
 .font-display {
   font-family: 'Cormorant Garamond', Georgia, serif;
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-weight: 400;
+  letter-spacing: 0;
 }
 
 .accent-violet { color: #9984d8; }
@@ -122,7 +122,7 @@
 /* Button primary: white on black in dark, black on white in light */
 .btn-bd-primary {
   display: inline-block;
-  padding: 12px 24px;
+  padding: 12px 20px;
   border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
@@ -138,7 +138,7 @@
 /* Button ghost: outlined */
 .btn-bd-ghost {
   display: inline-block;
-  padding: 12px 24px;
+  padding: 12px 20px;
   border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
@@ -178,8 +178,8 @@
   font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: 36px;
   line-height: 1.1;
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-weight: 400;
+  letter-spacing: 0;
   margin-bottom: 24px;
   text-align: center;
   color: var(--text-primary);
@@ -191,11 +191,11 @@
 
 /* Feature card hover polish */
 .feature-card {
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  transition: border-color 0.2s ease;
 }
 .feature-card:hover {
   border-color: var(--border-strong);
-  transform: translateY(-2px);
+  
 }
 .dark .feature-card:hover {
   border-color: #333;
