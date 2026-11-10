@@ -31,79 +31,129 @@
     </aside>
 
     <!-- MOBILE TOP BAR -->
-    <nav class="md:hidden fixed top-0 w-full z-50 border-b border-[var(--line)] bg-[var(--bg)]/90 backdrop-blur-md">
+    <nav class="md:hidden fixed top-0 w-full z-40 border-b border-[var(--line)] bg-[var(--bg)]/90 backdrop-blur-md">
       <div class="h-16 px-4 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 flex items-center justify-center rounded-md text-sm font-bold bg-[var(--text)] text-[var(--bg)]">IX</div>
           <span class="font-bold text-lg tracking-tight">Ixiera</span>
         </div>
-        <button @click="mobileMenuOpen = !mobileMenuOpen" class="p-2 rounded-md hover:bg-[var(--surface-2)] transition">
-          <svg v-if="!mobileMenuOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-          <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        <button @click="mobileMenuOpen = true" class="p-2 rounded-md hover:bg-[var(--surface-2)] transition">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
         </button>
-      </div>
-
-      <div v-if="mobileMenuOpen" class="border-t border-[var(--line)] bg-[var(--bg)] px-4 py-4 space-y-2">
-        <a href="#fitur" @click="mobileMenuOpen=false" class="block px-3 py-2 rounded-md text-sm font-medium">{{ $t('landing.nav.features') }}</a>
-        <a href="#cara-kerja" @click="mobileMenuOpen=false" class="block px-3 py-2 rounded-md text-sm font-medium">{{ $t('landing.nav.how_it_works') }}</a>
-        <a href="#faq" @click="mobileMenuOpen=false" class="block px-3 py-2 rounded-md text-sm font-medium">{{ $t('landing.nav.faq') }}</a>
-        <div class="pt-3 mt-3 border-t border-[var(--line)] flex gap-2">
-          <button @click="toggleTheme" class="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs font-bold border border-[var(--line)]">
-            <Sun v-if="theme === 'dark'" class="w-4 h-4" />
-            <Moon v-else class="w-4 h-4" />
-          </button>
-          <button @click="toggleLang" class="px-3 py-2 rounded-md text-xs font-bold border border-[var(--line)]">
-            {{ locale.toUpperCase() }}
-          </button>
-        </div>
-        <a href="https://app.ixiera.id/login" class="block text-center text-sm font-bold bg-[var(--text)] text-[var(--bg)] py-2.5 rounded-md mt-2">
-          {{ $t('landing.nav.start_free') }}
-        </a>
       </div>
     </nav>
 
-    <main class="md:ml-60 pt-20 md:pt-0">
-      <!-- HERO -->
-      <section class="max-w-[1120px] mx-auto px-6 pb-20 md:pb-32 flex flex-col md:flex-row items-center gap-12">
-        <div class="flex-1 space-y-6 text-center md:text-left fade-in">
-          <div class="inline-flex items-center px-3 py-1 rounded-full border border-[var(--line)] text-xs font-bold tracking-widest text-[var(--muted)] uppercase">{{ $t('landing.hero.badge') }}</div>
-          <h1 class="text-4xl md:text-6xl font-bold tracking-tight leading-[1.05]">
-            {{ $t('landing.hero.title_1') }} <br class="hidden md:block"/>
-            <span class="underline decoration-4 underline-offset-8 decoration-[var(--text)]">{{ $t('landing.hero.title_2') }}</span>
-          </h1>
-          <p class="text-lg text-[var(--muted)] leading-relaxed max-w-xl mx-auto md:mx-0">{{ $t('landing.hero.subtitle') }}</p>
-          <div class="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4 pt-4">
-            <a href="https://app.ixiera.id/login" class="w-full sm:w-auto px-8 py-3.5 rounded-full text-base font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">{{ $t('landing.hero.cta_primary') }}</a>
-            <a href="#contoh" class="w-full sm:w-auto px-8 py-3.5 rounded-full text-base font-bold border border-[var(--line)] hover:bg-[var(--surface-2)] transition">{{ $t('landing.hero.cta_secondary') }}</a>
-          </div>
-          <p class="text-xs text-[var(--muted)] pt-2">{{ $t('landing.hero.microcopy') }}</p>
-          <div class="flex flex-col sm:flex-row gap-4 pt-8 text-xs text-[var(--muted)] justify-center md:justify-start">
-            <span class="flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> {{ $t('landing.hero.trust_1') }}</span>
-            <span class="flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> {{ $t('landing.hero.trust_2') }}</span>
-            <span class="flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> {{ $t('landing.hero.trust_3') }}</span>
-          </div>
-        </div>
+    <!-- MOBILE DRAWER SIDEBAR (KIRI) -->
+    <Teleport to="body">
+      <div v-if="mobileMenuOpen" class="md:hidden fixed inset-0 z-[100] flex">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="mobileMenuOpen = false"></div>
         
-        <!-- MOCKUP: Hook Chart (Hero) -->
-        <div class="flex-1 w-full max-w-md mx-auto fade-in">
-          <div class="border border-dashed border-[var(--line)] rounded-xl overflow-hidden bg-[var(--surface)]">
-            <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[var(--line)]">
-              <div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div>
-              <span class="ml-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Hook Performance</span>
+        <!-- Drawer -->
+        <aside class="relative w-72 max-w-[80%] h-full bg-[var(--bg)] border-r border-[var(--line)] flex flex-col shadow-2xl" style="animation: slideIn 0.2s ease-out forwards;">
+          <div class="h-16 px-5 flex items-center justify-between border-b border-[var(--line)]">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 flex items-center justify-center rounded-md text-sm font-bold bg-[var(--text)] text-[var(--bg)]">IX</div>
+              <span class="font-bold text-xl tracking-tight">Ixiera</span>
             </div>
-            <div class="p-6 space-y-4">
-              <div v-for="(item, index) in hookData" :key="item.label" class="space-y-1">
-                <div class="flex justify-between text-xs font-bold"><span>{{ item.label }}</span><span>{{ item.er }}%</span></div>
-                <div class="w-full bg-[var(--surface-2)] h-2 rounded-full">
-                  <div class="h-full rounded-full bar-grow" :class="index === 0 ? 'bg-[var(--text)]' : 'bg-[var(--bar-dim)]'" :style="{ width: getBarWidth(item.er) }"></div>
-                </div>
-                <div class="text-[10px] text-[var(--muted)] text-right">n={{ item.n }}</div>
-              </div>
+            <button @click="mobileMenuOpen = false" class="p-2 text-[var(--muted)] hover:text-[var(--text)]">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+
+          <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+            <a href="#fitur" @click="mobileMenuOpen=false" class="block px-4 py-3 rounded-lg text-sm font-medium text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition">{{ $t('landing.nav.features') }}</a>
+            <a href="#cara-kerja" @click="mobileMenuOpen=false" class="block px-4 py-3 rounded-lg text-sm font-medium text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition">{{ $t('landing.nav.how_it_works') }}</a>
+            <a href="#faq" @click="mobileMenuOpen=false" class="block px-4 py-3 rounded-lg text-sm font-medium text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--surface-2)] transition">{{ $t('landing.nav.faq') }}</a>
+          </nav>
+
+          <div class="p-4 border-t border-[var(--line)] space-y-3">
+            <div class="flex gap-2">
+              <button @click="toggleTheme" class="flex-1 flex items-center justify-center gap-2 px-3 py-3 rounded-lg text-xs font-bold text-[var(--muted)] border border-[var(--line)] hover:bg-[var(--surface-2)] transition">
+                <Sun v-if="theme === 'dark'" class="w-4 h-4" />
+                <Moon v-else class="w-4 h-4" />
+                <span>{{ theme === 'dark' ? 'Light' : 'Dark' }}</span>
+              </button>
+              <button @click="toggleLang" class="flex-1 px-3 py-3 rounded-lg text-xs font-bold text-[var(--muted)] border border-[var(--line)] hover:bg-[var(--surface-2)] transition">
+                {{ locale === 'id' ? 'EN' : 'ID' }}
+              </button>
             </div>
-            <div class="bg-[var(--surface-2)] text-center py-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">
-              Data nyata
+            <a href="https://app.ixiera.id/login" class="block text-center text-sm font-bold bg-[var(--text)] text-[var(--bg)] py-3 rounded-lg hover:opacity-90 transition">
+              {{ $t('landing.nav.start_free') }}
+            </a>
+          </div>
+        </aside>
+      </div>
+    </Teleport>
+
+    <style>
+      @keyframes slideIn {
+        from { transform: translateX(-100%); }
+        to { transform: translateX(0); }
+      }
+    </style>
+
+    <main class="md:ml-60 pt-20 md:pt-0">
+      <!-- HERO (Basedash Style) -->
+      <section class="max-w-[1200px] mx-auto px-6 pb-20 md:pb-32 flex flex-col items-center text-center pt-10 md:pt-20">
+        
+        <!-- Pill Badge -->
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--line)] mb-8">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#3fcb7f]"></span>
+          <span class="text-[13px] font-medium tracking-[-0.03em] text-[var(--muted)]">{{ $t('landing.hero.badge') }}</span>
+        </div>
+
+        <!-- Serif Headline -->
+        <h1 class="font-serif-display text-[44px] md:text-[56px] leading-[1.1] md:leading-[1.05] tracking-normal mb-6 max-w-4xl mx-auto text-[var(--text)]">
+          {{ $t('landing.hero.title_1') }} <br class="hidden md:block"/>
+          <span class="italic text-[#9984d8]">{{ $t('landing.hero.title_2') }}</span>
+        </h1>
+
+        <!-- Subhead -->
+        <p class="text-[16px] md:text-[18px] text-[var(--muted)] tracking-[-0.03em] leading-[1.6] max-w-2xl mx-auto mb-10">
+          {{ $t('landing.hero.subtitle') }}
+        </p>
+
+        <!-- CTA Buttons -->
+        <div class="flex flex-col sm:flex-row items-center gap-4 mb-16 w-full sm:w-auto">
+          <a href="https://app.ixiera.id/login" class="w-full sm:w-auto px-8 py-3.5 rounded-md text-[15px] font-medium tracking-[-0.03em] bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">{{ $t('landing.hero.cta_primary') }}</a>
+          <a href="#contoh" class="w-full sm:w-auto px-8 py-3.5 rounded-md text-[15px] font-medium tracking-[-0.03em] text-[var(--text)] border border-[var(--line)] hover:bg-[var(--surface-2)] transition">{{ $t('landing.hero.cta_secondary') }}</a>
+        </div>
+
+        <!-- Trust Line -->
+        <p class="text-[13px] text-[var(--muted)] tracking-[-0.03em] mb-12">{{ $t('landing.hero.microcopy') }}</p>
+      </section>
+
+      <!-- Hero Mockup Image -->
+      <section class="max-w-[1000px] mx-auto px-4 md:px-0">
+        <div class="relative w-full rounded-xl overflow-hidden border border-[var(--line)] bg-[var(--surface)]">
+          <!-- Mockup Header -->
+          <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[var(--line)]">
+            <div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div>
+            <span class="ml-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Dashboard</span>
+          </div>
+          <!-- Mockup Body -->
+          <div class="p-6 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-[var(--bg)] border border-[var(--line)] rounded-lg p-5">
+              <p class="text-[12px] text-[var(--muted)] mb-1">Total Views</p>
+              <p class="text-[32px] font-semibold text-[var(--text)] tracking-[-0.03em] mb-2">311,781</p>
+              <p class="text-[12px] text-[#3fcb7f] tracking-[-0.03em]">up 126 percent</p>
+            </div>
+            <div class="bg-[var(--bg)] border border-[var(--line)] rounded-lg p-5">
+              <p class="text-[12px] text-[var(--muted)] mb-1">Followers</p>
+              <p class="text-[32px] font-semibold text-[var(--text)] tracking-[-0.03em] mb-2">2,592</p>
+              <p class="text-[12px] text-[#3fcb7f] tracking-[-0.03em]">up 15 this week</p>
+            </div>
+            <div class="bg-[var(--bg)] border border-[var(--line)] rounded-lg p-5">
+              <p class="text-[12px] text-[var(--muted)] mb-1">Engagement Rate</p>
+              <p class="text-[32px] font-semibold text-[var(--text)] tracking-[-0.03em] mb-2">4.8 percent</p>
+              <p class="text-[12px] text-[#3fcb7f] tracking-[-0.03em]">up 0.3 percent</p>
             </div>
           </div>
+          <!-- Glow Effect -->
+          <div class="absolute inset-0 pointer-events-none" style="background: radial-gradient(circle at 50% 0%, rgba(153,132,216,0.15) 0%, transparent 60%);"></div>
         </div>
       </section>
 
