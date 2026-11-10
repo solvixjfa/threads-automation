@@ -1,121 +1,71 @@
 <template>
   <div class="min-h-screen">
 
-    <!-- DESKTOP SIDEBAR (FIXED) -->
-    <aside class="hidden md:flex flex-col fixed top-0 left-0 h-screen w-60 z-50 bg-[var(--bg-primary)] border-r border-[var(--border)]">
-      <div class="h-16 px-5 flex items-center border-b border-[var(--border)]">
-        <div class="w-8 h-8 flex items-center justify-center rounded-md text-sm font-bold bg-[var(--accent)] text-[var(--accent-text)]">IX</div>
-        <span class="ml-2 font-bold text-xl text-[var(--text-primary)]" style="letter-spacing: -0.03em;">Ixiera</span>
-      </div>
-
-      <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
-        <a href="#fitur" class="nav-bd">Fitur</a>
-        <a href="#contoh" class="nav-bd">Contoh Data</a>
-        <a href="#cara-kerja" class="nav-bd">Cara Kerja</a>
-        <a href="/pricing" class="nav-bd">Harga</a>
-        <a href="#faq" class="nav-bd">FAQ</a>
-      </nav>
-
-      <div class="p-3 border-t border-[var(--border)] space-y-2">
+    
+    <!-- TOP NAVBAR (BASEDASH STYLE) -->
+    <nav class="fixed top-0 left-0 right-0 z-50 h-16 bg-[var(--bg-primary)]/80 backdrop-blur-md border-b border-[var(--border)]/50 flex items-center">
+      <div class="container-bd w-full flex items-center justify-between">
+        <!-- Logo -->
         <div class="flex items-center gap-2">
-          <button @click="toggleTheme" class="flex-1 flex items-center justify-center py-2 rounded-md border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition">
+          <div class="w-7 h-7 flex items-center justify-center rounded text-xs font-bold bg-[var(--accent)] text-[var(--accent-text)]">IX</div>
+          <span class="font-bold text-lg text-[var(--text-primary)] tracking-tight">Ixiera</span>
+        </div>
+
+        <!-- Center Links -->
+        <div class="hidden md:flex items-center gap-8 text-sm font-medium text-[var(--text-secondary)]">
+          <a href="#fitur" class="hover:text-[var(--text-primary)] transition">Fitur</a>
+          <a href="#contoh" class="hover:text-[var(--text-primary)] transition">Contoh Data</a>
+          <a href="#cara-kerja" class="hover:text-[var(--text-primary)] transition">Cara Kerja</a>
+          <a href="/pricing" class="hover:text-[var(--text-primary)] transition">Harga</a>
+          <a href="#faq" class="hover:text-[var(--text-primary)] transition">FAQ</a>
+        </div>
+
+        <!-- Right Actions -->
+        <div class="hidden md:flex items-center gap-4">
+          <button @click="toggleTheme" class="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition">
             <Sun v-if="theme === 'dark'" class="w-4 h-4" />
             <Moon v-else class="w-4 h-4" />
           </button>
-          <button @click="toggleLang" class="px-3 py-2 rounded-md border border-[var(--border)] text-[var(--text-muted)] text-xs font-bold hover:bg-[var(--bg-hover)] transition" style="letter-spacing: -0.03em;">
-            {{ locale.toUpperCase() }}
-          </button>
+          <a href="https://app.ixiera.id/login" class="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition">Log in</a>
+          <a href="https://app.ixiera.id/login" class="btn-bd-primary" style="padding: 8px 16px;">Sign up</a>
         </div>
-        <a href="https://app.ixiera.id/login" class="block text-center text-sm font-bold py-2.5 rounded-md bg-[var(--accent)] text-[var(--accent-text)] hover:opacity-90 transition" style="letter-spacing: -0.03em;">
-          Minta Akses
-        </a>
-      </div>
-    </aside>
 
-    <!-- MOBILE TOP BAR (FIXED, BUKAN STICKY) -->
-    <nav class="md:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-[var(--bg-primary)]/95 backdrop-blur-md border-b border-[var(--border)] flex items-center px-4 justify-between">
-      <div class="flex items-center gap-2">
-        <div class="w-7 h-7 flex items-center justify-center rounded-md text-xs font-bold bg-[var(--accent)] text-[var(--accent-text)]">IX</div>
-        <span class="font-bold text-lg text-[var(--text-primary)]" style="letter-spacing: -0.03em;">Ixiera</span>
+        <!-- Mobile Hamburger -->
+        <button @click="mobileMenuOpen = true" class="md:hidden p-2 text-[var(--text-primary)]">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
       </div>
-      <button @click="mobileMenuOpen = true" class="p-2 text-[var(--text-primary)]">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-      </button>
     </nav>
 
-    <!-- MOBILE DRAWER (FIXED, INLINE) -->
-    <div v-if="mobileMenuOpen" class="md:hidden fixed inset-0 z-[100]" style="display: flex;">
-      <div class="absolute inset-0 bg-black/60" @click="mobileMenuOpen = false"></div>
-      <aside class="drawer-slide relative w-72 max-w-[80%] h-full flex flex-col  bg-[var(--bg-primary)] border-r border-[var(--border)]">
-        <div class="h-16 px-5 flex items-center justify-between border-b border-[var(--border)]">
-          <div class="flex items-center gap-2">
-            <div class="w-8 h-8 flex items-center justify-center rounded-md text-sm font-bold bg-[var(--accent)] text-[var(--accent-text)]">IX</div>
-            <span class="font-bold text-xl text-[var(--text-primary)]" style="letter-spacing: -0.03em;">Ixiera</span>
-          </div>
-          <button @click="mobileMenuOpen = false" class="p-2 text-[var(--text-primary)]">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-          </button>
-        </div>
-
-        <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-          <a href="#fitur" @click="mobileMenuOpen = false" class="nav-bd">Fitur</a>
-          <a href="#contoh" @click="mobileMenuOpen = false" class="nav-bd">Contoh Data</a>
-          <a href="#cara-kerja" @click="mobileMenuOpen = false" class="nav-bd">Cara Kerja</a>
-          <a href="/pricing" @click="mobileMenuOpen = false" class="nav-bd">Harga</a>
-          <a href="#faq" @click="mobileMenuOpen = false" class="nav-bd">FAQ</a>
-        </nav>
-
-        <div class="p-4 border-t border-[var(--border)] space-y-3">
-          <div class="flex gap-2">
-            <button @click="toggleTheme" class="flex-1 flex items-center justify-center py-3 rounded-lg border border-[var(--border)] text-[var(--text-muted)]">
-              <Sun v-if="theme === 'dark'" class="w-4 h-4" />
-              <Moon v-else class="w-4 h-4" />
-            </button>
-            <button @click="toggleLang" class="flex-1 py-3 rounded-lg border border-[var(--border)] text-[var(--text-muted)] text-xs font-bold" style="letter-spacing: -0.03em;">
-              {{ locale.toUpperCase() }}
-            </button>
-          </div>
-          <a href="https://app.ixiera.id/login" class="block text-center text-sm font-bold py-3 rounded-lg bg-[var(--accent)] text-[var(--accent-text)]" style="letter-spacing: -0.03em;">
-            Minta Akses
-          </a>
-        </div>
-      </aside>
-    </div>
-
     <!-- MAIN CONTENT -->
-    <main class="md:ml-60 pt-14 md:pt-0">
+    <main class="pt-16">
       <!-- HERO -->
-      <section class="hero-section relative">
-        <div class="container-bd text-center relative z-10" style="padding-top: 32px; padding-bottom: 80px;">
-          <div class="pill-bd mb-6">
+      <section class="relative pt-24 pb-20">
+        <div class="container-bd text-center relative z-10">
+          <div class="pill-bd mb-6 mx-auto" style="width: fit-content;">
             <span class="w-1.5 h-1.5 rounded-full" style="background: #3fcb7f;"></span>
             PUBLIC BETA
           </div>
-
-          <h1 class="font-display text-[48px] md:text-[56px] leading-[1.0] mb-6 max-w-3xl mx-auto text-[var(--text-primary)]">
+          
+          <h1 class="font-display text-[48px] md:text-[64px] leading-[1.0] mb-6 max-w-3xl mx-auto text-[var(--text-primary)]">
             Posting yang belajar dari <br class="hidden md:block">
             <span class="italic" style="color: #9984d8;">akun kamu sendiri.</span>
           </h1>
-
-          <p class="text-[16px] md:text-[18px] leading-relaxed max-w-2xl mx-auto mb-8 text-[var(--text-secondary)]" style="letter-spacing: -0.03em;">
+          
+          <p class="text-[18px] leading-[1.56] max-w-[640px] mx-auto mb-10 text-[var(--text-secondary)]" style="letter-spacing: -0.03em;">
             Ixiera membaca post kamu yang paling jalan (jam, hook, panjang, topik), lalu membantu bikin rencana konten dan membalas komentar dengan gayamu.
           </p>
-
-          <div class="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
+          
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
             <a href="https://app.ixiera.id/login" class="btn-bd-primary w-full sm:w-auto text-center">Minta Akses</a>
             <a href="#contoh" class="btn-bd-ghost w-full sm:w-auto text-center">Lihat contohnya</a>
           </div>
-
+          
           <p class="text-[13px] text-[var(--text-muted)] mb-6" style="letter-spacing: -0.03em;">Trial 7 hari &middot; 20 kredit gratis &middot; Tanpa bayar di awal</p>
-
-          <div class="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-[var(--text-muted)]" style="letter-spacing: -0.03em;">
-            <span>Login resmi Meta, tanpa simpan password</span>
-            <span>Kill Switch kapan saja</span>
-            <span>Data terpisah per user</span>
-          </div>
         </div>
+      </section>
 
-        <!-- HERO MOCKUP with GLOW -->
+      <!-- HERO MOCKUP with GLOW -->
         <div class="container-bd pb-16 md:pb-24 relative">
           <div class="mockup-glow absolute inset-0 pointer-events-none" style="background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(153,132,216,0.35) 0%, transparent 70%);"></div>
           <div class="relative rounded-2xl border border-[var(--border)] overflow-hidden bg-[#050607]" >
