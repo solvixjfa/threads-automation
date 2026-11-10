@@ -1,5 +1,6 @@
 <template>
   <div class="space-y-6">
+    <!-- NEXT BEST CARD -->
     <Card v-if="!loading && !error && nextBest" style="border-color: #e5e5e5; border-width: 2px;">
       <div class="p-5">
         <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider theme-text-muted mb-2">
@@ -19,6 +20,7 @@
       </div>
     </Card>
 
+    <!-- BENCHMARK CARD -->
     <Card v-if="!loading && !error && benchmark">
       <div class="p-5">
         <div class="flex items-center gap-2 text-sm font-bold mb-2">
@@ -35,6 +37,7 @@
       </div>
     </Card>
 
+    <!-- HOURLY TREND -->
     <Card v-if="!loading && !error">
       <template #header>
         <div class="flex items-center justify-between">
@@ -73,6 +76,7 @@
       </div>
     </Card>
 
+    <!-- BEST TIME PER DAY (BAR CHART ONLY) -->
     <Card v-if="!loading && !error && translatedBlocks.length > 0">
       <template #header>
         <div class="flex items-center justify-between">
@@ -86,16 +90,12 @@
         </div>
       </template>
 
-      <div class="mb-8 mt-4">
+      <div class="mb-6 mt-2">
         <BestTimeChart :data="translatedBlocks" @select-block="(b) => selectedBlock = b" />
       </div>
+    </Card>
 
-      </Card>
-  </div>
-</template>
-  </div>
-
-    <!-- Modal Jadwalkan -->
+    <!-- MODAL JADWALKAN -->
     <Teleport to="body">
       <div v-if="selectedBlock" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="selectedBlock = null">
         <div class="card p-5 w-full max-w-sm space-y-4 shadow-2xl relative">
@@ -124,6 +124,7 @@
         </div>
       </div>
     </Teleport>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -144,14 +145,13 @@ const nextBest = ref<any>(null)
 const benchmark = ref<any>(null)
 const totalPosts = ref(0)
 const confidence = ref<'low' | 'medium' | 'high'>('low')
+const selectedBlock = ref<any>(null)
 
 const confidenceLabel = computed(() => ({
   low: t('analytics.conf_low'), medium: t('analytics.conf_med'), high: t('analytics.conf_high'),
 }[confidence.value]))
 
 const confidenceVariant = computed(() => ({ low: 'default', medium: 'default', high: 'accent' }[confidence.value] as any))
-
-const selectedBlock = ref<any>(null)
 
 const translatedBlocks = computed(() => {
   if (!bestBlockPerDay.value || bestBlockPerDay.value.length === 0) return []

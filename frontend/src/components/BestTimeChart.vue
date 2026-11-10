@@ -33,6 +33,10 @@ const chartData = computed(() => ({
 const chartOptions = {
   indexAxis: 'y' as const,
   responsive: true,
+  maintainAspectRatio: false,
+  layout: {
+    padding: { right: 20 }
+  },
   onClick: (event: any, elements: any[]) => {
     if (elements.length > 0) {
       const idx = elements[0].index
@@ -42,10 +46,6 @@ const chartOptions = {
   onHover: (event: any, elements: any[]) => {
     const canvas = event.native?.target
     if (canvas) canvas.style.cursor = elements.length > 0 ? 'pointer' : 'default'
-  },
-  maintainAspectRatio: false,
-  layout: {
-    padding: { right: 20 } // Biar sumbu X ada ruang
   },
   plugins: {
     legend: { display: false },
@@ -65,12 +65,7 @@ const chartOptions = {
     x: {
       display: true,
       grid: { color: '#262626', drawBorder: false, drawTicks: false },
-      ticks: { 
-        display: true,
-        color: '#8a8a8a', 
-        font: { size: 10 }, 
-        callback: (v: any) => v + '%' 
-      },
+      ticks: { display: true, color: '#8a8a8a', font: { size: 10 }, callback: (v: any) => v + '%' },
       beginAtZero: true
     },
     y: {
