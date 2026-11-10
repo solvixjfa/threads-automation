@@ -282,7 +282,7 @@
     "hook_benchmark_note": "Benchmark industri Threads: hook dengan angka spesifik (contoh: 2.4x, 87%) rata-rata 1.8x lebih tinggi dari hook pertanyaan.",
     "hook_compare_sub": "Bandingkan performa tipe hook berdasarkan {n} post",
     "hook_visual": "Perbandingan Visual",
-    "sample_thin": "sample tipis",
+    "sample_thin": "Sample tipis",
     "hook_cat_data_point": "Data-Point",
     "hook_cat_contrarian": "Kontrarian",
     "hook_cat_confession": "Pengakuan",
@@ -323,7 +323,12 @@
     "sentiment_best_desc": "Postingan dengan nada ini mendapat engagement tertinggi dari audiensmu.",
     "sent_positive": "Positif",
     "sent_neutral": "Netral",
-    "sent_negative": "Negatif"
+    "sent_negative": "Negatif",
+    "best_per_day_title": "Waktu Terbaik Per Hari",
+    "best_per_day_sub": "Rekomendasi blok waktu terbaik untuk Senin–Minggu",
+    "sample_ok": "Cukup",
+    "schedule": "Jadwalkan",
+    "schedule_now": "Jadwalkan Sekarang"
   },
   "settings": {
     "title": "Pengaturan",
@@ -517,5 +522,22 @@
     "desc_knowledge": "Knowledge base brand untuk RAG",
     "desc_ai": "Setting AI & billing",
     "desc_tutorial": "Panduan lengkap semua fitur"
+  },
+  "days": {
+    "sunday": "Minggu",
+    "monday": "Senin",
+    "tuesday": "Selasa",
+    "wednesday": "Rabu",
+    "thursday": "Kamis",
+    "friday": "Jumat",
+    "saturday": "Sabtu"
+  },
+  "time_blocks": {
+    "dini_hari": "Dini Hari",
+    "subuh": "Subuh",
+    "pagi": "Pagi",
+    "siang": "Siang",
+    "sore": "Sore",
+    "malam": "Malam"
   }
 }

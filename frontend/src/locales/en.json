@@ -282,7 +282,7 @@
     "hook_benchmark_note": "Threads industry benchmark: hooks with specific numbers (e.g., 2.4x, 87%) average 1.8x higher than question hooks.",
     "hook_compare_sub": "Compare hook types based on {n} posts",
     "hook_visual": "Visual Comparison",
-    "sample_thin": "thin sample",
+    "sample_thin": "Thin sample",
     "hook_cat_data_point": "Data-Point",
     "hook_cat_contrarian": "Contrarian",
     "hook_cat_confession": "Confession",
@@ -323,7 +323,12 @@
     "sentiment_best_desc": "Posts with this tone get the highest engagement from your audience.",
     "sent_positive": "Positive",
     "sent_neutral": "Neutral",
-    "sent_negative": "Negative"
+    "sent_negative": "Negative",
+    "best_per_day_title": "Best Time Per Day",
+    "best_per_day_sub": "Best time block recommendations for Monday–Sunday",
+    "sample_ok": "Enough",
+    "schedule": "Schedule",
+    "schedule_now": "Schedule Now"
   },
   "settings": {
     "title": "Settings",
@@ -517,5 +522,22 @@
     "desc_knowledge": "Brand knowledge base for RAG",
     "desc_ai": "AI provider & billing settings",
     "desc_tutorial": "Full guide for every feature"
+  },
+  "days": {
+    "sunday": "Sunday",
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday"
+  },
+  "time_blocks": {
+    "dini_hari": "Late Night",
+    "subuh": "Early Morning",
+    "pagi": "Morning",
+    "siang": "Afternoon",
+    "sore": "Evening",
+    "malam": "Night"
   }
 }

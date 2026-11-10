@@ -5,7 +5,7 @@
         <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider theme-text-muted mb-2"><Target class="w-3 h-3" /><span>Waktu Terbaik Berikutnya</span></div>
         <div class="text-2xl font-black mb-1">{{ nextBest.weekday }}, {{ nextBest.hour_start }}–{{ nextBest.hour_end }} WIB</div>
         <div class="text-sm theme-text-muted mb-3">{{ (nextBest.er_pct || 0).toFixed(2) }}% avg ER · {{ nextBest.sample_size }} posts ({{ nextBest.name }})</div>
-        <Button size="sm" @click="scheduleAt(nextBest)"><Calendar class="w-4 h-4" /><span>Jadwalkan Sekarang</span></Button>
+        <Button size="sm" @click="scheduleAt(nextBest)"><Calendar class="w-4 h-4" /><span>{{ $t('analytics.schedule_now') }}</span></Button>
       </div>
     </Card>
 
@@ -67,12 +67,16 @@
           <div>
             <h2 class="text-sm font-bold flex items-center gap-2">
               <TrendingUp class="w-4 h-4 theme-text-muted" />
-              Best Time Per Day
+              {{ $t('analytics.best_per_day_title') }}
             </h2>
-            <p class="text-xs theme-text-muted mt-0.5">Rekomendasi blok waktu terbaik untuk Senin–Minggu</p>
+            <p class="text-xs theme-text-muted mt-0.5">{{ $t('analytics.best_per_day_sub') }}</p>
           </div>
         </div>
       </template>
+
+      <div class="mb-8 mt-4">
+        <BestTimeChart :data="translatedBlocks" />
+      </div>
 
       <div class="space-y-2">
         <div v-for="(block, idx) in bestBlockPerDay" :key="idx"
@@ -85,8 +89,8 @@
             </div>
             <div class="min-w-0">
               <div class="text-sm font-bold truncate">
-                {{ block.weekday }}
-                <template v-if="block.has_data"> · {{ block.hour_start }}–{{ block.hour_end }} <span class="text-[10px] theme-text-muted">({{ block.name }})</span></template>
+                {{ translatedBlocks.find(t => t.weekday === block.weekday)?.weekdayLabel || block.weekday }}
+                <template v-if="block.has_data"> · {{ block.hour_start }}–{{ block.hour_end }} <span class="text-[10px] theme-text-muted">({{ translatedBlocks.find(t => t.weekday === block.weekday)?.blockLabel || block.name }})</span></template>
                 <template v-else><span class="theme-text-muted font-normal text-xs italic"> · Belum ada data</span></template>
               </div>
               <div class="text-[11px] theme-text-muted" v-if="block.has_data">
@@ -99,7 +103,7 @@
               <div class="text-lg font-black">{{ (block.er_pct || 0).toFixed(2) }}%</div>
               <div class="text-[10px] theme-text-muted uppercase font-bold">Avg ER</div>
             </div>
-            <Button size="sm" variant="secondary" @click="scheduleAt(block)">Jadwalkan</Button>
+            <Button size="sm" variant="secondary" @click="scheduleAt(block)">{{ $t('analytics.schedule') }}</Button>
           </div>
         </div>
       </div>
@@ -114,6 +118,7 @@ import { useI18n } from 'vue-i18n'
 import { Card, Badge, Button, EmptyState } from '../../components/ui'
 import BestTimeHeatmap from '../../components/BestTimeHeatmap.vue'
 import { Clock, TrendingUp, AlertCircle, Target, Calendar, BarChart3 } from 'lucide-vue-next'
+import BestTimeChart from '../../components/BestTimeChart.vue'
 
 const { t } = useI18n()
 const loading = ref(true)
@@ -125,6 +130,19 @@ const nextBest = ref<any>(null)
 const benchmark = ref<any>(null)
 const totalPosts = ref(0)
 const confidence = ref<'low' | 'medium' | 'high'>('low')
+
+const translatedBlocks = computed(() => {
+  if (!bestBlockPerDay.value || bestBlockPerDay.value.length === 0) return []
+  return bestBlockPerDay.value.filter((b: any) => b.has_data).map((b: any) => {
+    const dayKey = 'days.' + b.weekday.toLowerCase()
+    let blockName = b.name.toLowerCase().replace(' ', '_')
+    return {
+      ...b,
+      weekdayLabel: t(dayKey),
+      blockLabel: t('time_blocks.' + blockName)
+    }
+  })
+})
 
 const confidenceLabel = computed(() => ({
   low: t('analytics.conf_low'), medium: t('analytics.conf_med'), high: t('analytics.conf_high'),
