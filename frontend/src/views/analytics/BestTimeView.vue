@@ -52,81 +52,6 @@
         </div>
       </template>
 
-      <div v-if="loading" class="space-y-3">
-        <div class="h-6 w-48 skeleton"></div>
-        <div class="h-64 skeleton"></div>
-      </div>
-
-      <div v-else-if="error" class="text-center py-8 flex flex-col items-center gap-3">
-        <AlertCircle class="w-8 h-8 text-red-500 opacity-50" />
-        <p class="text-sm theme-text-muted">{{ error }}</p>
-        <Button variant="secondary" size="sm" @click="loadData">{{ $t('common.retry') }}</Button>
-      </div>
-
-      <div v-else-if="totalPosts === 0" class="text-center py-8">
-        <EmptyState :title="$t('analytics.not_enough')" :description="$t('analytics.not_enough_sub')" />
-      </div>
-
-      <div v-else class="space-y-6">
-        <div class="flex flex-wrap gap-4 text-xs">
-          <div><span class="theme-text-muted">{{ $t('analytics.total_analyzed') }}</span><span class="font-bold ml-1.5">{{ totalPosts }}</span></div>
-          <div><span class="theme-text-muted">{{ $t('analytics.confidence') }}</span><span class="font-bold ml-1.5 capitalize">{{ confidenceLabel }}</span></div>
-        </div>
-        <BestTimeLineChart :matrix="matrix" />
-      </div>
-    </Card>
-
-    <!-- BEST TIME PER DAY (BAR CHART ONLY) -->
-    <Card v-if="!loading && !error && translatedBlocks.length > 0">
-      <template #header>
-        <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-sm font-bold flex items-center gap-2">
-              <TrendingUp class="w-4 h-4 theme-text-muted" />
-              {{ $t('analytics.top_slots') }}
-            </h2>
-            <p class="text-xs theme-text-muted mt-0.5">{{ $t('analytics.top_slots_sub') }}</p>
-          </div>
-        </div>
-      </template>
-
-      <div class="mb-6 mt-2">
-        <BestTimeChart :data="translatedBlocks" @select-block="(b) => selectedBlock = b" />
-      </div>
-    </Card>
-
-    <!-- MODAL JADWALKAN -->
-    <Teleport to="body">
-      <div v-if="selectedBlock" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="selectedBlock = null">
-        <div class="card p-5 w-full max-w-sm space-y-4 shadow-2xl relative">
-          <button @click="selectedBlock = null" class="absolute top-4 right-4 p-1.5 rounded-md hover:theme-bg-hover transition theme-text-muted">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-          </button>
-          
-          <div>
-            <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider theme-text-muted mb-1">
-              <Calendar class="w-3 h-3" />
-              {{ $t('analytics.schedule_popup_title') }}
-            </div>
-            <h3 class="text-xl font-black">{{ selectedBlock.weekdayLabel }}, {{ selectedBlock.hour_start }}–{{ selectedBlock.hour_end }}</h3>
-            <p class="text-xs theme-text-muted mt-1">{{ selectedBlock.blockLabel }} · {{ $t('analytics.hook_posts', { n: selectedBlock.sample_size }) }}</p>
-          </div>
-
-          <div class="flex items-center justify-between p-3 rounded-lg theme-bg-sec border theme-border">
-            <span class="text-xs font-bold theme-text-muted">{{ $t('analytics.avg_er') }}</span>
-            <span class="text-lg font-black">{{ (selectedBlock.er_pct || 0).toFixed(2) }}%</span>
-          </div>
-
-          <Button class="w-full" @click="scheduleAt(selectedBlock); selectedBlock = null">
-            <Calendar class="w-4 h-4 mr-2" />
-            {{ $t('analytics.schedule_now') }}
-          </Button>
-        </div>
-      </div>
-    </Teleport>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
@@ -140,7 +65,7 @@ const { t } = useI18n()
 const loading = ref(true)
 const error = ref('')
 const matrix = ref<number[][]>(Array(7).fill(0).map(() => Array(24).fill(0)))
-const bestBlockPerDay = ref<any[]>([])
+const topSlots = ref<any[]>([])
 const nextBest = ref<any>(null)
 const benchmark = ref<any>(null)
 const totalPosts = ref(0)
@@ -153,22 +78,21 @@ const confidenceLabel = computed(() => ({
 
 const confidenceVariant = computed(() => ({ low: 'default', medium: 'default', high: 'accent' }[confidence.value] as any))
 
-const translatedBlocks = computed(() => {
-  if (!bestBlockPerDay.value || bestBlockPerDay.value.length === 0) return []
-  return bestBlockPerDay.value.filter((b: any) => b.has_data).map((b: any) => {
+const translatedSlots = computed(() => {
+  if (!topSlots.value || topSlots.value.length === 0) return []
+  return topSlots.value.map((s: any) => {
     let dayKey = 'sunday'
-    if (b.weekday_num === 1) dayKey = 'monday'
-    else if (b.weekday_num === 2) dayKey = 'tuesday'
-    else if (b.weekday_num === 3) dayKey = 'wednesday'
-    else if (b.weekday_num === 4) dayKey = 'thursday'
-    else if (b.weekday_num === 5) dayKey = 'friday'
-    else if (b.weekday_num === 6) dayKey = 'saturday'
+    if (s.weekday_num === 1) dayKey = 'monday'
+    else if (s.weekday_num === 2) dayKey = 'tuesday'
+    else if (s.weekday_num === 3) dayKey = 'wednesday'
+    else if (s.weekday_num === 4) dayKey = 'thursday'
+    else if (s.weekday_num === 5) dayKey = 'friday'
+    else if (s.weekday_num === 6) dayKey = 'saturday'
 
-    let blockName = (b.name || '').toLowerCase().replace(' ', '_')
     return {
-      ...b,
+      ...s,
       weekdayLabel: `${t('days.' + dayKey)} (${s.hour})`,
-      blockLabel: t('time_blocks.' + blockName)
+      displayHour: s.hour
     }
   })
 })
@@ -188,7 +112,8 @@ function scheduleAt(slot: any) {
   const targetDow = slot.weekday_num
   const todayDow = now.getDay()
   let diff = (targetDow - todayDow + 7) % 7
-  const h = parseInt((slot.hour_start || slot.hour || '00:00').split(':')[0])
+  const hourStr = slot.hour || slot.hour_start || '08:00'
+  const h = parseInt(hourStr.split(':')[0])
   if (diff === 0 && h <= now.getHours()) diff = 7
   const target = new Date(now)
   target.setDate(target.getDate() + diff)
@@ -211,7 +136,7 @@ async function loadData() {
     const data = await res.json()
     if (!res.ok) throw new Error(data.detail)
     matrix.value = data.matrix || Array(7).fill(0).map(() => Array(24).fill(0))
-    bestBlockPerDay.value = data.best_block_per_day || []
+    topSlots.value = data.top_slots || []
     nextBest.value = data.next_best || null
     benchmark.value = data.benchmark || null
     totalPosts.value = data.total_posts || 0
