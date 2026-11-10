@@ -256,8 +256,8 @@
     "conf_high": "Full Data",
     "total_analyzed": "Total posts analyzed:",
     "confidence": "Confidence:",
-    "top_slots": "Top 5 Best Slots",
-    "top_slots_sub": "Based on historical average engagement rate",
+    "top_slots": "Best Time Per Day",
+    "top_slots_sub": "Best time block recommendations for Monday–Sunday",
     "sample": "Sample: {n} posts",
     "avg_er": "Avg ER",
     "not_enough": "Not enough data",
@@ -328,7 +328,13 @@
     "best_per_day_sub": "Best time block recommendations for Monday–Sunday",
     "sample_ok": "Enough",
     "schedule": "Schedule",
-    "schedule_now": "Schedule Now"
+    "schedule_now": "Schedule Now",
+    "best_next_title": "Next Best Time",
+    "heatmap_row": "Rows = Day, Columns = Hour",
+    "heatmap_time": "(hour in WIB)",
+    "heatmap_low": "Low",
+    "heatmap_high": "High",
+    "heatmap_day": "Day"
   },
   "settings": {
     "title": "Settings",

@@ -2,28 +2,40 @@
   <div class="space-y-6">
     <Card v-if="!loading && !error && nextBest" style="border-color: #e5e5e5; border-width: 2px;">
       <div class="p-5">
-        <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider theme-text-muted mb-2"><Target class="w-3 h-3" /><span>Waktu Terbaik Berikutnya</span></div>
-        <div class="text-2xl font-black mb-1">{{ nextBest.weekday }}, {{ nextBest.hour_start }}–{{ nextBest.hour_end }} WIB</div>
-        <div class="text-sm theme-text-muted mb-3">{{ (nextBest.er_pct || 0).toFixed(2) }}% avg ER · {{ nextBest.sample_size }} posts ({{ nextBest.name }})</div>
-        <Button size="sm" @click="scheduleAt(nextBest)"><Calendar class="w-4 h-4" /><span>{{ $t('analytics.schedule_now') }}</span></Button>
+        <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider theme-text-muted mb-2">
+          <Target class="w-3 h-3" />
+          <span>{{ $t('analytics.best_next_title') }}</span>
+        </div>
+        <div class="text-2xl font-black mb-1">
+          {{ formatWeekday(nextBest.weekday_num) }}, {{ nextBest.hour_start }}–{{ nextBest.hour_end }} WIB
+        </div>
+        <div class="text-sm theme-text-muted mb-3">
+          {{ (nextBest.er_pct || 0).toFixed(2) }}% {{ $t('analytics.avg_er') }} · {{ $t('analytics.hook_posts', { n: nextBest.sample_size }) }} ({{ formatTimeBlock(nextBest.name) }})
+        </div>
+        <Button size="sm" @click="scheduleAt(nextBest)">
+          <Calendar class="w-4 h-4 mr-1.5" />
+          {{ $t('analytics.schedule_now') }}
+        </Button>
       </div>
     </Card>
 
     <Card v-if="!loading && !error && benchmark">
       <div class="p-5">
-        <div class="flex items-center gap-2 text-sm font-bold mb-2"><BarChart3 class="w-4 h-4 theme-text-muted" /><span>Data Masih Sedikit</span></div>
-        <p class="text-xs theme-text-muted mb-3">Terus posting minimal 2 minggu untuk unlock rekomendasi personal. Sementara, ini benchmark industri Threads:</p>
+        <div class="flex items-center gap-2 text-sm font-bold mb-2">
+          <BarChart3 class="w-4 h-4 theme-text-muted" />
+          <span>{{ $t('analytics.lowdata_title') }}</span>
+        </div>
+        <p class="text-xs theme-text-muted mb-3">{{ $t('analytics.lowdata_desc') }}</p>
         <div class="text-xs space-y-1 mb-2">
-          <div class="font-bold mt-2 mb-1">Weekday (Selasa–Kamis):</div>
+          <div class="font-bold mt-2 mb-1">{{ $t('analytics.industry_best') }}</div>
           <div v-for="b in benchmark.weekday_peak" :key="b" class="pl-3">• {{ b }}</div>
-          <div class="font-bold mt-2 mb-1">Weekend:</div>
           <div v-for="b in benchmark.weekend_peak" :key="b" class="pl-3">• {{ b }}</div>
         </div>
-        <p class="text-[10px] opacity-60 italic mt-3">{{ benchmark.note }}</p>
+        <p class="text-[10px] opacity-60 italic mt-3">{{ $t('analytics.industry_note') }}</p>
       </div>
     </Card>
 
-    <Card>
+    <Card v-if="!loading && !error">
       <template #header>
         <div class="flex items-center justify-between">
           <div>
@@ -61,49 +73,51 @@
       </div>
     </Card>
 
-    <Card v-if="!loading && !error">
+    <Card v-if="!loading && !error && translatedBlocks.length > 0">
       <template #header>
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-sm font-bold flex items-center gap-2">
               <TrendingUp class="w-4 h-4 theme-text-muted" />
-              {{ $t('analytics.best_per_day_title') }}
+              {{ $t('analytics.top_slots') }}
             </h2>
-            <p class="text-xs theme-text-muted mt-0.5">{{ $t('analytics.best_per_day_sub') }}</p>
+            <p class="text-xs theme-text-muted mt-0.5">{{ $t('analytics.top_slots_sub') }}</p>
           </div>
         </div>
       </template>
 
-      <div class="mb-8 mt-4">
+      <div class="mb-6 mt-2">
         <BestTimeChart :data="translatedBlocks" />
       </div>
 
       <div class="space-y-2">
-        <div v-for="(block, idx) in bestBlockPerDay" :key="idx"
-             class="flex items-center justify-between p-3 rounded-lg border transition-colors"
-             :class="block.has_data ? 'theme-bg-sec theme-border hover:border-[var(--border-strong)]' : 'theme-border opacity-50'">
+        <div v-for="(block, idx) in translatedBlocks" :key="idx"
+             class="flex items-center justify-between p-3 rounded-lg theme-bg-sec border theme-border hover:border-[var(--border-strong)] transition-colors">
           <div class="flex items-center gap-3 min-w-0 flex-1">
             <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0"
-                 :style="{ background: block.has_data ? '#e5e5e5' : '#262626', color: block.has_data ? '#0f0f0f' : '#8a8a8a' }">
+                 :style="{ background: '#e5e5e5', color: '#0f0f0f' }">
               {{ idx + 1 }}
             </div>
             <div class="min-w-0">
               <div class="text-sm font-bold truncate">
-                {{ translatedBlocks.find(t => t.weekday === block.weekday)?.weekdayLabel || block.weekday }}
-                <template v-if="block.has_data"> · {{ block.hour_start }}–{{ block.hour_end }} <span class="text-[10px] theme-text-muted">({{ translatedBlocks.find(t => t.weekday === block.weekday)?.blockLabel || block.name }})</span></template>
-                <template v-else><span class="theme-text-muted font-normal text-xs italic"> · Belum ada data</span></template>
+                {{ block.weekdayLabel }} · {{ block.hour_start }}–{{ block.hour_end }} <span class="text-[10px] theme-text-muted">({{ block.blockLabel }})</span>
               </div>
-              <div class="text-[11px] theme-text-muted" v-if="block.has_data">
-                {{ block.sample_size }} posts · {{ block.sample_size < 2 ? 'Sample tipis' : 'Cukup' }}
+              <div class="text-[11px] theme-text-muted">
+                {{ $t('analytics.hook_posts', { n: block.sample_size }) }} · 
+                <span :class="block.sample_size < 2 ? 'text-orange-500' : 'text-green-500'">
+                  {{ block.sample_size < 2 ? $t('analytics.sample_thin') : $t('analytics.sample_ok') }}
+                </span>
               </div>
             </div>
           </div>
-          <div class="flex items-center gap-3 shrink-0" v-if="block.has_data">
+          <div class="flex items-center gap-3 shrink-0">
             <div class="text-right">
               <div class="text-lg font-black">{{ (block.er_pct || 0).toFixed(2) }}%</div>
-              <div class="text-[10px] theme-text-muted uppercase font-bold">Avg ER</div>
+              <div class="text-[10px] theme-text-muted uppercase font-bold">{{ $t('analytics.avg_er') }}</div>
             </div>
-            <Button size="sm" variant="secondary" @click="scheduleAt(block)">{{ $t('analytics.schedule') }}</Button>
+            <Button size="sm" variant="secondary" @click="scheduleAt(block)">
+              {{ $t('analytics.schedule') }}
+            </Button>
           </div>
         </div>
       </div>
@@ -117,38 +131,70 @@ import { supabase } from '../../lib/supabase'
 import { useI18n } from 'vue-i18n'
 import { Card, Badge, Button, EmptyState } from '../../components/ui'
 import BestTimeHeatmap from '../../components/BestTimeHeatmap.vue'
-import { Clock, TrendingUp, AlertCircle, Target, Calendar, BarChart3 } from 'lucide-vue-next'
 import BestTimeChart from '../../components/BestTimeChart.vue'
+import { Clock, TrendingUp, AlertCircle, Target, Calendar, BarChart3 } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const loading = ref(true)
 const error = ref('')
 const matrix = ref<number[][]>(Array(7).fill(0).map(() => Array(24).fill(0)))
-const topSlots = ref<any[]>([])
 const bestBlockPerDay = ref<any[]>([])
 const nextBest = ref<any>(null)
 const benchmark = ref<any>(null)
 const totalPosts = ref(0)
 const confidence = ref<'low' | 'medium' | 'high'>('low')
 
-const translatedBlocks = computed(() => {
-  if (!bestBlockPerDay.value || bestBlockPerDay.value.length === 0) return []
-  return bestBlockPerDay.value.filter((b: any) => b.has_data).map((b: any) => {
-    const dayKey = 'days.' + b.weekday.toLowerCase()
-    let blockName = b.name.toLowerCase().replace(' ', '_')
-    return {
-      ...b,
-      weekdayLabel: t(dayKey),
-      blockLabel: t('time_blocks.' + blockName)
-    }
-  })
-})
-
 const confidenceLabel = computed(() => ({
   low: t('analytics.conf_low'), medium: t('analytics.conf_med'), high: t('analytics.conf_high'),
 }[confidence.value]))
 
 const confidenceVariant = computed(() => ({ low: 'default', medium: 'default', high: 'accent' }[confidence.value] as any))
+
+const translatedBlocks = computed(() => {
+  if (!bestBlockPerDay.value || bestBlockPerDay.value.length === 0) return []
+  return bestBlockPerDay.value.filter((b: any) => b.has_data).map((b: any) => {
+    let dayKey = 'sunday'
+    if (b.weekday_num === 1) dayKey = 'monday'
+    else if (b.weekday_num === 2) dayKey = 'tuesday'
+    else if (b.weekday_num === 3) dayKey = 'wednesday'
+    else if (b.weekday_num === 4) dayKey = 'thursday'
+    else if (b.weekday_num === 5) dayKey = 'friday'
+    else if (b.weekday_num === 6) dayKey = 'saturday'
+
+    let blockName = (b.name || '').toLowerCase().replace(' ', '_')
+    return {
+      ...b,
+      weekdayLabel: t('days.' + dayKey),
+      blockLabel: t('time_blocks.' + blockName)
+    }
+  })
+})
+
+function formatWeekday(dayNum: number) {
+  const keys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+  return t('days.' + keys[dayNum])
+}
+
+function formatTimeBlock(name: string) {
+  return t('time_blocks.' + (name || '').toLowerCase().replace(' ', '_'))
+}
+
+function scheduleAt(slot: any) {
+  if (!slot) return
+  const now = new Date()
+  const targetDow = slot.weekday_num
+  const todayDow = now.getDay()
+  let diff = (targetDow - todayDow + 7) % 7
+  const h = parseInt((slot.hour_start || slot.hour || '00:00').split(':')[0])
+  if (diff === 0 && h <= now.getHours()) diff = 7
+  const target = new Date(now)
+  target.setDate(target.getDate() + diff)
+  target.setHours(h, 0, 0, 0)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const isoLocal = `${target.getFullYear()}-${pad(target.getMonth()+1)}-${pad(target.getDate())}T${pad(h)}:00`
+  localStorage.setItem('ixiera_draft_time', isoLocal)
+  window.location.href = `/content/create?scheduled=${encodeURIComponent(isoLocal)}`
+}
 
 async function loadData() {
   loading.value = true
@@ -162,7 +208,6 @@ async function loadData() {
     const data = await res.json()
     if (!res.ok) throw new Error(data.detail)
     matrix.value = data.matrix || Array(7).fill(0).map(() => Array(24).fill(0))
-    topSlots.value = data.top_slots || []
     bestBlockPerDay.value = data.best_block_per_day || []
     nextBest.value = data.next_best || null
     benchmark.value = data.benchmark || null
@@ -170,23 +215,5 @@ async function loadData() {
     confidence.value = data.confidence || 'low'
   } catch (err: any) { error.value = err.message } finally { loading.value = false }
 }
-function scheduleAt(slot: any) {
-  if (!slot || !slot.has_data) return
-  const now = new Date()
-  const targetDow = slot.weekday_num
-  const todayDow = now.getDay()
-  let diff = (targetDow - todayDow + 7) % 7
-  const h = parseInt((slot.hour_start || slot.hour || '00:00').split(':')[0])
-  if (diff === 0 && h <= now.getHours()) diff = 7
-  const target = new Date(now)
-  target.setDate(target.getDate() + diff)
-  target.setHours(h, 0, 0, 0)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  const isoLocal = `${target.getFullYear()}-${pad(target.getMonth()+1)}-${pad(target.getDate())}T${pad(h)}:00`
-  localStorage.setItem('ixiera_draft_time', isoLocal)
-  // Kirim lewat URL param juga (lebih reliable)
-  window.location.href = `/content/create?scheduled=${encodeURIComponent(isoLocal)}`
-}
-
 onMounted(loadData)
 </script>

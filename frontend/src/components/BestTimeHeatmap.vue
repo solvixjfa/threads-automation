@@ -2,15 +2,15 @@
   <div class="space-y-3">
     <div class="flex items-center justify-between">
       <div class="text-xs theme-text-muted">
-        <span class="font-bold">Baris = Hari, Kolom = Jam</span>
-        <span class="ml-2">(jam dalam WIB)</span>
+        <span class="font-bold">{{ $t("analytics.heatmap_row") }}</span>
+        <span class="ml-2">{{ $t("analytics.heatmap_time") }}</span>
       </div>
       <div class="flex items-center gap-2 text-[10px] theme-text-muted">
-        <span>Rendah</span>
+        <span>{{ $t("analytics.heatmap_low") }}</span>
         <span class="flex gap-0.5">
           <span v-for="lvl in 5" :key="lvl" class="w-3 h-3 rounded-sm border theme-border" :style="cellStyle(lvl - 1)"></span>
         </span>
-        <span>Tinggi</span>
+        <span>{{ $t("analytics.heatmap_high") }}</span>
       </div>
     </div>
 
@@ -18,7 +18,7 @@
       <div class="inline-block min-w-full">
         <div class="flex">
           <div class="flex flex-col gap-1 pr-2 shrink-0">
-            <div class="h-6 flex items-center text-[9px] font-bold theme-text-muted" style="width: 36px;">Hari</div>
+            <div class="h-6 flex items-center text-[9px] font-bold theme-text-muted" style="width: 36px;">{{ $t("analytics.heatmap_day") }}</div>
             <div
               v-for="(wd, i) in weekdayLabels"
               :key="i"
@@ -75,13 +75,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   matrix: number[][]
 }>()
 
-const weekdayLabels = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']
+const weekdayLabels = computed(() => ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].map(d => t('days.' + d).substring(0, 3)))
 
 const tooltip = reactive({
   visible: false,
