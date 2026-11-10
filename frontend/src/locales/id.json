@@ -334,7 +334,8 @@
     "heatmap_time": "(jam dalam WIB)",
     "heatmap_low": "Rendah",
     "heatmap_high": "Tinggi",
-    "heatmap_day": "Hari"
+    "heatmap_day": "Hari",
+    "hourly_trend_sub": "Tren engagement berdasarkan jam (WIB)"
   },
   "settings": {
     "title": "Pengaturan",

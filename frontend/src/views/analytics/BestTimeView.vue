@@ -43,7 +43,7 @@
               <Clock class="w-4 h-4 theme-text-muted" />
               {{ $t('analytics.best_title') }}
             </h2>
-            <p class="text-xs theme-text-muted mt-0.5">{{ $t('analytics.best_subtitle') }}</p>
+            <p class="text-xs theme-text-muted mt-0.5">{{ $t('analytics.hourly_trend_sub') }}</p>
           </div>
           <Badge :variant="confidenceVariant">{{ confidenceLabel }}</Badge>
         </div>
@@ -69,7 +69,7 @@
           <div><span class="theme-text-muted">{{ $t('analytics.total_analyzed') }}</span><span class="font-bold ml-1.5">{{ totalPosts }}</span></div>
           <div><span class="theme-text-muted">{{ $t('analytics.confidence') }}</span><span class="font-bold ml-1.5 capitalize">{{ confidenceLabel }}</span></div>
         </div>
-        <BestTimeHeatmap :matrix="matrix" />
+        <BestTimeLineChart :matrix="matrix" />
       </div>
     </Card>
 
@@ -130,7 +130,7 @@ import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
 import { useI18n } from 'vue-i18n'
 import { Card, Badge, Button, EmptyState } from '../../components/ui'
-import BestTimeHeatmap from '../../components/BestTimeHeatmap.vue'
+import BestTimeLineChart from '../../components/BestTimeLineChart.vue'
 import BestTimeChart from '../../components/BestTimeChart.vue'
 import { Clock, TrendingUp, AlertCircle, Target, Calendar, BarChart3 } from 'lucide-vue-next'
 

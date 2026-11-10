@@ -334,7 +334,8 @@
     "heatmap_time": "(hour in WIB)",
     "heatmap_low": "Low",
     "heatmap_high": "High",
-    "heatmap_day": "Day"
+    "heatmap_day": "Day",
+    "hourly_trend_sub": "Engagement trend by hour (WIB)"
   },
   "settings": {
     "title": "Settings",
