@@ -52,6 +52,114 @@
         </div>
       </template>
 
+      <div v-if="loading" class="space-y-3">
+        <div class="h-6 w-48 skeleton"></div>
+        <div class="h-64 skeleton"></div>
+      </div>
+
+      <div v-else-if="error" class="text-center py-8 flex flex-col items-center gap-3">
+        <AlertCircle class="w-8 h-8 text-red-500 opacity-50" />
+        <p class="text-sm theme-text-muted">{{ error }}</p>
+        <Button variant="secondary" size="sm" @click="loadData">{{ $t('common.retry') }}</Button>
+      </div>
+
+      <div v-else-if="totalPosts === 0" class="text-center py-8">
+        <EmptyState :title="$t('analytics.not_enough')" :description="$t('analytics.not_enough_sub')" />
+      </div>
+
+      <div v-else class="space-y-6">
+        <div class="flex flex-wrap gap-4 text-xs">
+          <div><span class="theme-text-muted">{{ $t('analytics.total_analyzed') }}</span><span class="font-bold ml-1.5">{{ totalPosts }}</span></div>
+          <div><span class="theme-text-muted">{{ $t('analytics.confidence') }}</span><span class="font-bold ml-1.5 capitalize">{{ confidenceLabel }}</span></div>
+        </div>
+        <BestTimeLineChart :matrix="matrix" />
+      </div>
+    </Card>
+
+    <!-- BEST TIME PER DAY (CHART + LIST) -->
+    <Card v-if="!loading && !error && translatedSlots.length > 0">
+      <template #header>
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-sm font-bold flex items-center gap-2">
+              <TrendingUp class="w-4 h-4 theme-text-muted" />
+              {{ $t('analytics.top_slots') }}
+            </h2>
+            <p class="text-xs theme-text-muted mt-0.5">{{ $t('analytics.top_slots_sub') }}</p>
+          </div>
+        </div>
+      </template>
+
+      <div class="mb-8 mt-4">
+        <BestTimeChart :data="translatedSlots" @select-block="(b) => selectedBlock = b" />
+      </div>
+
+      <!-- LIST JADWAL -->
+      <div class="space-y-2 pt-4 border-t theme-border">
+        <div v-for="(slot, idx) in translatedSlots" :key="idx"
+             class="flex items-center justify-between p-3 rounded-lg theme-bg-sec border theme-border hover:border-[var(--border-strong)] transition-colors">
+          <div class="flex items-center gap-3 min-w-0 flex-1">
+            <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0"
+                 :style="{ background: '#e5e5e5', color: '#0f0f0f' }">
+              {{ idx + 1 }}
+            </div>
+            <div class="min-w-0">
+              <div class="text-sm font-bold truncate">
+                {{ slot.weekdayLabel }}
+              </div>
+              <div class="text-[11px] theme-text-muted">
+                {{ $t('analytics.hook_posts', { n: slot.sample_size }) }} · 
+                <span :class="slot.sample_size < 2 ? 'text-orange-500' : 'text-green-500'">
+                  {{ slot.sample_size < 2 ? $t('analytics.sample_thin') : $t('analytics.sample_ok') }}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <div class="text-right">
+              <div class="text-lg font-black">{{ (slot.er_pct || 0).toFixed(2) }}%</div>
+              <div class="text-[10px] theme-text-muted uppercase font-bold">{{ $t('analytics.avg_er') }}</div>
+            </div>
+            <Button size="sm" variant="secondary" @click="scheduleAt(slot)">
+              {{ $t('analytics.schedule') }}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Card>
+
+    <!-- MODAL JADWALKAN -->
+    <Teleport to="body">
+      <div v-if="selectedBlock" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" @click.self="selectedBlock = null">
+        <div class="card p-5 w-full max-w-sm space-y-4 shadow-2xl relative">
+          <button @click="selectedBlock = null" class="absolute top-4 right-4 p-1.5 rounded-md hover:theme-bg-hover transition theme-text-muted">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+          
+          <div>
+            <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider theme-text-muted mb-1">
+              <Calendar class="w-3 h-3" />
+              {{ $t('analytics.schedule_popup_title') }}
+            </div>
+            <h3 class="text-xl font-black">{{ selectedBlock.weekdayLabel }}</h3>
+            <p class="text-xs theme-text-muted mt-1">{{ $t('analytics.hook_posts', { n: selectedBlock.sample_size }) }}</p>
+          </div>
+
+          <div class="flex items-center justify-between p-3 rounded-lg theme-bg-sec border theme-border">
+            <span class="text-xs font-bold theme-text-muted">{{ $t('analytics.avg_er') }}</span>
+            <span class="text-lg font-black">{{ (selectedBlock.er_pct || 0).toFixed(2) }}%</span>
+          </div>
+
+          <Button class="w-full" @click="scheduleAt(selectedBlock); selectedBlock = null">
+            <Calendar class="w-4 h-4 mr-2" />
+            {{ $t('analytics.schedule_now') }}
+          </Button>
+        </div>
+      </div>
+    </Teleport>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
