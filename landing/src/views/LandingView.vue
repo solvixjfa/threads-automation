@@ -3,7 +3,7 @@
 
     
     <!-- TOP NAVBAR (BASEDASH STYLE) -->
-    <nav class="fixed top-0 left-0 right-0 z-50 h-16 bg-[var(--bg-primary)]/80 backdrop-blur-md border-b border-[var(--border)]/50 flex items-center">
+    <nav class="fixed top-0 left-0 right-0 z-50 h-16 bg-black/80 backdrop-blur-md border-b border-[var(--border)]/50 flex items-center">
       <div class="container-bd w-full flex items-center justify-between">
         <!-- Logo -->
         <div class="flex items-center gap-2">
@@ -36,6 +36,32 @@
         </button>
       </div>
     </nav>
+    <!-- MOBILE DRAWER BARU -->
+    <div v-if="mobileMenuOpen" class="md:hidden fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex flex-col p-6">
+      <div class="flex justify-between items-center mb-10">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 flex items-center justify-center rounded text-xs font-bold bg-white text-black">IX</div>
+          <span class="font-bold text-lg text-white">Ixiera</span>
+        </div>
+        <button @click="mobileMenuOpen = false" class="p-2 text-white">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      
+      <nav class="flex flex-col gap-6 text-[16px] font-medium text-[#b3b3b3]">
+        <a href="#fitur" @click="mobileMenuOpen = false" class="hover:text-white transition">Fitur</a>
+        <a href="#contoh" @click="mobileMenuOpen = false" class="hover:text-white transition">Contoh Data</a>
+        <a href="#cara-kerja" @click="mobileMenuOpen = false" class="hover:text-white transition">Cara Kerja</a>
+        <a href="/pricing" @click="mobileMenuOpen = false" class="hover:text-white transition">Harga</a>
+        <a href="#faq" @click="mobileMenuOpen = false" class="hover:text-white transition">FAQ</a>
+      </nav>
+      
+      <div class="mt-auto pt-6 border-t border-[#333]">
+        <a href="https://app.ixiera.id/login" class="btn-bd-primary w-full text-center block mb-3">Sign up</a>
+        <a href="https://app.ixiera.id/login" class="text-center block text-sm text-[#b3b3b3]">Log in</a>
+      </div>
+    </div>
+
 
     <!-- MAIN CONTENT -->
     <main class="pt-16">
