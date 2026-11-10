@@ -12,7 +12,7 @@
         <a href="#fitur" class="nav-bd">Fitur</a>
         <a href="#contoh" class="nav-bd">Contoh Data</a>
         <a href="#cara-kerja" class="nav-bd">Cara Kerja</a>
-        <a href="#harga" class="nav-bd">Harga</a>
+        <a href="/pricing" class="nav-bd">Harga</a>
         <a href="#faq" class="nav-bd">FAQ</a>
       </nav>
 
@@ -61,7 +61,7 @@
           <a href="#fitur" @click="mobileMenuOpen = false" class="nav-bd">Fitur</a>
           <a href="#contoh" @click="mobileMenuOpen = false" class="nav-bd">Contoh Data</a>
           <a href="#cara-kerja" @click="mobileMenuOpen = false" class="nav-bd">Cara Kerja</a>
-          <a href="#harga" @click="mobileMenuOpen = false" class="nav-bd">Harga</a>
+          <a href="/pricing" @click="mobileMenuOpen = false" class="nav-bd">Harga</a>
           <a href="#faq" @click="mobileMenuOpen = false" class="nav-bd">FAQ</a>
         </nav>
 
