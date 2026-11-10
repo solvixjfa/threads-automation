@@ -1,255 +1,234 @@
 <template>
-  <div class="min-h-screen">
-
-    <!-- DESKTOP SIDEBAR (SAMA SEPERTI LANDING) -->
-    <aside class="hidden md:flex flex-col fixed top-0 left-0 h-screen w-60 z-50 bg-[var(--bg-primary)] border-r border-[var(--border)]">
-      <div class="h-16 px-5 flex items-center border-b border-[var(--border)]">
+  <div class="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans selection:bg-[#9984d8] selection:text-white">
+    
+    <!-- TOP NAVBAR (SAMA SEPERTI LANDING) -->
+    <nav class="fixed top-0 left-0 right-0 z-50 h-16 bg-[var(--bg-primary)]/80 backdrop-blur-md border-b border-[var(--border)] flex items-center">
+      <div class="w-full max-w-[1200px] mx-auto px-6 flex items-center justify-between">
         <a href="/" class="flex items-center gap-2">
-          <div class="w-8 h-8 flex items-center justify-center rounded-md text-sm font-bold bg-[var(--accent)] text-[var(--accent-text)]">IX</div>
-          <span class="ml-2 font-bold text-xl text-[var(--text-primary)]" style="letter-spacing: -0.03em;">Ixiera</span>
+          <div class="w-7 h-7 flex items-center justify-center rounded text-xs font-bold bg-[var(--accent)] text-[var(--accent-text)]">IX</div>
+          <span class="font-bold text-lg tracking-tight">Ixiera</span>
         </a>
-      </div>
-
-      <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
-        <a href="/#fitur" class="nav-bd">Fitur</a>
-        <a href="/#contoh" class="nav-bd">Contoh Data</a>
-        <a href="/#cara-kerja" class="nav-bd">Cara Kerja</a>
-        <a href="/pricing" class="nav-bd" style="color: var(--text-primary); background: var(--bg-hover);">Harga</a>
-        <a href="/#faq" class="nav-bd">FAQ</a>
-      </nav>
-
-      <div class="p-3 border-t border-[var(--border)] space-y-2">
-        <div class="flex items-center gap-2">
-          <button @click="toggleTheme" class="flex-1 flex items-center justify-center py-2 rounded-md border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition">
+        <div class="hidden md:flex items-center gap-8 text-sm font-medium text-[var(--text-secondary)]">
+          <a href="/#fitur" class="hover:text-[var(--text-primary)] transition">{{ $t('nav.features') }}</a>
+          <a href="/#contoh" class="hover:text-[var(--text-primary)] transition">{{ $t('nav.data') }}</a>
+          <a href="/#cara-kerja" class="hover:text-[var(--text-primary)] transition">{{ $t('nav.how') }}</a>
+          <a href="/pricing" class="text-[var(--text-primary)] transition">{{ $t('nav.pricing') }}</a>
+          <a href="/#faq" class="hover:text-[var(--text-primary)] transition">{{ $t('nav.faq') }}</a>
+        </div>
+        <div class="hidden md:flex items-center gap-4">
+          <button @click="toggleTheme" class="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition">
             <Sun v-if="theme === 'dark'" class="w-4 h-4" />
             <Moon v-else class="w-4 h-4" />
           </button>
-          <button @click="toggleLang" class="px-3 py-2 rounded-md border border-[var(--border)] text-[var(--text-muted)] text-xs font-bold hover:bg-[var(--bg-hover)] transition" style="letter-spacing: -0.03em;">
+          <button @click="toggleLang" class="text-xs font-bold text-[var(--text-muted)] hover:text-[var(--text-primary)] transition px-2 py-1 rounded border border-[var(--border)]">
             {{ locale.toUpperCase() }}
           </button>
+          <div class="w-px h-4 bg-[var(--border)] mx-1"></div>
+          <a href="https://app.ixiera.id/login" class="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition">{{ $t('nav.login') }}</a>
+          <a href="https://app.ixiera.id/login" class="btn-bd-primary" style="padding: 8px 16px;">{{ $t('nav.signup') }}</a>
         </div>
-        <a href="https://app.ixiera.id/login" class="block text-center text-sm font-bold py-2.5 rounded-md bg-[var(--accent)] text-[var(--accent-text)] hover:opacity-90 transition" style="letter-spacing: -0.03em;">
-          Minta Akses
-        </a>
+        <button @click="mobileMenuOpen = true" class="md:hidden p-2 text-[var(--text-primary)]">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
       </div>
-    </aside>
-
-    <!-- MOBILE TOP BAR -->
-    <nav class="md:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-[var(--bg-primary)]/95 backdrop-blur-md border-b border-[var(--border)] flex items-center px-4 justify-between">
-      <a href="/" class="flex items-center gap-2">
-        <div class="w-7 h-7 flex items-center justify-center rounded-md text-xs font-bold bg-[var(--accent)] text-[var(--accent-text)]">IX</div>
-        <span class="font-bold text-lg text-[var(--text-primary)]" style="letter-spacing: -0.03em;">Ixiera</span>
-      </a>
-      <button @click="mobileMenuOpen = true" class="p-2 text-[var(--text-primary)]">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-      </button>
     </nav>
 
     <!-- MOBILE DRAWER -->
-    <div v-if="mobileMenuOpen" class="md:hidden fixed inset-0 z-[100]" style="display: flex;">
-      <div class="absolute inset-0 bg-black/60" @click="mobileMenuOpen = false"></div>
-      <aside class="drawer-slide relative w-72 max-w-[80%] h-full flex flex-col shadow-2xl bg-[var(--bg-primary)] border-r border-[var(--border)]">
-        <div class="h-16 px-5 flex items-center justify-between border-b border-[var(--border)]">
-          <a href="/" class="flex items-center gap-2">
-            <div class="w-8 h-8 flex items-center justify-center rounded-md text-sm font-bold bg-[var(--accent)] text-[var(--accent-text)]">IX</div>
-            <span class="font-bold text-xl text-[var(--text-primary)]" style="letter-spacing: -0.03em;">Ixiera</span>
-          </a>
-          <button @click="mobileMenuOpen = false" class="p-2 text-[var(--text-primary)]">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+    <div v-if="mobileMenuOpen" class="md:hidden fixed inset-0 z-[100] bg-[var(--bg-primary)]/95 backdrop-blur-lg flex flex-col p-6">
+      <div class="flex justify-between items-center mb-10">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 flex items-center justify-center rounded text-xs font-bold bg-[var(--accent)] text-[var(--accent-text)]">IX</div>
+          <span class="font-bold text-lg">Ixiera</span>
+        </div>
+        <button @click="mobileMenuOpen = false" class="p-2 text-[var(--text-primary)]">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      <nav class="flex flex-col gap-6 text-[16px] font-medium text-[var(--text-secondary)]">
+        <a href="/#fitur" @click="mobileMenuOpen = false" class="hover:text-[var(--text-primary)] transition">{{ $t('nav.features') }}</a>
+        <a href="/#contoh" @click="mobileMenuOpen = false" class="hover:text-[var(--text-primary)] transition">{{ $t('nav.data') }}</a>
+        <a href="/#cara-kerja" @click="mobileMenuOpen = false" class="hover:text-[var(--text-primary)] transition">{{ $t('nav.how') }}</a>
+        <a href="/pricing" @click="mobileMenuOpen = false" class="text-[var(--text-primary)] transition">{{ $t('nav.pricing') }}</a>
+        <a href="/#faq" @click="mobileMenuOpen = false" class="hover:text-[var(--text-primary)] transition">{{ $t('nav.faq') }}</a>
+      </nav>
+      <div class="mt-auto pt-6 border-t border-[var(--border)] space-y-4">
+        <div class="flex gap-2">
+          <button @click="toggleTheme" class="flex-1 flex items-center justify-center py-2.5 rounded-md border border-[var(--border)] text-[var(--text-muted)]">
+            <Sun v-if="theme === 'dark'" class="w-4 h-4" />
+            <Moon v-else class="w-4 h-4" />
+          </button>
+          <button @click="toggleLang" class="flex-1 py-2.5 rounded-md border border-[var(--border)] text-[var(--text-muted)] text-xs font-bold">
+            {{ locale.toUpperCase() }}
           </button>
         </div>
-
-        <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-          <a href="/#fitur" @click="mobileMenuOpen = false" class="nav-bd">Fitur</a>
-          <a href="/#contoh" @click="mobileMenuOpen = false" class="nav-bd">Contoh Data</a>
-          <a href="/#cara-kerja" @click="mobileMenuOpen = false" class="nav-bd">Cara Kerja</a>
-          <a href="/pricing" @click="mobileMenuOpen = false" class="nav-bd" style="color: var(--text-primary); background: var(--bg-hover);">Harga</a>
-          <a href="/#faq" @click="mobileMenuOpen = false" class="nav-bd">FAQ</a>
-        </nav>
-
-        <div class="p-4 border-t border-[var(--border)] space-y-3">
-          <div class="flex gap-2">
-            <button @click="toggleTheme" class="flex-1 flex items-center justify-center py-3 rounded-lg border border-[var(--border)] text-[var(--text-muted)]">
-              <Sun v-if="theme === 'dark'" class="w-4 h-4" />
-              <Moon v-else class="w-4 h-4" />
-            </button>
-            <button @click="toggleLang" class="flex-1 py-3 rounded-lg border border-[var(--border)] text-[var(--text-muted)] text-xs font-bold" style="letter-spacing: -0.03em;">
-              {{ locale.toUpperCase() }}
-            </button>
-          </div>
-          <a href="https://app.ixiera.id/login" class="block text-center text-sm font-bold py-3 rounded-lg bg-[var(--accent)] text-[var(--accent-text)]" style="letter-spacing: -0.03em;">
-            Minta Akses
-          </a>
-        </div>
-      </aside>
+        <a href="https://app.ixiera.id/login" class="btn-bd-primary w-full text-center block">{{ $t('nav.signup') }}</a>
+        <a href="https://app.ixiera.id/login" class="text-center block text-sm text-[var(--text-secondary)] py-1">{{ $t('nav.login') }}</a>
+      </div>
     </div>
 
     <!-- MAIN CONTENT -->
-    <main class="md:ml-60 pt-14 md:pt-0">
+    <main class="pt-16">
       
       <!-- HERO PRICING -->
-      <section class="relative">
-        <div class="container-bd text-center relative z-10" style="padding-top: 48px; padding-bottom: 48px;">
-          <div class="pill-bd mb-6">
-            <span class="w-1.5 h-1.5 rounded-full" style="background: #3fcb7f;"></span>
+      <section class="relative pt-24 pb-12">
+        <div class="max-w-[1200px] mx-auto px-6 text-center relative z-10">
+          <div class="pill-bd mb-6 mx-auto" style="width: fit-content;">
+            <span class="w-1.5 h-1.5 rounded-full" style="background: var(--accent-mint);"></span>
             HARGA BETA
           </div>
-          <h1 class="font-display text-[40px] md:text-[56px] leading-[1.1] mb-4 max-w-3xl mx-auto text-[var(--text-primary)]">
-            Harga transparan, <span class="italic" style="color: #9984d8;">tanpa jebakan.</span>
+          
+          <h1 class="font-display text-[48px] md:text-[56px] leading-[1.0] mb-6 max-w-[800px] mx-auto text-[var(--text-primary)]">
+            {{ $t('pricing_page.title1') }} <br class="hidden md:block">
+            <span class="italic text-[var(--accent-violet)]">{{ $t('pricing_page.title2') }}</span>
           </h1>
-          <p class="text-[16px] md:text-[18px] leading-relaxed max-w-2xl mx-auto text-[var(--text-secondary)]" style="letter-spacing: -0.03em;">
-            Mulai dengan trial 7 hari. Kalau cocok, lanjutkan dengan paket bulanan. Harga beta ini terkunci selama kamu berlangganan.
+          
+          <p class="text-[16px] md:text-[18px] leading-[1.56] max-w-[640px] mx-auto text-[var(--text-secondary)]">
+            {{ $t('pricing_page.subtitle') }}
           </p>
         </div>
       </section>
 
       <!-- PRICING CARDS -->
-      <section class="container-bd pb-20">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-4 lg:gap-6">
+      <section class="pb-20 px-6">
+        <div class="max-w-[1000px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
           
           <!-- TRIAL -->
           <div class="card-bd p-7 flex flex-col">
-            <h3 class="text-[20px] font-semibold mb-1 text-[var(--text-primary)]" style="letter-spacing: -0.03em;">Trial 7 Hari</h3>
-            <p class="text-[13px] mb-6 text-[var(--text-secondary)]" style="letter-spacing: -0.03em;">Coba semua fitur tanpa bayar di awal.</p>
+            <h3 class="text-[20px] font-semibold mb-1">{{ $t('pricing_page.t1_name') }}</h3>
+            <p class="text-[13px] mb-6 text-[var(--text-secondary)]">{{ $t('pricing_page.t1_desc') }}</p>
             
-            <div class="mb-6">
-              <span class="text-[40px] font-bold text-[var(--text-primary)]" style="letter-spacing: -0.03em;">Rp 0</span>
-              <span class="text-[14px] text-[var(--text-muted)]">/ 7 hari</span>
+            <div class="mb-6 flex items-baseline gap-1">
+              <span class="text-[40px] font-bold leading-none">{{ $t('pricing_page.t1_price') }}</span>
+              <span class="text-[14px] text-[var(--text-muted)]">{{ $t('pricing_page.t1_period') }}</span>
             </div>
 
-            <ul class="space-y-3 mb-8 flex-1 text-[14px] text-[var(--text-secondary)]" style="letter-spacing: -0.03em;">
+            <ul class="space-y-3 mb-8 flex-1 text-[14px] text-[var(--text-secondary)]">
               <li class="flex items-start gap-2.5">
-                <svg class="w-4 h-4 shrink-0 mt-0.5" style="color: #3fcb7f;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                20 kredit AI gratis
+                <svg class="w-4 h-4 shrink-0 mt-0.5 text-[var(--accent-mint)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                {{ $t('pricing_page.t1_f1') }}
               </li>
               <li class="flex items-start gap-2.5">
-                <svg class="w-4 h-4 shrink-0 mt-0.5" style="color: #3fcb7f;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                Akses ke semua fitur inti
+                <svg class="w-4 h-4 shrink-0 mt-0.5 text-[var(--accent-mint)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                {{ $t('pricing_page.t1_f2') }}
               </li>
               <li class="flex items-start gap-2.5">
-                <svg class="w-4 h-4 shrink-0 mt-0.5" style="color: #3fcb7f;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                Tanpa perlu kartu kredit
+                <svg class="w-4 h-4 shrink-0 mt-0.5 text-[var(--accent-mint)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                {{ $t('pricing_page.t1_f3') }}
               </li>
             </ul>
-            <a href="https://app.ixiera.id/login" class="btn-bd-ghost text-center">Mulai Trial</a>
+            <a href="https://app.ixiera.id/login" class="btn-bd-ghost text-center mt-auto">{{ $t('pricing_page.t1_cta') }}</a>
           </div>
 
           <!-- PRO -->
-          <div class="card-bd p-7 flex flex-col relative" style="border: 2px solid #9984d8; box-shadow: 0 0 40px rgba(153,132,216,0.15);">
-            <div class="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full text-white" style="background: #9984d8;">Paling Populer</div>
-            <h3 class="text-[20px] font-semibold mb-1 text-[var(--text-primary)]" style="letter-spacing: -0.03em;">Paket 30 Hari</h3>
-            <p class="text-[13px] mb-6 text-[var(--text-secondary)]" style="letter-spacing: -0.03em;">Buat yang serius ngejalanin otomatisasi.</p>
+          <div class="card-bd p-7 flex flex-col relative border-2 border-[var(--accent-violet)]">
+            <div class="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full text-white bg-[var(--accent-violet)]">{{ $t('pricing_page.popular') }}</div>
+            <h3 class="text-[20px] font-semibold mb-1">{{ $t('pricing_page.t2_name') }}</h3>
+            <p class="text-[13px] mb-6 text-[var(--text-secondary)]">{{ $t('pricing_page.t2_desc') }}</p>
             
-            <div class="mb-6">
-              <span class="text-[40px] font-bold text-[var(--text-primary)]" style="letter-spacing: -0.03em;">Rp 29rb</span>
-              <span class="text-[14px] text-[var(--text-muted)]">/ bulan</span>
+            <div class="mb-6 flex items-baseline gap-1">
+              <span class="text-[40px] font-bold leading-none">{{ $t('pricing_page.t2_price') }}</span>
+              <span class="text-[14px] text-[var(--text-muted)]">{{ $t('pricing_page.t2_period') }}</span>
             </div>
 
-            <ul class="space-y-3 mb-8 flex-1 text-[14px] text-[var(--text-secondary)]" style="letter-spacing: -0.03em;">
+            <ul class="space-y-3 mb-8 flex-1 text-[14px] text-[var(--text-secondary)]">
               <li class="flex items-start gap-2.5">
-                <svg class="w-4 h-4 shrink-0 mt-0.5" style="color: #3fcb7f;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                100 kredit AI per bulan
+                <svg class="w-4 h-4 shrink-0 mt-0.5 text-[var(--accent-mint)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                {{ $t('pricing_page.t2_f1') }}
               </li>
               <li class="flex items-start gap-2.5">
-                <svg class="w-4 h-4 shrink-0 mt-0.5" style="color: #3fcb7f;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                Auto-reply engine penuh
+                <svg class="w-4 h-4 shrink-0 mt-0.5 text-[var(--accent-mint)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                {{ $t('pricing_page.t2_f2') }}
               </li>
               <li class="flex items-start gap-2.5">
-                <svg class="w-4 h-4 shrink-0 mt-0.5" style="color: #3fcb7f;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                Analytics tanpa batas
+                <svg class="w-4 h-4 shrink-0 mt-0.5 text-[var(--accent-mint)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                {{ $t('pricing_page.t2_f3') }}
               </li>
               <li class="flex items-start gap-2.5">
-                <svg class="w-4 h-4 shrink-0 mt-0.5" style="color: #3fcb7f;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                Tanpa auto-renew (manual perpanjang)
+                <svg class="w-4 h-4 shrink-0 mt-0.5 text-[var(--accent-mint)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                {{ $t('pricing_page.t2_f4') }}
               </li>
             </ul>
-            <a href="https://app.ixiera.id/login" class="btn-bd-primary text-center">Pilih Pro</a>
+            <a href="https://app.ixiera.id/login" class="btn-bd-primary text-center mt-auto">{{ $t('pricing_page.t2_cta') }}</a>
           </div>
 
           <!-- BYOK -->
           <div class="card-bd p-7 flex flex-col">
-            <h3 class="text-[20px] font-semibold mb-1 text-[var(--text-primary)]" style="letter-spacing: -0.03em;">Paket + API Key</h3>
-            <p class="text-[13px] mb-6 text-[var(--text-secondary)]" style="letter-spacing: -0.03em;">Pakai API key Gemini/Groq milikmu sendiri.</p>
+            <h3 class="text-[20px] font-semibold mb-1">{{ $t('pricing_page.t3_name') }}</h3>
+            <p class="text-[13px] mb-6 text-[var(--text-secondary)]">{{ $t('pricing_page.t3_desc') }}</p>
             
-            <div class="mb-6">
-              <span class="text-[40px] font-bold text-[var(--text-primary)]" style="letter-spacing: -0.03em;">Rp 19rb</span>
-              <span class="text-[14px] text-[var(--text-muted)]">/ bulan</span>
+            <div class="mb-6 flex items-baseline gap-1">
+              <span class="text-[40px] font-bold leading-none">{{ $t('pricing_page.t3_price') }}</span>
+              <span class="text-[14px] text-[var(--text-muted)]">{{ $t('pricing_page.t3_period') }}</span>
             </div>
 
-            <ul class="space-y-3 mb-8 flex-1 text-[14px] text-[var(--text-secondary)]" style="letter-spacing: -0.03em;">
+            <ul class="space-y-3 mb-8 flex-1 text-[14px] text-[var(--text-secondary)]">
               <li class="flex items-start gap-2.5">
-                <svg class="w-4 h-4 shrink-0 mt-0.5" style="color: #3fcb7f;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                Tanpa batasan kredit dari kami
+                <svg class="w-4 h-4 shrink-0 mt-0.5 text-[var(--accent-mint)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                {{ $t('pricing_page.t3_f1') }}
               </li>
               <li class="flex items-start gap-2.5">
-                <svg class="w-4 h-4 shrink-0 mt-0.5" style="color: #3fcb7f;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                Biaya API langsung ke provider
+                <svg class="w-4 h-4 shrink-0 mt-0.5 text-[var(--accent-mint)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                {{ $t('pricing_page.t3_f2') }}
               </li>
               <li class="flex items-start gap-2.5">
-                <svg class="w-4 h-4 shrink-0 mt-0.5" style="color: #3fcb7f;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                Kontrol penuh atas model AI
+                <svg class="w-4 h-4 shrink-0 mt-0.5 text-[var(--accent-mint)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                {{ $t('pricing_page.t3_f3') }}
               </li>
             </ul>
-            <a href="https://app.ixiera.id/login" class="btn-bd-ghost text-center">Pilih BYOK</a>
+            <a href="https://app.ixiera.id/login" class="btn-bd-ghost text-center mt-auto">{{ $t('pricing_page.t3_cta') }}</a>
           </div>
 
         </div>
-
-        <div class="mt-10 text-center text-[12px] text-[var(--text-muted)]" style="letter-spacing: -0.03em;">
-          <p>1 kredit = 1 aksi AI (generate, balasan AI, repurpose, analisis lanjutan). Template balasan dan Quick Score gratis.</p>
-          <p class="mt-1">API key sendiri hanya tersedia di paket berbayar.</p>
-        </div>
       </section>
 
-      <!-- PRICING FAQ -->
-      <section class="section-bd" style="background: var(--bg-secondary);">
-        <div class="container-bd" style="max-width: 800px;">
-          <h2 class="h2-bd">Pertanyaan soal Harga</h2>
+      <!-- FAQ HARGA -->
+      <section class="py-20 border-t border-[var(--border)] bg-[var(--bg-secondary)]">
+        <div class="max-w-[800px] mx-auto px-6">
+          <h2 class="h2-bd">{{ $t('pricing_page.faq_title') }}</h2>
           <div class="border-t border-[var(--border)] mt-8">
             <details class="group border-b border-[var(--border)] py-5 cursor-pointer">
-              <summary class="flex justify-between items-center text-[16px] font-semibold list-none text-[var(--text-primary)]" style="letter-spacing: -0.03em;">
-                Apakah ada biaya tersembunyi?
+              <summary class="flex justify-between items-center text-[16px] font-semibold list-none text-[var(--text-primary)]">
+                {{ $t('pricing_page.faq1_q') }}
                 <span class="group-open:rotate-180 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></span>
               </summary>
-              <p class="text-[14px] mt-3 leading-relaxed text-[var(--text-secondary)]" style="letter-spacing: -0.03em;">Tidak. Harga yang tertera adalah harga final. Tidak ada biaya setup, biaya tersembunyi, atau auto-renew diam-diam.</p>
+              <p class="text-[14px] mt-3 leading-relaxed text-[var(--text-secondary)]">{{ $t('pricing_page.faq1_a') }}</p>
             </details>
             <details class="group border-b border-[var(--border)] py-5 cursor-pointer">
-              <summary class="flex justify-between items-center text-[16px] font-semibold list-none text-[var(--text-primary)]" style="letter-spacing: -0.03em;">
-                Kenapa paketnya tidak auto-renew?
+              <summary class="flex justify-between items-center text-[16px] font-semibold list-none text-[var(--text-primary)]">
+                {{ $t('pricing_page.faq2_q') }}
                 <span class="group-open:rotate-180 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></span>
               </summary>
-              <p class="text-[14px] mt-3 leading-relaxed text-[var(--text-secondary)]" style="letter-spacing: -0.03em;">Supaya kamu punya kendali penuh. Kami tidak mau uangmu kepotong otomatis saat kamu sedang tidak aktif. Kamu bisa perpanjang manual kapan saja.</p>
+              <p class="text-[14px] mt-3 leading-relaxed text-[var(--text-secondary)]">{{ $t('pricing_page.faq2_a') }}</p>
             </details>
             <details class="group border-b border-[var(--border)] py-5 cursor-pointer">
-              <summary class="flex justify-between items-center text-[16px] font-semibold list-none text-[var(--text-primary)]" style="letter-spacing: -0.03em;">
-                Kalau kredit habis di tengah bulan, gimana?
+              <summary class="flex justify-between items-center text-[16px] font-semibold list-none text-[var(--text-primary)]">
+                {{ $t('pricing_page.faq3_q') }}
                 <span class="group-open:rotate-180 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></span>
               </summary>
-              <p class="text-[14px] mt-3 leading-relaxed text-[var(--text-secondary)]" style="letter-spacing: -0.03em;">Kamu bisa upgrade ke paket BYOK, atau top-up kredit tambahan (akan hadir segera). Fitur template dan Quick Score tetap bisa dipakai tanpa kredit.</p>
+              <p class="text-[14px] mt-3 leading-relaxed text-[var(--text-secondary)]">{{ $t('pricing_page.faq3_a') }}</p>
             </details>
             <details class="group border-b border-[var(--border)] py-5 cursor-pointer">
-              <summary class="flex justify-between items-center text-[16px] font-semibold list-none text-[var(--text-primary)]" style="letter-spacing: -0.03em;">
-                Apakah harga beta akan naik?
+              <summary class="flex justify-between items-center text-[16px] font-semibold list-none text-[var(--text-primary)]">
+                {{ $t('pricing_page.faq4_q') }}
                 <span class="group-open:rotate-180 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></span>
               </summary>
-              <p class="text-[14px] mt-3 leading-relaxed text-[var(--text-secondary)]" style="letter-spacing: -0.03em;">Harga bisa naik untuk pengguna baru nanti. Tapi untuk kamu yang berlangganan sekarang, harga beta ini terkunci selamanya selama langgananmu tidak terputus.</p>
+              <p class="text-[14px] mt-3 leading-relaxed text-[var(--text-secondary)]">{{ $t('pricing_page.faq4_a') }}</p>
             </details>
           </div>
         </div>
       </section>
 
       <!-- FINAL CTA -->
-      <section class="section-bd text-center">
-        <div class="container-bd">
-          <h2 class="font-display text-[36px] md:text-[48px] leading-[1.1] mb-6 text-[var(--text-primary)]">Masih ragu?</h2>
-          <p class="text-[15px] text-[var(--text-secondary)] mb-8" style="letter-spacing: -0.03em;">Coba dulu trial 7 hari. Kalau tidak cocok, tidak perlu bayar apa-apa.</p>
-          <a href="https://app.ixiera.id/login" class="btn-bd-primary inline-block">Mulai Trial Gratis</a>
+      <section class="py-24 text-center border-t border-[var(--border)]">
+        <div class="max-w-[800px] mx-auto px-6">
+          <h2 class="font-display text-[40px] md:text-[56px] leading-[1.0] mb-8">{{ $t('cta.title') }}</h2>
+          <a href="https://app.ixiera.id/login" class="btn-bd-primary inline-block">{{ $t('cta.btn') }}</a>
         </div>
       </section>
 
       <!-- FOOTER -->
       <footer class="border-t border-[var(--border)] py-8">
-        <div class="container-bd flex flex-col md:flex-row justify-between items-center gap-5 text-[13px] text-[var(--text-muted)]" style="letter-spacing: -0.03em;">
+        <div class="max-w-[1000px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-5 text-[13px] text-[var(--text-muted)]">
           <div class="flex items-center gap-2">
             <div class="w-6 h-6 flex items-center justify-center rounded text-[10px] font-bold bg-[var(--accent)] text-[var(--accent-text)]">IX</div>
             <span>2026 Ixiera.</span>
@@ -257,12 +236,8 @@
           <div class="flex gap-5 flex-wrap justify-center">
             <a href="mailto:contact@ixiera.id" class="hover:text-[var(--text-primary)] transition">Email</a>
             <a href="/privacy" class="hover:text-[var(--text-primary)] transition">Kebijakan Privasi</a>
-            <a href="/terms" class="hover:text-[var(--text-primary)] transition">Syarat &amp; Ketentuan</a>
-            <a href="/data-deletion" class="hover:text-[var(--text-primary)] transition">Hapus Data</a>
+            <a href="/terms" class="hover:text-[var(--text-primary)] transition">Syarat & Ketentuan</a>
           </div>
-        </div>
-        <div class="container-bd text-center mt-5 text-[10px] text-[var(--text-muted)]" style="letter-spacing: -0.03em;">
-          Ixiera adalah produk independen dan tidak berafiliasi dengan Meta Platforms. Threads adalah merek dagang Meta.
         </div>
       </footer>
     </main>
