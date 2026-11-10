@@ -142,7 +142,7 @@
 
       <div v-if="mediaUrl" class="relative w-full max-w-sm mb-3 rounded-lg overflow-hidden border theme-border">
         <img :src="mediaUrl" class="w-full h-auto object-cover" />
-        <button @click="mediaUrl = ''" type="button" class="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black transition">
+        <button @click="mediaUrl = ''; selectedFile = null" type="button" class="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black transition">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
@@ -247,6 +247,7 @@ const { t } = useI18n()
                                                                   
 const postText = ref('')
 const mediaUrl = ref('')
+const selectedFile = ref<File | null>(null)
 const isUploading = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const threadParts = ref<string[]>([])
@@ -513,29 +514,39 @@ async function handleFileUpload(event: Event) {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
   if (!file) return
+  
   if (file.size > 8 * 1024 * 1024) {
     showToast('Maksimal ukuran gambar 8MB', 'error')
     return
   }
-  isUploading.value = true
-  try {
-    const ext = file.name.split('.').pop() || 'jpg'
-    const fileName = `${currentAccountId.value}/${Date.now()}-${crypto.randomUUID()}.${ext}`
-    const { error } = await supabase.storage.from('threads-media').upload(fileName, file)
-    if (error) throw error
-    const { data } = supabase.storage.from('threads-media').getPublicUrl(fileName)
-    mediaUrl.value = data.publicUrl
-    showToast('Gambar berhasil diupload', 'success')
-  } catch (err: any) {
-    showToast('Gagal upload: ' + err.message, 'error')
-  } finally {
-    isUploading.value = false
-    if (fileInput.value) fileInput.value.value = ''
-  }
+  
+  selectedFile.value = file
+  mediaUrl.value = URL.createObjectURL(file) // Preview lokal (instan, 0 storage cost)
 }
 
 async function schedulePost() {
   if (!postText.value.trim()) { showToast('Write a post first.', 'error'); return }
+  if (isUploading.value) return
+  
+  // UPLOAD GAMBAR (Baru dilakuin pas mau Schedule)
+  if (selectedFile.value) {
+    isUploading.value = true
+    try {
+      const file = selectedFile.value
+      const ext = file.name.split('.').pop() || 'jpg'
+      const fileName = `${currentAccountId.value || 'temp'}/${Date.now()}-${crypto.randomUUID()}.${ext}`
+      const { error } = await supabase.storage.from('threads-media').upload(fileName, file)
+      if (error) throw error
+      
+      const { data } = supabase.storage.from('threads-media').getPublicUrl(fileName)
+      mediaUrl.value = data.publicUrl // Ganti preview lokal jadi URL Supabase asli
+    } catch (err: any) {
+      showToast('Gagal upload gambar: ' + err.message, 'error')
+      isUploading.value = false
+      return // Batal schedule kalau upload gagal
+    }
+    isUploading.value = false
+  }
   if (!scheduledDate.value) { showToast('Select a schedule time.', 'error'); return }
   
   const localDate = new Date(scheduledDate.value)
