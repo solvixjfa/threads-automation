@@ -23,7 +23,7 @@
           </button>
           <div class="w-px h-4 bg-[var(--border)] mx-1"></div>
           <a href="https://app.ixiera.id/login" class="text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition">{{ $t('nav.login') }}</a>
-          <a href="https://app.ixiera.id/login" class="btn-bd-primary" style="padding: 8px 16px;">{{ $t('nav.signup') }}</a>
+          <a href="https://app.ixiera.id/signup" class="btn-bd-primary" style="padding: 8px 16px;">{{ $t('nav.signup') }}</a>
         </div>
         <button @click="mobileMenuOpen = true" class="md:hidden p-2 text-[var(--text-primary)]">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
@@ -57,7 +57,7 @@
             {{ locale.toUpperCase() }}
           </button>
         </div>
-        <a href="https://app.ixiera.id/login" class="btn-bd-primary w-full text-center block">{{ $t('nav.signup') }}</a>
+        <a href="https://app.ixiera.id/signup" class="btn-bd-primary w-full text-center block">{{ $t('nav.signup') }}</a>
         <a href="https://app.ixiera.id/login" class="text-center block text-sm text-[var(--text-secondary)] py-1">{{ $t('nav.login') }}</a>
       </div>
     </div>
@@ -76,7 +76,7 @@
             {{ $t('hero.subtitle') }}
           </p>
           <div class="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
-            <a href="https://app.ixiera.id/login" class="btn-bd-primary w-full sm:w-auto text-center">{{ $t('hero.cta1') }}</a>
+            <a href="https://app.ixiera.id/signup" class="btn-bd-primary w-full sm:w-auto text-center">{{ $t('hero.cta1') }}</a>
             <a href="#contoh" class="btn-bd-ghost w-full sm:w-auto text-center">{{ $t('hero.cta2') }}</a>
           </div>
           <p class="text-[13px] text-[var(--text-muted)] mb-6">{{ $t('hero.trust1') }}</p>
@@ -155,66 +155,119 @@
           </div>
         </div>
       </section>
+      
+      <!-- FITUR SECTION (MOCKUP DIPERBAIKI) -->
       <section id="fitur" class="py-20 border-t border-[var(--border)]">
         <div class="max-w-[1000px] mx-auto px-6">
           <h2 class="h2-bd">{{ $t('features.title') }}</h2>
-          <p class="text-center mb-14 text-[15px] text-[var(--text-secondary)]">{{ $t('features.subtitle') }}</p>
-          <div class="space-y-14">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          <p class="text-center mb-16 text-[15px] text-[var(--text-secondary)]">{{ $t('features.subtitle') }}</p>
+          
+          <div class="space-y-20">
+            
+            <!-- Fitur 1: AI Content Planner -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
               <div>
                 <span class="text-[12px] font-bold tracking-widest uppercase block mb-2 text-[var(--accent-violet)]">01 &middot; Content</span>
-                <h3 class="font-display text-[26px] md:text-[30px] leading-tight mb-3">{{ $t('features.f1_title') }}</h3>
-                <p class="text-[14px] leading-relaxed text-[var(--text-secondary)]">{{ $t('features.f1_desc') }}</p>
+                <h3 class="font-display text-[28px] md:text-[32px] leading-tight mb-4">{{ $t('features.f1_title') }}</h3>
+                <p class="text-[15px] leading-relaxed text-[var(--text-secondary)]">{{ $t('features.f1_desc') }}</p>
               </div>
-              <div class="card-bd p-5">
-                <div class="text-[10px] font-bold uppercase tracking-widest mb-3 text-[var(--text-muted)]">AI Content Planner</div>
-                <div class="rounded-md p-2.5 mb-2 text-xs border border-[var(--border)] bg-[var(--bg-primary)]">Topik / Short Idea</div>
-                <div class="rounded-md p-2.5 mb-2 text-xs border border-[var(--border)] bg-[var(--bg-primary)] flex justify-between"><span>Tone / Style</span><span class="text-[var(--text-muted)]">Storytelling</span></div>
-                <div class="rounded-md p-2.5 mb-3 text-xs font-bold text-center bg-[var(--accent)] text-[var(--accent-text)]">Generate 3-Day Plan</div>
-                <div class="rounded-md p-3 border border-[var(--border)] bg-[var(--bg-primary)]">
-                  <div class="text-[10px] font-bold mb-1 text-[var(--accent-violet)]">DAY 1: KOMPLEKSITAS MODEL</div>
-                  <p class="text-[11px] leading-relaxed text-[var(--text-secondary)]">Awal-awal ngulik AI, bawaannya pengen bikin arsitektur yang keliatan paling rumit...</p>
+              <!-- Mockup 1 (Premium) -->
+              <div class="card-bd p-6 bg-[#0a0a0a] border-[#333] shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#9984d8] to-transparent"></div>
+                <div class="text-[11px] font-bold uppercase tracking-widest mb-4 text-[#888]">AI Content Planner</div>
+                <div class="space-y-3 mb-5">
+                  <input type="text" placeholder="Topik / Short Idea" class="w-full px-4 py-3 rounded-lg border border-[#333] bg-[#111] text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#9984d8] transition">
+                  <div class="relative">
+                    <input type="text" placeholder="Tone / Style" class="w-full px-4 py-3 rounded-lg border border-[#333] bg-[#111] text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#9984d8] transition">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-medium">Storytelling</span>
+                  </div>
+                </div>
+                <button class="w-full bg-white text-black font-semibold py-3 rounded-lg hover:bg-gray-200 transition text-sm mb-5">
+                  Generate 3-Day Plan
+                </button>
+                <div class="p-4 rounded-xl border border-[#333] bg-[#111]">
+                  <h3 class="text-[11px] font-bold text-[#9984d8] uppercase mb-1.5 tracking-wide">
+                    DAY 1: KOMPLEKSITAS MODEL
+                  </h3>
+                  <p class="text-[13px] text-gray-400 leading-relaxed">
+                    Awal-awal ngulik AI, bawaannya pengen bikin arsitektur yang keliatan paling rumit...
+                  </p>
                 </div>
               </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              <div class="order-2 md:order-1 card-bd p-5">
-                <div class="flex gap-2 mb-4">
-                  <div class="px-3 py-1 text-xs font-bold rounded-md bg-[var(--accent)] text-[var(--accent-text)]">Review Manual</div>
-                  <div class="px-3 py-1 text-xs font-bold rounded-md border border-[var(--border)] text-[var(--text-secondary)]">Full Auto</div>
+
+            <!-- Fitur 2: Komentar -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+              <!-- Mockup 2 (Premium) -->
+              <div class="order-2 md:order-1 card-bd p-6 bg-[#0a0a0a] border-[#333] shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#3fcb7f] to-transparent"></div>
+                <!-- Segmented Control -->
+                <div class="flex p-1 bg-[#1A1A1A] rounded-lg mb-6">
+                  <button class="flex-1 px-4 py-2.5 text-xs font-semibold bg-[#2A2A2A] rounded-md text-white shadow-sm transition-all">
+                    Review Manual
+                  </button>
+                  <button class="flex-1 px-4 py-2.5 text-xs font-semibold text-gray-500 hover:text-white transition-all">
+                    Full Auto
+                  </button>
                 </div>
-                <div class="space-y-2 text-xs">
-                  <div class="flex justify-between p-3 rounded-md border border-[var(--border)] bg-[var(--bg-primary)]"><span>Pertanyaan</span><span class="font-bold text-[var(--accent-violet)]">Balasan AI</span></div>
-                  <div class="flex justify-between p-3 rounded-md border border-[var(--border)] bg-[var(--bg-primary)]"><span>Pujian</span><span class="font-bold text-[var(--accent-mint)]">Template</span></div>
-                  <div class="flex justify-between p-3 rounded-md border border-[var(--border)] bg-[var(--bg-primary)]"><span>Spam / Toxic</span><span class="font-bold text-[var(--text-muted)]">Template</span></div>
+                
+                <div class="space-y-3">
+                  <div class="flex items-center justify-between p-4 rounded-xl border border-[#333] bg-[#111]">
+                    <span class="text-sm font-medium text-white">Pertanyaan</span>
+                    <span class="text-[10px] font-bold text-[#9984d8] bg-[#9984d8]/15 px-3 py-1.5 rounded-md">
+                      Balasan AI
+                    </span>
+                  </div>
+                  <div class="flex items-center justify-between p-4 rounded-xl border border-[#333] bg-[#111]">
+                    <span class="text-sm font-medium text-white">Pujian</span>
+                    <span class="text-[10px] font-bold text-[#3fcb7f] bg-[#3fcb7f]/15 px-3 py-1.5 rounded-md">
+                      Template
+                    </span>
+                  </div>
+                  <div class="flex items-center justify-between p-4 rounded-xl border border-[#333] bg-[#111]">
+                    <span class="text-sm font-medium text-white">Spam / Toxic</span>
+                    <span class="text-[10px] font-bold text-gray-500 bg-gray-500/15 px-3 py-1.5 rounded-md">
+                      Template
+                    </span>
+                  </div>
                 </div>
               </div>
               <div class="order-1 md:order-2">
                 <span class="text-[12px] font-bold tracking-widest uppercase block mb-2 text-[var(--accent-violet)]">02 &middot; Komentar</span>
-                <h3 class="font-display text-[26px] md:text-[30px] leading-tight mb-3">{{ $t('features.f2_title') }}</h3>
-                <p class="text-[14px] leading-relaxed text-[var(--text-secondary)]">{{ $t('features.f2_desc') }}</p>
+                <h3 class="font-display text-[28px] md:text-[32px] leading-tight mb-4">{{ $t('features.f2_title') }}</h3>
+                <p class="text-[15px] leading-relaxed text-[var(--text-secondary)]">{{ $t('features.f2_desc') }}</p>
               </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+
+            <!-- Fitur 3: Analytics -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
               <div>
                 <span class="text-[12px] font-bold tracking-widest uppercase block mb-2 text-[var(--accent-violet)]">03 &middot; Analytics</span>
-                <h3 class="font-display text-[26px] md:text-[30px] leading-tight mb-3">{{ $t('features.f3_title') }}</h3>
-                <p class="text-[14px] leading-relaxed text-[var(--text-secondary)]">{{ $t('features.f3_desc') }}</p>
+                <h3 class="font-display text-[28px] md:text-[32px] leading-tight mb-4">{{ $t('features.f3_title') }}</h3>
+                <p class="text-[15px] leading-relaxed text-[var(--text-secondary)]">{{ $t('features.f3_desc') }}</p>
               </div>
-              <div class="card-bd p-5">
-                <div class="flex gap-4 mb-4 text-xs font-bold border-b border-[var(--border)] pb-2 text-[var(--text-muted)]">
-                  <span class="text-[var(--text-primary)] border-b-2 border-[var(--accent-violet)] pb-2 -mb-[10px]">Best Time</span>
-                  <span>Hook</span>
-                  <span>Length</span>
+              <!-- Mockup 3 (Premium) -->
+              <div class="card-bd p-6 bg-[#0a0a0a] border-[#333] shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#9984d8] to-transparent"></div>
+                <div class="flex gap-6 mb-5 text-xs font-semibold border-b border-[#333] pb-3 text-gray-500">
+                  <span class="text-white border-b-2 border-[#9984d8] pb-3 -mb-[13px]">Best Time</span>
+                  <span class="hover:text-white transition">Hook</span>
+                  <span class="hover:text-white transition">Length</span>
                 </div>
-                <div class="grid grid-cols-7 gap-1">
-                  <div v-for="i in 21" :key="i" class="h-5 rounded-sm border border-[var(--border)]" :style="{ background: [3,7,11,15,18].includes(i) ? 'rgba(153,132,216,0.5)' : 'var(--bg-primary)' }"></div>
+                <div class="grid grid-cols-7 gap-1.5">
+                  <div v-for="i in 21" :key="i" class="aspect-square rounded border border-[#222]" :style="{ background: [3,7,11,15,18].includes(i) ? 'rgba(153,132,216,0.6)' : '#111' }"></div>
+                </div>
+                <div class="mt-4 flex items-center justify-between text-[10px] text-gray-500">
+                  <span>Mon</span>
+                  <span>Sun</span>
                 </div>
               </div>
             </div>
+
           </div>
         </div>
       </section>
+      
       <section id="contoh" class="py-20 border-t border-[var(--border)] bg-[var(--bg-secondary)]">
         <div class="max-w-[1000px] mx-auto px-6">
           <h2 class="h2-bd">Contoh dari data nyata.</h2>
@@ -249,40 +302,73 @@
           </div>
         </div>
       </section>
-      <section id="harga" class="py-20 border-t border-[var(--border)]">
+      
+      <section id="cara-kerja" class="py-20 border-t border-[var(--border)]">
         <div class="max-w-[1000px] mx-auto px-6">
-          <h2 class="h2-bd">{{ $t('pricing.title') }}</h2>
-          <p class="text-center mb-12 text-[15px] text-[var(--text-secondary)]">{{ $t('pricing.subtitle') }}</p>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div class="card-bd p-7 flex flex-col">
-              <h3 class="text-[17px] font-semibold mb-1">{{ $t('pricing.p1_title') }}</h3>
-              <p class="text-[13px] mb-6 text-[var(--text-secondary)]">{{ $t('pricing.p1_desc') }}</p>
-              <a href="https://app.ixiera.id/login" class="btn-bd-ghost text-center mt-auto">{{ $t('pricing.p1_cta') }}</a>
+          <h2 class="h2-bd">Mulai dalam 3 langkah.</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10">
+            <div class="space-y-3">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center font-display text-[18px] border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent-violet)]">1</div>
+              <h3 class="text-[17px] font-semibold">Daftar dan minta akses.</h3>
+              <p class="text-[14px] leading-relaxed text-[var(--text-secondary)]">Buat akun, lalu kirim @username Threads kamu. Akses disetujui manual dan kamu dikabari lewat email.</p>
             </div>
-            <div class="card-bd p-7 flex flex-col relative border-2 border-[var(--accent-violet)]">
-              <div class="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full text-white bg-[var(--accent-violet)]">Popular</div>
-              <h3 class="text-[17px] font-semibold mb-1">{{ $t('pricing.p2_title') }}</h3>
-              <p class="text-[13px] mb-6 text-[var(--text-secondary)]">{{ $t('pricing.p2_desc') }}</p>
-              <a href="https://app.ixiera.id/login" class="btn-bd-primary text-center mt-auto">{{ $t('pricing.p2_cta') }}</a>
+            <div class="space-y-3">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center font-display text-[18px] border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent-violet)]">2</div>
+              <h3 class="text-[17px] font-semibold">Hubungkan dan ajari gayamu.</h3>
+              <p class="text-[14px] leading-relaxed text-[var(--text-secondary)]">Setelah disetujui, terima undangan tester di Threads dan login lewat sistem resmi Meta. Tulis dokumen gaya dan aturanmu di Knowledge Base.</p>
             </div>
-            <div class="card-bd p-7 flex flex-col">
-              <h3 class="text-[17px] font-semibold mb-1">{{ $t('pricing.p3_title') }}</h3>
-              <p class="text-[13px] mb-6 text-[var(--text-secondary)]">{{ $t('pricing.p3_desc') }}</p>
-              <a href="https://app.ixiera.id/login" class="btn-bd-ghost text-center mt-auto">{{ $t('pricing.p3_cta') }}</a>
+            <div class="space-y-3">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center font-display text-[18px] border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--accent-violet)]">3</div>
+              <h3 class="text-[17px] font-semibold">Review dan jalan.</h3>
+              <p class="text-[14px] leading-relaxed text-[var(--text-secondary)]">Setujui draf, atur mode balasan, dan pantau Analytics tiap minggu.</p>
             </div>
-          </div>
-          <div class="text-center mt-8 space-y-2">
-            <p class="text-[12px] text-[var(--text-muted)]">{{ $t('pricing.note1') }}</p>
-            <p class="text-[12px] font-medium text-[var(--text-secondary)]">{{ $t('pricing.note2') }}</p>
           </div>
         </div>
       </section>
+
+      <section id="faq" class="py-20 border-t border-[var(--border)] bg-[var(--bg-secondary)]">
+        <div class="max-w-[800px] mx-auto px-6">
+          <h2 class="h2-bd">Pertanyaan Umum</h2>
+          <div class="border-t border-[var(--border)] mt-8">
+            <details class="group border-b border-[var(--border)] py-4 cursor-pointer">
+              <summary class="flex justify-between items-center text-[15px] font-semibold list-none text-[var(--text-primary)]">
+                Kenapa harus minta akses?
+                <span class="group-open:rotate-180 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></span>
+              </summary>
+              <p class="text-[14px] mt-3 leading-relaxed text-[var(--text-secondary)]">Ixiera masih dalam tahap early access, jadi tiap akun ditambahkan manual dan perlu disetujui dulu. Kabar lewat email.</p>
+            </details>
+            <details class="group border-b border-[var(--border)] py-4 cursor-pointer">
+              <summary class="flex justify-between items-center text-[15px] font-semibold list-none text-[var(--text-primary)]">
+                Apakah ini gratis?
+                <span class="group-open:rotate-180 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></span>
+              </summary>
+              <p class="text-[14px] mt-3 leading-relaxed text-[var(--text-secondary)]">Trial 7 hari gratis dengan 20 kredit. Setelah itu, paket berbayar mulai dari Rp29.000 per bulan.</p>
+            </details>
+            <details class="group border-b border-[var(--border)] py-4 cursor-pointer">
+              <summary class="flex justify-between items-center text-[15px] font-semibold list-none text-[var(--text-primary)]">
+                Apa itu kredit?
+                <span class="group-open:rotate-180 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></span>
+              </summary>
+              <p class="text-[14px] mt-3 leading-relaxed text-[var(--text-secondary)]">1 kredit = 1 aksi AI (generate, balas komentar, repurpose, analisis lanjutan). Template balasan dan Quick Score gratis tanpa kredit.</p>
+            </details>
+            <details class="group border-b border-[var(--border)] py-4 cursor-pointer">
+              <summary class="flex justify-between items-center text-[15px] font-semibold list-none text-[var(--text-primary)]">
+                Apakah posting tanpa izinku?
+                <span class="group-open:rotate-180 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></span>
+              </summary>
+              <p class="text-[14px] mt-3 leading-relaxed text-[var(--text-secondary)]">Tidak. Semua posting dan balasan bisa di-review manual dulu sebelum tayang. Kamu yang pegang kendali penuh.</p>
+            </details>
+          </div>
+        </div>
+      </section>
+
       <section class="py-24 text-center border-t border-[var(--border)]">
         <div class="max-w-[800px] mx-auto px-6">
           <h2 class="font-display text-[40px] md:text-[56px] leading-[1.0] mb-8">{{ $t('cta.title') }}</h2>
-          <a href="https://app.ixiera.id/login" class="btn-bd-primary inline-block">{{ $t('cta.btn') }}</a>
+          <a href="https://app.ixiera.id/signup" class="btn-bd-primary inline-block">{{ $t('cta.btn') }}</a>
         </div>
       </section>
+
       <footer class="border-t border-[var(--border)] py-8">
         <div class="max-w-[1000px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-5 text-[13px] text-[var(--text-muted)]">
           <div class="flex items-center gap-2">
