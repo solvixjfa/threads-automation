@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-64 relative">
+  <div class="w-full h-80 relative">
     <Bar :data="chartData" :options="chartOptions" />
   </div>
 </template>
@@ -19,12 +19,12 @@ const chartData = computed(() => ({
   labels: props.data.map(d => d.weekdayLabel),
   datasets: [
     {
-      label: 'Avg ER',
+      label: 'Avg ER (%)',
       backgroundColor: '#e5e5e5',
       hoverBackgroundColor: '#ffffff',
       data: props.data.map(d => d.er_pct || 0),
       borderRadius: 4,
-      barPercentage: 0.6,
+      barPercentage: 0.7,
     }
   ]
 }))
@@ -33,7 +33,9 @@ const chartOptions = {
   indexAxis: 'y' as const,
   responsive: true,
   maintainAspectRatio: false,
-  animation: { duration: 400 },
+  layout: {
+    padding: { right: 20 } // Biar sumbu X ada ruang
+  },
   plugins: {
     legend: { display: false },
     tooltip: {
@@ -44,19 +46,26 @@ const chartOptions = {
       borderWidth: 1,
       padding: 10,
       callbacks: {
-        label: (ctx: any) => `${(ctx.parsed.x || 0).toFixed(2)}% ER`,
+        label: (ctx: any) => ` ${(ctx.parsed.x || 0).toFixed(2)}% ER`,
       }
     }
   },
   scales: {
     x: {
-      grid: { color: '#262626', drawBorder: false },
-      ticks: { color: '#8a8a8a', font: { size: 10 }, callback: (v: any) => v + '%' },
+      display: true,
+      grid: { color: '#262626', drawBorder: false, drawTicks: false },
+      ticks: { 
+        display: true,
+        color: '#8a8a8a', 
+        font: { size: 10 }, 
+        callback: (v: any) => v + '%' 
+      },
       beginAtZero: true
     },
     y: {
+      display: true,
       grid: { display: false, drawBorder: false },
-      ticks: { color: '#e5e5e5', font: { size: 11, weight: 'bold' } }
+      ticks: { color: '#e5e5e5', font: { size: 12, weight: 'bold' } }
     }
   }
 }

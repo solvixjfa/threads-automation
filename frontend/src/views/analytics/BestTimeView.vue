@@ -86,7 +86,7 @@
         </div>
       </template>
 
-      <div class="mb-6 mt-2">
+      <div class="mb-8 mt-4">
         <BestTimeChart :data="translatedBlocks" />
       </div>
 
