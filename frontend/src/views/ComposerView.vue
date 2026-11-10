@@ -140,6 +140,21 @@
         </div>
       </div>
 
+      <div v-if="mediaUrl" class="relative w-full max-w-sm mb-3 rounded-lg overflow-hidden border theme-border">
+        <img :src="mediaUrl" class="w-full h-auto object-cover" />
+        <button @click="mediaUrl = ''" type="button" class="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2 mb-2">
+        <input type="file" accept="image/jpeg,image/png,image/webp" ref="fileInput" @change="handleFileUpload" class="hidden" />
+        <Button variant="secondary" size="sm" type="button" @click="fileInput?.click()" :loading="isUploading">
+          <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          {{ isUploading ? 'Uploading...' : 'Tambah Gambar' }}
+        </Button>
+      </div>
+
       <Textarea v-model="postText" :rows="6" :placeholder="$t('content.composer.draft_ph')" />
 
       <div v-if="threadParts.length > 1" class="space-y-3 pt-3 divider mt-4">
@@ -231,6 +246,9 @@ const { showToast } = useNotify()
 const { t } = useI18n()
                                                                   
 const postText = ref('')
+const mediaUrl = ref('')
+const isUploading = ref(false)
+const fileInput = ref<HTMLInputElement | null>(null)
 const threadParts = ref<string[]>([])
 const scheduledDate = ref('')
 const isSaving = ref(false)
@@ -491,6 +509,31 @@ async function deepAiScore() {
   } finally { isDeepScoring.value = false }
 }
 
+async function handleFileUpload(event: Event) {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+  if (file.size > 8 * 1024 * 1024) {
+    showToast('Maksimal ukuran gambar 8MB', 'error')
+    return
+  }
+  isUploading.value = true
+  try {
+    const ext = file.name.split('.').pop() || 'jpg'
+    const fileName = `${currentAccountId.value}/${Date.now()}-${crypto.randomUUID()}.${ext}`
+    const { error } = await supabase.storage.from('threads-media').upload(fileName, file)
+    if (error) throw error
+    const { data } = supabase.storage.from('threads-media').getPublicUrl(fileName)
+    mediaUrl.value = data.publicUrl
+    showToast('Gambar berhasil diupload', 'success')
+  } catch (err: any) {
+    showToast('Gagal upload: ' + err.message, 'error')
+  } finally {
+    isUploading.value = false
+    if (fileInput.value) fileInput.value.value = ''
+  }
+}
+
 async function schedulePost() {
   if (!postText.value.trim()) { showToast('Write a post first.', 'error'); return }
   if (!scheduledDate.value) { showToast('Select a schedule time.', 'error'); return }
@@ -515,7 +558,7 @@ async function schedulePost() {
     let parentId = null
     for (let i = 0; i < partsToSchedule.length; i++) {                 
       const { data: insertedPart, error: insertError } = await supabase.schema('threads').from('scheduled_posts').insert({
-        account_id: targetAccountId, text: partsToSchedule[i], scheduled_for: localDate.toISOString(),
+        account_id: targetAccountId, text: partsToSchedule[i], scheduled_for: localDate.toISOString(), media: mediaUrl.value ? { url: mediaUrl.value, type: 'IMAGE' } : null,
         status: 'scheduled', parent_id: parentId, sequence_number: i + 1, idempotency_key: crypto.randomUUID()                             
       }).select().single()                                                  
       if (insertError) throw insertError                                 

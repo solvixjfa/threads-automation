@@ -47,7 +47,14 @@ serve(async (req) => {
       try {
         let creationId = post.creation_id;
         if (!creationId) {
-          const bodyParams: Record<string, string> = { media_type: "TEXT", text: post.text || "", access_token: accessToken };
+          const bodyParams: Record<string, string> = { 
+            media_type: post.media?.url ? (post.media.type || "IMAGE") : "TEXT", 
+            text: post.text || "", 
+            access_token: accessToken 
+          };
+          if (post.media?.url) {
+            bodyParams.image_url = post.media.url;
+          }
           if (replyToMediaId) bodyParams.reply_to_id = replyToMediaId;
 
           const createRes = await fetch(`https://graph.threads.net/v1.0/${userId}/threads`, {
