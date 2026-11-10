@@ -205,6 +205,20 @@
         </div>
       </div>
 
+      <!-- AUDIENCE INSIGHTS -->
+      <div v-if="sentimentMix.values.length > 0 || topicMix.values.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+        <div v-if="sentimentMix.values.length > 0" class="card p-4 md:p-6 space-y-2">
+          <h2 class="text-xs font-bold uppercase tracking-wide">{{ $t('dashboard.sentiment_mix') }}</h2>
+          <p class="text-[10px] theme-text-muted mb-2">{{ $t('dashboard.sentiment_sub') }}</p>
+          <DoughnutChart :labels="sentimentMix.labels" :values="sentimentMix.values" />
+        </div>
+        <div v-if="topicMix.values.length > 0" class="card p-4 md:p-6 space-y-2">
+          <h2 class="text-xs font-bold uppercase tracking-wide">{{ $t('dashboard.topic_mix') }}</h2>
+          <p class="text-[10px] theme-text-muted mb-2">{{ $t('dashboard.topic_sub') }}</p>
+          <DoughnutChart :labels="topicMix.labels" :values="topicMix.values" />
+        </div>
+      </div>
+
       <!-- CHART SECTION -->
       <div class="card p-4 md:p-6 space-y-4 w-full max-w-full overflow-hidden">
         <div class="flex flex-wrap justify-between items-center pb-3 divider gap-2">
@@ -314,6 +328,7 @@
 import { ref, computed, onMounted, onUnmounted, watch} from 'vue'
 import { RouterLink } from 'vue-router'
 import GrowthChart from '../components/GrowthChart.vue'
+import DoughnutChart from '../components/DoughnutChart.vue'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
 import { useI18n } from 'vue-i18n'
@@ -343,11 +358,13 @@ const trialInfo = ref<any>(null)
 const pendingRepliesCount = ref(0)
 const nextBestTime = ref<any>(null)
 const followers = ref<any>({ current: 0, delta_7d: 0, delta_30d: 0 })
-const chartRange = ref<7 | 14 | 30>(7)
+const chartRange = ref<7 | 14 | 30 | 90>(7)
+const sentimentMix = ref({ labels: [] as string[], values: [] as number[] })
+const topicMix = ref({ labels: [] as string[], values: [] as number[] })
 const overview = ref({ total_posts: 0, total_views: 0, total_likes: 0, total_replies: 0, total_reposts: 0, avg_engagement_rate: 0 })
 const allPosts = ref<any[]>([])
 const dailyInsights = ref<any[]>([])
-const timeRange = ref<7 | 14 | 30>(30)
+const timeRange = ref<7 | 14 | 30 | 90>(30)
 const failedPosts = ref<any[]>([])
 const adminHealth = ref<any>(null)
 
@@ -456,6 +473,45 @@ async function loadAllDashboardData() {
           }
         }
       } catch (e) { console.warn('[dashboard] trial info', e) }
+
+      // Sentiment Mix
+      try {
+        const sRes = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/analytics/sentiment-performance/${account.id}`)
+        const sData = await sRes.json()
+        if (sData.success && sData.data) {
+          const valid = sData.data.filter((d: any) => d.count > 0)
+          if (valid.length > 0) {
+            const sentMap: any = { positive: t('analytics.sent_positive'), neutral: t('analytics.sent_neutral'), negative: t('analytics.sent_negative') }
+            sentimentMix.value = {
+              labels: valid.map((d: any) => sentMap[d.sentiment] || d.sentiment),
+              values: valid.map((d: any) => d.count)
+            }
+          }
+        }
+      } catch (e) { console.warn('[dashboard] sentiment mix', e) }
+
+      // Topic Mix
+      try {
+        const tRes = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/analytics/topic-clusters/${account.id}`)
+        const tData = await tRes.json()
+        if (tData.success && tData.data) {
+          const sorted = [...tData.data].sort((a: any, b: any) => b.count - a.count)
+          const top4 = sorted.slice(0, 4)
+          const othersCount = sorted.slice(4).reduce((sum: number, d: any) => sum + d.count, 0)
+          
+          const labels = top4.map((d: any) => d.topic || 'Unknown')
+          const values = top4.map((d: any) => d.count)
+          
+          if (othersCount > 0) {
+            labels.push(t('dashboard.others') || 'Lainnya')
+            values.push(othersCount)
+          }
+          
+          if (labels.length > 0) {
+            topicMix.value = { labels, values }
+          }
+        }
+      } catch (e) { console.warn('[dashboard] topic mix', e) }
 
       // Followers stats
       try {

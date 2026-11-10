@@ -85,7 +85,17 @@
     "toast_retry_success": "Post successfully re-queued for publishing.",
     "toast_retry_failed": "Failed to trigger retry",
     "error_generic": "An error occurred",
-    "followers": "Followers"
+    "followers": "Followers",
+    "sentiment_mix": "Sentiment Mix",
+    "sentiment_sub": "Distribution of post tones",
+    "topic_mix": "Top Topics",
+    "topic_sub": "Most frequent content themes",
+    "others": "Others",
+    "views": "Views",
+    "likes": "Likes",
+    "summary_title": "Your Content Insights",
+    "summary_empty": "Not enough data to summarize. Post more content!",
+    "top_topic": "Top Topic"
   },
   "content": {
     "composer": {

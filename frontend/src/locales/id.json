@@ -85,7 +85,17 @@
     "toast_retry_success": "Post berhasil masuk antrean lagi.",
     "toast_retry_failed": "Gagal retry",
     "error_generic": "Ada error",
-    "followers": "Pengikut"
+    "followers": "Pengikut",
+    "sentiment_mix": "Sebaran Sentimen",
+    "sentiment_sub": "Distribusi nada postingan",
+    "topic_mix": "Topik Utama",
+    "topic_sub": "Tema konten paling sering",
+    "others": "Lainnya",
+    "views": "Tayangan",
+    "likes": "Suka",
+    "summary_title": "Insight Konten Kamu",
+    "summary_empty": "Data belum cukup untuk dirangkum. Rajin posting lagi ya!",
+    "top_topic": "Topik Utama"
   },
   "content": {
     "composer": {
