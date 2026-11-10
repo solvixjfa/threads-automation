@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen font-sans selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black bg-[var(--bg)] text-[var(--text)]">
-    
+
     <!-- SIDEBAR DESKTOP (KIRI) -->
     <aside class="hidden md:flex fixed left-0 top-0 h-screen w-60 border-r border-[var(--line)] bg-[var(--bg)] flex-col z-50">
       <div class="h-16 px-5 flex items-center border-b border-[var(--line)]">
@@ -46,10 +46,7 @@
     <!-- MOBILE DRAWER SIDEBAR (KIRI) -->
     <Teleport to="body">
       <div v-if="mobileMenuOpen" class="md:hidden fixed inset-0 z-[100] flex">
-        <!-- Backdrop -->
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="mobileMenuOpen = false"></div>
-        
-        <!-- Drawer -->
         <aside class="relative w-72 max-w-[80%] h-full bg-[var(--bg)] border-r border-[var(--line)] flex flex-col shadow-2xl" style="animation: slideIn 0.2s ease-out forwards;">
           <div class="h-16 px-5 flex items-center justify-between border-b border-[var(--line)]">
             <div class="flex items-center gap-2">
@@ -93,48 +90,42 @@
       }
     </style>
 
-    <main class="md:ml-60 pt-20 md:pt-0">
+    <!-- MAIN CONTENT WRAPPER -->
+    <main class="md:ml-60 pt-16 md:pt-0">
+      
       <!-- HERO (Basedash Style) -->
-      <section class="max-w-[1200px] mx-auto px-6 pb-20 md:pb-32 flex flex-col items-center text-center pt-10 md:pt-20">
-        
-        <!-- Pill Badge -->
+      <section class="max-w-[1200px] mx-auto px-6 pb-20 md:pb-32 flex flex-col items-center text-center pt-10 md:pt-24">
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--line)] mb-8">
           <span class="w-1.5 h-1.5 rounded-full bg-[#3fcb7f]"></span>
           <span class="text-[13px] font-medium tracking-[-0.03em] text-[var(--muted)]">{{ $t('landing.hero.badge') }}</span>
         </div>
 
-        <!-- Serif Headline -->
         <h1 class="font-serif-display text-[44px] md:text-[56px] leading-[1.1] md:leading-[1.05] tracking-normal mb-6 max-w-4xl mx-auto text-[var(--text)]">
           {{ $t('landing.hero.title_1') }} <br class="hidden md:block"/>
           <span class="italic text-[#9984d8]">{{ $t('landing.hero.title_2') }}</span>
         </h1>
 
-        <!-- Subhead -->
         <p class="text-[16px] md:text-[18px] text-[var(--muted)] tracking-[-0.03em] leading-[1.6] max-w-2xl mx-auto mb-10">
           {{ $t('landing.hero.subtitle') }}
         </p>
 
-        <!-- CTA Buttons -->
         <div class="flex flex-col sm:flex-row items-center gap-4 mb-16 w-full sm:w-auto">
           <a href="https://app.ixiera.id/login" class="w-full sm:w-auto px-8 py-3.5 rounded-md text-[15px] font-medium tracking-[-0.03em] bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">{{ $t('landing.hero.cta_primary') }}</a>
           <a href="#contoh" class="w-full sm:w-auto px-8 py-3.5 rounded-md text-[15px] font-medium tracking-[-0.03em] text-[var(--text)] border border-[var(--line)] hover:bg-[var(--surface-2)] transition">{{ $t('landing.hero.cta_secondary') }}</a>
         </div>
 
-        <!-- Trust Line -->
         <p class="text-[13px] text-[var(--muted)] tracking-[-0.03em] mb-12">{{ $t('landing.hero.microcopy') }}</p>
       </section>
 
       <!-- Hero Mockup Image -->
       <section class="max-w-[1000px] mx-auto px-4 md:px-0">
         <div class="relative w-full rounded-xl overflow-hidden border border-[var(--line)] bg-[var(--surface)]">
-          <!-- Mockup Header -->
           <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[var(--line)]">
             <div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div>
             <div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div>
             <div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div>
             <span class="ml-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Dashboard</span>
           </div>
-          <!-- Mockup Body -->
           <div class="p-6 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-[var(--bg)] border border-[var(--line)] rounded-lg p-5">
               <p class="text-[12px] text-[var(--muted)] mb-1">Total Views</p>
@@ -152,7 +143,6 @@
               <p class="text-[12px] text-[#3fcb7f] tracking-[-0.03em]">up 0.3 percent</p>
             </div>
           </div>
-          <!-- Glow Effect -->
           <div class="absolute inset-0 pointer-events-none" style="background: radial-gradient(circle at 50% 0%, rgba(153,132,216,0.15) 0%, transparent 60%);"></div>
         </div>
       </section>
@@ -192,13 +182,9 @@
             <h2 class="font-serif-display text-[36px] md:text-[48px] leading-[1.1] mb-4 text-[var(--text)]">
               {{ $t('landing.features.title') }}
             </h2>
-            <p class="text-[16px] md:text-[18px] text-[var(--muted)] max-w-2xl mx-auto tracking-[-0.03em]">
-              {{ $t('landing.features.subtitle') || 'Everything you need to automate and grow on Threads.' }}
-            </p>
           </div>
           
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Feature 1 -->
             <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-8 hover:border-[#333] transition-colors">
               <div class="w-10 h-10 rounded-lg bg-[#111] border border-[var(--line)] flex items-center justify-center mb-6">
                 <span class="text-[#3fcb7f] text-lg font-bold">01</span>
@@ -206,7 +192,6 @@
               <h3 class="text-[18px] font-semibold text-[var(--text)] mb-2 tracking-[-0.03em]">{{ $t('landing.features.f1_title') }}</h3>
               <p class="text-[14px] text-[var(--muted)] leading-[1.6] tracking-[-0.03em]">{{ $t('landing.features.f1_desc') }}</p>
             </div>
-            <!-- Feature 2 -->
             <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-8 hover:border-[#333] transition-colors">
               <div class="w-10 h-10 rounded-lg bg-[#111] border border-[var(--line)] flex items-center justify-center mb-6">
                 <span class="text-[#3fcb7f] text-lg font-bold">02</span>
@@ -214,7 +199,6 @@
               <h3 class="text-[18px] font-semibold text-[var(--text)] mb-2 tracking-[-0.03em]">{{ $t('landing.features.f2_title') }}</h3>
               <p class="text-[14px] text-[var(--muted)] leading-[1.6] tracking-[-0.03em]">{{ $t('landing.features.f2_desc') }}</p>
             </div>
-            <!-- Feature 3 -->
             <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-8 hover:border-[#333] transition-colors">
               <div class="w-10 h-10 rounded-lg bg-[#111] border border-[var(--line)] flex items-center justify-center mb-6">
                 <span class="text-[#3fcb7f] text-lg font-bold">03</span>
@@ -222,7 +206,6 @@
               <h3 class="text-[18px] font-semibold text-[var(--text)] mb-2 tracking-[-0.03em]">{{ $t('landing.features.f3_title') }}</h3>
               <p class="text-[14px] text-[var(--muted)] leading-[1.6] tracking-[-0.03em]">{{ $t('landing.features.f3_desc') }}</p>
             </div>
-            <!-- Feature 4 -->
             <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-8 hover:border-[#333] transition-colors">
               <div class="w-10 h-10 rounded-lg bg-[#111] border border-[var(--line)] flex items-center justify-center mb-6">
                 <span class="text-[#3fcb7f] text-lg font-bold">04</span>
@@ -230,7 +213,6 @@
               <h3 class="text-[18px] font-semibold text-[var(--text)] mb-2 tracking-[-0.03em]">{{ $t('landing.features.f4_title') }}</h3>
               <p class="text-[14px] text-[var(--muted)] leading-[1.6] tracking-[-0.03em]">{{ $t('landing.features.f4_desc') }}</p>
             </div>
-            <!-- Feature 5 -->
             <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-8 hover:border-[#333] transition-colors">
               <div class="w-10 h-10 rounded-lg bg-[#111] border border-[var(--line)] flex items-center justify-center mb-6">
                 <span class="text-[#3fcb7f] text-lg font-bold">05</span>
@@ -238,7 +220,6 @@
               <h3 class="text-[18px] font-semibold text-[var(--text)] mb-2 tracking-[-0.03em]">{{ $t('landing.features.f5_title') }}</h3>
               <p class="text-[14px] text-[var(--muted)] leading-[1.6] tracking-[-0.03em]">{{ $t('landing.features.f5_desc') }}</p>
             </div>
-            <!-- Feature 6 -->
             <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-8 hover:border-[#333] transition-colors">
               <div class="w-10 h-10 rounded-lg bg-[#111] border border-[var(--line)] flex items-center justify-center mb-6">
                 <span class="text-[#3fcb7f] text-lg font-bold">06</span>
@@ -285,9 +266,6 @@
             <h2 class="font-serif-display text-[36px] md:text-[48px] leading-[1.1] mb-6 text-[var(--text)]">
               {{ $t('landing.security.title') }}
             </h2>
-            <p class="text-[16px] text-[var(--muted)] leading-[1.6] mb-6 tracking-[-0.03em]">
-              {{ $t('landing.security.subtitle') || 'Your data is yours. We use official APIs and never store your passwords.' }}
-            </p>
             <ul class="space-y-3">
               <li class="flex items-center gap-3 text-[14px] text-[var(--text)] tracking-[-0.03em]">
                 <svg class="w-5 h-5 text-[#3fcb7f]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
@@ -321,15 +299,10 @@
             <h2 class="font-serif-display text-[36px] md:text-[48px] leading-[1.1] mb-4 text-[var(--text)]">
               {{ $t('landing.pricing.title') }}
             </h2>
-            <p class="text-[16px] md:text-[18px] text-[var(--muted)] max-w-2xl mx-auto tracking-[-0.03em]">
-              {{ $t('landing.pricing.subtitle') || 'Simple, transparent pricing.' }}
-            </p>
           </div>
-
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Tier 1 -->
             <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-8 flex flex-col">
-              <h3 class="text-[20px] font-semibold text-[var(--text)] mb-2">{{ $t('landing.pricing.t1_name') || 'Trial' }}</h3>
+              <h3 class="text-[20px] font-semibold text-[var(--text)] mb-2">Trial</h3>
               <div class="text-[40px] font-bold text-[var(--text)] mb-6">Rp 0<span class="text-[14px] font-normal text-[var(--muted)]">/mo</span></div>
               <ul class="space-y-3 mb-8 flex-1">
                 <li class="text-[14px] text-[var(--muted)] flex items-center gap-2"><div class="w-1 h-1 rounded-full bg-white"></div> 7-day trial</li>
@@ -337,11 +310,9 @@
               </ul>
               <a href="https://app.ixiera.id/login" class="block text-center w-full py-3 rounded-md border border-[var(--line)] text-[14px] font-medium hover:bg-[#111] transition">Start free</a>
             </div>
-
-            <!-- Tier 2 (Highlight) -->
             <div class="bg-[#050607] border border-[#9984d8] rounded-2xl p-8 flex flex-col relative shadow-[0_0_30px_rgba(153,132,216,0.15)]">
               <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#9984d8] text-black text-[11px] font-bold uppercase tracking-widest py-1 px-3 rounded-full">Popular</div>
-              <h3 class="text-[20px] font-semibold text-white mb-2">{{ $t('landing.pricing.t2_name') || 'Pro' }}</h3>
+              <h3 class="text-[20px] font-semibold text-white mb-2">Pro</h3>
               <div class="text-[40px] font-bold text-white mb-6">Rp 29k<span class="text-[14px] font-normal text-[#b3b3b3]">/mo</span></div>
               <ul class="space-y-3 mb-8 flex-1">
                 <li class="text-[14px] text-[#b3b3b3] flex items-center gap-2"><div class="w-1 h-1 rounded-full bg-white"></div> 100 AI credits</li>
@@ -350,10 +321,8 @@
               </ul>
               <a href="https://app.ixiera.id/login" class="block text-center w-full py-3 rounded-md bg-white text-black text-[14px] font-medium hover:bg-gray-200 transition">Upgrade Pro</a>
             </div>
-
-            <!-- Tier 3 -->
             <div class="bg-[var(--surface)] border border-[var(--line)] rounded-2xl p-8 flex flex-col">
-              <h3 class="text-[20px] font-semibold text-[var(--text)] mb-2">{{ $t('landing.pricing.t3_name') || 'Enterprise' }}</h3>
+              <h3 class="text-[20px] font-semibold text-[var(--text)] mb-2">Enterprise</h3>
               <div class="text-[40px] font-bold text-[var(--text)] mb-6">Custom</div>
               <ul class="space-y-3 mb-8 flex-1">
                 <li class="text-[14px] text-[var(--muted)] flex items-center gap-2"><div class="w-1 h-1 rounded-full bg-white"></div> Unlimited accounts</li>
@@ -407,117 +376,33 @@
         <p class="text-[13px] text-[var(--muted)] mt-4 tracking-[-0.03em]">7-day trial - 20 free credits - No upfront payment</p>
       </section>
 
+    </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { RouterLink } from 'vue-router'
-import { useTheme } from '../composables/useTheme'
+import { ref, computed, onMounted } from 'vue'
 import { Sun, Moon } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 
 const { locale } = useI18n()
-const { theme, toggle: toggleTheme } = useTheme()
 const mobileMenuOpen = ref(false)
-const faqOpen = ref<number | null>(1)
+const theme = ref<'light' | 'dark'>('dark')
 
-// STATE MOCKUP INTERAKTIF
-const mockReplyMode = ref('manual') 
-const activeMockTab = ref('best')
-const isGenerating = ref(false)
-const generatedPlan = ref(true) // Set true biar langsung muncul di awal, atau false kalau mau diklik dulu
-
-// Fungsi simulasi generate content
-function simulateGenerate() {
-  isGenerating.value = true
-  generatedPlan.value = false
-  setTimeout(() => {
-    isGenerating.value = false
-    generatedPlan.value = true
-  }, 1000)
-}
-
-const hookData = ref([
-  { label: 'Question', er: 2.92, n: 6 },
-  { label: 'Story', er: 1.36, n: 32 },
-  { label: 'Statement', er: 0.90, n: 10 },
-  { label: 'List', er: 0.00, n: 2 }
-])
-const lengthData = ref([
-  { label: '300–500 char', er: 2.96, n: 10 },
-  { label: '100–300 char', er: 1.12, n: 25 },
-])
-
-function getBarWidth(er: number) {
-  const maxER = 3.5
-  const pct = (er / maxER) * 100
-  return `${Math.min(pct, 100)}%`
+function toggleTheme() {
+  theme.value = theme.value === 'dark' ? 'light' : 'dark'
+  document.documentElement.classList.toggle('dark', theme.value === 'dark')
 }
 
 function toggleLang() {
   locale.value = locale.value === 'id' ? 'en' : 'id'
-  localStorage.setItem('app_lang', locale.value)
 }
 
 onMounted(() => {
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible')
-        entry.target.querySelectorAll('.bar-grow').forEach(bar => {
-          const width = (bar as HTMLElement).style.width;
-          (bar as HTMLElement).style.width = '0%';
-          setTimeout(() => {
-            (bar as HTMLElement).style.width = width;
-          }, 50);
-        })
-        observer.unobserve(entry.target)
-      }
-    })
-  }, { threshold: 0.1 })
-
-  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el))
+  if (document.documentElement.classList.contains('dark')) {
+    theme.value = 'dark'
+  } else {
+    theme.value = 'light'
+  }
 })
 </script>
-
-<style>
-:root {
-  --bg: #000000; --surface: #0A0A0A; --surface-2: #141414;
-  --line: #262626; --text: #FFFFFF; --muted: #A3A3A3;
-  --faint: #8A8A8A; --bar-dim: #404040;
-}
-html:not(.dark) {
-  --bg: #FFFFFF; --surface: #FAFAFA; --surface-2: #F2F2F2;
-  --line: #E5E5E5; --text: #0A0A0A; --muted: #525252;
-  --faint: #737373; --bar-dim: #C4C4C4;
-}
-body {
-  background-color: var(--bg);
-  color: var(--text);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  font-variant-numeric: tabular-nums;
-  -webkit-font-smoothing: antialiased;
-}
-
-.fade-in {
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 300ms ease-out, transform 300ms ease-out;
-}
-.fade-in.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-.bar-grow {
-  transition: width 800ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-@media (prefers-reduced-motion: reduce) {
-  .fade-in, .bar-grow {
-    transition: none !important;
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-  }
-}
-</style>
