@@ -2,52 +2,7 @@
   <div class="min-h-screen font-sans selection:bg-[var(--text)] selection:text-[var(--bg)] bg-[var(--bg)] text-[var(--text)] overflow-x-hidden">
     
     <!-- NAVBAR -->
-    <nav class="fixed top-0 w-full z-50 border-b border-[var(--line)] bg-[var(--bg)]/80 backdrop-blur-md">
-      <div class="max-w-[1120px] mx-auto px-6 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 flex items-center justify-center rounded-md text-sm font-bold bg-[var(--text)] text-[var(--bg)]">IX</div>
-          <span class="font-bold text-xl tracking-tight">Ixiera</span>
-        </div>
-
-        <div class="hidden md:flex items-center gap-8">
-          <a href="#fitur" class="text-sm font-medium text-[var(--muted)] hover:text-[var(--text)] transition-colors">{{ $t('landing.nav.features') }}</a>
-          <a href="#cara-kerja" class="text-sm font-medium text-[var(--muted)] hover:text-[var(--text)] transition-colors">{{ $t('landing.nav.how_it_works') }}</a>
-          <a href="#faq" class="text-sm font-medium text-[var(--muted)] hover:text-[var(--text)] transition-colors">{{ $t('landing.nav.faq') }}</a>
-        </div>
-
-        <div class="hidden md:flex items-center gap-4">
-          <button @click="toggleTheme" class="p-2 rounded-full hover:bg-[var(--surface-2)] transition-colors">
-            <Sun v-if="theme === 'dark'" class="w-5 h-5 text-[var(--text)]" />
-            <Moon v-else class="w-5 h-5 text-[var(--text)]" />
-          </button>
-          <button @click="toggleLang" class="text-sm font-bold border border-[var(--line)] px-3 py-1.5 rounded-full hover:bg-[var(--surface-2)] transition">{{ locale.toUpperCase() }}</button>
-          <a href="https://app.ixiera.id/login" class="text-sm font-bold bg-[var(--text)] text-[var(--bg)] px-6 py-2 rounded-full hover:opacity-90 transition">{{ $t('landing.nav.start_free') }}</a>
-        </div>
-
-        <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2">
-          <svg v-if="!mobileMenuOpen" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-          <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
-      </div>
-
-      <!-- MOBILE MENU -->
-      <div v-if="mobileMenuOpen" class="md:hidden border-t border-[var(--line)] bg-[var(--bg)] px-6 py-4 space-y-4 shadow-xl">
-        <a href="#fitur" @click="mobileMenuOpen=false" class="block text-sm font-medium">{{ $t('landing.nav.features') }}</a>
-        <a href="#cara-kerja" @click="mobileMenuOpen=false" class="block text-sm font-medium">{{ $t('landing.nav.how_it_works') }}</a>
-        <a href="#faq" @click="mobileMenuOpen=false" class="block text-sm font-medium">{{ $t('landing.nav.faq') }}</a>
-        <div class="pt-4 border-t border-[var(--line)] flex flex-col gap-4">
-          <div class="flex items-center justify-between">
-            <button @click="toggleTheme" class="flex items-center gap-2 text-sm font-medium text-[var(--muted)]">
-              <Sun v-if="theme === 'dark'" class="w-5 h-5" />
-              <Moon v-else class="w-5 h-5" />
-              <span>{{ theme === 'dark' ? 'Light Mode' : 'Dark Mode' }}</span>
-            </button>
-            <button @click="toggleLang" class="text-sm font-bold border border-[var(--line)] px-3 py-1.5 rounded-md">{{ locale === 'id' ? 'EN' : 'ID' }}</button>
-          </div>
-          <a href="https://app.ixiera.id/login" class="block text-center text-sm font-bold bg-[var(--text)] text-[var(--bg)] py-3 rounded-full">{{ $t('landing.nav.start_free') }}</a>
-        </div>
-      </div>
-    </nav>
+    <AppNavbar />
 
     <main class="pt-24 md:pt-32">
       <!-- HERO -->
@@ -343,31 +298,16 @@
     </main>
 
     <!-- FOOTER -->
-    <footer class="py-12 border-t border-[var(--line)] text-center text-sm text-[var(--muted)]">
-      <div class="flex flex-wrap justify-center items-center gap-4 mb-4">
-        <a href="mailto:contact@ixiera.id" class="hover:text-[var(--text)] transition-colors">{{ $t('landing.footer.email') }}</a>
-        <span class="hidden sm:inline text-[var(--line)]">·</span>
-        <RouterLink to="/privacy" class="hover:text-[var(--text)] transition-colors">{{ $t('landing.footer.privacy') }}</RouterLink>
-        <span class="hidden sm:inline text-[var(--line)]">·</span>
-        <RouterLink to="/terms" class="hover:text-[var(--text)] transition-colors">{{ $t('landing.footer.terms') }}</RouterLink>
-        <span class="hidden sm:inline text-[var(--line)]">·</span>
-        <RouterLink to="/data-deletion" class="hover:text-[var(--text)] transition-colors">{{ $t('landing.footer.delete') }}</RouterLink>
-      </div>
-      <p class="text-xs text-[var(--muted)]">&copy; 2026 Ixiera.</p>
-    </footer>
+    <AppFooter />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useI18n } from 'vue-i18n'
+import AppNavbar from '../components/layouts/AppNavbar.vue'
+import AppFooter from '../components/layouts/AppFooter.vue'
 import { RouterLink } from 'vue-router'
-import { useTheme } from '../composables/useTheme'
-import { Sun, Moon } from 'lucide-vue-next'
 
-const { locale } = useI18n()
-const { theme, toggle: toggleTheme } = useTheme()
-const mobileMenuOpen = ref(false)
 const faqOpen = ref<number | null>(1)
 
 const hookData = ref([
@@ -385,10 +325,7 @@ function getBarWidth(er: number) {
   return `${Math.min(pct, 100)}%`
 }
 
-function toggleLang() {
-  locale.value = locale.value === 'id' ? 'en' : 'id'
-  localStorage.setItem('app_lang', locale.value)
-}
+
 
 onMounted(() => {
   const observer = new IntersectionObserver((entries) => {
