@@ -1,5 +1,7 @@
 <template>
   <div class="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans selection:bg-[#9984d8] selection:text-white">
+    
+    <!-- TOP NAVBAR -->
     <nav class="fixed top-0 left-0 right-0 z-50 h-16 bg-[var(--bg-primary)]/80 backdrop-blur-md border-b border-[var(--border)] flex items-center">
       <div class="w-full max-w-[1200px] mx-auto px-6 flex items-center justify-between">
         <a href="/" class="flex items-center gap-2">
@@ -30,6 +32,8 @@
         </button>
       </div>
     </nav>
+
+    <!-- MOBILE DRAWER -->
     <div v-if="mobileMenuOpen" class="md:hidden fixed inset-0 z-[100] bg-[var(--bg-primary)]/95 backdrop-blur-lg flex flex-col p-6">
       <div class="flex justify-between items-center mb-10">
         <div class="flex items-center gap-2">
@@ -61,7 +65,9 @@
         <a href="https://app.ixiera.id/login" class="text-center block text-sm text-[var(--text-secondary)] py-1">{{ $t('nav.login') }}</a>
       </div>
     </div>
+
     <main class="pt-16">
+      <!-- HERO -->
       <section class="relative pt-24 pb-20">
         <div class="max-w-[1200px] mx-auto px-6 text-center relative z-10">
           <div class="pill-bd mb-6 mx-auto" style="width: fit-content;">
@@ -86,6 +92,7 @@
             <span>{{ $t('hero.trust4') }}</span>
           </div>
         </div>
+        <!-- Hero Mockup -->
         <div class="max-w-[1000px] mx-auto px-6 pb-16 md:pb-24 relative mt-10">
           <div class="absolute inset-0 pointer-events-none" style="background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(153,132,216,0.35) 0%, transparent 70%);"></div>
           <div class="relative rounded-2xl border border-[var(--border)] overflow-hidden bg-[#050607]">
@@ -133,6 +140,8 @@
           </div>
         </div>
       </section>
+
+      <!-- MASALAH -->
       <section class="py-20 border-t border-[var(--border)]">
         <div class="max-w-[1000px] mx-auto px-6">
           <h2 class="h2-bd">{{ $t('problem.title') }}</h2>
@@ -155,80 +164,69 @@
           </div>
         </div>
       </section>
-      
-      <!-- FITUR SECTION (MOCKUP DIPERBAIKI) -->
+
+      <!-- FITUR (MOCKUP DIPERBAIKI - BASEDASH STYLE) -->
       <section id="fitur" class="py-20 border-t border-[var(--border)]">
         <div class="max-w-[1000px] mx-auto px-6">
           <h2 class="h2-bd">{{ $t('features.title') }}</h2>
           <p class="text-center mb-16 text-[15px] text-[var(--text-secondary)]">{{ $t('features.subtitle') }}</p>
           
           <div class="space-y-20">
-            
-            <!-- Fitur 1: AI Content Planner -->
+            <!-- Fitur 1 -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
               <div>
                 <span class="text-[12px] font-bold tracking-widest uppercase block mb-2 text-[var(--accent-violet)]">01 &middot; Content</span>
                 <h3 class="font-display text-[28px] md:text-[32px] leading-tight mb-4">{{ $t('features.f1_title') }}</h3>
                 <p class="text-[15px] leading-relaxed text-[var(--text-secondary)]">{{ $t('features.f1_desc') }}</p>
               </div>
-              <!-- Mockup 1 (Premium) -->
-              <div class="card-bd p-6 bg-[#0a0a0a] border-[#333] shadow-2xl relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#9984d8] to-transparent"></div>
-                <div class="text-[11px] font-bold uppercase tracking-widest mb-4 text-[#888]">AI Content Planner</div>
+              <!-- Mockup 1 -->
+              <div class="card-bd p-6 bg-[#050607] border-[#222] relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-[#9984d8] to-transparent"></div>
+                <div class="text-[11px] font-bold uppercase tracking-widest mb-4 text-[#666]">AI Content Planner</div>
                 <div class="space-y-3 mb-5">
-                  <input type="text" placeholder="Topik / Short Idea" class="w-full px-4 py-3 rounded-lg border border-[#333] bg-[#111] text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#9984d8] transition">
+                  <input type="text" placeholder="Topik / Short Idea" class="w-full px-4 py-3 rounded-lg border border-[#222] bg-[#000] text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#9984d8] transition">
                   <div class="relative">
-                    <input type="text" placeholder="Tone / Style" class="w-full px-4 py-3 rounded-lg border border-[#333] bg-[#111] text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#9984d8] transition">
-                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500 font-medium">Storytelling</span>
+                    <input type="text" placeholder="Tone / Style" class="w-full px-4 py-3 rounded-lg border border-[#222] bg-[#000] text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#9984d8] transition">
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-600 font-medium">Storytelling</span>
                   </div>
                 </div>
                 <button class="w-full bg-white text-black font-semibold py-3 rounded-lg hover:bg-gray-200 transition text-sm mb-5">
                   Generate 3-Day Plan
                 </button>
-                <div class="p-4 rounded-xl border border-[#333] bg-[#111]">
-                  <h3 class="text-[11px] font-bold text-[#9984d8] uppercase mb-1.5 tracking-wide">
-                    DAY 1: KOMPLEKSITAS MODEL
-                  </h3>
-                  <p class="text-[13px] text-gray-400 leading-relaxed">
-                    Awal-awal ngulik AI, bawaannya pengen bikin arsitektur yang keliatan paling rumit...
-                  </p>
+                <div class="p-4 rounded-xl border border-[#222] bg-[#000]">
+                  <h3 class="text-[11px] font-bold text-[#9984d8] uppercase mb-1.5 tracking-wide">DAY 1: KOMPLEKSITAS MODEL</h3>
+                  <p class="text-[13px] text-gray-500 leading-relaxed">Awal-awal ngulik AI, bawaannya pengen bikin arsitektur yang keliatan paling rumit...</p>
                 </div>
               </div>
             </div>
 
-            <!-- Fitur 2: Komentar -->
+            <!-- Fitur 2 -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-              <!-- Mockup 2 (Premium) -->
-              <div class="order-2 md:order-1 card-bd p-6 bg-[#0a0a0a] border-[#333] shadow-2xl relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#3fcb7f] to-transparent"></div>
+              <!-- Mockup 2 -->
+              <div class="order-2 md:order-1 card-bd p-6 bg-[#050607] border-[#222] relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-[#3fcb7f] to-transparent"></div>
                 <!-- Segmented Control -->
-                <div class="flex p-1 bg-[#1A1A1A] rounded-lg mb-6">
-                  <button class="flex-1 px-4 py-2.5 text-xs font-semibold bg-[#2A2A2A] rounded-md text-white shadow-sm transition-all">
+                <div class="flex p-1 bg-[#111] rounded-lg mb-6 border border-[#222]">
+                  <button class="flex-1 px-4 py-2.5 text-xs font-semibold bg-[#222] rounded-md text-white transition-all">
                     Review Manual
                   </button>
-                  <button class="flex-1 px-4 py-2.5 text-xs font-semibold text-gray-500 hover:text-white transition-all">
+                  <button class="flex-1 px-4 py-2.5 text-xs font-semibold text-gray-600 hover:text-white transition-all">
                     Full Auto
                   </button>
                 </div>
-                
+                <!-- Badges -->
                 <div class="space-y-3">
-                  <div class="flex items-center justify-between p-4 rounded-xl border border-[#333] bg-[#111]">
+                  <div class="flex items-center justify-between p-4 rounded-xl border border-[#222] bg-[#000]">
                     <span class="text-sm font-medium text-white">Pertanyaan</span>
-                    <span class="text-[10px] font-bold text-[#9984d8] bg-[#9984d8]/15 px-3 py-1.5 rounded-md">
-                      Balasan AI
-                    </span>
+                    <span class="text-[10px] font-bold text-[#9984d8] bg-[#9984d8]/10 px-3 py-1.5 rounded-md border border-[#9984d8]/20">Balasan AI</span>
                   </div>
-                  <div class="flex items-center justify-between p-4 rounded-xl border border-[#333] bg-[#111]">
+                  <div class="flex items-center justify-between p-4 rounded-xl border border-[#222] bg-[#000]">
                     <span class="text-sm font-medium text-white">Pujian</span>
-                    <span class="text-[10px] font-bold text-[#3fcb7f] bg-[#3fcb7f]/15 px-3 py-1.5 rounded-md">
-                      Template
-                    </span>
+                    <span class="text-[10px] font-bold text-[#3fcb7f] bg-[#3fcb7f]/10 px-3 py-1.5 rounded-md border border-[#3fcb7f]/20">Template</span>
                   </div>
-                  <div class="flex items-center justify-between p-4 rounded-xl border border-[#333] bg-[#111]">
+                  <div class="flex items-center justify-between p-4 rounded-xl border border-[#222] bg-[#000]">
                     <span class="text-sm font-medium text-white">Spam / Toxic</span>
-                    <span class="text-[10px] font-bold text-gray-500 bg-gray-500/15 px-3 py-1.5 rounded-md">
-                      Template
-                    </span>
+                    <span class="text-[10px] font-bold text-gray-600 bg-gray-500/10 px-3 py-1.5 rounded-md border border-gray-500/20">Template</span>
                   </div>
                 </div>
               </div>
@@ -239,35 +237,35 @@
               </div>
             </div>
 
-            <!-- Fitur 3: Analytics -->
+            <!-- Fitur 3 -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
               <div>
                 <span class="text-[12px] font-bold tracking-widest uppercase block mb-2 text-[var(--accent-violet)]">03 &middot; Analytics</span>
                 <h3 class="font-display text-[28px] md:text-[32px] leading-tight mb-4">{{ $t('features.f3_title') }}</h3>
                 <p class="text-[15px] leading-relaxed text-[var(--text-secondary)]">{{ $t('features.f3_desc') }}</p>
               </div>
-              <!-- Mockup 3 (Premium) -->
-              <div class="card-bd p-6 bg-[#0a0a0a] border-[#333] shadow-2xl relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#9984d8] to-transparent"></div>
-                <div class="flex gap-6 mb-5 text-xs font-semibold border-b border-[#333] pb-3 text-gray-500">
+              <!-- Mockup 3 -->
+              <div class="card-bd p-6 bg-[#050607] border-[#222] relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-[#9984d8] to-transparent"></div>
+                <div class="flex gap-6 mb-5 text-xs font-semibold border-b border-[#222] pb-3 text-gray-600">
                   <span class="text-white border-b-2 border-[#9984d8] pb-3 -mb-[13px]">Best Time</span>
                   <span class="hover:text-white transition">Hook</span>
                   <span class="hover:text-white transition">Length</span>
                 </div>
                 <div class="grid grid-cols-7 gap-1.5">
-                  <div v-for="i in 21" :key="i" class="aspect-square rounded border border-[#222]" :style="{ background: [3,7,11,15,18].includes(i) ? 'rgba(153,132,216,0.6)' : '#111' }"></div>
+                  <div v-for="i in 21" :key="i" class="aspect-square rounded border border-[#222]" :style="{ background: [3,7,11,15,18].includes(i) ? 'rgba(153,132,216,0.6)' : '#000' }"></div>
                 </div>
-                <div class="mt-4 flex items-center justify-between text-[10px] text-gray-500">
+                <div class="mt-4 flex items-center justify-between text-[10px] text-gray-600">
                   <span>Mon</span>
                   <span>Sun</span>
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </section>
-      
+
+      <!-- CONTOH DATA -->
       <section id="contoh" class="py-20 border-t border-[var(--border)] bg-[var(--bg-secondary)]">
         <div class="max-w-[1000px] mx-auto px-6">
           <h2 class="h2-bd">Contoh dari data nyata.</h2>
@@ -302,7 +300,8 @@
           </div>
         </div>
       </section>
-      
+
+      <!-- CARA KERJA -->
       <section id="cara-kerja" class="py-20 border-t border-[var(--border)]">
         <div class="max-w-[1000px] mx-auto px-6">
           <h2 class="h2-bd">Mulai dalam 3 langkah.</h2>
@@ -326,6 +325,7 @@
         </div>
       </section>
 
+      <!-- FAQ -->
       <section id="faq" class="py-20 border-t border-[var(--border)] bg-[var(--bg-secondary)]">
         <div class="max-w-[800px] mx-auto px-6">
           <h2 class="h2-bd">Pertanyaan Umum</h2>
@@ -362,6 +362,7 @@
         </div>
       </section>
 
+      <!-- FINAL CTA -->
       <section class="py-24 text-center border-t border-[var(--border)]">
         <div class="max-w-[800px] mx-auto px-6">
           <h2 class="font-display text-[40px] md:text-[56px] leading-[1.0] mb-8">{{ $t('cta.title') }}</h2>
@@ -369,6 +370,7 @@
         </div>
       </section>
 
+      <!-- FOOTER -->
       <footer class="border-t border-[var(--border)] py-8">
         <div class="max-w-[1000px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-5 text-[13px] text-[var(--text-muted)]">
           <div class="flex items-center gap-2">
@@ -385,20 +387,25 @@
     </main>
   </div>
 </template>
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { Sun, Moon } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
+
 const { locale } = useI18n()
 const mobileMenuOpen = ref(false)
 const theme = ref<'light' | 'dark'>('dark')
+
 function toggleTheme() {
   theme.value = theme.value === 'dark' ? 'light' : 'dark'
   document.documentElement.classList.toggle('dark', theme.value === 'dark')
 }
+
 function toggleLang() {
   locale.value = locale.value === 'id' ? 'en' : 'id'
 }
+
 onMounted(() => {
   theme.value = document.documentElement.classList.contains('dark') ? 'dark' : 'light'
 })
