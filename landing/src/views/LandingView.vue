@@ -92,6 +92,7 @@
             <span>{{ $t('hero.trust4') }}</span>
           </div>
         </div>
+        
         <!-- Hero Mockup -->
         <div class="max-w-[1000px] mx-auto px-6 pb-16 md:pb-24 relative mt-10">
           <div class="absolute inset-0 pointer-events-none" style="background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(153,132,216,0.35) 0%, transparent 70%);"></div>
@@ -165,102 +166,155 @@
         </div>
       </section>
 
-      <!-- FITUR (MOCKUP DIPERBAIKI - BASEDASH STYLE) -->
-      <section id="fitur" class="py-20 border-t border-[var(--border)]">
-        <div class="max-w-[1000px] mx-auto px-6">
+      <!-- FITUR (REDESIGN TOTAL - BASEDASH PREMIUM MOCKUPS) -->
+      <section id="fitur" class="py-20 border-t border-[var(--border)] relative overflow-hidden">
+        <!-- Ambient Background Glow -->
+        <div class="absolute top-1/3 left-0 w-[500px] h-[500px] bg-[#9984d8] opacity-5 blur-[120px] rounded-full pointer-events-none"></div>
+        
+        <div class="max-w-[1000px] mx-auto px-6 relative z-10">
           <h2 class="h2-bd">{{ $t('features.title') }}</h2>
           <p class="text-center mb-16 text-[15px] text-[var(--text-secondary)]">{{ $t('features.subtitle') }}</p>
           
-          <div class="space-y-20">
-            <!-- Fitur 1 -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+          <div class="space-y-24">
+            
+            <!-- Fitur 1: AI Content Planner -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
               <div>
-                <span class="text-[12px] font-bold tracking-widest uppercase block mb-2 text-[var(--accent-violet)]">01 &middot; Content</span>
-                <h3 class="font-display text-[28px] md:text-[32px] leading-tight mb-4">{{ $t('features.f1_title') }}</h3>
-                <p class="text-[15px] leading-relaxed text-[var(--text-secondary)]">{{ $t('features.f1_desc') }}</p>
+                <span class="text-[12px] font-bold tracking-widest uppercase block mb-3 text-[var(--accent-violet)]">01 &middot; Content</span>
+                <h3 class="font-display text-[32px] md:text-[40px] leading-[1.1] mb-4">{{ $t('features.f1_title') }}</h3>
+                <p class="text-[16px] leading-[1.6] text-[var(--text-secondary)]">{{ $t('features.f1_desc') }}</p>
               </div>
-              <!-- Mockup 1 -->
-              <div class="card-bd p-6 bg-[#050607] border-[#222] relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-[#9984d8] to-transparent"></div>
-                <div class="text-[11px] font-bold uppercase tracking-widest mb-4 text-[#666]">AI Content Planner</div>
-                <div class="space-y-3 mb-5">
-                  <input type="text" placeholder="Topik / Short Idea" class="w-full px-4 py-3 rounded-lg border border-[#222] bg-[#000] text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#9984d8] transition">
-                  <div class="relative">
-                    <input type="text" placeholder="Tone / Style" class="w-full px-4 py-3 rounded-lg border border-[#222] bg-[#000] text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#9984d8] transition">
-                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-600 font-medium">Storytelling</span>
-                  </div>
+              
+              <!-- Premium Mockup 1: Window Style -->
+              <div class="relative rounded-2xl border border-[#222] bg-[#050607] shadow-2xl overflow-hidden">
+                <!-- Window Bar -->
+                <div class="h-10 bg-[#0a0a0a] border-b border-[#222] flex items-center px-4 gap-2">
+                  <div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div>
+                  <div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div>
+                  <div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div>
+                  <div class="ml-auto text-[10px] font-mono text-[#555]">ixiera.app/planner</div>
                 </div>
-                <button class="w-full bg-white text-black font-semibold py-3 rounded-lg hover:bg-gray-200 transition text-sm mb-5">
-                  Generate 3-Day Plan
-                </button>
-                <div class="p-4 rounded-xl border border-[#222] bg-[#000]">
-                  <h3 class="text-[11px] font-bold text-[#9984d8] uppercase mb-1.5 tracking-wide">DAY 1: KOMPLEKSITAS MODEL</h3>
-                  <p class="text-[13px] text-gray-500 leading-relaxed">Awal-awal ngulik AI, bawaannya pengen bikin arsitektur yang keliatan paling rumit...</p>
+                <div class="p-6">
+                  <div class="flex items-center gap-2 mb-6">
+                    <svg class="w-4 h-4 text-[#9984d8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    <span class="text-xs font-bold text-white tracking-wide">AI Content Planner</span>
+                  </div>
+                  
+                  <div class="space-y-4">
+                    <div>
+                      <label class="text-[10px] text-gray-500 mb-1 block uppercase tracking-wider">Topik / Short Idea</label>
+                      <div class="w-full px-4 py-3 rounded-lg border border-[#222] bg-[#000] text-sm text-white flex items-center">
+                        Strategi konten Threads Q4
+                      </div>
+                    </div>
+                    <div>
+                      <label class="text-[10px] text-gray-500 mb-1 block uppercase tracking-wider">Tone / Style</label>
+                      <div class="w-full px-4 py-3 rounded-lg border border-[#222] bg-[#000] text-sm text-white flex justify-between items-center">
+                        <span>Storytelling</span>
+                        <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                      </div>
+                    </div>
+                    <button class="w-full bg-white text-black font-semibold py-3 rounded-lg text-sm hover:bg-gray-200 transition">
+                      Generate 3-Day Plan
+                    </button>
+                  </div>
+
+                  <!-- Output Area -->
+                  <div class="mt-6 p-4 rounded-xl border border-[#222] bg-[#111] relative overflow-hidden">
+                    <div class="absolute left-0 top-0 w-1 h-full bg-[#9984d8]"></div>
+                    <div class="flex items-center gap-2 mb-2">
+                      <span class="text-[10px] font-bold text-[#9984d8] bg-[#9984d8]/10 px-2 py-0.5 rounded border border-[#9984d8]/20">DAY 1</span>
+                      <span class="text-xs font-semibold text-white">Kompleksitas Model</span>
+                    </div>
+                    <p class="text-[13px] text-gray-400 leading-relaxed">
+                      Awal-awal ngulik AI, bawaannya pengen bikin arsitektur yang keliatan paling rumit. Padahal...
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Fitur 2 -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
-              <!-- Mockup 2 -->
-              <div class="order-2 md:order-1 card-bd p-6 bg-[#050607] border-[#222] relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-[#3fcb7f] to-transparent"></div>
-                <!-- Segmented Control -->
-                <div class="flex p-1 bg-[#111] rounded-lg mb-6 border border-[#222]">
-                  <button class="flex-1 px-4 py-2.5 text-xs font-semibold bg-[#222] rounded-md text-white transition-all">
-                    Review Manual
-                  </button>
-                  <button class="flex-1 px-4 py-2.5 text-xs font-semibold text-gray-600 hover:text-white transition-all">
-                    Full Auto
-                  </button>
-                </div>
-                <!-- Badges -->
-                <div class="space-y-3">
-                  <div class="flex items-center justify-between p-4 rounded-xl border border-[#222] bg-[#000]">
-                    <span class="text-sm font-medium text-white">Pertanyaan</span>
-                    <span class="text-[10px] font-bold text-[#9984d8] bg-[#9984d8]/10 px-3 py-1.5 rounded-md border border-[#9984d8]/20">Balasan AI</span>
+            <!-- Fitur 2: Komentar -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+              
+              <!-- Premium Mockup 2: Floating Card Style -->
+              <div class="order-2 md:order-1 relative p-2">
+                <!-- Background Glow -->
+                <div class="absolute inset-0 bg-gradient-to-tr from-[#3fcb7f]/20 to-transparent blur-2xl rounded-3xl"></div>
+                
+                <div class="relative bg-[#0a0a0a] border border-[#222] rounded-2xl shadow-2xl overflow-hidden">
+                  <div class="p-5 border-b border-[#222]">
+                    <div class="flex bg-[#111] p-1 rounded-lg border border-[#222]">
+                      <button class="flex-1 px-4 py-2 text-xs font-bold bg-[#222] rounded-md text-white shadow-sm">Review Manual</button>
+                      <button class="flex-1 px-4 py-2 text-xs font-bold text-gray-500 hover:text-white transition">Full Auto</button>
+                    </div>
                   </div>
-                  <div class="flex items-center justify-between p-4 rounded-xl border border-[#222] bg-[#000]">
-                    <span class="text-sm font-medium text-white">Pujian</span>
-                    <span class="text-[10px] font-bold text-[#3fcb7f] bg-[#3fcb7f]/10 px-3 py-1.5 rounded-md border border-[#3fcb7f]/20">Template</span>
-                  </div>
-                  <div class="flex items-center justify-between p-4 rounded-xl border border-[#222] bg-[#000]">
-                    <span class="text-sm font-medium text-white">Spam / Toxic</span>
-                    <span class="text-[10px] font-bold text-gray-600 bg-gray-500/10 px-3 py-1.5 rounded-md border border-gray-500/20">Template</span>
+                  <div class="p-5 space-y-3 bg-[#050607]">
+                    <div class="flex items-center justify-between p-3.5 rounded-xl border border-[#222] bg-[#000]">
+                      <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full bg-[#9984d8]"></div>
+                        <span class="text-sm font-medium text-white">Pertanyaan</span>
+                      </div>
+                      <span class="text-[10px] font-bold text-[#9984d8] bg-[#9984d8]/10 px-2.5 py-1 rounded-md border border-[#9984d8]/20">Balasan AI</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3.5 rounded-xl border border-[#222] bg-[#000]">
+                      <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full bg-[#3fcb7f]"></div>
+                        <span class="text-sm font-medium text-white">Pujian</span>
+                      </div>
+                      <span class="text-[10px] font-bold text-[#3fcb7f] bg-[#3fcb7f]/10 px-2.5 py-1 rounded-md border border-[#3fcb7f]/20">Template</span>
+                    </div>
+                    <div class="flex items-center justify-between p-3.5 rounded-xl border border-[#222] bg-[#000]">
+                      <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full bg-red-500"></div>
+                        <span class="text-sm font-medium text-white">Spam / Toxic</span>
+                      </div>
+                      <span class="text-[10px] font-bold text-gray-500 bg-gray-500/10 px-2.5 py-1 rounded-md border border-gray-500/20">Diabaikan</span>
+                    </div>
                   </div>
                 </div>
               </div>
+
               <div class="order-1 md:order-2">
-                <span class="text-[12px] font-bold tracking-widest uppercase block mb-2 text-[var(--accent-violet)]">02 &middot; Komentar</span>
-                <h3 class="font-display text-[28px] md:text-[32px] leading-tight mb-4">{{ $t('features.f2_title') }}</h3>
-                <p class="text-[15px] leading-relaxed text-[var(--text-secondary)]">{{ $t('features.f2_desc') }}</p>
+                <span class="text-[12px] font-bold tracking-widest uppercase block mb-3 text-[var(--accent-violet)]">02 &middot; Komentar</span>
+                <h3 class="font-display text-[32px] md:text-[40px] leading-[1.1] mb-4">{{ $t('features.f2_title') }}</h3>
+                <p class="text-[16px] leading-[1.6] text-[var(--text-secondary)]">{{ $t('features.f2_desc') }}</p>
               </div>
             </div>
 
-            <!-- Fitur 3 -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+            <!-- Fitur 3: Analytics -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
               <div>
-                <span class="text-[12px] font-bold tracking-widest uppercase block mb-2 text-[var(--accent-violet)]">03 &middot; Analytics</span>
-                <h3 class="font-display text-[28px] md:text-[32px] leading-tight mb-4">{{ $t('features.f3_title') }}</h3>
-                <p class="text-[15px] leading-relaxed text-[var(--text-secondary)]">{{ $t('features.f3_desc') }}</p>
+                <span class="text-[12px] font-bold tracking-widest uppercase block mb-3 text-[var(--accent-violet)]">03 &middot; Analytics</span>
+                <h3 class="font-display text-[32px] md:text-[40px] leading-[1.1] mb-4">{{ $t('features.f3_title') }}</h3>
+                <p class="text-[16px] leading-[1.6] text-[var(--text-secondary)]">{{ $t('features.f3_desc') }}</p>
               </div>
-              <!-- Mockup 3 -->
-              <div class="card-bd p-6 bg-[#050607] border-[#222] relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-[#9984d8] to-transparent"></div>
-                <div class="flex gap-6 mb-5 text-xs font-semibold border-b border-[#222] pb-3 text-gray-600">
-                  <span class="text-white border-b-2 border-[#9984d8] pb-3 -mb-[13px]">Best Time</span>
-                  <span class="hover:text-white transition">Hook</span>
-                  <span class="hover:text-white transition">Length</span>
+
+              <!-- Premium Mockup 3: Analytics Grid -->
+              <div class="relative rounded-2xl border border-[#222] bg-[#050607] shadow-2xl overflow-hidden p-6">
+                <div class="flex items-center justify-between mb-6">
+                  <div class="flex gap-4 text-xs font-bold">
+                    <span class="text-white border-b-2 border-[#9984d8] pb-2">Best Time</span>
+                    <span class="text-gray-500 hover:text-white transition pb-2">Hook</span>
+                    <span class="text-gray-500 hover:text-white transition pb-2">Length</span>
+                  </div>
+                  <span class="text-[10px] text-gray-500 bg-[#111] px-2 py-1 rounded border border-[#222]">Last 30d</span>
                 </div>
+                
+                <!-- Heatmap Grid -->
                 <div class="grid grid-cols-7 gap-1.5">
-                  <div v-for="i in 21" :key="i" class="aspect-square rounded border border-[#222]" :style="{ background: [3,7,11,15,18].includes(i) ? 'rgba(153,132,216,0.6)' : '#000' }"></div>
+                  <div v-for="i in 21" :key="i" 
+                       class="aspect-square rounded border transition-all duration-300"
+                       :class="[3,7,11,15,18].includes(i) ? 'bg-[#9984d8]/80 border-[#9984d8] shadow-[0_0_10px_rgba(153,132,216,0.4)]' : 'bg-[#111] border-[#222] hover:bg-[#222]'">
+                  </div>
                 </div>
-                <div class="mt-4 flex items-center justify-between text-[10px] text-gray-600">
-                  <span>Mon</span>
-                  <span>Sun</span>
+                <div class="mt-4 flex justify-between text-[10px] text-gray-500 font-medium">
+                  <span>Monday</span>
+                  <span>Sunday</span>
                 </div>
               </div>
             </div>
+
           </div>
         </div>
       </section>
@@ -273,27 +327,27 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div class="card-bd p-6 bg-[var(--bg-primary)]">
               <h3 class="text-sm font-bold mb-5">Hook Performance</h3>
-              <div class="space-y-3">
+              <div class="space-y-4">
                 <div>
-                  <div class="flex justify-between text-xs mb-1"><span class="font-bold">Question</span><span>2.92%</span></div>
-                  <div class="w-full h-2 rounded-full overflow-hidden bg-[var(--bg-hover)]"><div class="h-full rounded-full bg-[var(--accent-violet)]" style="width: 92%;"></div></div>
+                  <div class="flex justify-between text-xs mb-1.5"><span class="font-bold text-white">Question</span><span class="text-gray-400">2.92%</span></div>
+                  <div class="w-full h-2 rounded-full overflow-hidden bg-[#111]"><div class="h-full rounded-full bg-[var(--accent-violet)]" style="width: 92%;"></div></div>
                 </div>
                 <div>
-                  <div class="flex justify-between text-xs mb-1"><span class="font-bold">Story</span><span>1.36%</span></div>
-                  <div class="w-full h-2 rounded-full overflow-hidden bg-[var(--bg-hover)]"><div class="h-full rounded-full bg-[var(--accent-mint)]" style="width: 43%;"></div></div>
+                  <div class="flex justify-between text-xs mb-1.5"><span class="font-bold text-white">Story</span><span class="text-gray-400">1.36%</span></div>
+                  <div class="w-full h-2 rounded-full overflow-hidden bg-[#111]"><div class="h-full rounded-full bg-[var(--accent-mint)]" style="width: 43%;"></div></div>
                 </div>
               </div>
             </div>
             <div class="card-bd p-6 bg-[var(--bg-primary)]">
               <h3 class="text-sm font-bold mb-5">Post Length</h3>
-              <div class="space-y-3">
+              <div class="space-y-4">
                 <div>
-                  <div class="flex justify-between text-xs mb-1"><span class="font-bold">300-500 char</span><span>2.96%</span></div>
-                  <div class="w-full h-2 rounded-full overflow-hidden bg-[var(--bg-hover)]"><div class="h-full rounded-full bg-[var(--accent-violet)]" style="width: 93%;"></div></div>
+                  <div class="flex justify-between text-xs mb-1.5"><span class="font-bold text-white">300-500 char</span><span class="text-gray-400">2.96%</span></div>
+                  <div class="w-full h-2 rounded-full overflow-hidden bg-[#111]"><div class="h-full rounded-full bg-[var(--accent-violet)]" style="width: 93%;"></div></div>
                 </div>
                 <div>
-                  <div class="flex justify-between text-xs mb-1"><span class="font-bold">100-300 char</span><span>1.12%</span></div>
-                  <div class="w-full h-2 rounded-full overflow-hidden bg-[var(--bg-hover)]"><div class="h-full rounded-full bg-[var(--accent-mint)]" style="width: 35%;"></div></div>
+                  <div class="flex justify-between text-xs mb-1.5"><span class="font-bold text-white">100-300 char</span><span class="text-gray-400">1.12%</span></div>
+                  <div class="w-full h-2 rounded-full overflow-hidden bg-[#111]"><div class="h-full rounded-full bg-[var(--accent-mint)]" style="width: 35%;"></div></div>
                 </div>
               </div>
             </div>
@@ -330,29 +384,29 @@
         <div class="max-w-[800px] mx-auto px-6">
           <h2 class="h2-bd">Pertanyaan Umum</h2>
           <div class="border-t border-[var(--border)] mt-8">
-            <details class="group border-b border-[var(--border)] py-4 cursor-pointer">
-              <summary class="flex justify-between items-center text-[15px] font-semibold list-none text-[var(--text-primary)]">
+            <details class="group border-b border-[var(--border)] py-5 cursor-pointer">
+              <summary class="flex justify-between items-center text-[16px] font-semibold list-none text-[var(--text-primary)]">
                 Kenapa harus minta akses?
                 <span class="group-open:rotate-180 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></span>
               </summary>
               <p class="text-[14px] mt-3 leading-relaxed text-[var(--text-secondary)]">Ixiera masih dalam tahap early access, jadi tiap akun ditambahkan manual dan perlu disetujui dulu. Kabar lewat email.</p>
             </details>
-            <details class="group border-b border-[var(--border)] py-4 cursor-pointer">
-              <summary class="flex justify-between items-center text-[15px] font-semibold list-none text-[var(--text-primary)]">
+            <details class="group border-b border-[var(--border)] py-5 cursor-pointer">
+              <summary class="flex justify-between items-center text-[16px] font-semibold list-none text-[var(--text-primary)]">
                 Apakah ini gratis?
                 <span class="group-open:rotate-180 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></span>
               </summary>
               <p class="text-[14px] mt-3 leading-relaxed text-[var(--text-secondary)]">Trial 7 hari gratis dengan 20 kredit. Setelah itu, paket berbayar mulai dari Rp29.000 per bulan.</p>
             </details>
-            <details class="group border-b border-[var(--border)] py-4 cursor-pointer">
-              <summary class="flex justify-between items-center text-[15px] font-semibold list-none text-[var(--text-primary)]">
+            <details class="group border-b border-[var(--border)] py-5 cursor-pointer">
+              <summary class="flex justify-between items-center text-[16px] font-semibold list-none text-[var(--text-primary)]">
                 Apa itu kredit?
                 <span class="group-open:rotate-180 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></span>
               </summary>
               <p class="text-[14px] mt-3 leading-relaxed text-[var(--text-secondary)]">1 kredit = 1 aksi AI (generate, balas komentar, repurpose, analisis lanjutan). Template balasan dan Quick Score gratis tanpa kredit.</p>
             </details>
-            <details class="group border-b border-[var(--border)] py-4 cursor-pointer">
-              <summary class="flex justify-between items-center text-[15px] font-semibold list-none text-[var(--text-primary)]">
+            <details class="group border-b border-[var(--border)] py-5 cursor-pointer">
+              <summary class="flex justify-between items-center text-[16px] font-semibold list-none text-[var(--text-primary)]">
                 Apakah posting tanpa izinku?
                 <span class="group-open:rotate-180 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></span>
               </summary>
