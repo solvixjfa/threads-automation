@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen font-sans selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black bg-[var(--bg)] text-[var(--text)] overflow-x-hidden">
+  <div class="min-h-screen font-sans selection:bg-[var(--text)] selection:text-[var(--bg)] bg-[var(--bg)] text-[var(--text)] overflow-x-hidden">
     
     <!-- NAVBAR -->
     <nav class="fixed top-0 w-full z-50 border-b border-[var(--line)] bg-[var(--bg)]/80 backdrop-blur-md">
@@ -8,7 +8,7 @@
           <div class="w-8 h-8 flex items-center justify-center rounded-md text-sm font-bold bg-[var(--text)] text-[var(--bg)]">IX</div>
           <span class="font-bold text-xl tracking-tight">Ixiera</span>
         </div>
-        
+
         <div class="hidden md:flex items-center gap-8">
           <a href="#fitur" class="text-sm font-medium text-[var(--muted)] hover:text-[var(--text)] transition-colors">{{ $t('landing.nav.features') }}</a>
           <a href="#cara-kerja" class="text-sm font-medium text-[var(--muted)] hover:text-[var(--text)] transition-colors">{{ $t('landing.nav.how_it_works') }}</a>
@@ -20,9 +20,7 @@
             <Sun v-if="theme === 'dark'" class="w-5 h-5 text-[var(--text)]" />
             <Moon v-else class="w-5 h-5 text-[var(--text)]" />
           </button>
-          
           <button @click="toggleLang" class="text-sm font-bold border border-[var(--line)] px-3 py-1.5 rounded-full hover:bg-[var(--surface-2)] transition">{{ locale.toUpperCase() }}</button>
-          
           <a href="https://app.ixiera.id/login" class="text-sm font-bold bg-[var(--text)] text-[var(--bg)] px-6 py-2 rounded-full hover:opacity-90 transition">{{ $t('landing.nav.start_free') }}</a>
         </div>
 
@@ -32,6 +30,7 @@
         </button>
       </div>
 
+      <!-- MOBILE MENU -->
       <div v-if="mobileMenuOpen" class="md:hidden border-t border-[var(--line)] bg-[var(--bg)] px-6 py-4 space-y-4 shadow-xl">
         <a href="#fitur" @click="mobileMenuOpen=false" class="block text-sm font-medium">{{ $t('landing.nav.features') }}</a>
         <a href="#cara-kerja" @click="mobileMenuOpen=false" class="block text-sm font-medium">{{ $t('landing.nav.how_it_works') }}</a>
@@ -45,7 +44,7 @@
             </button>
             <button @click="toggleLang" class="text-sm font-bold border border-[var(--line)] px-3 py-1.5 rounded-md">{{ locale === 'id' ? 'EN' : 'ID' }}</button>
           </div>
-          <a href="https://app.ixiera.id/login" class="block text-center text-sm font-bold bg-[var(--text)] text-[var(--bg)] py-3 rounded-md">{{ $t('landing.nav.start_free') }}</a>
+          <a href="https://app.ixiera.id/login" class="block text-center text-sm font-bold bg-[var(--text)] text-[var(--bg)] py-3 rounded-full">{{ $t('landing.nav.start_free') }}</a>
         </div>
       </div>
     </nav>
@@ -55,65 +54,66 @@
       <section class="max-w-[1120px] mx-auto px-6 pb-20 md:pb-32 flex flex-col md:flex-row items-center gap-12">
         <div class="flex-1 space-y-6 text-center md:text-left fade-in">
           <div class="inline-flex items-center px-3 py-1 rounded-full border border-[var(--line)] text-xs font-bold tracking-widest text-[var(--muted)] uppercase">{{ $t('landing.hero.badge') }}</div>
-          <h1 class="text-4xl md:text-6xl font-bold tracking-tight leading-[1.05]">
+          
+          <h1 class="font-display text-5xl md:text-7xl leading-[1.05]">
             {{ $t('landing.hero.title_1') }} <br class="hidden md:block"/>
-            <span class="underline decoration-4 underline-offset-8 decoration-[var(--text)]">{{ $t('landing.hero.title_2') }}</span>
+            <span class="italic text-[var(--text)]">{{ $t('landing.hero.title_2') }}</span>
           </h1>
+          
           <p class="text-lg text-[var(--muted)] leading-relaxed max-w-xl mx-auto md:mx-0">{{ $t('landing.hero.subtitle') }}</p>
+          
           <div class="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4 pt-4">
             <a href="https://app.ixiera.id/login" class="w-full sm:w-auto px-8 py-3.5 rounded-full text-base font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">{{ $t('landing.hero.cta_primary') }}</a>
             <a href="#contoh" class="w-full sm:w-auto px-8 py-3.5 rounded-full text-base font-bold border border-[var(--line)] hover:bg-[var(--surface-2)] transition">{{ $t('landing.hero.cta_secondary') }}</a>
           </div>
+          
           <p class="text-xs text-[var(--muted)] pt-2">{{ $t('landing.hero.microcopy') }}</p>
+          
           <div class="flex flex-col sm:flex-row gap-4 pt-8 text-xs text-[var(--muted)] justify-center md:justify-start">
             <span class="flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> {{ $t('landing.hero.trust_1') }}</span>
             <span class="flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> {{ $t('landing.hero.trust_2') }}</span>
             <span class="flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> {{ $t('landing.hero.trust_3') }}</span>
           </div>
         </div>
-        
-        <!-- MOCKUP: Hook Chart (Hero) -->
-        <div class="flex-1 w-full max-w-md mx-auto fade-in">
-          <div class="border border-dashed border-[var(--line)] rounded-xl overflow-hidden bg-[var(--surface)]">
-            <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[var(--line)]">
-              <div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div>
-              <span class="ml-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Hook Performance</span>
-            </div>
-            <div class="p-6 space-y-4">
-              <div v-for="(item, index) in hookData" :key="item.label" class="space-y-1">
-                <div class="flex justify-between text-xs font-bold"><span>{{ item.label }}</span><span>{{ item.er }}%</span></div>
-                <div class="w-full bg-[var(--surface-2)] h-2 rounded-full">
-                  <div class="h-full rounded-full bar-grow" :class="index === 0 ? 'bg-[var(--text)]' : 'bg-[var(--bar-dim)]'" :style="{ width: getBarWidth(item.er) }"></div>
-                </div>
-                <div class="text-[10px] text-[var(--muted)] text-right">n={{ item.n }}</div>
-              </div>
-            </div>
-            <div class="bg-[var(--surface-2)] text-center py-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">
-              Data nyata
-            </div>
-          </div>
-        </div>
-      </section>
 
-      <!-- MASALAH -->
-      <section class="border-t border-[var(--line)] bg-[var(--surface)] py-20 md:py-32">
-        <div class="max-w-[1120px] mx-auto px-6">
-          <h2 class="text-3xl md:text-5xl font-bold tracking-tight text-center mb-16 fade-in">{{ $t('landing.problems.title') }}</h2>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div class="space-y-4 fade-in">
-              <span class="text-5xl font-bold text-[var(--faint)]">01</span>
-              <h3 class="text-xl font-bold">{{ $t('landing.problems.p1_title') }}</h3>
-              <p class="text-[var(--muted)]">{{ $t('landing.problems.p1_desc') }}</p>
+        <!-- MOCKUP HERO: DASHBOARD (PIXEL PERFECT) -->
+        <div class="flex-1 w-full max-w-md mx-auto fade-in">
+          <div class="border border-[#222] rounded-2xl overflow-hidden bg-[#050607] shadow-2xl">
+            <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[#1a1a1a] bg-[#0a0a0a]">
+              <div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div>
+              <div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div>
+              <div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div>
+              <div class="ml-auto text-[10px] font-mono text-[#666]">app.ixiera.id/dashboard</div>
             </div>
-            <div class="space-y-4 fade-in" style="transition-delay: 100ms">
-              <span class="text-5xl font-bold text-[var(--faint)]">02</span>
-              <h3 class="text-xl font-bold">{{ $t('landing.problems.p2_title') }}</h3>
-              <p class="text-[var(--muted)]">{{ $t('landing.problems.p2_desc') }}</p>
-            </div>
-            <div class="space-y-4 fade-in" style="transition-delay: 200ms">
-              <span class="text-5xl font-bold text-[var(--faint)]">03</span>
-              <h3 class="text-xl font-bold">{{ $t('landing.problems.p3_title') }}</h3>
-              <p class="text-[var(--muted)]">{{ $t('landing.problems.p3_desc') }}</p>
+            <div class="p-5 space-y-4">
+              <div class="grid grid-cols-2 gap-3">
+                <div class="bg-[#000] border border-[#1a1a1a] rounded-xl p-3">
+                  <p class="text-[10px] text-[#666] mb-1">TOTAL VIEWS</p>
+                  <p class="text-xl font-bold text-white tracking-tight">324.158</p>
+                </div>
+                <div class="bg-[#000] border border-[#1a1a1a] rounded-xl p-3">
+                  <p class="text-[10px] text-[#666] mb-1">AVG ENGAGEMENT</p>
+                  <p class="text-xl font-bold text-white tracking-tight">0.97%</p>
+                </div>
+              </div>
+              <div class="bg-[#000] border border-[#1a1a1a] rounded-xl p-4">
+                <div class="flex justify-between items-center mb-3">
+                  <span class="text-[10px] text-[#666] uppercase tracking-widest font-bold">Growth Harian</span>
+                  <div class="flex gap-2 text-[9px] font-bold text-[#666]">
+                    <span class="text-white">7D</span><span>14D</span><span>30D</span>
+                  </div>
+                </div>
+                <svg viewBox="0 0 400 80" class="w-full" preserveAspectRatio="none" style="height: 60px;">
+                  <defs>
+                    <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.2" />
+                      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0,60 Q50,55 80,45 T160,35 T240,20 T320,15 L400,10 L400,80 L0,80 Z" fill="url(#chartGradient)" />
+                  <path d="M0,60 Q50,55 80,45 T160,35 T240,20 T320,15 L400,10" stroke="#ffffff" stroke-width="1.5" fill="none" />
+                </svg>
+              </div>
             </div>
           </div>
         </div>
@@ -123,290 +123,211 @@
       <section id="fitur" class="py-20 md:py-32 border-t border-[var(--line)]">
         <div class="max-w-[1120px] mx-auto px-6">
           <div class="text-center mb-20 fade-in">
-            <h2 class="text-3xl md:text-5xl font-bold tracking-tight">{{ $t('landing.features.title') }}</h2>
+            <h2 class="font-display text-4xl md:text-5xl">{{ $t('landing.features.title') }}</h2>
             <p class="text-lg text-[var(--muted)] mt-4">{{ $t('landing.features.subtitle') }}</p>
           </div>
 
           <div class="space-y-32">
-            <!-- Fitur 1: Content (UI BARU, MIRIP SCREENSHOT) -->
+            <!-- Fitur 1: Content (PIXEL PERFECT COMPOSER) -->
             <div class="flex flex-col md:flex-row items-center gap-12">
               <div class="flex-1 space-y-4 fade-in">
                 <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">01 · Content</span>
-                <h3 class="text-2xl font-bold">{{ $t('landing.features.f1_title') }}</h3>
+                <h3 class="font-display text-3xl">{{ $t('landing.features.f1_title') }}</h3>
                 <p class="text-[var(--muted)] leading-relaxed">{{ $t('landing.features.f1_desc') }}</p>
               </div>
+              
               <div class="flex-1 w-full">
-                <div class="border border-dashed border-[var(--line)] rounded-xl overflow-hidden bg-[var(--surface)]">
-                  <!-- Window Header -->
-                  <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[var(--line)]"><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><span class="ml-2 text-[10px] text-[var(--muted)] font-bold">AI CONTENT PLANNER</span></div>
-                  
-                  <!-- Form Input Area -->
-                  <div class="p-4 border-b border-[var(--line)] bg-[var(--bg)] space-y-3">
-                    <div class="grid grid-cols-2 gap-3">
-                      <div class="space-y-1"><label class="text-[10px] font-bold text-[var(--muted)]">Topik / Short Idea</label><div class="border border-[var(--line)] rounded-md p-2 text-xs bg-[var(--surface)]">AI</div></div>
-                      <div class="space-y-1"><label class="text-[10px] font-bold text-[var(--muted)]">Tone / Style</label><div class="border border-[var(--line)] rounded-md p-2 text-xs bg-[var(--surface)]">Storytelling</div></div>
+                <div class="border border-[#222] rounded-xl overflow-hidden bg-[#050607] shadow-2xl">
+                  <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[#1a1a1a] bg-[#0a0a0a]">
+                    <div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div>
+                    <span class="ml-2 text-[10px] text-[#666] font-mono">app.ixiera.id/content/create</span>
+                  </div>
+                  <div class="p-5">
+                    <div class="mb-4">
+                      <h3 class="text-sm font-bold text-white mb-1">Composer</h3>
+                      <p class="text-[10px] text-[#666]">Tulis atau generate draf otomatis pakai AI, pecah utasan, dan jadwalkan postingan.</p>
                     </div>
-                    <div class="flex justify-between items-center pt-2">
-                      <span class="text-[10px] font-bold text-[var(--muted)]">94 Credits</span>
-                      <button @click="simulateGenerate" :disabled="isGenerating" class="px-4 py-1.5 bg-[var(--text)] text-[var(--bg)] rounded-md font-bold text-xs flex items-center gap-2 transition-opacity hover:opacity-90">
-                        <span v-if="isGenerating" class="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
-                        <span>{{ isGenerating ? 'Memproses...' : 'Generate 3-Day Plan' }}</span>
-                      </button>
+                    
+                    <div class="border border-[#222] rounded-xl p-4 bg-[#0a0a0a] mb-4">
+                      <div class="text-[10px] font-bold text-white mb-3 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-white"></span> AI CONTENT PLANNER
+                      </div>
+                      <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                          <label class="text-[9px] text-[#666] block mb-1">Topik / Ide Singkat</label>
+                          <div class="w-full bg-[#000] border border-[#222] rounded-md px-2 py-1.5 text-[10px] text-[#666]">Masukkan topik singkat...</div>
+                        </div>
+                        <div>
+                          <label class="text-[9px] text-[#666] block mb-1">Gaya Bahasa</label>
+                          <div class="w-full bg-[#000] border border-[#222] rounded-md px-2 py-1.5 text-[10px] text-white flex justify-between items-center">
+                            <span>Edukasi & Insight</span>
+                            <svg class="w-3 h-3 text-[#666]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="flex justify-end mt-2">
+                        <button class="bg-white text-black text-[10px] font-bold px-3 py-1.5 rounded-md">Bikin Rencana 3 Hari</button>
+                      </div>
+                    </div>
+
+                    <div class="border border-[#222] rounded-xl p-4 bg-[#0a0a0a]">
+                      <div class="text-[10px] font-bold text-white mb-3 flex justify-between">
+                        <span>TEKS POSTINGAN UTAMA</span>
+                        <span class="text-[#666] font-normal">0 Karakter</span>
+                      </div>
+                      <div class="w-full bg-[#000] border border-[#222] rounded-md p-2 text-[10px] text-[#666] h-16 mb-3">Tulis draf kamu di sini...</div>
+                      <div class="flex justify-between items-center pt-3 border-t border-[#222]">
+                        <div class="flex gap-2 text-[9px] text-[#666]">
+                          <span class="bg-[#1a1a1a] px-2 py-1 rounded">Best time hari ini 17:00</span>
+                          <span class="bg-[#1a1a1a] px-2 py-1 rounded">Pakai Insight</span>
+                        </div>
+                        <button class="bg-white text-black text-[10px] font-bold px-3 py-1.5 rounded-md">Jadwalkan</button>
+                      </div>
                     </div>
                   </div>
-
-                  <!-- Generated Cards -->
-                  <div v-if="generatedPlan" class="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 bg-[var(--surface-2)] animate-[fade-in_0.5s_ease-out]">
-                    <!-- Card 1 -->
-                    <div class="bg-[var(--bg)] border border-[var(--line)] rounded-md p-3 flex flex-col justify-between">
-                      <div>
-                        <div class="bg-[var(--text)] text-[var(--bg)] text-[9px] font-bold px-2 py-1 rounded-sm mb-2 text-center">DAY 1: KOMPLEKSITAS MODEL VS KEBUTUHAN NYATA</div>
-                        <p class="text-[9px] text-[var(--muted)] leading-tight">Awal-awal ngulik AI, bawaannya pengen bikin arsitektur yang keliatan paling rumit. Pas nemu masalah nyata di lapangan...</p>
-                      </div>
-                      <button class="mt-3 w-full py-1 border border-[var(--line)] rounded text-[9px] font-bold hover:bg-[var(--surface-2)]">Use This Draft</button>
-                    </div>
-                    <!-- Card 2 -->
-                    <div class="bg-[var(--bg)] border border-[var(--line)] rounded-md p-3 flex flex-col justify-between">
-                      <div>
-                        <div class="bg-[var(--text)] text-[var(--bg)] text-[9px] font-bold px-2 py-1 rounded-sm mb-2 text-center">DAY 2: EVALUASI METRIK MACHINE LEARNING</div>
-                        <p class="text-[9px] text-[var(--muted)] leading-tight">Lagi ngejelasin hasil eksperimen model kemarin. AUC dapet 0,84, tapi pas dicek F1 Score-nya masih di angka...</p>
-                      </div>
-                      <button class="mt-3 w-full py-1 border border-[var(--line)] rounded text-[9px] font-bold hover:bg-[var(--surface-2)]">Use This Draft</button>
-                    </div>
-                    <!-- Card 3 -->
-                    <div class="bg-[var(--bg)] border border-[var(--line)] rounded-md p-3 flex flex-col justify-between">
-                      <div>
-                        <div class="bg-[var(--text)] text-[var(--bg)] text-[9px] font-bold px-2 py-1 rounded-sm mb-2 text-center">DAY 3: DILEMA AI ENGINEERING</div>
-                        <p class="text-[9px] text-[var(--muted)] leading-tight">Kadang mikir, kerjaan AI engineer itu porsinya lebih banyak di bagian machine learning-nya atau data engineering-nya...</p>
-                      </div>
-                      <button class="mt-3 w-full py-1 border border-[var(--line)] rounded text-[9px] font-bold hover:bg-[var(--surface-2)]">Use This Draft</button>
-                    </div>
-                  </div>
-                  <div v-else class="p-10 text-center text-xs text-[var(--muted)]">Klik "Generate" untuk melihat hasil.</div>
-
-                  <div class="bg-[var(--surface-2)] border-t border-[var(--line)] text-center py-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Contoh tampilan</div>
                 </div>
               </div>
             </div>
 
-            <!-- Fitur 2: Komentar (INTERAKTIF) -->
+            <!-- Fitur 2: Komentar (PIXEL PERFECT INBOX) -->
             <div class="flex flex-col md:flex-row-reverse items-center gap-12">
               <div class="flex-1 space-y-4 fade-in">
                 <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">02 · Komentar</span>
-                <h3 class="text-2xl font-bold">{{ $t('landing.features.f2_title') }}</h3>
+                <h3 class="font-display text-3xl">{{ $t('landing.features.f2_title') }}</h3>
                 <p class="text-[var(--muted)] leading-relaxed">{{ $t('landing.features.f2_desc') }}</p>
               </div>
+              
               <div class="flex-1 w-full">
-                <div class="border border-dashed border-[var(--line)] rounded-xl overflow-hidden bg-[var(--surface)]">
-                  <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[var(--line)]"><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div></div>
-                  <div class="p-6 space-y-4">
-                    <div class="flex rounded-md border border-[var(--line)] p-1 bg-[var(--bg)]">
-                      <button @click="mockReplyMode = 'manual'" :class="mockReplyMode === 'manual' ? 'bg-[var(--text)] text-[var(--bg)] shadow-sm' : 'text-[var(--muted)] hover:text-[var(--text)]'" class="flex-1 py-1.5 text-xs font-bold rounded transition-colors">Review Manual</button>
-                      <button @click="mockReplyMode = 'auto'" :class="mockReplyMode === 'auto' ? 'bg-[var(--text)] text-[var(--bg)] shadow-sm' : 'text-[var(--muted)] hover:text-[var(--text)]'" class="flex-1 py-1.5 text-xs font-bold rounded transition-colors">Full Auto</button>
-                    </div>
-                    <div class="text-xs text-[var(--muted)] flex justify-between"><span>Maks balasan per jam:</span><span class="font-bold text-[var(--text)]">5</span></div>
-                    <div class="space-y-2 text-xs">
-                      <div class="flex justify-between p-2 bg-[var(--bg)] border border-[var(--line)] rounded"><span>Pertanyaan</span><span class="font-bold">{{ mockReplyMode === 'auto' ? 'Langsung Balas' : 'Balasan AI' }}</span></div>
-                      <div class="flex justify-between p-2 bg-[var(--bg)] border border-[var(--line)] rounded"><span>Pujian</span><span class="font-bold">{{ mockReplyMode === 'auto' ? 'Langsung Balas' : 'Template' }}</span></div>
-                      <div class="flex justify-between p-2 bg-[var(--bg)] border border-[var(--line)] rounded"><span>Spam / Toxic</span><span class="font-bold">{{ mockReplyMode === 'auto' ? 'Langsung Balas' : 'Template' }}</span></div>
-                    </div>
+                <div class="border border-[#222] rounded-xl overflow-hidden bg-[#050607] shadow-2xl">
+                  <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[#1a1a1a] bg-[#0a0a0a]">
+                    <div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div>
+                    <span class="ml-2 text-[10px] text-[#666] font-mono">app.ixiera.id/comment</span>
                   </div>
-                  <div class="bg-[var(--surface-2)] text-center py-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Contoh tampilan</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Fitur 3: Analytics (INTERAKTIF) -->
-            <div class="flex flex-col md:flex-row items-center gap-12">
-              <div class="flex-1 space-y-4 fade-in">
-                <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">03 · Analytics</span>
-                <h3 class="text-2xl font-bold">{{ $t('landing.features.f3_title') }}</h3>
-                <p class="text-[var(--muted)] leading-relaxed">{{ $t('landing.features.f3_desc') }}</p>
-              </div>
-              <div class="flex-1 w-full">
-                <div class="border border-dashed border-[var(--line)] rounded-xl overflow-hidden bg-[var(--surface)]">
-                  <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[var(--line)]"><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div></div>
-                  <div class="p-6 space-y-4">
-                    <div class="flex gap-4 border-b border-[var(--line)] pb-2 text-xs font-bold">
-                      <button @click="activeMockTab = 'best'" :class="activeMockTab === 'best' ? 'border-b-2 border-[var(--text)] pb-2 text-[var(--text)]' : 'text-[var(--muted)] pb-2 hover:text-[var(--text)] transition-colors'">Best Time</button>
-                      <button @click="activeMockTab = 'hook'" :class="activeMockTab === 'hook' ? 'border-b-2 border-[var(--text)] pb-2 text-[var(--text)]' : 'text-[var(--muted)] pb-2 hover:text-[var(--text)] transition-colors'">Hook</button>
-                      <button @click="activeMockTab = 'length'" :class="activeMockTab === 'length' ? 'border-b-2 border-[var(--text)] pb-2 text-[var(--text)]' : 'text-[var(--muted)] pb-2 hover:text-[var(--text)] transition-colors'">Length</button>
+                  <div class="p-5">
+                    <div class="mb-4">
+                      <h3 class="text-sm font-bold text-white mb-1">Komentar</h3>
+                      <p class="text-[10px] text-[#666]">Balas komentar di postingan kamu pakai draf AI atau template.</p>
                     </div>
-                    
-                    <div v-if="activeMockTab === 'best'" class="flex gap-2">
-                      <div class="flex flex-col justify-between text-[9px] text-[var(--muted)] py-1">
-                        <span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span>
+
+                    <div class="flex gap-4 border-b border-[#222] pb-2 mb-4 text-[10px] font-bold">
+                      <span class="text-white border-b-2 border-white pb-2 -mb-[10px]">Review (1)</span>
+                      <span class="text-[#666]">Prioritas (0)</span>
+                      <span class="text-[#666]">Percakapan (1)</span>
+                      <span class="text-[#666]">Riwayat (48)</span>
+                    </div>
+
+                    <div class="border border-[#222] rounded-xl p-4 bg-[#0a0a0a]">
+                      <div class="flex items-center gap-2 mb-3">
+                        <div class="w-5 h-5 rounded-full bg-[#222]"></div>
+                        <span class="text-[10px] font-bold text-white">@username</span>
+                        <span class="text-[9px] font-bold text-[#9984d8] bg-[#9984d8]/10 px-2 py-0.5 rounded border border-[#9984d8]/20">PRAISE</span>
                       </div>
-                      <div class="flex-1 grid grid-cols-12 gap-1">
-                        <div v-for="i in 84" :key="i" class="h-4 rounded-sm bg-[var(--line)]"
-                             :class="{
-                               'opacity-20': i % 5 === 0,
-                               'bg-[var(--text)] opacity-100': i === 12 || i === 25 || i === 38 || i === 51,
-                               'bg-[var(--bar-dim)] opacity-60': i % 3 === 0
-                             }">
+                      
+                      <div class="bg-[#000] border border-[#222] rounded-lg p-2 text-[10px] text-white mb-3">
+                        Kontennya sangat membantu, kak! Ditunggu update selanjutnya.
+                      </div>
+                      
+                      <div class="border border-[#222] rounded-lg bg-[#000] p-3">
+                        <div class="flex justify-between items-center mb-2">
+                          <span class="text-[9px] font-bold text-[#666]">DRAF BALASAN <span class="text-[#444]">| DARI TEMPLATE</span></span>
+                          <button class="text-[9px] font-bold text-white bg-[#1a1a1a] px-2 py-1 rounded flex items-center gap-1 border border-[#333]">
+                            <svg class="w-3 h-3 text-[#9984d8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Bikin Ulang AI
+                          </button>
+                        </div>
+                        <div class="text-[10px] text-[#999] bg-[#111] border border-[#222] rounded p-2 h-10 mb-3">
+                          Terima kasih banyak, kak! Senang bisa membantu.
+                        </div>
+                        <div class="flex justify-end gap-2">
+                          <button class="text-[9px] font-bold text-[#666] px-2 py-1">Abaikan</button>
+                          <button class="bg-white text-black text-[9px] font-bold px-3 py-1.5 rounded-md flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg> Kirim ke Threads
+                          </button>
                         </div>
                       </div>
                     </div>
-                    <div v-if="activeMockTab === 'hook'" class="space-y-3 py-2">
-                       <div class="space-y-1"><div class="flex justify-between text-[10px] font-bold"><span>Question</span><span>2.92%</span></div><div class="w-full bg-[var(--surface-2)] h-1.5 rounded-full"><div class="h-full bg-[var(--text)] w-[80%] rounded-full"></div></div></div>
-                       <div class="space-y-1"><div class="flex justify-between text-[10px] font-bold"><span>Story</span><span>1.36%</span></div><div class="w-full bg-[var(--surface-2)] h-1.5 rounded-full"><div class="h-full bg-[var(--bar-dim)] w-[40%] rounded-full"></div></div></div>
-                    </div>
-                    <div v-if="activeMockTab === 'length'" class="space-y-3 py-2">
-                       <div class="space-y-1"><div class="flex justify-between text-[10px] font-bold"><span>300-500 char</span><span>2.96%</span></div><div class="w-full bg-[var(--surface-2)] h-1.5 rounded-full"><div class="h-full bg-[var(--text)] w-[90%] rounded-full"></div></div></div>
-                       <div class="space-y-1"><div class="flex justify-between text-[10px] font-bold"><span>100-300 char</span><span>1.12%</span></div><div class="w-full bg-[var(--surface-2)] h-1.5 rounded-full"><div class="h-full bg-[var(--bar-dim)] w-[35%] rounded-full"></div></div></div>
-                    </div>
                   </div>
-                  <div class="bg-[var(--surface-2)] text-center py-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Contoh tampilan</div>
                 </div>
               </div>
             </div>
 
-            <!-- Fitur 4: Knowledge Base (SECTION BARU) -->
-            <div class="flex flex-col md:flex-row-reverse items-center gap-12">
+            <!-- Fitur 3: Analytics (PIXEL PERFECT BEST TIME) -->
+            <div class="flex flex-col md:flex-row items-center gap-12">
               <div class="flex-1 space-y-4 fade-in">
-                <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">04 · Pengetahuan</span>
-                <h3 class="text-2xl font-bold">{{ $t('landing.features.f4_title') }}</h3>
-                <p class="text-[var(--muted)] leading-relaxed">{{ $t('landing.features.f4_desc') }}</p>
+                <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">03 · Analytics</span>
+                <h3 class="font-display text-3xl">{{ $t('landing.features.f3_title') }}</h3>
+                <p class="text-[var(--muted)] leading-relaxed">{{ $t('landing.features.f3_desc') }}</p>
               </div>
+              
               <div class="flex-1 w-full">
-                <div class="border border-dashed border-[var(--line)] rounded-xl overflow-hidden bg-[var(--surface)]">
-                  <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[var(--line)]"><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div><div class="w-2.5 h-2.5 rounded-full bg-[var(--line)]"></div></div>
-                  <div class="p-6 space-y-4">
-                    <div class="flex items-center gap-2">
-                       <span class="px-2 py-1 bg-[var(--text)] text-[var(--bg)] text-[9px] font-bold rounded">Gaya Bahasa</span>
-                       <span class="text-[10px] text-[var(--muted)]">Dokumen Tersimpan</span>
+                <div class="border border-[#222] rounded-xl overflow-hidden bg-[#050607] shadow-2xl">
+                  <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[#1a1a1a] bg-[#0a0a0a]">
+                    <div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div>
+                    <span class="ml-2 text-[10px] text-[#666] font-mono">app.ixiera.id/analytics/best-time</span>
+                  </div>
+                  <div class="p-5">
+                    <div class="mb-4">
+                      <h3 class="text-sm font-bold text-white mb-1">Waktu Terbaik</h3>
+                      <p class="text-[10px] text-[#666]">Tren engagement berdasarkan jam (WIB).</p>
                     </div>
-                    <div class="border border-[var(--line)] rounded-md p-3 bg-[var(--bg)] space-y-2">
-                      <h4 class="text-xs font-bold border-b border-[var(--line)] pb-2">Panduan gaya bahasa</h4>
-                      <p class="text-[10px] text-[var(--muted)] leading-relaxed">Santai, singkat, hindari jargon. Selalu sapa dengan "kak".</p>
-                      <div class="flex justify-end pt-2">
-                        <span class="text-[9px] font-bold border border-[var(--line)] px-2 py-1 rounded-full flex items-center gap-1">
-                          <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Dipakai AI
-                        </span>
+
+                    <!-- Best Time Card -->
+                    <div class="border border-[#9984d8] rounded-xl p-4 bg-[#9984d8]/5 mb-4 relative overflow-hidden">
+                      <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-[#9984d8] to-transparent"></div>
+                      <div class="text-[9px] text-[#9984d8] bg-[#9984d8]/20 px-2 py-0.5 rounded font-bold uppercase tracking-wider mb-2 inline-block">Waktu Terbaik Berikutnya</div>
+                      <div class="text-lg font-bold text-white mb-1">Selasa, 08:00–12:00 WIB</div>
+                      <div class="text-[10px] text-[#999] mb-3">3.20% Rata-rata ER • 8 post (Pagi)</div>
+                      <button class="bg-white text-black text-[10px] font-bold px-3 py-1.5 rounded-md">Jadwalkan Sekarang</button>
+                    </div>
+
+                    <!-- Chart -->
+                    <div class="border border-[#222] rounded-xl p-4 bg-[#0a0a0a] mb-4">
+                      <div class="text-[10px] font-bold text-white mb-3 flex justify-between items-center">
+                        <span>Waktu Terbaik untuk Posting</span>
+                        <span class="text-[8px] bg-[#1a1a1a] text-[#666] px-1.5 py-0.5 rounded">DATA LENGKAP</span>
+                      </div>
+                      <svg viewBox="0 0 400 80" class="w-full" preserveAspectRatio="none" style="height: 60px;">
+                        <defs>
+                          <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.2" />
+                            <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+                          </linearGradient>
+                        </defs>
+                        <path d="M0,60 Q50,55 80,45 T160,35 T240,20 T320,15 L400,10 L400,80 L0,80 Z" fill="url(#chartGradient)" />
+                        <path d="M0,60 Q50,55 80,45 T160,35 T240,20 T320,15 L400,10" stroke="#ffffff" stroke-width="1.5" fill="none" />
+                      </svg>
+                      <div class="flex justify-between mt-2 text-[8px] text-[#666]">
+                        <span>00:00</span><span>09:00</span><span>12:00</span><span>18:00</span><span>21:00</span>
+                      </div>
+                    </div>
+                    
+                    <!-- List -->
+                    <div class="border border-[#222] rounded-xl p-4 bg-[#0a0a0a]">
+                      <div class="text-[10px] font-bold text-white mb-3">Waktu Terbaik Per Hari</div>
+                      <div class="space-y-2">
+                        <div class="flex items-center justify-between bg-[#111] p-2 rounded border border-[#222]">
+                          <div class="flex items-center gap-2">
+                            <span class="w-4 h-4 rounded-full bg-[#222] flex items-center justify-center text-[8px] text-white">3</span>
+                            <span class="text-[10px] text-white">Selasa (11:00)</span>
+                          </div>
+                          <div class="flex items-center gap-3">
+                            <span class="text-[10px] font-bold text-[#3fcb7f]">13.64%</span>
+                            <button class="bg-[#222] text-white text-[8px] px-2 py-1 rounded">Jadwalkan</button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div class="bg-[var(--surface-2)] text-center py-2 text-[10px] text-[var(--muted)] uppercase tracking-widest font-bold">Contoh tampilan</div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      <!-- DATA NYATA -->
-      <section id="contoh" class="py-20 md:py-32 bg-[var(--surface)] border-t border-[var(--line)]">
-        <div class="max-w-[1120px] mx-auto px-6">
-          <div class="text-center mb-16 fade-in">
-            <h2 class="text-3xl md:text-5xl font-bold tracking-tight">{{ $t('landing.realData.title') }}</h2>
-            <p class="text-lg text-[var(--muted)] mt-4 max-w-2xl mx-auto">{{ $t('landing.realData.subtitle') }}</p>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="border border-solid border-[var(--line)] rounded-xl overflow-hidden bg-[var(--bg)] fade-in">
-              <div class="flex justify-between items-center px-4 py-3 border-b border-[var(--line)]">
-                <span class="text-xs font-bold uppercase tracking-widest">Hook Performance</span>
-                <span class="text-[10px] font-bold bg-[var(--text)] text-[var(--bg)] px-2 py-1 rounded-full">{{ $t('landing.realData.hook_label') }}</span>
-              </div>
-              <div class="p-6 space-y-4">
-                <div v-for="(item, index) in hookData.slice(0, 2)" :key="item.label" class="space-y-1">
-                  <div class="flex justify-between text-xs font-bold"><span>{{ item.label }}</span><span>{{ item.er }}%</span></div>
-                  <div class="w-full bg-[var(--surface-2)] h-2 rounded-full">
-                    <div class="h-full rounded-full bar-grow" :class="index === 0 ? 'bg-[var(--text)]' : 'bg-[var(--bar-dim)]'" :style="{ width: getBarWidth(item.er) }"></div>
-                  </div>
-                  <div class="text-[10px] text-[var(--muted)] text-right">n={{ item.n }}</div>
-                </div>
-              </div>
-              <div class="px-6 pb-6 text-sm text-[var(--muted)] border-t border-[var(--line)] pt-4">{{ $t('landing.realData.hook_desc') }}</div>
-            </div>
-            <div class="border border-solid border-[var(--line)] rounded-xl overflow-hidden bg-[var(--bg)] fade-in" style="transition-delay: 100ms">
-              <div class="flex justify-between items-center px-4 py-3 border-b border-[var(--line)]">
-                <span class="text-xs font-bold uppercase tracking-widest">Post Length</span>
-                <span class="text-[10px] font-bold bg-[var(--text)] text-[var(--bg)] px-2 py-1 rounded-full">{{ $t('landing.realData.len_label') }}</span>
-              </div>
-              <div class="p-6 space-y-4">
-                <div v-for="(item, index) in lengthData.slice(0, 2)" :key="item.label" class="space-y-1">
-                  <div class="flex justify-between text-xs font-bold"><span>{{ item.label }}</span><span>{{ item.er }}%</span></div>
-                  <div class="w-full bg-[var(--surface-2)] h-2 rounded-full">
-                    <div class="h-full rounded-full bar-grow" :class="index === 0 ? 'bg-[var(--text)]' : 'bg-[var(--bar-dim)]'" :style="{ width: getBarWidth(item.er) }"></div>
-                  </div>
-                  <div class="text-[10px] text-[var(--muted)] text-right">n={{ item.n }}</div>
-                </div>
-              </div>
-              <div class="px-6 pb-6 text-sm text-[var(--muted)] border-t border-[var(--line)] pt-4">{{ $t('landing.realData.len_desc') }}</div>
-            </div>
-          </div>
-          <p class="text-center text-xs text-[var(--muted)] mt-8">{{ $t('landing.realData.note') }}</p>
-        </div>
-      </section>
-
-      <!-- CARA KERJA -->
-      <section id="cara-kerja" class="py-20 md:py-32 border-t border-[var(--line)]">
-        <div class="max-w-[1120px] mx-auto px-6">
-          <h2 class="text-3xl md:text-5xl font-bold tracking-tight text-center mb-16 fade-in">{{ $t('landing.how.title') }}</h2>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            <div class="hidden md:block absolute top-8 left-[15%] right-[15%] h-px bg-[var(--line)] z-0"></div>
-            <div class="relative z-10 text-center space-y-4 fade-in">
-              <div class="w-16 h-16 mx-auto rounded-full border border-[var(--line)] bg-[var(--bg)] flex items-center justify-center text-2xl font-bold">1</div>
-              <h3 class="font-bold text-lg">{{ $t('landing.how.s1_title') }}</h3>
-              <p class="text-sm text-[var(--muted)] px-4">{{ $t('landing.how.s1_desc') }}</p>
-            </div>
-            <div class="relative z-10 text-center space-y-4 fade-in" style="transition-delay: 100ms">
-              <div class="w-16 h-16 mx-auto rounded-full border border-[var(--line)] bg-[var(--bg)] flex items-center justify-center text-2xl font-bold">2</div>
-              <h3 class="font-bold text-lg">{{ $t('landing.how.s2_title') }}</h3>
-              <p class="text-sm text-[var(--muted)] px-4">{{ $t('landing.how.s2_desc') }}</p>
-            </div>
-            <div class="relative z-10 text-center space-y-4 fade-in" style="transition-delay: 200ms">
-              <div class="w-16 h-16 mx-auto rounded-full border border-[var(--line)] bg-[var(--bg)] flex items-center justify-center text-2xl font-bold">3</div>
-              <h3 class="font-bold text-lg">{{ $t('landing.how.s3_title') }}</h3>
-              <p class="text-sm text-[var(--muted)] px-4">{{ $t('landing.how.s3_desc') }}</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- KEAMANAN -->
-      <section class="py-20 md:py-32 bg-[var(--surface)] border-t border-[var(--line)]">
-        <div class="max-w-[1120px] mx-auto px-6 text-center fade-in">
-          <h2 class="text-3xl md:text-4xl font-bold tracking-tight mb-12">{{ $t('landing.security.title') }}</h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-sm text-left">
-            <div class="flex gap-3"><svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg><p class="text-[var(--muted)]">{{ $t('landing.security.s1') }}</p></div>
-            <div class="flex gap-3"><svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg><p class="text-[var(--muted)]">{{ $t('landing.security.s2') }}</p></div>
-            <div class="flex gap-3"><svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><p class="text-[var(--muted)]">{{ $t('landing.security.s3') }}</p></div>
-            <div class="flex gap-3"><svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg><p class="text-[var(--muted)]">{{ $t('landing.security.s4') }}</p></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- HARGA -->
-      <section id="harga" class="py-20 md:py-32 border-t border-[var(--line)]">
-        <div class="max-w-[1120px] mx-auto px-6 text-center fade-in">
-          <h2 class="text-3xl md:text-5xl font-bold tracking-tight mb-4">{{ $t('landing.pricing.title') }}</h2>
-          <p class="text-[var(--muted)] max-w-2xl mx-auto mb-16">{{ $t('landing.pricing.desc') }}</p>
-          
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-5xl mx-auto">
-            <div class="border-2 border-[var(--text)] rounded-xl p-8 space-y-4 bg-[var(--bg)] relative">
-              <h3 class="text-lg font-bold">{{ $t('landing.pricing.p1_title') }}</h3>
-              <p class="text-sm text-[var(--muted)]">{{ $t('landing.pricing.p1_desc') }}</p>
-            </div>
-            <div class="border border-[var(--line)] rounded-xl p-8 space-y-4 bg-[var(--surface)]">
-              <h3 class="text-lg font-bold">{{ $t('landing.pricing.p2_title') }}</h3>
-              <p class="text-sm text-[var(--muted)]">{{ $t('landing.pricing.p2_desc') }}</p>
-            </div>
-            <div class="border border-[var(--line)] rounded-xl p-8 space-y-4 bg-[var(--surface)]">
-              <h3 class="text-lg font-bold">{{ $t('landing.pricing.p3_title') }}</h3>
-              <p class="text-sm text-[var(--muted)]">{{ $t('landing.pricing.p3_desc') }}</p>
-            </div>
-          </div>
-          <p class="text-xs text-[var(--muted)] mt-8 max-w-3xl mx-auto">{{ $t('landing.pricing.note') }}</p>
-          <p class="text-[11px] text-[var(--muted)] text-center mt-3 font-semibold">Harga beta, terkunci selama kamu berlangganan.</p>
-          <a href="https://app.ixiera.id/login" class="inline-block mt-8 px-10 py-4 rounded-full text-lg font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">{{ $t('landing.pricing.cta') }}</a>
         </div>
       </section>
 
       <!-- FAQ -->
       <section id="faq" class="py-20 md:py-32 bg-[var(--surface)] border-t border-[var(--line)]">
         <div class="max-w-3xl mx-auto px-6 fade-in">
-          <h2 class="text-3xl font-bold tracking-tight text-center mb-12">{{ $t('landing.faq.title') }}</h2>
+          <h2 class="font-display text-4xl text-center mb-12">{{ $t('landing.faq.title') }}</h2>
           <div class="space-y-2">
             <div v-for="i in 9" :key="i" class="border border-[var(--line)] rounded-lg bg-[var(--bg)] overflow-hidden">
               <button @click="faqOpen = faqOpen === i ? null : i" class="w-full px-6 py-4 text-left flex justify-between items-center font-bold hover:bg-[var(--surface-2)] transition">
@@ -416,14 +337,6 @@
               <div v-if="faqOpen === i" class="px-6 pb-4 text-sm text-[var(--muted)] leading-relaxed">{{ $t('landing.faq.a' + i) }}</div>
             </div>
           </div>
-        </div>
-      </section>
-
-      <!-- CTA PENUTUP -->
-      <section class="py-24 text-center px-6 border-t border-[var(--line)]">
-        <div class="max-w-3xl mx-auto space-y-8 fade-in">
-          <h2 class="text-3xl md:text-5xl font-bold tracking-tight">{{ $t('landing.cta_end.title') }}</h2>
-          <a href="https://app.ixiera.id/login" class="inline-flex items-center gap-2 px-10 py-4 rounded-full text-lg font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">{{ $t('landing.cta_end.btn') }}</a>
         </div>
       </section>
 
@@ -441,7 +354,6 @@
         <RouterLink to="/data-deletion" class="hover:text-[var(--text)] transition-colors">{{ $t('landing.footer.delete') }}</RouterLink>
       </div>
       <p class="text-xs text-[var(--muted)]">&copy; 2026 Ixiera.</p>
-      <p class="text-[10px] max-w-2xl mx-auto px-4 mt-2">{{ $t('landing.footer.disclaimer') }}</p>
     </footer>
   </div>
 </template>
@@ -458,27 +370,9 @@ const { theme, toggle: toggleTheme } = useTheme()
 const mobileMenuOpen = ref(false)
 const faqOpen = ref<number | null>(1)
 
-// STATE MOCKUP INTERAKTIF
-const mockReplyMode = ref('manual') 
-const activeMockTab = ref('best')
-const isGenerating = ref(false)
-const generatedPlan = ref(true) // Set true biar langsung muncul di awal, atau false kalau mau diklik dulu
-
-// Fungsi simulasi generate content
-function simulateGenerate() {
-  isGenerating.value = true
-  generatedPlan.value = false
-  setTimeout(() => {
-    isGenerating.value = false
-    generatedPlan.value = true
-  }, 1000)
-}
-
 const hookData = ref([
   { label: 'Question', er: 2.92, n: 6 },
   { label: 'Story', er: 1.36, n: 32 },
-  { label: 'Statement', er: 0.90, n: 10 },
-  { label: 'List', er: 0.00, n: 2 }
 ])
 const lengthData = ref([
   { label: '300–500 char', er: 2.96, n: 10 },
@@ -502,38 +396,46 @@ onMounted(() => {
       if (entry.isIntersecting) {
         entry.target.classList.add('visible')
         entry.target.querySelectorAll('.bar-grow').forEach(bar => {
-          const width = (bar as HTMLElement).style.width;
-          (bar as HTMLElement).style.width = '0%';
+          const width = (bar as HTMLElement).style.width
+          ;(bar as HTMLElement).style.width = '0%'
           setTimeout(() => {
-            (bar as HTMLElement).style.width = width;
-          }, 50);
+            (bar as HTMLElement).style.width = width
+          }, 50)
         })
         observer.unobserve(entry.target)
       }
     })
   }, { threshold: 0.1 })
-
   document.querySelectorAll('.fade-in').forEach(el => observer.observe(el))
 })
 </script>
 
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap');
+
 :root {
-  --bg: #000000; --surface: #0A0A0A; --surface-2: #141414;
-  --line: #262626; --text: #FFFFFF; --muted: #A3A3A3;
-  --faint: #8A8A8A; --bar-dim: #404040;
+  --bg: #000000; --surface: #050607; --surface-2: #0A0A0A;
+  --line: #222222; --text: #FFFFFF; --muted: #A3A3A3;
+  --faint: #555555; --bar-dim: #404040;
 }
 html:not(.dark) {
   --bg: #FFFFFF; --surface: #FAFAFA; --surface-2: #F2F2F2;
   --line: #E5E5E5; --text: #0A0A0A; --muted: #525252;
-  --faint: #737373; --bar-dim: #C4C4C4;
+  --faint: #A3A3A3; --bar-dim: #C4C4C4;
 }
+
 body {
   background-color: var(--bg);
   color: var(--text);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
 .fade-in {
