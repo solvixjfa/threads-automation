@@ -172,6 +172,8 @@ async def score_draft(payload: ScoreDraftRequest):
         )
         return {"status": "success", "data": result}
     except Exception as e:
+        if ref_id: refund_credits(payload.account_id, "deep_scoring", ref_id)
+        if isinstance(e, BillingError): raise HTTPException(status_code=403, detail=e.message)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/improve")

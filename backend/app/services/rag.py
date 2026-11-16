@@ -265,13 +265,26 @@ Create a 3-DAY CONTENT PLAN based on the TOPIC below. Avoid repeating recent pos
         raw_text = response.text.strip()
         if raw_text.startswith("```json"): raw_text = raw_text.replace("```json", "", 1).rstrip("`").strip()
         parsed = json.loads(raw_text)
-        result_options = parsed.get("options", parsed)
+        if isinstance(parsed, dict) and isinstance(parsed.get("options"), list):
+            result_options = parsed["options"]
+        elif isinstance(parsed, list):
+            result_options = parsed
+        else:
+            raise Exception(f"AI returned unexpected JSON structure: {type(parsed).__name__}")
 
-    if is_using_saas:
-        db.schema("threads").from_("threads_accounts").update({"credit_balance": credits - 1}).eq("id", account_id).execute()
+    # NOTE: kredit sudah dipotong via check_and_spend() di endpoint.
+    # Manual deduction (credits - 1) di-REMOVE untuk cegah DOUBLE DEDUCT.
+    if not isinstance(result_options, list) or not result_options:
+        raise Exception("AI returned empty content.")
 
-    if not result_options: raise Exception("AI returned empty content.")
-    return result_options
+    valid_options = [
+        o for o in result_options
+        if isinstance(o, dict) and (o.get("content") or "").strip()
+    ]
+    if not valid_options:
+        raise Exception("AI returned empty content (all options blank).")
+
+    return valid_options
 
 async def repurpose_content(account_id: str, source_text: str, angle: str, provider: str = "gemini", model_name: str = None) -> list[dict]:
     db = get_supabase()
@@ -353,13 +366,26 @@ Do not invent new facts, just change the format, tone, and structure to fit the 
         raw_text = response.text.strip()
         if raw_text.startswith("```json"): raw_text = raw_text.replace("```json", "", 1).rstrip("`").strip()
         parsed = json.loads(raw_text)
-        result_options = parsed.get("options", parsed)
+        if isinstance(parsed, dict) and isinstance(parsed.get("options"), list):
+            result_options = parsed["options"]
+        elif isinstance(parsed, list):
+            result_options = parsed
+        else:
+            raise Exception(f"AI returned unexpected JSON structure: {type(parsed).__name__}")
 
-    if is_using_saas:
-        db.schema("threads").from_("threads_accounts").update({"credit_balance": credits - 1}).eq("id", account_id).execute()
+    # NOTE: kredit sudah dipotong via check_and_spend() di endpoint.
+    # Manual deduction (credits - 1) di-REMOVE untuk cegah DOUBLE DEDUCT.
+    if not isinstance(result_options, list) or not result_options:
+        raise Exception("AI returned empty content.")
 
-    if not result_options: raise Exception("AI returned empty content.")
-    return result_options
+    valid_options = [
+        o for o in result_options
+        if isinstance(o, dict) and (o.get("content") or "").strip()
+    ]
+    if not valid_options:
+        raise Exception("AI returned empty content (all options blank).")
+
+    return valid_options
 
 async def get_repurpose_recommendations(account_id: str) -> list[dict]:
     db = get_supabase()
