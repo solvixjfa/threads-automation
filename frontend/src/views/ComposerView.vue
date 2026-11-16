@@ -243,7 +243,7 @@
 </template>
 
 <script setup lang="ts">                                           
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import { X } from 'lucide-vue-next'
 import { supabase } from '../lib/supabase'                         
 import { useNotify } from '../composables/useNotify'
@@ -373,7 +373,19 @@ watch(aiResults, (newVal) => {
   }
 }, { deep: true })                                                                 
 
+const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+  if (isGenerating.value) {
+    event.preventDefault()
+    event.returnValue = 'Konten sedang digenerate. Yakin mau keluar? Kredit lu bisa hangus.'
+  }
+}
+
+onUnmounted(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+})
+
 onMounted(() => {
+  window.addEventListener('beforeunload', handleBeforeUnload)
   const savedAi = localStorage.getItem('ixiera_draft_ai_results')
   if (savedAi) {
     try {

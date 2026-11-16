@@ -136,6 +136,9 @@ async def generate_post(payload: GeneratePostRequest):
             selected_knowledge_ids=payload.selected_knowledge_ids
         )
         return {"status": "success", "options": options}
+    except asyncio.CancelledError:
+        if ref_id: refund_credits(payload.account_id, "generate", ref_id)
+        raise
     except Exception as e:
         if ref_id: refund_credits(payload.account_id, "generate", ref_id)
         if isinstance(e, BillingError): raise HTTPException(status_code=403, detail=e.message)
@@ -154,6 +157,9 @@ async def repurpose(payload: RepurposeRequest):
             model_name=payload.model_name
         )
         return {"status": "success", "options": options}
+    except asyncio.CancelledError:
+        if ref_id: refund_credits(payload.account_id, "repurpose", ref_id)
+        raise
     except Exception as e:
         if ref_id: refund_credits(payload.account_id, "repurpose", ref_id)
         if isinstance(e, BillingError): raise HTTPException(status_code=403, detail=e.message)
