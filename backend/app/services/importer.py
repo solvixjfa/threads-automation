@@ -58,6 +58,18 @@ async def import_threads_history(account_id: str, access_token: str, max_pages: 
                             "text": text
                         }).eq("published_media_id", media_id).execute()
 
+                    # 2b. Auto-save ke post_history (buat RAG gaya bahasa)
+                    try:
+                        from app.services.rag import save_post_to_history_sync
+                        save_post_to_history_sync(
+                            account_id=account_id,
+                            threads_media_id=media_id,
+                            text=text,
+                            posted_at=timestamp,
+                        )
+                    except Exception as e:
+                        print(f"[Importer] post_history save failed: {str(e)}")
+
                     # 3. Tarik Metrik
                     try:
                         insight_url = f"https://graph.threads.net/v1.0/{media_id}/insights?metric=views,likes,replies,reposts,quotes&access_token={access_token}"

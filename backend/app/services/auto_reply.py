@@ -4,7 +4,7 @@ import httpx
 import asyncio
 import json
 from google import genai
-from app.services.rag import search_knowledge, get_supabase, GROQ_KEY, GEMINI_KEY, DEFAULT_GEMINI_MODELS, DEFAULT_GROQ_MODELS
+from app.services.rag import search_knowledge, search_post_history, get_supabase, GROQ_KEY, GEMINI_KEY, DEFAULT_GEMINI_MODELS, DEFAULT_GROQ_MODELS
 from app.services.billing import check_and_spend, refund_credits, BillingError
 from groq import Groq
 
@@ -45,9 +45,22 @@ async def generate_rag_reply(account_id: str, user_comment: str, post_text: str 
     contexts = await search_knowledge(account_id, user_comment, limit=3, api_key=gemini_embed_key)
     knowledge_text = "\n".join([f"- {c.get('title')}: {c.get('content')}" for c in contexts]) if contexts else "No specific brand knowledge found."
 
+    # 2b. Tarik post history (contoh gaya bahasa dari post sebelumnya)
+    post_history = []
+    try:
+        post_history = await search_post_history(account_id, user_comment, limit=2, api_key=gemini_embed_key)
+    except Exception as e:
+        logging.warning(f"[auto_reply] search_post_history failed: {str(e)}")
+    post_history_text = "\n".join([f"- {p.get('text', '')[:250]}" for p in post_history]) if post_history else ""
+
     # 3. PROMPT (Disesuaikan dengan konteks komentar)
     final_tone = tone_prompt if tone_prompt else "Reply naturally, casually, and straight to the point like the account owner talking to a friend. No corporate greetings, no over-enthusiasm, no emojis unless natural."
     final_kb = user_kb if user_kb else knowledge_text
+
+    style_block = f"""
+[RECENT POST STYLE EXAMPLES - Mirror this writing style naturally, do not copy verbatim]
+{post_history_text}
+""" if post_history_text else ""
 
     prompt = f"""You are acting as the owner of this Threads account, replying directly to a user comment.
 
@@ -66,7 +79,7 @@ Do NOT translate. Do NOT reply in a different language than the user used.
 
 [BRAND KNOWLEDGE & FACTS]
 {final_kb}
-
+{style_block}
 [USER COMMENT]
 @{author_username} says: "{user_comment}"
 

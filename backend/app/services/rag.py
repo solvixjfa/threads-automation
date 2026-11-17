@@ -151,6 +151,54 @@ async def search_knowledge(account_id: str, query: str, limit: int = 3, api_key:
 
 
 
+async def search_post_history(account_id: str, query: str, limit: int = 2, api_key: str = None):
+    if not api_key: api_key = GEMINI_KEY
+    try:
+        query_vector = generate_embedding(query, api_key)
+    except Exception as e:
+        logging.error(f"search_post_history embedding failed: {str(e)}")
+        return []
+    db = get_supabase()
+    try:
+        res = db.rpc("match_post_history", {
+            "query_embedding": query_vector, "match_threshold": 0.3, "match_count": limit, "p_account_id": account_id
+        }).execute()
+        return res.data or []
+    except Exception as e:
+        logging.error(f"search_post_history RPC failed: {str(e)}")
+        return []
+
+
+def save_post_to_history_sync(account_id: str, threads_media_id: str, text: str, posted_at: str = None, api_key: str = None):
+    if not text or len(text.strip()) < 50:
+        return None
+    db = get_supabase()
+    if not api_key:
+        try:
+            acc = db.schema("threads").from_("threads_accounts").select("custom_gemini_key").eq("id", account_id).limit(1).execute()
+            api_key = (acc.data[0].get("custom_gemini_key") if acc.data else None) or GEMINI_KEY
+        except Exception:
+            api_key = GEMINI_KEY
+    try:
+        embedding = generate_embedding(text, api_key)
+    except Exception as e:
+        logging.error(f"save_post_to_history embedding failed: {str(e)}")
+        return None
+    try:
+        res = db.schema("threads").from_("post_history").upsert({
+            "account_id": account_id,
+            "threads_media_id": threads_media_id,
+            "text": text,
+            "embedding": embedding,
+            "posted_at": posted_at,
+        }, on_conflict="threads_media_id").execute()
+        logging.info(f"[post_history] saved media_id={threads_media_id} len={len(text)}")
+        return res.data
+    except Exception as e:
+        logging.error(f"save_post_to_history insert failed: {str(e)}")
+        return None
+
+
 async def list_knowledge_docs(account_id: str) -> list[dict]:
     db = get_supabase()
     res = db.schema("threads").from_("brand_knowledge").select("id, title, category").eq("account_id", account_id).order("created_at", desc=True).execute()
