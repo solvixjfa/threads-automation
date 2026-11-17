@@ -8,7 +8,7 @@ from app.services.rag import search_knowledge, get_supabase, GROQ_KEY, GEMINI_KE
 from app.services.billing import check_and_spend, refund_credits, BillingError
 from groq import Groq
 
-async def generate_rag_reply(account_id: str, user_comment: str, post_text: str = "", author_username: str = "", provider: str = "gemini", model_name: str = None) -> str:
+async def generate_rag_reply(account_id: str, user_comment: str, post_text: str = "", author_username: str = "", provider: str = "gemini", model_name: str = None, tone_prompt: str = "", user_kb: str = "") -> str:
     db = get_supabase()
     ref_id = None
     try:
@@ -46,23 +46,38 @@ async def generate_rag_reply(account_id: str, user_comment: str, post_text: str 
     knowledge_text = "\n".join([f"- {c.get('title')}: {c.get('content')}" for c in contexts]) if contexts else "No specific brand knowledge found."
 
     # 3. PROMPT (Disesuaikan dengan konteks komentar)
-    prompt = f"""You are the official AI Assistant for this Threads account.
-Your task is to reply to a user comment. Be friendly, concise, and professional.
+    final_tone = tone_prompt if tone_prompt else "Reply naturally, casually, and straight to the point like the account owner talking to a friend. No corporate greetings, no over-enthusiasm, no emojis unless natural."
+    final_kb = user_kb if user_kb else knowledge_text
+
+    prompt = f"""You are acting as the owner of this Threads account, replying directly to a user comment.
+
+[LANGUAGE RULE - HIGHEST PRIORITY]
+Detect the language of the user's comment below. You MUST reply in the EXACT SAME language.
+- If the user comment is in English -> reply in English.
+- If the user comment is in Indonesian -> reply in Indonesian.
+- If mixed -> reply in the dominant language.
+Do NOT translate. Do NOT reply in a different language than the user used.
+
+[TONE & PERSONA INSTRUCTIONS]
+{final_tone}
 
 [ORIGINAL POST CONTEXT]
 {post_text if post_text else "No post context available."}
 
-[BRAND KNOWLEDGE]
-{knowledge_text}
+[BRAND KNOWLEDGE & FACTS]
+{final_kb}
 
 [USER COMMENT]
 @{author_username} says: "{user_comment}"
 
 [REPLY RULES]
-1. Max 2-3 sentences. Natural and casual.
-2. If they ask about price/service, use the Brand Knowledge above.
-3. Reply in the same language as the user's comment (Indonesian/English).
-4. Do NOT use excessive hashtags.
+1. Reply in the SAME language as the user's comment (critical, see Language Rule above).
+2. Max 1-2 short sentences. Straight to the point, no fluff.
+3. If they ask about a project/service, use facts from Brand Knowledge. Do NOT invent facts.
+4. Match the tone from Tone & Persona Instructions (casual/formal/etc), but language still follows the user.
+5. Do NOT use hashtags. Emojis only if tone explicitly allows.
+6. Do NOT sound like a corporate customer service bot. Avoid "Halo kak", "Wah ide bagus tuh", "Hai sobat", or any template greeting.
+7. If Brand Knowledge does not contain the answer, say honestly and briefly that you'll follow up, instead of making something up.
 """
 
     result_text = ""

@@ -275,9 +275,13 @@ async def sync_replies_for_post(
         elif action == "llm":
             ai_input = text.strip() if text.strip() else "[User sent an image without any text...]"
             try:
+                tone = auto_settings.get("tone_prompt", "") if auto_settings else ""
+                user_kb = auto_settings.get("knowledge_base", "") if auto_settings else ""
+
                 draft_text = await generate_rag_reply(
                     account_id=acc_id, user_comment=ai_input, post_text=post_text,
                     author_username=author_username, provider=ai_provider,
+                    tone_prompt=tone, user_kb=user_kb
                 )
                 if draft_text is None:
                     # Fallback ke template gratis karena kredit habis

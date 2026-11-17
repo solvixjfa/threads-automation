@@ -160,11 +160,22 @@ async def generate_reply(payload: AutoReplyRequest):
             except Exception as lookup_err:
                 logging.error(f"[generate-reply] Post text lookup failed: {lookup_err}")
 
+        # Ambil tone & custom KB dari settings
+        tone = ""
+        user_kb = ""
+        try:
+            st = db.schema("threads").from_("auto_reply_settings").select("tone_prompt, knowledge_base").eq("account_id", payload.account_id).limit(1).execute()
+            if st.data:
+                tone = st.data[0].get("tone_prompt") or ""
+                user_kb = st.data[0].get("knowledge_base") or ""
+        except Exception: pass
+
         reply = await generate_rag_reply(
             account_id=payload.account_id, user_comment=payload.user_comment,
             post_text=final_post_text,
             author_username=payload.author_username or "",
-            provider=payload.provider or "gemini", model_name=payload.model_name
+            provider=payload.provider or "gemini", model_name=payload.model_name,
+            tone_prompt=tone, user_kb=user_kb
         )
         return {"status": "success", "reply": reply}
     except Exception as e:
