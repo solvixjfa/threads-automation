@@ -455,6 +455,19 @@ async def process_account(db, client, acc: dict) -> dict:
     new_posts = await sync_posts_from_meta(db, client, acc_id, token)
     account_stats["new_posts"] = new_posts
 
+    # Auto-sync post_history dari scheduled_posts (buat RAG gaya bahasa)
+    # Idempotent: aman dipanggil tiap siklus worker.
+    try:
+        from app.services.rag import backfill_post_history_from_scheduled
+        ph_result = await asyncio.to_thread(backfill_post_history_from_scheduled, acc_id)
+        if ph_result.get("newly_inserted", 0) > 0:
+            logging.info(
+                f"[post_history] acc={acc_id} new={ph_result['newly_inserted']} "
+                f"existing={ph_result['already_in_history']} failed={ph_result.get('failed', 0)}"
+            )
+    except Exception as e:
+        logging.error(f"[post_history] sync failed for {acc_id}: {e}")
+
     settings_res = (
         db.schema("threads").from_("auto_reply_settings").select("*")
         .eq("account_id", acc_id).limit(1).execute()
