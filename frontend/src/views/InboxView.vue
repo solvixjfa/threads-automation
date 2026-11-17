@@ -384,7 +384,7 @@ async function generateAIDraft(item: any) {
   try {
     const res = await fetch('https://threads-automation-r9so.onrender.com/api/v1/rag/generate-reply', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ account_id: item.account_id, user_comment: item.text, author_username: item.author_username, provider: aiProvider.value, model_name: aiModel.value })
+      body: JSON.stringify({ account_id: item.account_id, user_comment: item.text, author_username: item.author_username, provider: aiProvider.value, model_name: aiModel.value, reply_id: item.id })
     })
     const data = await res.json()
     if (!res.ok) throw new Error(data.detail || 'Failed to generate')

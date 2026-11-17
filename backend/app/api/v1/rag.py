@@ -30,6 +30,8 @@ class AutoReplyRequest(BaseModel):
     author_username: Optional[str] = ""
     provider: Optional[str] = "gemini"
     model_name: Optional[str] = None
+    post_text: Optional[str] = ""
+    reply_id: Optional[str] = None
 
 class BackfillRequest(BaseModel):
     account_id: str
@@ -114,8 +116,54 @@ async def backfill_knowledge(payload: BackfillRequest):
 @router.post("/generate-reply")
 async def generate_reply(payload: AutoReplyRequest):
     try:
+        import logging
+        import httpx
+        final_post_text = payload.post_text or ""
+        
+        if not final_post_text and payload.reply_id:
+            try:
+                from app.services.rag import get_supabase
+                db = get_supabase()
+                media_id = None
+                
+                # 1. Cek ke tabel scheduled_posts lewat ID (langsung)
+                sp_res = db.schema("threads").from_("scheduled_posts").select("text").eq("id", payload.reply_id).limit(1).execute()
+                if sp_res.data:
+                    final_post_text = sp_res.data[0].get("text", "")
+                
+                if not final_post_text:
+                    # 2. Cek ke tabel replies -> posts -> threads_media_id
+                    r_res = db.schema("threads").from_("replies").select("post_id").eq("id", payload.reply_id).limit(1).execute()
+                    if r_res.data and r_res.data[0].get("post_id"):
+                        post_ref = r_res.data[0]["post_id"]
+                        p_res = db.schema("threads").from_("posts").select("threads_media_id").eq("id", post_ref).limit(1).execute()
+                        if p_res.data:
+                            media_id = p_res.data[0].get("threads_media_id")
+                            
+                            # Coba cari di scheduled_posts pakai media_id
+                            if media_id:
+                                sp2 = db.schema("threads").from_("scheduled_posts").select("text").eq("published_media_id", media_id).limit(1).execute()
+                                if sp2.data:
+                                    final_post_text = sp2.data[0].get("text", "")
+                                    
+                            # 3. JALUR TERAKHIR: Tembak API Threads (Meta)
+                            if not final_post_text and media_id:
+                                acc = db.schema("threads").from_("threads_accounts").select("settings").eq("id", payload.account_id).limit(1).execute()
+                                token = acc.data[0].get("settings", {}).get("access_token") if acc.data else None
+                                if token:
+                                    async with httpx.AsyncClient() as client:
+                                        m_res = await client.get(f"https://graph.threads.net/v1.0/{media_id}?fields=text&access_token={token}")
+                                        if m_res.status_code == 200:
+                                            final_post_text = m_res.json().get("text", "")
+                                            
+                logging.info(f"[generate-reply] reply_id={payload.reply_id} media_id={media_id} post_text_len={len(final_post_text)}")
+            except Exception as lookup_err:
+                logging.error(f"[generate-reply] Post text lookup failed: {lookup_err}")
+
         reply = await generate_rag_reply(
-            account_id=payload.account_id, user_comment=payload.user_comment, author_username=payload.author_username or "",
+            account_id=payload.account_id, user_comment=payload.user_comment,
+            post_text=final_post_text,
+            author_username=payload.author_username or "",
             provider=payload.provider or "gemini", model_name=payload.model_name
         )
         return {"status": "success", "reply": reply}
