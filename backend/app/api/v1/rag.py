@@ -6,6 +6,7 @@ from app.services.rag import (
     get_all_raw_models, get_available_models, repurpose_content, get_repurpose_recommendations,
     score_draft_ai, improve_draft_ai, label_topics_ai
 )
+from app.services.rag import backfill_post_history_from_scheduled
 from app.services.auto_reply import generate_rag_reply
 from app.services.billing import check_and_spend, refund_credits, BillingError
 
@@ -109,6 +110,15 @@ async def embed_knowledge(payload: KnowledgeRequest):
 async def backfill_knowledge(payload: BackfillRequest):
     try:
         result = await backfill_unembedded_knowledge(payload.account_id)
+        return {"status": "success", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/backfill-post-history")
+async def backfill_post_history_endpoint(payload: BackfillRequest):
+    try:
+        result = backfill_post_history_from_scheduled(payload.account_id)
         return {"status": "success", "data": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

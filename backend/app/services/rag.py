@@ -199,6 +199,55 @@ def save_post_to_history_sync(account_id: str, threads_media_id: str, text: str,
         return None
 
 
+def backfill_post_history_from_scheduled(account_id: str) -> dict:
+    """Backfill post_history dari scheduled_posts (data lokal, gak butuh Meta API)."""
+    db = get_supabase()
+
+    # 1. Ambil semua post published dari scheduled_posts
+    sp_res = db.schema("threads").from_("scheduled_posts") \
+        .select("published_media_id, text, scheduled_for") \
+        .eq("account_id", account_id) \
+        .eq("status", "published") \
+        .execute()
+    all_posts = [sp for sp in (sp_res.data or []) if sp.get("published_media_id") and sp.get("text")]
+
+    # 2. Ambil yang udah ada di post_history
+    ph_res = db.schema("threads").from_("post_history") \
+        .select("threads_media_id") \
+        .eq("account_id", account_id) \
+        .execute()
+    existing = {row["threads_media_id"] for row in (ph_res.data or [])}
+
+    # 3. Filter yang belum ada
+    to_process = [sp for sp in all_posts if sp["published_media_id"] not in existing]
+
+    # 4. Embed + insert per item
+    inserted = 0
+    failed = 0
+    for sp in to_process:
+        try:
+            result = save_post_to_history_sync(
+                account_id=account_id,
+                threads_media_id=sp["published_media_id"],
+                text=sp["text"],
+                posted_at=sp.get("scheduled_for"),
+            )
+            if result:
+                inserted += 1
+            else:
+                failed += 1
+        except Exception as e:
+            logging.error(f"[backfill] failed {sp['published_media_id']}: {e}")
+            failed += 1
+
+    return {
+        "total_published_posts": len(all_posts),
+        "already_in_history": len(existing),
+        "newly_inserted": inserted,
+        "failed": failed,
+    }
+
+
 async def list_knowledge_docs(account_id: str) -> list[dict]:
     db = get_supabase()
     res = db.schema("threads").from_("brand_knowledge").select("id, title, category").eq("account_id", account_id).order("created_at", desc=True).execute()
