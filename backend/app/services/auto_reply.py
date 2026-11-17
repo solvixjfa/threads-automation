@@ -8,7 +8,7 @@ from app.services.rag import search_knowledge, get_supabase, GROQ_KEY, GEMINI_KE
 from app.services.billing import check_and_spend, refund_credits, BillingError
 from groq import Groq
 
-async def generate_rag_reply(account_id: str, user_comment: str, author_username: str = "", provider: str = "gemini", model_name: str = None) -> str:
+async def generate_rag_reply(account_id: str, user_comment: str, post_text: str = "", author_username: str = "", provider: str = "gemini", model_name: str = None) -> str:
     db = get_supabase()
     ref_id = None
     try:
@@ -48,6 +48,9 @@ async def generate_rag_reply(account_id: str, user_comment: str, author_username
     # 3. PROMPT (Disesuaikan dengan konteks komentar)
     prompt = f"""You are the official AI Assistant for this Threads account.
 Your task is to reply to a user comment. Be friendly, concise, and professional.
+
+[ORIGINAL POST CONTEXT]
+{post_text if post_text else "No post context available."}
 
 [BRAND KNOWLEDGE]
 {knowledge_text}
@@ -92,9 +95,8 @@ Your task is to reply to a user comment. Be friendly, concise, and professional.
         if not result_text:
             raise Exception(f"All Gemini models failed. Last error: {last_error}")
 
-    # 5. POTONG KREDIT (Kalau pakai SaaS)
-    if is_using_saas:
-        db.schema("threads").from_("threads_accounts").update({"credit_balance": credits - 1}).eq("id", account_id).execute()
+    # Kredit sudah dipotong otomatis oleh check_and_spend() di awal fungsi.
+    # Manual deduction dihapus untuk mencegah DOUBLE DEDUCT.
 
     return result_text
 

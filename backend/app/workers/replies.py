@@ -104,6 +104,15 @@ async def sync_replies_for_post(
 ) -> dict:
     stats = empty_stats()
 
+    # Ambil teks postingan asli untuk konteks AI
+    post_text = ""
+    try:
+        post_res = db.schema("threads").from_("scheduled_posts").select("text").eq("published_media_id", media_id).limit(1).execute()
+        if post_res.data:
+            post_text = post_res.data[0].get("text", "")
+    except Exception as e:
+        logging.error(f"[Sync Replies] Error fetching post text: {str(e)}")
+
     url = (
         f"https://graph.threads.net/v1.0/{media_id}/replies"
         f"?fields=id,text,username,timestamp,permalink,media_type,media_url&limit={MAX_REPLIES_PER_POST}"
@@ -267,7 +276,7 @@ async def sync_replies_for_post(
             ai_input = text.strip() if text.strip() else "[User sent an image without any text...]"
             try:
                 draft_text = await generate_rag_reply(
-                    account_id=acc_id, user_comment=ai_input,
+                    account_id=acc_id, user_comment=ai_input, post_text=post_text,
                     author_username=author_username, provider=ai_provider,
                 )
                 if draft_text is None:
