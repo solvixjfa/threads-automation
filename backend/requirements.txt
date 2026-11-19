@@ -7,3 +7,4 @@ httpx
 python-dotenv
 groq
 scikit-learn
+python-multipart>=0.0.9
