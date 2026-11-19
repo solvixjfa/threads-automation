@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+import io
+import logging
 from pydantic import BaseModel
 from typing import Optional
 from app.services.rag import (
@@ -105,6 +107,111 @@ async def embed_knowledge(payload: KnowledgeRequest):
         return {"status": "success", "data": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def _chunk_text(text: str, size: int = 1000, overlap: int = 100) -> list[str]:
+    text = (text or "").strip()
+    if not text:
+        return []
+    if len(text) <= size:
+        return [text]
+    chunks = []
+    step = size - overlap
+    for i in range(0, len(text), step):
+        chunks.append(text[i:i + size])
+    return chunks
+
+
+class EmbedBatchRequest(BaseModel):
+    account_id: str
+    title_prefix: str
+    category: Optional[str] = "general"
+    chunks: list[str]
+
+
+@router.post("/embed-batch")
+async def embed_batch(payload: EmbedBatchRequest):
+    """Terima array chunk text (dari client-side parsing atau paste)."""
+    MAX_CHUNKS = 100
+    chunks = (payload.chunks or [])[:MAX_CHUNKS]
+    inserted = 0
+    failed = 0
+    for idx, chunk in enumerate(chunks):
+        if not chunk or not chunk.strip():
+            continue
+        try:
+            await store_knowledge(
+                account_id=payload.account_id,
+                title=f"{payload.title_prefix} - Part {idx + 1}",
+                content=chunk,
+                category=payload.category or "general",
+            )
+            inserted += 1
+        except Exception as e:
+            logging.error(f"[embed-batch] chunk {idx} failed: {e}")
+            failed += 1
+    return {"status": "success", "data": {"total": len(chunks), "inserted": inserted, "failed": failed}}
+
+
+@router.post("/upload-knowledge")
+async def upload_knowledge(
+    account_id: str = Form(...),
+    category: str = Form("general"),
+    files: list[UploadFile] = File(...),
+):
+    """Upload .txt/.md files. PDF/DOCX coming soon (convert ke .txt dulu)."""
+    MAX_SIZE = 5 * 1024 * 1024  # 5MB per file
+    MAX_CHUNKS_PER_FILE = 100
+    results = []
+    total_inserted = 0
+    total_failed = 0
+
+    for f in files:
+        name = (f.filename or "").lower()
+        if not (name.endswith(".txt") or name.endswith(".md")):
+            results.append({"file": f.filename, "error": "Only .txt and .md supported. PDF/DOCX coming soon."})
+            continue
+        try:
+            raw = await f.read()
+            if len(raw) > MAX_SIZE:
+                results.append({"file": f.filename, "error": f"File too large (>{MAX_SIZE // 1024 // 1024}MB)"})
+                continue
+            text = raw.decode("utf-8", errors="ignore").strip()
+            if not text:
+                results.append({"file": f.filename, "error": "Empty file"})
+                continue
+            chunks = _chunk_text(text)[:MAX_CHUNKS_PER_FILE]
+            inserted = 0
+            failed = 0
+            for idx, chunk in enumerate(chunks):
+                if not chunk.strip():
+                    continue
+                try:
+                    await store_knowledge(
+                        account_id=account_id,
+                        title=f"{f.filename} - Part {idx + 1}",
+                        content=chunk,
+                        category=category,
+                    )
+                    inserted += 1
+                except Exception as ce:
+                    logging.error(f"[upload] {f.filename} chunk {idx}: {ce}")
+                    failed += 1
+            results.append({"file": f.filename, "chunks_total": len(chunks), "inserted": inserted, "failed": failed})
+            total_inserted += inserted
+            total_failed += failed
+        except Exception as e:
+            results.append({"file": f.filename, "error": str(e)})
+
+    return {
+        "status": "success",
+        "data": {
+            "total_files": len(files),
+            "inserted": total_inserted,
+            "failed": total_failed,
+            "details": results,
+        },
+    }
 
 @router.post("/backfill")
 async def backfill_knowledge(payload: BackfillRequest):
