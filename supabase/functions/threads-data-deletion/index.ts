@@ -16,7 +16,7 @@ serve(async (req) => {
     const signedRequest = formData.get("signed_request") as string;
 
     const confirmationCode = crypto.randomUUID();
-    const statusUrl = `${Deno.env.get("APP_BASE_URL") || "https://ixiera.id"}/deletion-status?code=${confirmationCode}`;
+    const statusUrl = `${Deno.env.get("APP_BASE_URL") || "https://ixiera.online"}/deletion-status?code=${confirmationCode}`;
 
     return new Response(
       JSON.stringify({
