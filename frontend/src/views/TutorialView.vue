@@ -77,8 +77,8 @@
       </div>
       <h3 class="text-base font-bold">{{ txt.contactTitle }}</h3>
       <p class="text-xs theme-text-muted max-w-md mx-auto">{{ txt.contactSub }}</p>
-      <a href="mailto:contact@ixiera.online" class="inline-flex items-center gap-2 text-sm font-bold underline underline-offset-4 hover:opacity-80 transition">
-        contact@ixiera.online
+      <a href="mailto:support@ixiera.online" class="inline-flex items-center gap-2 text-sm font-bold underline underline-offset-4 hover:opacity-80 transition">
+        support@ixiera.online
       </a>
     </div>
 

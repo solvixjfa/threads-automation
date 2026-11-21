@@ -1,0 +1,150 @@
+# Auto-Generated Architecture Audit
+
+## 1. Backend Environment Variables
+- `GEMINI_API_KEY`
+- `GROQ_API_KEY`
+- `PAID_CREDITS`
+- `PAID_DAYS`
+- `REMINDER_DAYS_BEFORE_EXPIRY`
+- `REPLY_MAX_PER_HOUR`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_URL`
+- `TRIAL_CREDITS`
+- `TRIAL_DAYS`
+
+## 2. Database Tables Used
+- `threads.account_insights_daily`
+- `threads.api_call_logs`
+- `threads.auto_reply_logs`
+- `threads.auto_reply_settings`
+- `threads.brand_knowledge`
+- `threads.credit_ledger`
+- `threads.post_history`
+- `threads.post_metrics`
+- `threads.posts`
+- `threads.replies`
+- `threads.scheduled_posts`
+- `threads.threads_accounts`
+
+## 3. Database RPCs Used
+- `threads.match_brand_knowledge()`
+- `threads.match_post_history()`
+- `threads.refund_credits()`
+- `threads.spend_credits()`
+
+## 4. Backend API Routes
+- `/adjust-credits`
+- `/analysis-status/{account_id}`
+- `/analyze`
+- `/backfill`
+- `/backfill-permalinks/{account_id}`
+- `/backfill-post-history`
+- `/best-time/{account_id}`
+- `/bulk-delete`
+- `/deep-analyze/{account_id}`
+- `/downgrade`
+- `/edit`
+- `/embed`
+- `/embed-batch`
+- `/extend`
+- `/followers/{account_id}`
+- `/force-sync`
+- `/generate-post`
+- `/generate-reply`
+- `/hook-performance/{account_id}`
+- `/import`
+- `/improve`
+- `/knowledge`
+- `/label-topics`
+- `/ledger/{account_id}`
+- `/length-performance/{account_id}`
+- `/list-models`
+- `/models/{provider}`
+- `/publish-reply`
+- `/recommendations/{account_id}`
+- `/repurpose`
+- `/retry`
+- `/score-draft`
+- `/sentiment-performance/{account_id}`
+- `/stats`
+- `/sync-replies`
+- `/token-stats`
+- `/topic-clusters/{account_id}`
+- `/upload-knowledge`
+- `/users`
+- `/{post_id}`
+
+## 5. File Structure
+### Backend (.py)
+- `backend/main.py`
+- `backend/app/core/config.py`
+- `backend/app/services/rag.py`
+- `backend/app/services/auto_reply.py`
+- `backend/app/services/importer.py`
+- `backend/app/services/leads.py`
+- `backend/app/services/comment_classifier.py`
+- `backend/app/services/comment_templates.py`
+- `backend/app/services/billing.py`
+- `backend/app/workers/replies.py`
+- `backend/app/api/v1/rag.py`
+- `backend/app/api/v1/history.py`
+- `backend/app/api/v1/leads.py`
+- `backend/app/api/v1/queue.py`
+- `backend/app/api/v1/analytics.py`
+- `backend/app/api/v1/admin.py`
+
+### Frontend (.vue)
+- `frontend/src/App.vue`
+- `frontend/src/components/BestTimeHeatmap.vue`
+- `frontend/src/components/NotifyOverlay.vue`
+- `frontend/src/components/AppSidebar.vue`
+- `frontend/src/components/BestTimeChip.vue`
+- `frontend/src/components/WorkerStatusCard.vue`
+- `frontend/src/components/LanguageSwitcher.vue`
+- `frontend/src/components/TemplateSettingsCard.vue`
+- `frontend/src/components/PasswordInput.vue`
+- `frontend/src/components/BottomNav.vue`
+- `frontend/src/components/GrowthChart.vue`
+- `frontend/src/components/DoughnutChart.vue`
+- `frontend/src/components/BestTimeChart.vue`
+- `frontend/src/components/BestTimeLineChart.vue`
+- `frontend/src/views/LoginView.vue`
+- `frontend/src/views/DashboardView.vue`
+- `frontend/src/views/ComposerView.vue`
+- `frontend/src/views/InboxView.vue`
+- `frontend/src/views/LandingView.vue`
+- `frontend/src/views/RepurposeView.vue`
+- `frontend/src/views/UpdatePasswordView.vue`
+- `frontend/src/views/PrivacyView.vue`
+- `frontend/src/views/TermsView.vue`
+- `frontend/src/views/DataDeletionView.vue`
+- `frontend/src/views/PricingView.vue`
+- `frontend/src/views/TutorialView.vue`
+- `frontend/src/components/ui/Spinner.vue`
+- `frontend/src/components/ui/Button.vue`
+- `frontend/src/components/ui/Card.vue`
+- `frontend/src/components/ui/Input.vue`
+- `frontend/src/components/ui/Textarea.vue`
+- `frontend/src/components/ui/Badge.vue`
+- `frontend/src/components/ui/EmptyState.vue`
+- `frontend/src/components/ui/Select.vue`
+- `frontend/src/views/content/ContentLayout.vue`
+- `frontend/src/views/content/QueueView.vue`
+- `frontend/src/views/analytics/AnalyticsLayout.vue`
+- `frontend/src/views/analytics/BestTimeView.vue`
+- `frontend/src/views/analytics/HookView.vue`
+- `frontend/src/views/analytics/LengthView.vue`
+- `frontend/src/views/analytics/TopicView.vue`
+- `frontend/src/views/analytics/SentimentView.vue`
+- `frontend/src/views/settings/SettingsLayout.vue`
+- `frontend/src/views/settings/AccountView.vue`
+- `frontend/src/views/settings/TemplateView.vue`
+- `frontend/src/views/settings/KnowledgeView.vue`
+- `frontend/src/views/settings/AiView.vue`
+- `frontend/src/views/settings/AutoReplyView.vue`
+- `frontend/src/views/settings/ProfileLayout.vue`
+- `frontend/src/views/admin/AdminLayout.vue`
+- `frontend/src/views/admin/AdminOverview.vue`
+- `frontend/src/views/admin/AdminUsers.vue`
