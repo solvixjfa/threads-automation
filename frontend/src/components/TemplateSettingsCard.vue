@@ -32,7 +32,7 @@
           <div class="flex items-center gap-3 shrink-0">
             <div class="w-40">
               <Select 
-                v-model="state[cat.value]?.action" 
+                v-model="state[cat.value].action" 
                 :options="[
                   { label: $t('settings.templates.action_ai'), value: 'llm' },
                   { label: $t('settings.templates.action_template'), value: 'template' },
