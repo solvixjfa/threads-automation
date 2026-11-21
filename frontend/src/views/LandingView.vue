@@ -296,7 +296,7 @@
     <!-- FOOTER -->
     <footer class="py-12 border-t theme-border text-center space-y-4">
       <div class="flex flex-wrap justify-center gap-4 text-xs theme-text-muted">
-        <a href="mailto:contact@ixiera.id" class="hover:theme-text transition">Email</a>
+        <a href="mailto:contact@ixiera.online" class="hover:theme-text transition">Email</a>
         <RouterLink to="/privacy" class="hover:theme-text transition">{{ $t('landing.footer.privacy') }}</RouterLink>
         <RouterLink to="/terms" class="hover:theme-text transition">{{ $t('landing.footer.terms') }}</RouterLink>
         <RouterLink to="/data-deletion" class="hover:theme-text transition">{{ $t('landing.footer.delete') }}</RouterLink>

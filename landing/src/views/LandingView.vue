@@ -23,7 +23,7 @@
           
           <button @click="toggleLang" class="text-sm font-bold border border-[var(--line)] px-3 py-1.5 rounded-full hover:bg-[var(--surface-2)] transition">{{ locale.toUpperCase() }}</button>
           
-          <a href="https://app.ixiera.id/login" class="text-sm font-bold bg-[var(--text)] text-[var(--bg)] px-6 py-2 rounded-full hover:opacity-90 transition">{{ $t('landing.nav.start_free') }}</a>
+          <a href="https://app.ixiera.online/login" class="text-sm font-bold bg-[var(--text)] text-[var(--bg)] px-6 py-2 rounded-full hover:opacity-90 transition">{{ $t('landing.nav.start_free') }}</a>
         </div>
 
         <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2">
@@ -45,7 +45,7 @@
             </button>
             <button @click="toggleLang" class="text-sm font-bold border border-[var(--line)] px-3 py-1.5 rounded-md">{{ locale === 'id' ? 'EN' : 'ID' }}</button>
           </div>
-          <a href="https://app.ixiera.id/login" class="block text-center text-sm font-bold bg-[var(--text)] text-[var(--bg)] py-3 rounded-md">{{ $t('landing.nav.start_free') }}</a>
+          <a href="https://app.ixiera.online/login" class="block text-center text-sm font-bold bg-[var(--text)] text-[var(--bg)] py-3 rounded-md">{{ $t('landing.nav.start_free') }}</a>
         </div>
       </div>
     </nav>
@@ -61,7 +61,7 @@
           </h1>
           <p class="text-lg text-[var(--muted)] leading-relaxed max-w-xl mx-auto md:mx-0">{{ $t('landing.hero.subtitle') }}</p>
           <div class="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4 pt-4">
-            <a href="https://app.ixiera.id/login" class="w-full sm:w-auto px-8 py-3.5 rounded-full text-base font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">{{ $t('landing.hero.cta_primary') }}</a>
+            <a href="https://app.ixiera.online/login" class="w-full sm:w-auto px-8 py-3.5 rounded-full text-base font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">{{ $t('landing.hero.cta_primary') }}</a>
             <a href="#contoh" class="w-full sm:w-auto px-8 py-3.5 rounded-full text-base font-bold border border-[var(--line)] hover:bg-[var(--surface-2)] transition">{{ $t('landing.hero.cta_secondary') }}</a>
           </div>
           <p class="text-xs text-[var(--muted)] pt-2">{{ $t('landing.hero.microcopy') }}</p>
@@ -399,7 +399,7 @@
           </div>
           <p class="text-xs text-[var(--muted)] mt-8 max-w-3xl mx-auto">{{ $t('landing.pricing.note') }}</p>
           <p class="text-[11px] text-[var(--muted)] text-center mt-3 font-semibold">Harga beta, terkunci selama kamu berlangganan.</p>
-          <a href="https://app.ixiera.id/login" class="inline-block mt-8 px-10 py-4 rounded-full text-lg font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">{{ $t('landing.pricing.cta') }}</a>
+          <a href="https://app.ixiera.online/login" class="inline-block mt-8 px-10 py-4 rounded-full text-lg font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">{{ $t('landing.pricing.cta') }}</a>
         </div>
       </section>
 
@@ -423,7 +423,7 @@
       <section class="py-24 text-center px-6 border-t border-[var(--line)]">
         <div class="max-w-3xl mx-auto space-y-8 fade-in">
           <h2 class="text-3xl md:text-5xl font-bold tracking-tight">{{ $t('landing.cta_end.title') }}</h2>
-          <a href="https://app.ixiera.id/login" class="inline-flex items-center gap-2 px-10 py-4 rounded-full text-lg font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">{{ $t('landing.cta_end.btn') }}</a>
+          <a href="https://app.ixiera.online/login" class="inline-flex items-center gap-2 px-10 py-4 rounded-full text-lg font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">{{ $t('landing.cta_end.btn') }}</a>
         </div>
       </section>
 
@@ -432,7 +432,7 @@
     <!-- FOOTER -->
     <footer class="py-12 border-t border-[var(--line)] text-center text-sm text-[var(--muted)]">
       <div class="flex flex-wrap justify-center items-center gap-4 mb-4">
-        <a href="mailto:contact@ixiera.id" class="hover:text-[var(--text)] transition-colors">{{ $t('landing.footer.email') }}</a>
+        <a href="mailto:contact@ixiera.online" class="hover:text-[var(--text)] transition-colors">{{ $t('landing.footer.email') }}</a>
         <span class="hidden sm:inline text-[var(--line)]">·</span>
         <RouterLink to="/privacy" class="hover:text-[var(--text)] transition-colors">{{ $t('landing.footer.privacy') }}</RouterLink>
         <span class="hidden sm:inline text-[var(--line)]">·</span>
