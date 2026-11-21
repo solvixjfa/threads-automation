@@ -24,7 +24,7 @@
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-2 flex-wrap">
               <span class="text-sm font-bold">{{ $t('settings.templates.' + cat.value) }}</span>
-              <Badge v-if="!state[cat.value].enabled" variant="danger">{{ $t('settings.templates.disabled') }}</Badge>
+              <Badge v-if="!state[cat.value]?.enabled" variant="danger">{{ $t('settings.templates.disabled') }}</Badge>
             </div>
             <p class="text-xs theme-text-muted mt-0.5">{{ $t('settings.templates.' + cat.value + '_desc') }}</p>
           </div>
@@ -32,22 +32,22 @@
           <div class="flex items-center gap-3 shrink-0">
             <div class="w-40">
               <Select 
-                v-model="state[cat.value].action" 
+                v-model="state[cat.value]?.action" 
                 :options="[
                   { label: $t('settings.templates.action_ai'), value: 'llm' },
                   { label: $t('settings.templates.action_template'), value: 'template' },
                   { label: $t('settings.templates.action_skip'), value: 'skip' }
                 ]" 
-                :disabled="!state[cat.value].enabled"
+                :disabled="!state[cat.value]?.enabled"
               />
             </div>
-            <button type="button" @click="state[cat.value].enabled = !state[cat.value].enabled" class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition" :style="{ background: state[cat.value].enabled ? 'var(--accent)' : 'var(--bg-hover)' }">
-              <span class="inline-block h-5 w-5 rounded-full transition-transform" :style="{ background: state[cat.value].enabled ? 'var(--accent-text)' : 'var(--text-muted)', transform: state[cat.value].enabled ? 'translateX(22px)' : 'translateX(2px)' }"></span>
+            <button type="button" @click="state[cat.value].enabled = !state[cat.value]?.enabled" class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition" :style="{ background: state[cat.value]?.enabled ? 'var(--accent)' : 'var(--bg-hover)' }">
+              <span class="inline-block h-5 w-5 rounded-full transition-transform" :style="{ background: state[cat.value]?.enabled ? 'var(--accent-text)' : 'var(--text-muted)', transform: state[cat.value]?.enabled ? 'translateX(22px)' : 'translateX(2px)' }"></span>
             </button>
           </div>
         </div>
 
-        <div v-if="state[cat.value].enabled && state[cat.value].action === 'template'" class="space-y-2 pt-3 border-t theme-border">
+        <div v-if="state[cat.value]?.enabled && state[cat.value]?.action === 'template'" class="space-y-2 pt-3 border-t theme-border">
           <div v-if="state[cat.value].templates.length === 0" class="text-[11px] theme-text-muted italic">{{ $t('settings.templates.sys_template') }}</div>
           <div v-for="(tpl, idx) in state[cat.value].templates" :key="idx" class="flex items-center gap-2 p-2 rounded-lg theme-bg border theme-border text-xs">
             <span class="flex-1 whitespace-pre-wrap">{{ tpl }}</span>
@@ -59,7 +59,7 @@
           </div>
         </div>
 
-        <div v-if="state[cat.value].enabled && state[cat.value].action === 'llm'" class="text-[11px] theme-text-muted pt-2 border-t theme-border">
+        <div v-if="state[cat.value]?.enabled && state[cat.value]?.action === 'llm'" class="text-[11px] theme-text-muted pt-2 border-t theme-border">
           {{ $t('settings.templates.ai_cost') }}
         </div>
       </div>
