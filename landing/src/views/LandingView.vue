@@ -75,7 +75,8 @@
       </section>
 
       <!-- FITUR -->
-      <section id="fitur" class="py-20 md:py-32 border-t border-[var(--line)]">
+      <section id="contoh" class="scroll-mt-16 py-20 md:py-32 border-t border-[var(--line)]">
+        <span id="fitur"></span>
         <div class="max-w-[1120px] mx-auto px-6">
           <div class="text-center mb-20 fade-in">
             <h2 class="font-display text-4xl md:text-5xl">{{ $t('landing.features.title') }}</h2>
