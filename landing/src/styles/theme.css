@@ -1,5 +1,12 @@
 :root {
   color-scheme: light;
+  --bg: #ffffff;
+  --surface: #fafafa;
+  --surface-2: #f2f2f2;
+  --text: #0a0a0a;
+  --muted: #666666;
+  --line: #e5e5e5;
+
   --bg-primary: #ffffff;
   --bg-secondary: #fafafa;
   --bg-elevated: #ffffff;
@@ -17,6 +24,13 @@
 
 .dark {
   color-scheme: dark;
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --surface-2: #141414;
+  --text: #ffffff;
+  --muted: #888888;
+  --line: #1f1f1f;
+
   --bg-primary: #000000;
   --bg-secondary: #0a0a0a;
   --bg-elevated: #141414;
@@ -30,6 +44,21 @@
   --accent-text: #000000;
   --danger: #ef4444;
   --success: #22c55e;
+}
+
+.font-display {
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .theme-bg { background: var(--bg-primary); }

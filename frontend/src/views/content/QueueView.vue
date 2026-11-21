@@ -147,7 +147,7 @@
                 <div class="w-10 h-10 rounded-full theme-bg-sec border theme-border shrink-0 flex items-center justify-center font-bold text-xs">IX</div>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-1">
-                    <span class="font-bold text-sm theme-text">ixiera.id</span>
+                    <span class="font-bold text-sm theme-text">ixiera.online</span>
                     <span class="text-xs theme-text-muted">· now</span>
                   </div>
                   <p class="text-sm whitespace-pre-wrap break-words mt-1 leading-relaxed theme-text">{{ editForm.text }}</p>

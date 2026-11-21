@@ -11,7 +11,7 @@
           <h3 class="text-xl font-bold mb-2">Trial</h3>
           <p class="text-sm text-[var(--muted)] mb-6">Coba semua fitur.</p>
           <div class="text-4xl font-bold mb-6">Rp 0<span class="text-sm text-[var(--muted)] font-normal">/7 hari</span></div>
-          <a href="https://app.ixiera.id/login" class="mt-auto block text-center py-3 rounded-full font-bold border border-[var(--line)] hover:bg-[var(--surface-2)] transition">Mulai Trial</a>
+          <a href="https://app.ixiera.online/login" class="mt-auto block text-center py-3 rounded-full font-bold border border-[var(--line)] hover:bg-[var(--surface-2)] transition">Mulai Trial</a>
         </div>
         <!-- Card 2 -->
         <div class="border-2 border-[var(--text)] rounded-2xl p-8 bg-[var(--bg)] relative shadow-xl flex flex-col">
@@ -19,14 +19,14 @@
           <h3 class="text-xl font-bold mb-2">Pro</h3>
           <p class="text-sm text-[var(--muted)] mb-6">Untuk yang serius otomatisasi.</p>
           <div class="text-4xl font-bold mb-6">Rp 29rb<span class="text-sm text-[var(--muted)] font-normal">/bulan</span></div>
-          <a href="https://app.ixiera.id/login" class="mt-auto block text-center py-3 rounded-full font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">Pilih Pro</a>
+          <a href="https://app.ixiera.online/login" class="mt-auto block text-center py-3 rounded-full font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">Pilih Pro</a>
         </div>
         <!-- Card 3 -->
         <div class="border border-[var(--line)] rounded-2xl p-8 bg-[var(--surface)] flex flex-col">
           <h3 class="text-xl font-bold mb-2">BYOK</h3>
           <p class="text-sm text-[var(--muted)] mb-6">Bawa API Key sendiri.</p>
           <div class="text-4xl font-bold mb-6">Rp 19rb<span class="text-sm text-[var(--muted)] font-normal">/bulan</span></div>
-          <a href="https://app.ixiera.id/login" class="mt-auto block text-center py-3 rounded-full font-bold border border-[var(--line)] hover:bg-[var(--surface-2)] transition">Pilih BYOK</a>
+          <a href="https://app.ixiera.online/login" class="mt-auto block text-center py-3 rounded-full font-bold border border-[var(--line)] hover:bg-[var(--surface-2)] transition">Pilih BYOK</a>
         </div>
       </div>
     </main>

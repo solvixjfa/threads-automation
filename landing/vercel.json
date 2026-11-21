@@ -6,7 +6,7 @@
       "has": [
         {
           "type": "host",
-          "value": "ixiera.id"
+          "value": "ixiera.online"
         }
       ],
       "destination": "https://ixiera.online/$1",
@@ -17,7 +17,7 @@
       "has": [
         {
           "type": "host",
-          "value": "www.ixiera.id"
+          "value": "www.ixiera.online"
         }
       ],
       "destination": "https://ixiera.online/$1",
