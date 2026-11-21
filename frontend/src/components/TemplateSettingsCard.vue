@@ -6,7 +6,7 @@
           <h2 class="text-sm font-bold">{{ $t('settings.templates.title') }}</h2>
           <p class="text-xs theme-text-muted mt-0.5">{{ $t('settings.templates.subtitle') }}</p>
         </div>
-        <Button @click="save" :disabled="saving" :loading="saving" size="sm">
+        <Button @click="save" :disabled="saving || !accountId" :loading="saving" size="sm">
           {{ saving ? $t('common.processing') : $t('settings.templates.save_btn') }}
         </Button>
       </div>
@@ -104,7 +104,7 @@ async function load() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id').eq('user_id', user.id).maybeSingle()
-    if (!account) return
+    if (!account) { initState({}); return }
     accountId.value = account.id
     const { data: settings } = await supabase.schema('threads').from('auto_reply_settings').select('rules').eq('account_id', account.id).maybeSingle()
     initState(settings?.rules || {})
