@@ -333,14 +333,14 @@
       "how_it_works": "How it Works",
       "faq": "FAQ",
       "login": "Log in",
-      "start_free": "Request Access"
+      "start_free": "Start Free Trial"
     },
     "hero": {
       "badge": "PUBLIC BETA",
       "title_1": "Posts that learn from",
       "title_2": "your own account.",
       "subtitle": "Ixiera reads your best-performing posts (time, hook, length, topic), then helps you plan content and reply to comments in your style.",
-      "cta_primary": "Request Access",
+      "cta_primary": "Start Free Trial",
       "cta_secondary": "See examples",
       "microcopy": "7-day trial · 20 free credits · No upfront payment",
       "trust_1": "Official Meta login, no password saved",
@@ -405,7 +405,7 @@
       "p3_title": "30-day plan + own API key",
       "p3_desc": "Rp19,000 · use your own API key · no credits",
       "note": "1 credit = 1 AI action (generate, AI reply, repurpose, advanced analysis). Reply templates and Quick Score are free. Own API key is only available in paid plans.",
-      "cta": "Request Access"
+      "cta": "Start Free Trial"
     },
     "faq": {
       "title": "Frequently Asked Questions",
@@ -430,7 +430,7 @@
     },
     "cta_end": {
       "title": "Ready to stop guessing?",
-      "btn": "Request Access"
+      "btn": "Start Free Trial"
     },
     "footer": {
       "email": "Email",
