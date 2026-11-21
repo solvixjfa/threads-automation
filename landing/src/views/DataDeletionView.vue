@@ -6,7 +6,7 @@
       <li>Login to your Ixiera dashboard.</li>
       <li>Go to Settings > Account.</li>
       <li>Click "Disconnect Threads".</li>
-      <li>Send an email to <strong>contact@ixiera.id</strong> with the subject "Delete My Data".</li>
+      <li>Send an email to <strong>support@ixiera.online</strong> with the subject "Delete My Data".</li>
     </ol>
     <p class="mt-4">We will permanently delete all your data from our database within 7 working days.</p>
     <RouterLink to="/" class="text-sm font-bold underline mt-8 block">Back to Home</RouterLink>

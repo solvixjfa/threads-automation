@@ -18,7 +18,7 @@
           <p class="text-lg text-[var(--muted)] leading-relaxed max-w-xl mx-auto md:mx-0">{{ $t('landing.hero.subtitle') }}</p>
           
           <div class="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4 pt-4">
-            <a href="https://app.ixiera.id/login" class="w-full sm:w-auto px-8 py-3.5 rounded-full text-base font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">{{ $t('landing.hero.cta_primary') }}</a>
+            <a href="https://app.ixiera.online/login" class="w-full sm:w-auto px-8 py-3.5 rounded-full text-base font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">{{ $t('landing.hero.cta_primary') }}</a>
             <a href="#contoh" class="w-full sm:w-auto px-8 py-3.5 rounded-full text-base font-bold border border-[var(--line)] hover:bg-[var(--surface-2)] transition">{{ $t('landing.hero.cta_secondary') }}</a>
           </div>
           
