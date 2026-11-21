@@ -38,7 +38,7 @@
               <div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div>
               <div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div>
               <div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div>
-              <div class="ml-auto text-[10px] font-mono text-[#666]">app.ixiera.id/dashboard</div>
+              <div class="ml-auto text-[10px] font-mono text-[#666]">app.ixiera.online/dashboard</div>
             </div>
             <div class="p-5 space-y-4">
               <div class="grid grid-cols-2 gap-3">
@@ -95,7 +95,7 @@
                 <div class="border border-[#222] rounded-xl overflow-hidden bg-[#050607] shadow-2xl">
                   <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[#1a1a1a] bg-[#0a0a0a]">
                     <div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div>
-                    <span class="ml-2 text-[10px] text-[#666] font-mono">app.ixiera.id/content/create</span>
+                    <span class="ml-2 text-[10px] text-[#666] font-mono">app.ixiera.online/content/create</span>
                   </div>
                   <div class="p-5">
                     <div class="mb-4">
@@ -156,7 +156,7 @@
                 <div class="border border-[#222] rounded-xl overflow-hidden bg-[#050607] shadow-2xl">
                   <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[#1a1a1a] bg-[#0a0a0a]">
                     <div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div>
-                    <span class="ml-2 text-[10px] text-[#666] font-mono">app.ixiera.id/comment</span>
+                    <span class="ml-2 text-[10px] text-[#666] font-mono">app.ixiera.online/comment</span>
                   </div>
                   <div class="p-5">
                     <div class="mb-4">
@@ -217,7 +217,7 @@
                 <div class="border border-[#222] rounded-xl overflow-hidden bg-[#050607] shadow-2xl">
                   <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[#1a1a1a] bg-[#0a0a0a]">
                     <div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div>
-                    <span class="ml-2 text-[10px] text-[#666] font-mono">app.ixiera.id/analytics/best-time</span>
+                    <span class="ml-2 text-[10px] text-[#666] font-mono">app.ixiera.online/analytics/best-time</span>
                   </div>
                   <div class="p-5">
                     <div class="mb-4">

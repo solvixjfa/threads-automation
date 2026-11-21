@@ -17,7 +17,7 @@
         <div class="max-w-3xl mx-auto border border-[#222] rounded-xl overflow-hidden bg-[#050607] shadow-2xl">
           <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[#1a1a1a] bg-[#0a0a0a]">
             <div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div>
-            <span class="ml-2 text-[10px] text-[#666] font-mono">app.ixiera.id/content/create</span>
+            <span class="ml-2 text-[10px] text-[#666] font-mono">app.ixiera.online/content/create</span>
           </div>
           <div class="p-6">
             <div class="mb-4">
@@ -61,7 +61,7 @@
         <div class="max-w-3xl mx-auto border border-[#222] rounded-xl overflow-hidden bg-[#050607] shadow-2xl">
           <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[#1a1a1a] bg-[#0a0a0a]">
             <div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div>
-            <span class="ml-2 text-[10px] text-[#666] font-mono">app.ixiera.id/comment</span>
+            <span class="ml-2 text-[10px] text-[#666] font-mono">app.ixiera.online/comment</span>
           </div>
           <div class="p-6">
             <div class="flex gap-4 border-b border-[#222] pb-2 mb-4 text-[10px] font-bold">
@@ -113,7 +113,7 @@
         <div class="max-w-3xl mx-auto border border-[#222] rounded-xl overflow-hidden bg-[#050607] shadow-2xl">
           <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[#1a1a1a] bg-[#0a0a0a]">
             <div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div>
-            <span class="ml-2 text-[10px] text-[#666] font-mono">app.ixiera.id/analytics/best-time</span>
+            <span class="ml-2 text-[10px] text-[#666] font-mono">app.ixiera.online/analytics/best-time</span>
           </div>
           <div class="p-6">
             <div class="border border-[#9984d8] rounded-xl p-5 bg-[#9984d8]/5 mb-6 relative overflow-hidden">

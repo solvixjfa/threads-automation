@@ -34,7 +34,7 @@
           <Moon v-else class="w-5 h-5 text-[var(--text)]" />
         </button>
         <button @click="toggleLang" class="text-sm font-bold border border-[var(--line)] px-3 py-1.5 rounded-full hover:bg-[var(--surface-2)] transition">{{ locale.toUpperCase() }}</button>
-        <a href="https://app.ixiera.id/login" class="text-sm font-bold bg-[var(--text)] text-[var(--bg)] px-6 py-2 rounded-full hover:opacity-90 transition">Minta Akses</a>
+        <a href="https://app.ixiera.online/login" class="text-sm font-bold bg-[var(--text)] text-[var(--bg)] px-6 py-2 rounded-full hover:opacity-90 transition">Minta Akses</a>
       </div>
 
       <!-- Mobile Hamburger -->
@@ -45,7 +45,8 @@
     </div>
 
     <!-- Mobile Menu (Full Screen Overlay) -->
-    <div v-if="mobileMenuOpen" class="md:hidden fixed inset-0 top-16 bg-[var(--bg)] z-40 overflow-y-auto">
+    <Teleport to="body">
+      <div v-if="mobileMenuOpen" class="md:hidden fixed inset-0 top-16 bg-[var(--bg)] text-[var(--text)] z-[60] overflow-y-auto">
       <div class="px-6 py-6 flex flex-col gap-2 min-h-full">
         
         <!-- Dropdown Fitur Accordion -->
@@ -79,10 +80,11 @@
             </button>
             <button @click="toggleLang" class="text-sm font-bold border border-[var(--line)] px-4 py-1.5 rounded-md bg-[var(--bg)]">{{ locale === 'id' ? 'EN' : 'ID' }}</button>
           </div>
-          <a href="https://app.ixiera.id/login" class="block text-center text-base font-bold bg-[var(--text)] text-[var(--bg)] py-4 rounded-full shadow-lg">Minta Akses</a>
+          <a href="https://app.ixiera.online/login" class="block text-center text-base font-bold bg-[var(--text)] text-[var(--bg)] py-4 rounded-full shadow-lg">Minta Akses</a>
         </div>
       </div>
-    </div>
+      </div>
+    </Teleport>
   </nav>
 </template>
 
