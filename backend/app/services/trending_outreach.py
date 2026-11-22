@@ -96,6 +96,81 @@ def _enrich_and_filter_posts(db, account_id: str, own_username: str, raw_posts: 
     return external_posts if external_posts else own_posts
 
 
+
+DEFAULT_TRENDING_TOPICS = ["AI", "Bisnis", "Startup", "Marketing", "Produktivitas"]
+
+
+async def fetch_official_trending_topics(
+    account_id: str,
+    force_refresh: bool = False,
+    cache_only: bool = False,
+) -> dict:
+    db = get_supabase()
+    acc = _get_account_guard(db, account_id)
+    token = acc["_token"]
+    cache_key = "topics:v1:official"
+    now = datetime.now(timezone.utc)
+
+    if not force_refresh:
+        q = (
+            db.schema("threads")
+            .from_("trending_cache")
+            .select("payload, fetched_at, expires_at")
+            .eq("cache_key", cache_key)
+            .limit(1)
+        )
+        if not cache_only:
+            q = q.gt("expires_at", now.isoformat())
+        cached = q.execute()
+        if cached.data:
+            topics = cached.data[0].get("payload") or DEFAULT_TRENDING_TOPICS
+            return {"topics": topics, "cached": True}
+        if cache_only:
+            return {"topics": DEFAULT_TRENDING_TOPICS, "cached": True}
+
+    extracted = []
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        for params in (
+            {"country_code": "US", "access_token": token},
+            {"access_token": token},
+        ):
+            try:
+                res = await client.get("https://graph.threads.net/v1.0/trending_topics", params=params)
+                if res.status_code != 200:
+                    logging.warning(f"[Trending Topics] Meta status {res.status_code}: {res.text[:200]}")
+                    continue
+                items = res.json().get("data") or []
+                for item in items:
+                    if isinstance(item, str):
+                        label = item.strip()
+                    elif isinstance(item, dict):
+                        label = (item.get("topic") or item.get("name") or item.get("title") or "").strip()
+                    else:
+                        label = ""
+                    if label and label not in extracted:
+                        extracted.append(label)
+                if extracted:
+                    break
+            except Exception as e:
+                logging.error(f"[Trending Topics] Error: {e}")
+
+    final_topics = extracted[:10] if extracted else DEFAULT_TRENDING_TOPICS
+    try:
+        db.schema("threads").from_("trending_cache").upsert({
+            "cache_key": cache_key,
+            "region": "GLOBAL",
+            "category": "topics",
+            "query_text": "official_trending_topics",
+            "payload": final_topics,
+            "fetched_at": now.isoformat(),
+            "expires_at": (now + timedelta(minutes=60)).isoformat(),
+        }, on_conflict="cache_key").execute()
+    except Exception as e:
+        logging.warning(f"[Trending Topics Cache] Save failed: {e}")
+
+    return {"topics": final_topics, "cached": False}
+
+
 async def discover_trending_posts(
     account_id: str,
     region: str = "ID",
