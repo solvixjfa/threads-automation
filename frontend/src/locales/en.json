@@ -138,7 +138,9 @@
       "prev": "Previous",
       "next": "Next",
       "close": "Close",
-      "use_draft": "Use This Draft"
+      "use_draft": "Use This Draft",
+      "share_ig_title": "Share to Instagram",
+      "share_ig_desc": "Auto-share this Threads post to your linked Instagram Story"
     },
     "repurpose": {
       "title": "Repurpose",

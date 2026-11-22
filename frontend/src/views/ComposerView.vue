@@ -166,6 +166,42 @@
 
       <Textarea v-model="postText" :rows="6" :placeholder="$t('content.composer.draft_ph')" />
 
+      <div
+        @click="shareToInstagram = !shareToInstagram"
+        role="switch"
+        :aria-checked="shareToInstagram"
+        tabindex="0"
+        @keydown.space.prevent="shareToInstagram = !shareToInstagram"
+        class="mt-4 flex items-center justify-between gap-3 p-3.5 rounded-xl border theme-border theme-bg-sec cursor-pointer select-none transition hover:opacity-95"
+      >
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-9 h-9 rounded-lg border theme-border flex items-center justify-center shrink-0" style="background: var(--bg);">
+            <svg class="w-4 h-4 theme-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+            </svg>
+          </div>
+          <div class="min-w-0">
+            <p class="text-xs font-bold theme-text truncate">{{ $t('content.composer.share_ig_title') }}</p>
+            <p class="text-[11px] theme-text-muted truncate">{{ $t('content.composer.share_ig_desc') }}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          @click.stop="shareToInstagram = !shareToInstagram"
+          class="relative w-11 h-6 rounded-full transition-colors shrink-0 border theme-border"
+          :style="shareToInstagram ? 'background: var(--accent);' : 'background: var(--bg);'"
+          :aria-label="$t('content.composer.share_ig_title')"
+        >
+          <span
+            class="absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform"
+            :class="shareToInstagram ? 'translate-x-5' : 'translate-x-0'"
+            :style="shareToInstagram ? 'background: var(--accent-text);' : 'background: var(--text-muted, #888);'"
+          ></span>
+        </button>
+      </div>
+
       <div v-if="threadParts.length > 1" class="space-y-3 pt-3 divider mt-4">
         <span class="text-xs font-bold uppercase tracking-wide">{{ $t('content.composer.split_preview') }} ({{ threadParts.length }})</span>
         <div v-for="(part, idx) in threadParts" :key="idx" class="p-3 rounded-xl theme-bg-sec border theme-border space-y-1.5">
@@ -262,6 +298,7 @@ const isUploading = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const threadParts = ref<string[]>([])
 const scheduledDate = ref('')
+const shareToInstagram = ref(false)
 const isSaving = ref(false)
 const isChecking = ref(false)   
 const isDeepScoring = ref(false)                                   
@@ -592,14 +629,14 @@ async function schedulePost() {
     for (let i = 0; i < partsToSchedule.length; i++) {                 
       const { data: insertedPart, error: insertError } = await supabase.schema('threads').from('scheduled_posts').insert({
         account_id: targetAccountId, text: partsToSchedule[i], scheduled_for: localDate.toISOString(), media: (i === targetImagePart.value && mediaUrl.value) ? { url: mediaUrl.value, type: 'IMAGE' } : null,
-        status: 'scheduled', parent_id: parentId, sequence_number: i + 1, idempotency_key: crypto.randomUUID()                             
+        status: 'scheduled', share_to_instagram: i === 0 ? shareToInstagram.value : false, parent_id: parentId, sequence_number: i + 1, idempotency_key: crypto.randomUUID()                             
       }).select().single()                                                  
       if (insertError) throw insertError                                 
       if (i === 0) parentId = insertedPart.id
     }                                                              
     
     showToast(`Scheduled ${partsToSchedule.length} thread(s)!`, 'success')
-    postText.value = ''; mediaUrl.value = ''; selectedFile.value = null; targetImagePart.value = 0; if (fileInput.value) fileInput.value.value = '';
+    postText.value = ''; mediaUrl.value = ''; selectedFile.value = null; targetImagePart.value = 0; if (fileInput.value) fileInput.value.value = ''; shareToInstagram.value = false;
     mediaUrl.value = ''
     selectedFile.value = null
     if (fileInput.value) fileInput.value.value = ''

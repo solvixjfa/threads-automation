@@ -7,6 +7,7 @@ export interface ScheduledPost {
   account_id: string
   text: string
   scheduled_for: string
+  share_to_instagram?: boolean
   status?: string
 }
 
@@ -58,6 +59,7 @@ export const useComposerStore = defineStore('composer', () => {
           account_id: post.account_id,
           text: post.text,
           scheduled_for: post.scheduled_for,
+          share_to_instagram: !!post.share_to_instagram,
           status: 'scheduled',
           idempotency_key: crypto.randomUUID()
         })
