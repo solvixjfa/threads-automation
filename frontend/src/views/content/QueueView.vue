@@ -72,7 +72,7 @@
                       <span v-if="post.sequence_number > 1" class="text-[10px] font-bold theme-text-muted">Part {{ post.sequence_number }}</span>
                     </div>
                     <p class="text-sm font-medium whitespace-pre-wrap break-words">{{ post.text }}</p>
-                    <p v-if="post.error_message && post.status !== 'published' && post.status !== 'scheduled'" class="text-xs text-red-400 bg-red-950/30 border border-red-900/50 rounded-md px-2.5 py-1.5 mt-1 break-words">{{ post.error_message }}</p>
+                    <p v-if="post.last_error && post.status !== 'published' && post.status !== 'scheduled'" class="text-xs text-red-400 bg-red-950/30 border border-red-900/50 rounded-md px-2.5 py-1.5 mt-1 break-words">{{ post.last_error }}</p>
                     <img
                       v-if="post.media && post.media.url"
                       :src="post.media.url"
