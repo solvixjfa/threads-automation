@@ -60,7 +60,7 @@
                 class="input text-xs flex-1 min-w-0"
               />
               <Button size="sm" @click="loadTrending(false, false)" :loading="loadingPosts">Cari</Button>
-              <Button size="sm" variant="secondary" @click="loadTrending(true, false)" :loading="loadingPosts">Refresh</Button>
+              <Button size="sm" variant="secondary" @click="handleRefreshAll()" :loading="loadingPosts">Refresh</Button>
             </div>
           </div>
         </div>
@@ -326,7 +326,7 @@ const activeTab = ref<'discover' | 'auto'>('discover')
 const region = ref('ID')
 const category = ref('all')
 const searchQuery = ref('')
-const quickTopics = ['AI', 'Bisnis', 'Startup', 'Marketing', 'Produktivitas']
+const quickTopics = ref<string[]>(['AI', 'Bisnis', 'Startup', 'Marketing', 'Produktivitas'])
 
 const loadingPosts = ref(false)
 const posts = ref<any[]>([])
@@ -376,6 +376,28 @@ async function resolveAccountId() {
   if (!acc?.id) throw new Error('Akun Threads belum terhubung')
   accountId.value = acc.id
   return acc.id
+}
+
+async function loadOfficialTopics(forceRefresh = false, cacheOnly = false) {
+  try {
+    const accId = await resolveAccountId()
+    const params = new URLSearchParams({
+      account_id: accId,
+      refresh: forceRefresh ? 'true' : 'false',
+      cache_only: cacheOnly ? 'true' : 'false',
+    })
+    const res = await fetch(`${API_BASE}/topics?${params.toString()}`)
+    const data = await res.json()
+    if (res.ok && Array.isArray(data.topics) && data.topics.length) {
+      quickTopics.value = data.topics
+    }
+  } catch {
+    // Keep default topic chips
+  }
+}
+
+async function handleRefreshAll() {
+  await Promise.all([loadOfficialTopics(true, false), loadTrending(true, false)])
 }
 
 async function loadTrending(forceRefresh = false, cacheOnly = false) {
@@ -580,6 +602,6 @@ async function runCampaignNow() {
 }
 
 onMounted(async () => {
-  await Promise.all([loadTrending(false, true), loadCampaignAndLogs()])
+  await Promise.all([loadOfficialTopics(false, false), loadTrending(false, true), loadCampaignAndLogs()])
 })
 </script>

@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 from app.services.rag import get_supabase
 from app.services.trending_outreach import (
+    fetch_official_trending_topics,
     discover_trending_posts,
     inspect_creator_profile,
     generate_outreach_reply_draft,
@@ -47,6 +48,25 @@ class CampaignUpsertRequest(BaseModel):
 
 class RunCampaignRequest(BaseModel):
     account_id: str
+
+
+
+@router.get("/topics")
+async def get_official_topics(
+    account_id: str = Query(...),
+    refresh: bool = Query(False),
+    cache_only: bool = Query(False),
+):
+    try:
+        return await fetch_official_trending_topics(
+            account_id=account_id,
+            force_refresh=refresh,
+            cache_only=cache_only,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/discover")
