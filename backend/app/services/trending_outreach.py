@@ -77,6 +77,27 @@ def _count_sent_last_hour(db, account_id: str) -> int:
     return res.count or 0
 
 
+def _enrich_and_filter_posts(db, account_id: str, own_username: str, raw_posts: list[dict]) -> tuple[list[dict], bool]:
+    own_lower = (own_username or "").lstrip("@").lower()
+    external_posts = []
+    own_posts = []
+
+    for p in raw_posts:
+        mid = p.get("id")
+        if not mid:
+            continue
+        item = {**p, "already_replied": _is_already_commented(db, account_id, mid)}
+        author_lower = (item.get("username") or "").lstrip("@").lower()
+        if own_lower and author_lower == own_lower:
+            own_posts.append(item)
+        else:
+            external_posts.append(item)
+
+    if external_posts:
+        return external_posts, False
+    return own_posts, bool(own_posts)
+
+
 async def discover_trending_posts(
     account_id: str,
     region: str = "ID",
@@ -84,10 +105,12 @@ async def discover_trending_posts(
     query: str = "",
     limit: int = 20,
     force_refresh: bool = False,
+    cache_only: bool = False,
 ) -> dict:
     db = get_supabase()
     acc = _get_account_guard(db, account_id)
     token = acc["_token"]
+    own_username = acc.get("username") or ""
 
     norm_region = (region or "ID").upper()
     norm_cat = (category or "all").lower()
@@ -95,6 +118,36 @@ async def discover_trending_posts(
     cache_key = f"v1:{norm_region}:{norm_cat}:{clean_q.lower()}:{limit}"
     now = datetime.now(timezone.utc)
 
+    # 1. Mode cache_only (saat halaman baru dibuka): baca dari DB tanpa call Meta API
+    if cache_only:
+        latest_q = (
+            db.schema("threads")
+            .from_("trending_cache")
+            .select("payload, fetched_at, query_text, region, category")
+            .order("fetched_at", desc=True)
+            .limit(1)
+        )
+        if clean_q or norm_cat != "all" or norm_region != "ID":
+            latest_q = (
+                db.schema("threads")
+                .from_("trending_cache")
+                .select("payload, fetched_at, query_text, region, category")
+                .eq("cache_key", cache_key)
+                .limit(1)
+            )
+        cached_any = latest_q.execute()
+        if cached_any.data:
+            row = cached_any.data[0]
+            filtered, sandbox_only = _enrich_and_filter_posts(db, account_id, own_username, row.get("payload") or [])
+            return {
+                "posts": filtered,
+                "cached": True,
+                "sandbox_only": sandbox_only,
+                "fetched_at": row.get("fetched_at"),
+            }
+        return {"posts": [], "cached": True, "sandbox_only": False, "fetched_at": None}
+
+    # 2. Cek cache valid di DB sebelum menyentuh Live Meta API
     if not force_refresh:
         cached = (
             db.schema("threads")
@@ -106,14 +159,22 @@ async def discover_trending_posts(
             .execute()
         )
         if cached.data:
+            row = cached.data[0]
+            filtered, sandbox_only = _enrich_and_filter_posts(db, account_id, own_username, row.get("payload") or [])
             return {
-                "posts": cached.data[0].get("payload") or [],
+                "posts": filtered,
                 "cached": True,
-                "fetched_at": cached.data[0].get("fetched_at"),
+                "sandbox_only": sandbox_only,
+                "fetched_at": row.get("fetched_at"),
             }
 
+    # 3. Call Meta Keyword Search hanya jika cache kosong/expired atau force_refresh=True
     search_terms = [clean_q] if clean_q else CATEGORY_SEEDS.get(norm_cat, CATEGORY_SEEDS["all"])[:2]
-    region_suffix = f" {REGION_HINTS[norm_region]}" if norm_region == "ID" and clean_q and "indonesia" not in clean_q.lower() else ""
+    region_suffix = (
+        f" {REGION_HINTS[norm_region]}"
+        if norm_region == "ID" and clean_q and "indonesia" not in clean_q.lower()
+        else ""
+    )
 
     seen_ids = set()
     collected = []
@@ -150,7 +211,6 @@ async def discover_trending_posts(
                         "topic_tag": term,
                         "region": norm_region,
                         "category": norm_cat,
-                        "already_replied": _is_already_commented(db, account_id, mid),
                     })
                     if len(collected) >= limit:
                         break
@@ -159,7 +219,7 @@ async def discover_trending_posts(
             if len(collected) >= limit:
                 break
 
-    expires_at = (now + timedelta(minutes=20)).isoformat()
+    expires_at = (now + timedelta(minutes=60)).isoformat()
     try:
         db.schema("threads").from_("trending_cache").upsert({
             "cache_key": cache_key,
@@ -173,9 +233,11 @@ async def discover_trending_posts(
     except Exception as e:
         logging.warning(f"[Trending Cache] Failed to save cache: {e}")
 
+    filtered, sandbox_only = _enrich_and_filter_posts(db, account_id, own_username, collected)
     return {
-        "posts": collected,
+        "posts": filtered,
         "cached": False,
+        "sandbox_only": sandbox_only,
         "fetched_at": now.isoformat(),
     }
 
@@ -335,7 +397,7 @@ async def run_auto_comment_cycle(account_id: str) -> dict:
             mid = post.get("id")
             post_body = (post.get("text") or "").strip()
             author = post.get("username") or "creator"
-            if not mid or len(post_body) < 15 or author == acc.get("username"):
+            if not mid or len(post_body) < 15 or author.lower() == (acc.get("username") or "").lower():
                 skipped_count += 1
                 continue
             if _is_already_commented(db, account_id, mid):
