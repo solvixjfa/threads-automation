@@ -93,9 +93,14 @@
                     <Button size="sm" @click="handleRetryPost(post.id)" :loading="retryingId === post.id">{{ $t('content.queue.retry') }}</Button>
                     <Button variant="danger" size="sm" @click="confirmDeletePost(post.id)">{{ $t('content.queue.delete') }}</Button>
                   </div>
-                  <a v-else-if="post.published_media_id" :href="'https://www.threads.net/post/' + post.published_media_id" target="_blank" class="text-xs font-bold hover:underline">
-                    {{ $t('content.queue.view_threads') }}
-                  </a>
+                  <div v-else-if="post.published_media_id" class="flex items-center gap-3 flex-wrap">
+                    <a :href="'https://www.threads.net/post/' + post.published_media_id" target="_blank" class="text-xs font-bold hover:underline">
+                      {{ $t('content.queue.view_threads') }}
+                    </a>
+                    <Button variant="danger" size="sm" @click="confirmDeleteFromThreads(post.id)" :loading="deletingThreadsId === post.id">
+                      {{ $t('content.queue.delete_threads') }}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -196,6 +201,7 @@ const isBulkDeleting = ref(false)
 const posts = ref<any[]>([])
 const counts = ref({ scheduled: 0, published: 0, failed: 0, all: 0 })
 const retryingId = ref<string | null>(null)
+const deletingThreadsId = ref<string | null>(null)
 const activeFilter = ref<'all' | 'scheduled' | 'published' | 'failed'>('scheduled')
 const editingPost = ref<any>(null)
 const editForm = ref({ text: '', scheduled_for: '' })
@@ -526,6 +532,31 @@ async function handleRetryPost(id: string) {
     showToast('Retry failed: ' + err.message, 'error')
   } finally {
     retryingId.value = null
+  }
+}
+
+
+function confirmDeleteFromThreads(id: string) {
+  askConfirm({
+    title: 'Delete Post from Threads',
+    message: 'This will permanently delete the post from your Threads profile and database. Continue?',
+    confirmText: 'Delete on Threads',
+    onConfirm: () => deleteFromThreads(id)
+  })
+}
+
+async function deleteFromThreads(id: string) {
+  deletingThreadsId.value = id
+  try {
+    const res = await fetch(`https://api.ixiera.online/api/v1/queue/${id}/threads`, { method: 'DELETE' })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(data.detail || 'Failed to delete from Threads')
+    showToast('Post deleted from Threads.', 'success')
+    await refreshAll()
+  } catch (err: any) {
+    showToast('Threads Delete failed: ' + err.message, 'error')
+  } finally {
+    deletingThreadsId.value = null
   }
 }
 
