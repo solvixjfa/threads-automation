@@ -65,27 +65,18 @@
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center justify-between gap-2 mt-3 pt-3 border-t theme-border">
-          <div class="flex flex-wrap items-center gap-1.5">
-            <button
-              v-for="chip in quickTopics"
-              :key="chip"
-              type="button"
-              @click="selectQuickTopic(chip)"
-              class="px-2.5 py-1 rounded-full text-[11px] font-medium border theme-border theme-bg-sec hover:opacity-85 transition"
-            >
-              #{{ chip }}
-            </button>
-          </div>
-          <span v-if="cacheInfo" class="text-[11px] theme-text-muted">
-            {{ cacheInfo }}
-          </span>
+        <div class="flex flex-wrap items-center gap-1.5 mt-3 pt-3 border-t theme-border">
+          <button
+            v-for="chip in quickTopics"
+            :key="chip"
+            type="button"
+            @click="selectQuickTopic(chip)"
+            class="px-2.5 py-1 rounded-full text-[11px] font-medium border theme-border theme-bg-sec hover:opacity-85 transition"
+          >
+            #{{ chip }}
+          </button>
         </div>
       </Card>
-
-      <div v-if="sandboxOnly" class="p-3.5 rounded-xl border theme-border theme-bg-sec text-xs theme-text-muted">
-        Info Meta API: Izin <strong>threads_keyword_search</strong> masih dalam mode Development/Pre-Review sehingga Meta hanya menampilkan postingan dari akun tester aplikasi. Setelah disetujui Meta App Review, postingan publik seluruh kreator Threads akan otomatis muncul.
-      </div>
 
       <div v-if="loadingPosts" class="grid grid-cols-1 gap-3">
         <div v-for="n in 3" :key="n" class="card p-5 animate-pulse h-32"></div>
@@ -93,7 +84,7 @@
 
       <EmptyState
         v-else-if="posts.length === 0"
-        title="Belum ada data tren di cache"
+        title="Belum ada postingan tren ditemukan"
         description="Pilih kategori atau ketik kata kunci lalu klik Cari untuk memuat hasil."
       />
 
@@ -282,13 +273,36 @@
             <h3 class="text-sm font-bold">@{{ selectedProfile.username }}</h3>
             <button type="button" @click="selectedProfile = null" class="text-xs font-bold theme-text-muted hover:theme-text">Tutup</button>
           </div>
-          <p class="text-xs font-bold">{{ selectedProfile.name }}</p>
-          <p v-if="selectedProfile.followers_count !== null && selectedProfile.followers_count !== undefined" class="text-[11px] theme-text-muted">
-            Followers: {{ selectedProfile.followers_count }}
+
+          <div class="flex items-center gap-3">
+            <img
+              v-if="selectedProfile.avatar_url"
+              :src="selectedProfile.avatar_url"
+              alt="Avatar"
+              class="w-11 h-11 rounded-full object-cover border theme-border"
+            />
+            <div>
+              <p class="text-xs font-bold">{{ selectedProfile.name }}</p>
+              <p v-if="selectedProfile.followers_count !== null && selectedProfile.followers_count !== undefined" class="text-[11px] theme-text-muted">
+                Followers: {{ selectedProfile.followers_count }}
+              </p>
+            </div>
+          </div>
+
+          <p v-if="selectedProfile.bio" class="text-xs whitespace-pre-wrap leading-relaxed theme-text-muted">
+            {{ selectedProfile.bio }}
           </p>
-          <p class="text-xs whitespace-pre-wrap leading-relaxed theme-text-muted">
-            {{ selectedProfile.bio || 'Tidak ada bio publik.' }}
-          </p>
+
+          <div class="pt-2 border-t theme-border flex justify-end">
+            <a
+              :href="selectedProfile.threads_url || `https://www.threads.net/@${selectedProfile.username}`"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn btn-primary text-xs px-3 py-1.5 rounded-lg font-bold"
+            >
+              Buka Profil di Threads
+            </a>
+          </div>
         </div>
       </div>
     </Teleport>
@@ -316,8 +330,6 @@ const quickTopics = ['AI', 'Bisnis', 'Startup', 'Marketing', 'Produktivitas']
 
 const loadingPosts = ref(false)
 const posts = ref<any[]>([])
-const cacheInfo = ref('')
-const sandboxOnly = ref(false)
 
 const generatingId = ref<string | null>(null)
 const activeReplyPostId = ref<string | null>(null)
@@ -383,8 +395,6 @@ async function loadTrending(forceRefresh = false, cacheOnly = false) {
     const data = await res.json()
     if (!res.ok) throw new Error(data.detail || 'Gagal memuat topik tren')
     posts.value = data.posts || []
-    sandboxOnly.value = Boolean(data.sandbox_only)
-    cacheInfo.value = data.cached ? 'Dari cache database (hemat kuota)' : 'Live dari Threads API (tersimpan ke cache 60 mnt)'
   } catch (err: any) {
     showToast(err.message || 'Gagal memuat trending', 'error')
   } finally {
@@ -399,14 +409,25 @@ function selectQuickTopic(topic: string) {
 
 async function openCreatorProfile(username: string) {
   if (!username) return
+  const cleanUser = username.replace(/^@/, '')
   try {
     const accId = await resolveAccountId()
-    const res = await fetch(`${API_BASE}/profile/${encodeURIComponent(username)}?account_id=${accId}`)
+    const res = await fetch(`${API_BASE}/profile/${encodeURIComponent(cleanUser)}?account_id=${accId}`)
     const data = await res.json()
-    if (!res.ok) throw new Error(data.detail || 'Gagal memuat profil kreator')
-    selectedProfile.value = data.profile
-  } catch (err: any) {
-    showToast(err.message || 'Gagal memuat profil', 'error')
+    if (res.ok && data.profile) {
+      selectedProfile.value = data.profile
+      return
+    }
+  } catch {
+    // Fallback cleanly below
+  }
+  selectedProfile.value = {
+    username: cleanUser,
+    name: `@${cleanUser}`,
+    avatar_url: '',
+    bio: '',
+    followers_count: null,
+    threads_url: `https://www.threads.net/@${cleanUser}`,
   }
 }
 

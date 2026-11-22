@@ -77,7 +77,7 @@ def _count_sent_last_hour(db, account_id: str) -> int:
     return res.count or 0
 
 
-def _enrich_and_filter_posts(db, account_id: str, own_username: str, raw_posts: list[dict]) -> tuple[list[dict], bool]:
+def _enrich_and_filter_posts(db, account_id: str, own_username: str, raw_posts: list[dict]) -> list[dict]:
     own_lower = (own_username or "").lstrip("@").lower()
     external_posts = []
     own_posts = []
@@ -93,9 +93,7 @@ def _enrich_and_filter_posts(db, account_id: str, own_username: str, raw_posts: 
         else:
             external_posts.append(item)
 
-    if external_posts:
-        return external_posts, False
-    return own_posts, bool(own_posts)
+    return external_posts if external_posts else own_posts
 
 
 async def discover_trending_posts(
@@ -118,12 +116,11 @@ async def discover_trending_posts(
     cache_key = f"v1:{norm_region}:{norm_cat}:{clean_q.lower()}:{limit}"
     now = datetime.now(timezone.utc)
 
-    # 1. Mode cache_only (saat halaman baru dibuka): baca dari DB tanpa call Meta API
     if cache_only:
         latest_q = (
             db.schema("threads")
             .from_("trending_cache")
-            .select("payload, fetched_at, query_text, region, category")
+            .select("payload, fetched_at")
             .order("fetched_at", desc=True)
             .limit(1)
         )
@@ -131,23 +128,17 @@ async def discover_trending_posts(
             latest_q = (
                 db.schema("threads")
                 .from_("trending_cache")
-                .select("payload, fetched_at, query_text, region, category")
+                .select("payload, fetched_at")
                 .eq("cache_key", cache_key)
                 .limit(1)
             )
         cached_any = latest_q.execute()
         if cached_any.data:
             row = cached_any.data[0]
-            filtered, sandbox_only = _enrich_and_filter_posts(db, account_id, own_username, row.get("payload") or [])
-            return {
-                "posts": filtered,
-                "cached": True,
-                "sandbox_only": sandbox_only,
-                "fetched_at": row.get("fetched_at"),
-            }
-        return {"posts": [], "cached": True, "sandbox_only": False, "fetched_at": None}
+            filtered = _enrich_and_filter_posts(db, account_id, own_username, row.get("payload") or [])
+            return {"posts": filtered, "cached": True, "fetched_at": row.get("fetched_at")}
+        return {"posts": [], "cached": True, "fetched_at": None}
 
-    # 2. Cek cache valid di DB sebelum menyentuh Live Meta API
     if not force_refresh:
         cached = (
             db.schema("threads")
@@ -160,15 +151,9 @@ async def discover_trending_posts(
         )
         if cached.data:
             row = cached.data[0]
-            filtered, sandbox_only = _enrich_and_filter_posts(db, account_id, own_username, row.get("payload") or [])
-            return {
-                "posts": filtered,
-                "cached": True,
-                "sandbox_only": sandbox_only,
-                "fetched_at": row.get("fetched_at"),
-            }
+            filtered = _enrich_and_filter_posts(db, account_id, own_username, row.get("payload") or [])
+            return {"posts": filtered, "cached": True, "fetched_at": row.get("fetched_at")}
 
-    # 3. Call Meta Keyword Search hanya jika cache kosong/expired atau force_refresh=True
     search_terms = [clean_q] if clean_q else CATEGORY_SEEDS.get(norm_cat, CATEGORY_SEEDS["all"])[:2]
     region_suffix = (
         f" {REGION_HINTS[norm_region]}"
@@ -233,13 +218,8 @@ async def discover_trending_posts(
     except Exception as e:
         logging.warning(f"[Trending Cache] Failed to save cache: {e}")
 
-    filtered, sandbox_only = _enrich_and_filter_posts(db, account_id, own_username, collected)
-    return {
-        "posts": filtered,
-        "cached": False,
-        "sandbox_only": sandbox_only,
-        "fetched_at": now.isoformat(),
-    }
+    filtered = _enrich_and_filter_posts(db, account_id, own_username, collected)
+    return {"posts": filtered, "cached": False, "fetched_at": now.isoformat()}
 
 
 async def inspect_creator_profile(account_id: str, username: str) -> dict:
@@ -250,24 +230,59 @@ async def inspect_creator_profile(account_id: str, username: str) -> dict:
     if not clean_user:
         raise ValueError("Username is required")
 
+    own_user = (acc.get("username") or "").lstrip("@").strip().lower()
+    threads_url = f"https://www.threads.net/@{clean_user}"
+
     async with httpx.AsyncClient(timeout=15.0) as client:
-        url = "https://graph.threads.net/v1.0/profile_discovery"
-        params = {
-            "username": clean_user,
-            "fields": "username,name,threads_profile_picture_url,threads_biography,followers_count",
-            "access_token": token,
-        }
-        res = await client.get(url, params=params)
-        if res.status_code != 200:
-            raise ValueError(f"Profile discovery unavailable ({res.status_code}): {res.text[:180]}")
-        data = res.json()
-        return {
-            "username": data.get("username") or clean_user,
-            "name": data.get("name") or clean_user,
-            "avatar_url": data.get("threads_profile_picture_url") or "",
-            "bio": data.get("threads_biography") or "",
-            "followers_count": data.get("followers_count"),
-        }
+        if own_user and clean_user.lower() == own_user:
+            res = await client.get(
+                "https://graph.threads.net/v1.0/me",
+                params={
+                    "fields": "username,name,threads_profile_picture_url,threads_biography,followers_count",
+                    "access_token": token,
+                },
+            )
+            if res.status_code == 200:
+                data = res.json()
+                return {
+                    "username": data.get("username") or clean_user,
+                    "name": data.get("name") or clean_user,
+                    "avatar_url": data.get("threads_profile_picture_url") or "",
+                    "bio": data.get("threads_biography") or "",
+                    "followers_count": data.get("followers_count"),
+                    "threads_url": threads_url,
+                    "limited": False,
+                }
+
+        res = await client.get(
+            "https://graph.threads.net/v1.0/profile_discovery",
+            params={
+                "username": clean_user,
+                "fields": "username,name,threads_profile_picture_url,threads_biography,followers_count",
+                "access_token": token,
+            },
+        )
+        if res.status_code == 200:
+            data = res.json()
+            return {
+                "username": data.get("username") or clean_user,
+                "name": data.get("name") or clean_user,
+                "avatar_url": data.get("threads_profile_picture_url") or "",
+                "bio": data.get("threads_biography") or "",
+                "followers_count": data.get("followers_count"),
+                "threads_url": threads_url,
+                "limited": False,
+            }
+
+    return {
+        "username": clean_user,
+        "name": f"@{clean_user}",
+        "avatar_url": "",
+        "bio": "",
+        "followers_count": None,
+        "threads_url": threads_url,
+        "limited": True,
+    }
 
 
 async def generate_outreach_reply_draft(
