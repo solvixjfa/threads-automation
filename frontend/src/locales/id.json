@@ -138,7 +138,9 @@
       "prev": "Sebelumnya",
       "next": "Selanjutnya",
       "close": "Tutup",
-      "use_draft": "Pakai Draft Ini"
+      "use_draft": "Pakai Draft Ini",
+      "share_ig_title": "Bagikan ke Instagram",
+      "share_ig_desc": "Otomatis bagikan postingan Threads ini ke Instagram Story yang tertaut"
     },
     "repurpose": {
       "title": "Repurpose",
