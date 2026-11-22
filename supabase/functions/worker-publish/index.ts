@@ -56,6 +56,7 @@ serve(async (req) => {
             bodyParams.image_url = post.media.url;
           }
           if (replyToMediaId) bodyParams.reply_to_id = replyToMediaId;
+          if (post.share_to_instagram) bodyParams.crossreshare_to_ig = "true";
 
           const createRes = await fetch(`https://graph.threads.net/v1.0/${userId}/threads`, {
             method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams(bodyParams),
