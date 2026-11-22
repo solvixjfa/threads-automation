@@ -4,21 +4,20 @@
       <div class="p-5 divider flex justify-between items-center theme-bg-sec">
         <div class="flex items-center gap-2">
           <span class="text-xs font-bold uppercase tracking-wide">{{ $t('content.queue.title') }}</span>
-          <Badge>{{ filteredPosts.length }} groups</Badge>
+          <Badge>{{ groupedPosts.length }} groups</Badge>
         </div>
-        <button @click="loadPosts" class="text-xs font-bold hover:underline">{{ $t('common.refresh') }}</button>
+        <button @click="refreshAll" class="text-xs font-bold hover:underline">{{ $t('common.refresh') }}</button>
       </div>
 
-      <!-- FIX: Tambah w-full, hide-scrollbar, dan pastikan tombol flex-shrink-0 -->
       <div class="flex gap-2 px-5 pt-4 pb-3 overflow-x-auto hide-scrollbar w-full">
         <button
           v-for="tab in tabs"
           :key="tab.value"
-          @click="activeFilter = tab.value"
+          @click="switchTab(tab.value)"
           class="px-3 py-1.5 text-xs font-bold rounded-lg transition whitespace-nowrap flex-shrink-0"
           :class="activeFilter === tab.value ? 'theme-accent' : 'theme-bg-sec theme-text-muted hover:theme-text'"
         >
-          {{ $t(tab.labelKey) }} ({{ countByStatus(tab.value) }})
+          {{ $t(tab.labelKey) }} ({{ counts[tab.value] }})
         </button>
       </div>
 
@@ -26,7 +25,7 @@
         {{ $t('common.loading') }}
       </div>
 
-      <div v-else-if="filteredPosts.length === 0" class="p-12 text-center text-xs theme-text-muted">
+      <div v-else-if="groupedPosts.length === 0" class="p-12 text-center text-xs theme-text-muted">
         {{ emptyMessage }}
       </div>
 
@@ -67,20 +66,18 @@
                     @change="togglePostSelection(post.id)"
                     class="w-4 h-4 mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500 flex-shrink-0"
                   />
-                  <!-- FIX: min-w-0 wajib biar teks panjang gak maksa melebarin div -->
                   <div class="flex-1 space-y-1 min-w-0">
                     <div class="flex items-center gap-2 flex-wrap">
                       <Badge :variant="statusVariant(post.status)">{{ post.status }}</Badge>
                       <span v-if="post.sequence_number > 1" class="text-[10px] font-bold theme-text-muted">Part {{ post.sequence_number }}</span>
                     </div>
-                    <!-- FIX: break-words biar teks panjang turun ke bawah -->
                     <p class="text-sm font-medium whitespace-pre-wrap break-words">{{ post.text }}</p>
-                  <img 
-                    v-if="post.media && post.media.url" 
-                    :src="post.media.url" 
-                    class="w-full max-w-[200px] rounded-lg border theme-border object-cover mt-2" 
-                    alt="Post media" 
-                  />
+                    <img
+                      v-if="post.media && post.media.url"
+                      :src="post.media.url"
+                      class="w-full max-w-[200px] rounded-lg border theme-border object-cover mt-2"
+                      alt="Post media"
+                    />
                   </div>
                 </div>
 
@@ -101,6 +98,12 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <div v-if="hasMore" class="p-4 text-center border-t theme-border">
+          <Button variant="secondary" size="sm" @click="loadMore" :loading="loadingMore">
+            Load More
+          </Button>
         </div>
       </div>
     </Card>
@@ -151,13 +154,6 @@
                     <span class="text-xs theme-text-muted">· now</span>
                   </div>
                   <p class="text-sm whitespace-pre-wrap break-words mt-1 leading-relaxed theme-text">{{ editForm.text }}</p>
-
-                  <div class="flex items-center gap-4 mt-4 text-gray-500">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-                  </div>
                 </div>
               </div>
             </div>
@@ -185,11 +181,18 @@ import { Card, Button, Textarea, Badge } from '../../components/ui'
 const { showToast, askConfirm } = useNotify()
 const { t } = useI18n()
 
+const PAGE_SIZE = 30
+const FAILED_STATUSES = ['error', 'failed', 'quota_exceeded']
+
 const loading = ref(true)
+const loadingMore = ref(false)
+const hasMore = ref(false)
 const isUpdating = ref(false)
 const isRewriting = ref(false)
 const isBulkDeleting = ref(false)
+
 const posts = ref<any[]>([])
+const counts = ref({ scheduled: 0, published: 0, failed: 0, all: 0 })
 const retryingId = ref<string | null>(null)
 const activeFilter = ref<'all' | 'scheduled' | 'published' | 'failed'>('scheduled')
 const editingPost = ref<any>(null)
@@ -210,16 +213,9 @@ const tabs = [
   { labelKey: 'content.queue.tab_all', value: 'all' as const },
 ]
 
-const filteredPosts = computed(() => {
-  let filtered = posts.value
-  if (activeFilter.value === 'failed') {
-    filtered = posts.value.filter(p => ['error', 'failed', 'quota_exceeded'].includes(p.status))
-  } else if (activeFilter.value !== 'all') {
-    filtered = posts.value.filter(p => p.status === activeFilter.value)
-  }
-
+const groupedPosts = computed(() => {
   const groups = new Map()
-  filtered.forEach(post => {
+  posts.value.forEach(post => {
     const groupId = post.parent_id || post.id
     if (!groups.has(groupId)) {
       groups.set(groupId, { id: groupId, parts: [], isThread: false })
@@ -241,21 +237,23 @@ const groupedByDate = computed(() => {
   tomorrow.setDate(tomorrow.getDate() + 1)
 
   const groups: Record<string, any[]> = {
-    'today': [], 'tomorrow': [], 'upcoming': [], 'past': []
+    today: [], tomorrow: [], upcoming: [], past: []
   }
 
-  const sorted = [...filteredPosts.value].sort((a, b) => {
-    return new Date(a.parts[0].scheduled_for).getTime() - new Date(b.parts[0].scheduled_for).getTime()
+  const sorted = [...groupedPosts.value].sort((a, b) => {
+    const tA = new Date(a.parts[0].scheduled_for).getTime()
+    const tB = new Date(b.parts[0].scheduled_for).getTime()
+    return activeFilter.value === 'scheduled' ? tA - tB : tB - tA
   })
 
   sorted.forEach(group => {
     const postDate = new Date(group.parts[0].scheduled_for)
     postDate.setHours(0, 0, 0, 0)
 
-    if (postDate.getTime() === today.getTime()) groups['today'].push(group)
-    else if (postDate.getTime() === tomorrow.getTime()) groups['tomorrow'].push(group)
-    else if (postDate > tomorrow) groups['upcoming'].push(group)
-    else groups['past'].push(group)
+    if (postDate.getTime() === today.getTime()) groups.today.push(group)
+    else if (postDate.getTime() === tomorrow.getTime()) groups.tomorrow.push(group)
+    else if (postDate > tomorrow) groups.upcoming.push(group)
+    else groups.past.push(group)
   })
 
   return Object.entries(groups)
@@ -271,21 +269,130 @@ function togglePostSelection(id: string) {
 }
 
 function toggleGroupSelection(group: any) {
-  if (selectedThreads.value.has(group.id)) {
-    selectedThreads.value.delete(group.id)
-  } else {
-    selectedThreads.value.add(group.id)
-  }
+  if (selectedThreads.value.has(group.id)) selectedThreads.value.delete(group.id)
+  else selectedThreads.value.add(group.id)
 }
 
 function isGroupSelected(group: any) {
   return selectedThreads.value.has(group.id)
 }
 
+const emptyMessage = computed(() => {
+  if (activeFilter.value === 'scheduled') return t('content.queue.empty_scheduled')
+  if (activeFilter.value === 'published') return t('content.queue.empty_published')
+  if (activeFilter.value === 'failed') return t('content.queue.empty_failed')
+  return t('content.queue.empty_all')
+})
+
+function toggleExpand(groupId: string) {
+  if (expandedThreads.value.has(groupId)) expandedThreads.value.delete(groupId)
+  else expandedThreads.value.add(groupId)
+}
+
+function formatTime(isoString: string) {
+  if (!isoString) return ''
+  return new Date(isoString).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
+}
+
+function statusVariant(status: string) {
+  if (status === 'published') return 'accent'
+  if (FAILED_STATUSES.includes(status)) return 'danger'
+  return 'default'
+}
+
+async function ensureAccount() {
+  if (currentAccountId.value) return currentAccountId.value
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+  const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id, ai_provider').eq('user_id', user.id).maybeSingle()
+  if (!account) return null
+  currentAccountId.value = account.id
+  if (account.ai_provider) aiProvider.value = account.ai_provider
+  return account.id
+}
+
+async function loadCounts(accountId: string) {
+  const base = () => supabase.schema('threads').from('scheduled_posts').select('*', { count: 'exact', head: true }).eq('account_id', accountId)
+  const [schedRes, pubRes, failRes, allRes] = await Promise.all([
+    base().eq('status', 'scheduled'),
+    base().eq('status', 'published'),
+    base().in('status', FAILED_STATUSES),
+    base()
+  ])
+  counts.value = {
+    scheduled: schedRes.count || 0,
+    published: pubRes.count || 0,
+    failed: failRes.count || 0,
+    all: allRes.count || 0
+  }
+}
+
+function buildFilteredQuery(accountId: string, offset: number) {
+  const isAscending = activeFilter.value === 'scheduled'
+  let q = supabase
+    .schema('threads')
+    .from('scheduled_posts')
+    .select('*')
+    .eq('account_id', accountId)
+    .order('scheduled_for', { ascending: isAscending })
+    .range(offset, offset + PAGE_SIZE - 1)
+
+  if (activeFilter.value === 'scheduled') q = q.eq('status', 'scheduled')
+  else if (activeFilter.value === 'published') q = q.eq('status', 'published')
+  else if (activeFilter.value === 'failed') q = q.in('status', FAILED_STATUSES)
+
+  return q
+}
+
+async function loadPosts(reset = true) {
+  if (reset) {
+    loading.value = true
+    posts.value = []
+    selectedPosts.value.clear()
+    selectedThreads.value.clear()
+  } else {
+    loadingMore.value = true
+  }
+
+  const accountId = await ensureAccount()
+  if (!accountId) {
+    loading.value = false
+    loadingMore.value = false
+    return
+  }
+
+  const offset = reset ? 0 : posts.value.length
+  const { data } = await buildFilteredQuery(accountId, offset)
+  const rows = data || []
+
+  if (reset) posts.value = rows
+  else posts.value = [...posts.value, ...rows]
+
+  hasMore.value = rows.length === PAGE_SIZE
+  loading.value = false
+  loadingMore.value = false
+}
+
+async function switchTab(tab: 'all' | 'scheduled' | 'published' | 'failed') {
+  if (activeFilter.value === tab) return
+  activeFilter.value = tab
+  await loadPosts(true)
+}
+
+async function loadMore() {
+  if (loadingMore.value || !hasMore.value) return
+  await loadPosts(false)
+}
+
+async function refreshAll() {
+  const accountId = await ensureAccount()
+  if (!accountId) return
+  await Promise.all([loadCounts(accountId), loadPosts(true)])
+}
+
 async function handleBulkDelete() {
   const allIds: string[] = []
-
-  filteredPosts.value.forEach(group => {
+  groupedPosts.value.forEach(group => {
     if (selectedThreads.value.has(group.id)) {
       group.parts.forEach((p: any) => allIds.push(p.id))
     } else {
@@ -304,17 +411,16 @@ async function handleBulkDelete() {
     onConfirm: async () => {
       isBulkDeleting.value = true
       try {
-        const res = await fetch('https://threads-automation-r9so.onrender.com/api/v1/queue/bulk-delete', {
+        const res = await fetch('https://api.ixiera.online/api/v1/queue/bulk-delete', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ post_ids: allIds })
         })
         if (!res.ok) throw new Error('Bulk delete failed')
         showToast(`${allIds.length} posts deleted.`, 'info')
-
         selectedPosts.value.clear()
         selectedThreads.value.clear()
-        await loadPosts()
+        await refreshAll()
       } catch (err: any) {
         showToast('Error: ' + err.message, 'error')
       } finally {
@@ -322,55 +428,6 @@ async function handleBulkDelete() {
       }
     }
   })
-}
-
-const emptyMessage = computed(() => {
-  if (activeFilter.value === 'scheduled') return t('content.queue.empty_scheduled')
-  if (activeFilter.value === 'published') return t('content.queue.empty_published')
-  if (activeFilter.value === 'failed') return t('content.queue.empty_failed')
-  return t('content.queue.empty_all')
-})
-
-function countByStatus(status: string) {
-  if (status === 'all') return posts.value.length
-  if (status === 'failed') return posts.value.filter(p => ['error', 'failed', 'quota_exceeded'].includes(p.status)).length
-  return posts.value.filter(p => p.status === status).length
-}
-
-function toggleExpand(groupId: string) {
-  if (expandedThreads.value.has(groupId)) expandedThreads.value.delete(groupId)
-  else expandedThreads.value.add(groupId)
-}
-
-function formatTime(isoString: string) {
-  if (!isoString) return ''
-  const d = new Date(isoString)
-  return d.toLocaleString(undefined, { timeStyle: 'short' })
-}
-function statusVariant(status: string) {
-  if (status === 'published') return 'accent'
-  if (['error', 'failed', 'quota_exceeded'].includes(status)) return 'danger'
-  return 'default'
-}
-
-async function loadPosts() {
-  loading.value = true
-  posts.value = []
-  selectedPosts.value.clear()
-  selectedThreads.value.clear()
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) { loading.value = false; return }
-
-  const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id, ai_provider').eq('user_id', user.id).maybeSingle()
-  if (!account) { loading.value = false; return }
-
-  currentAccountId.value = account.id
-  if (account.ai_provider) aiProvider.value = account.ai_provider
-
-  const { data } = await supabase.schema('threads').from('scheduled_posts').select('*').eq('account_id', account.id).order('scheduled_for', { ascending: true }).limit(100)
-  if (data) posts.value = data
-  loading.value = false
 }
 
 function openEditModal(post: any) {
@@ -387,7 +444,7 @@ async function saveEdit() {
   isUpdating.value = true
   try {
     const localDate = new Date(editForm.value.scheduled_for)
-    const res = await fetch('https://threads-automation-r9so.onrender.com/api/v1/queue/edit', {
+    const res = await fetch('https://api.ixiera.online/api/v1/queue/edit', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -399,7 +456,7 @@ async function saveEdit() {
     if (!res.ok) throw new Error('Update failed')
     editingPost.value = null
     showToast('Post updated successfully.', 'success')
-    await loadPosts()
+    await refreshAll()
   } catch (err: any) {
     showToast('Update failed: ' + err.message, 'error')
   } finally {
@@ -411,7 +468,7 @@ async function magicRewrite() {
   if (!editForm.value.text.trim()) return
   isRewriting.value = true
   try {
-    const res = await fetch('https://threads-automation-r9so.onrender.com/api/v1/rag/improve', {
+    const res = await fetch('https://api.ixiera.online/api/v1/rag/improve', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -443,10 +500,10 @@ function confirmDeletePost(id: string) {
 
 async function deletePost(id: string) {
   try {
-    const res = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/queue/${id}`, { method: 'DELETE' })
+    const res = await fetch(`https://api.ixiera.online/api/v1/queue/${id}`, { method: 'DELETE' })
     if (!res.ok) throw new Error('Failed to delete')
     showToast('Post deleted.', 'info')
-    await loadPosts()
+    await refreshAll()
   } catch (err: any) {
     showToast('Delete failed: ' + err.message, 'error')
   }
@@ -455,14 +512,14 @@ async function deletePost(id: string) {
 async function handleRetryPost(id: string) {
   retryingId.value = id
   try {
-    const res = await fetch('https://threads-automation-r9so.onrender.com/api/v1/queue/retry', {
+    const res = await fetch('https://api.ixiera.online/api/v1/queue/retry', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ post_id: id })
     })
     if (!res.ok) throw new Error('Failed to retry')
     showToast('Post re-queued for publishing.', 'success')
-    await loadPosts()
+    await refreshAll()
   } catch (err: any) {
     showToast('Retry failed: ' + err.message, 'error')
   } finally {
@@ -470,5 +527,5 @@ async function handleRetryPost(id: string) {
   }
 }
 
-onMounted(() => loadPosts())
+onMounted(() => refreshAll())
 </script>
