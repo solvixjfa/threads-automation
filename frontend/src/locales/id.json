@@ -189,7 +189,8 @@
       "magic_rewriting": "Memperbaiki...",
       "new_time": "Waktu Tayang Baru",
       "cancel": "Batal",
-      "save_changes": "Simpan Perubahan"
+      "save_changes": "Simpan Perubahan",
+      "delete_threads": "Hapus di Threads"
     },
     "desc_create": "Tulis atau generate post baru",
     "desc_variant": "Ubah post jadi variasi",

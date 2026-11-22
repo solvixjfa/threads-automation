@@ -189,7 +189,8 @@
       "magic_rewriting": "Improving...",
       "new_time": "New Schedule Time",
       "cancel": "Cancel",
-      "save_changes": "Save Changes"
+      "save_changes": "Save Changes",
+      "delete_threads": "Delete on Threads"
     },
     "desc_create": "Write or AI-generate new post",
     "desc_variant": "Remix posts into variations",
