@@ -47,7 +47,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, RouterView, RouterLink } from 'vue-router'
-import { PenTool, Plus, Layers, Clock, ChevronRight, ChevronLeft } from 'lucide-vue-next'
+import { PenTool, Plus, Layers, Clock, Flame, ChevronRight, ChevronLeft } from 'lucide-vue-next'
 
 const route = useRoute()
 const isRoot = computed(() => route.path === '/content' || route.path === '/content/')
@@ -56,5 +56,6 @@ const menuItems = [
   { path: '/content/create', icon: Plus, labelKey: 'content.tabs.create', descKey: 'content.desc_create' },
   { path: '/content/variant', icon: Layers, labelKey: 'content.tabs.variant', descKey: 'content.desc_variant' },
   { path: '/content/queue', icon: Clock, labelKey: 'content.tabs.queue', descKey: 'content.desc_queue' },
+  { path: '/content/trending', icon: Flame, labelKey: 'content.tabs.trending', descKey: 'content.desc_trending' },
 ]
 </script>

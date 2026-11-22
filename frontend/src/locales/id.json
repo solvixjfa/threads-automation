@@ -202,8 +202,10 @@
     "tabs": {
       "create": "Buat",
       "variant": "Variant",
-      "queue": "Antrian"
-    }
+      "queue": "Antrian",
+      "trending": "Trending"
+    },
+    "desc_trending": "Temukan topik tren, post viral, balasan AI 1-klik, dan auto-comment."
   },
   "comments": {
     "title": "Komentar",

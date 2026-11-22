@@ -202,8 +202,10 @@
     "tabs": {
       "create": "Create",
       "variant": "Variant",
-      "queue": "Queue"
-    }
+      "queue": "Queue",
+      "trending": "Trending"
+    },
+    "desc_trending": "Discover trending topics, viral posts, AI replies, and auto-comment outreach."
   },
   "comments": {
     "title": "Comments",
