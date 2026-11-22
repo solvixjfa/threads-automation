@@ -72,6 +72,7 @@
                       <span v-if="post.sequence_number > 1" class="text-[10px] font-bold theme-text-muted">Part {{ post.sequence_number }}</span>
                     </div>
                     <p class="text-sm font-medium whitespace-pre-wrap break-words">{{ post.text }}</p>
+                    <p v-if="post.error_message && post.status !== 'published' && post.status !== 'scheduled'" class="text-xs text-red-400 bg-red-950/30 border border-red-900/50 rounded-md px-2.5 py-1.5 mt-1 break-words">{{ post.error_message }}</p>
                     <img
                       v-if="post.media && post.media.url"
                       :src="post.media.url"
@@ -88,8 +89,9 @@
                     <Button variant="secondary" size="sm" @click="openEditModal(post)">{{ $t('content.queue.edit') }}</Button>
                     <Button variant="danger" size="sm" @click="confirmDeletePost(post.id)">{{ $t('content.queue.delete') }}</Button>
                   </div>
-                  <div v-else-if="['error', 'failed', 'quota_exceeded'].includes(post.status)" class="flex items-center gap-2 flex-wrap">
+                  <div v-else-if="post.status !== 'published'" class="flex items-center gap-2 flex-wrap">
                     <Button size="sm" @click="handleRetryPost(post.id)" :loading="retryingId === post.id">{{ $t('content.queue.retry') }}</Button>
+                    <Button variant="danger" size="sm" @click="confirmDeletePost(post.id)">{{ $t('content.queue.delete') }}</Button>
                   </div>
                   <a v-else-if="post.published_media_id" :href="'https://www.threads.net/post/' + post.published_media_id" target="_blank" class="text-xs font-bold hover:underline">
                     {{ $t('content.queue.view_threads') }}
@@ -296,7 +298,7 @@ function formatTime(isoString: string) {
 
 function statusVariant(status: string) {
   if (status === 'published') return 'accent'
-  if (FAILED_STATUSES.includes(status)) return 'danger'
+  if (status !== 'scheduled' && status !== 'published') return 'danger'
   return 'default'
 }
 
@@ -316,7 +318,7 @@ async function loadCounts(accountId: string) {
   const [schedRes, pubRes, failRes, allRes] = await Promise.all([
     base().eq('status', 'scheduled'),
     base().eq('status', 'published'),
-    base().in('status', FAILED_STATUSES),
+    base().not('status', 'in', '("scheduled","published")'),
     base()
   ])
   counts.value = {
@@ -339,7 +341,7 @@ function buildFilteredQuery(accountId: string, offset: number) {
 
   if (activeFilter.value === 'scheduled') q = q.eq('status', 'scheduled')
   else if (activeFilter.value === 'published') q = q.eq('status', 'published')
-  else if (activeFilter.value === 'failed') q = q.in('status', FAILED_STATUSES)
+  else if (activeFilter.value === 'failed') q = q.not('status', 'in', '("scheduled","published")')
 
   return q
 }
