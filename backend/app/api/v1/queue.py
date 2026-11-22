@@ -84,26 +84,27 @@ async def delete_from_threads(post_id: str):
         acc_res = (
             db.schema("threads")
             .from_("threads_accounts")
-            .select("token_secret_id")
+            .select("settings, token_secret_id")
             .eq("id", post["account_id"])
-            .maybe_single()
+            .limit(1)
             .execute()
         )
-        secret_id = (acc_res.data or {}).get("token_secret_id")
-        if not secret_id:
-            raise HTTPException(status_code=400, detail="Account token_secret_id missing")
+        acc_data = acc_res.data[0] if acc_res.data else {}
+        token = (acc_data.get("settings") or {}).get("access_token")
 
-        vault_res = (
-            db.schema("vault")
-            .from_("decrypted_secrets")
-            .select("decrypted_secret")
-            .eq("id", secret_id)
-            .maybe_single()
-            .execute()
-        )
-        token = (vault_res.data or {}).get("decrypted_secret")
+        if not token and acc_data.get("token_secret_id"):
+            vault_res = (
+                db.schema("vault")
+                .from_("decrypted_secrets")
+                .select("decrypted_secret")
+                .eq("id", acc_data["token_secret_id"])
+                .maybe_single()
+                .execute()
+            )
+            token = (vault_res.data or {}).get("decrypted_secret")
+
         if not token:
-            raise HTTPException(status_code=400, detail="Decrypted access token missing from Vault")
+            raise HTTPException(status_code=400, detail="Threads access token missing")
 
         async with httpx.AsyncClient(timeout=15.0) as client:
             resp = await client.delete(
