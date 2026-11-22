@@ -1,3 +1,4 @@
+import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
@@ -58,5 +59,53 @@ async def retry_queue(payload: ActionQueueRequest):
             "status": "scheduled", "attempts": 0, "last_error": None
         }).eq("id", payload.post_id).execute()
         return {"status": "success", "message": "Post queued for retry"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/{post_id}/threads")
+async def delete_from_threads(post_id: str):
+    try:
+        db = get_supabase()
+        post_res = (
+            db.schema("threads")
+            .from_("scheduled_posts")
+            .select("id, account_id, published_media_id")
+            .eq("id", post_id)
+            .maybe_single()
+            .execute()
+        )
+        post = post_res.data
+        if not post:
+            raise HTTPException(status_code=404, detail="Post not found")
+        media_id = post.get("published_media_id")
+        if not media_id:
+            raise HTTPException(status_code=400, detail="Post has no published_media_id")
+
+        acc_res = (
+            db.schema("threads")
+            .from_("threads_accounts")
+            .select("access_token")
+            .eq("id", post["account_id"])
+            .maybe_single()
+            .execute()
+        )
+        token = (acc_res.data or {}).get("access_token")
+        if not token:
+            raise HTTPException(status_code=400, detail="Account access token missing")
+
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.delete(
+                f"https://graph.threads.net/v1.0/{media_id}",
+                params={"access_token": token}
+            )
+            data = resp.json() if resp.content else {}
+            if resp.status_code >= 400 or not data.get("success", False):
+                err_msg = (data.get("error") or {}).get("message") or resp.text or "Threads API delete failed"
+                raise HTTPException(status_code=resp.status_code or 400, detail=err_msg)
+
+        db.schema("threads").from_("scheduled_posts").delete().eq("id", post_id).execute()
+        return {"status": "success", "message": "Deleted from Threads"}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
