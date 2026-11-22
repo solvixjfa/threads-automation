@@ -83,6 +83,8 @@ def _enrich_and_filter_posts(db, account_id: str, own_username: str, raw_posts: 
     own_posts = []
 
     for p in raw_posts:
+        if not isinstance(p, dict):
+            continue
         mid = p.get("id")
         if not mid:
             continue
@@ -196,6 +198,7 @@ async def discover_trending_posts(
             db.schema("threads")
             .from_("trending_cache")
             .select("payload, fetched_at")
+            .like("cache_key", "v1:%")
             .order("fetched_at", desc=True)
             .limit(1)
         )
