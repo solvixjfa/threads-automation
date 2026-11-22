@@ -57,7 +57,7 @@ serve(async (req) => {
       throw new Error("Gagal menyimpan OAuth state: " + stateErr.message);
     }
 
-    const scope = "threads_basic,threads_content_publish,threads_manage_replies,threads_read_replies,threads_manage_insights,threads_delete,threads_share_to_instagram,threads_keyword_search";
+    const scope = "threads_basic,threads_content_publish,threads_manage_replies,threads_read_replies,threads_manage_insights,threads_delete,threads_share_to_instagram,threads_keyword_search,threads_profile_discovery,threads_location_tagging,threads_manage_mentions";
     const authUrl = `https://threads.net/oauth/authorize?client_id=${appId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&response_type=code&state=${state}`;
 
     return new Response(JSON.stringify({ url: authUrl }), {
