@@ -26,6 +26,7 @@ import AdminUsers from '../views/admin/AdminUsers.vue'
 
 import ContentLayout from '../views/content/ContentLayout.vue'
 import QueueView from '../views/content/QueueView.vue'
+import TrendingView from '../views/content/TrendingView.vue'
 
 import AnalyticsLayout from '../views/analytics/AnalyticsLayout.vue'
 import BestTimeView from '../views/analytics/BestTimeView.vue'
@@ -65,6 +66,7 @@ const router = createRouter({
         { path: 'create', name: 'content-create', component: ComposerView },
         { path: 'variant', name: 'content-variant', component: RepurposeView },
         { path: 'queue', name: 'content-queue', component: QueueView },
+        { path: 'trending', name: 'content-trending', component: TrendingView },
       ],
     },
     { path: '/comment', name: 'comment', component: InboxView, meta: { requiresAuth: true } },
