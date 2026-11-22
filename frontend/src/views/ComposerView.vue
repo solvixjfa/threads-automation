@@ -197,12 +197,13 @@
           <div class="flex gap-2">
             <input
               v-model="locationQuery"
+              @input="onLocationInput"
               @keyup.enter="searchLocations"
               type="text"
-              placeholder="Cari nama tempat atau kota (misal: Jakarta, Surabaya)..."
+              placeholder="Ketik nama tempat atau kota..."
               class="input text-xs flex-1 min-w-0"
             />
-            <Button size="sm" variant="secondary" type="button" @click="searchLocations" :loading="isSearchingLocation">
+            <Button size="sm" variant="secondary" type="button" @click="searchLocations(false)" :loading="isSearchingLocation">
               Cari
             </Button>
           </div>
@@ -375,7 +376,21 @@ async function ensureComposerAccountId() {
   return account.id
 }
 
-async function searchLocations() {
+let locationDebounceTimer: ReturnType<typeof setTimeout> | null = null
+
+function onLocationInput() {
+  if (locationDebounceTimer) clearTimeout(locationDebounceTimer)
+  const q = locationQuery.value.trim()
+  if (q.length < 2) {
+    locationResults.value = []
+    return
+  }
+  locationDebounceTimer = setTimeout(() => {
+    searchLocations(true)
+  }, 450)
+}
+
+async function searchLocations(silent = false) {
   const q = locationQuery.value.trim()
   if (!q) return
   isSearchingLocation.value = true
@@ -384,12 +399,18 @@ async function searchLocations() {
     const res = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/threads-extra/locations/search?account_id=${accId}&q=${encodeURIComponent(q)}`)
     const data = await res.json()
     if (!res.ok) throw new Error(data.detail || 'Gagal mencari lokasi')
-    locationResults.value = data.locations || []
-    if (locationResults.value.length === 0) {
+    const rawLocs = data.locations || []
+    const qLower = q.toLowerCase()
+    locationResults.value = [...rawLocs].sort((a: any, b: any) => {
+      const aMatch = `${a.name} ${a.city}`.toLowerCase().includes(qLower) ? 0 : 1
+      const bMatch = `${b.name} ${b.city}`.toLowerCase().includes(qLower) ? 0 : 1
+      return aMatch - bMatch
+    })
+    if (!silent && locationResults.value.length === 0) {
       showToast('Lokasi tidak ditemukan, coba kata kunci lain.', 'info')
     }
   } catch (err: any) {
-    showToast(err.message || 'Gagal mencari lokasi', 'error')
+    if (!silent) showToast(err.message || 'Gagal mencari lokasi', 'error')
   } finally {
     isSearchingLocation.value = false
   }

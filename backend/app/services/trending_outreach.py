@@ -110,7 +110,7 @@ async def fetch_official_trending_topics(
     db = get_supabase()
     acc = _get_account_guard(db, account_id)
     token = acc["_token"]
-    cache_key = "topics:v1:official"
+    cache_key = "topics:v2:official"
     now = datetime.now(timezone.utc)
 
     if not force_refresh:
@@ -141,7 +141,8 @@ async def fetch_official_trending_topics(
                 if res.status_code != 200:
                     logging.warning(f"[Trending Topics] Meta status {res.status_code}: {res.text[:200]}")
                     continue
-                items = res.json().get("data") or []
+                raw_json = res.json()
+                items = raw_json.get("trends") or raw_json.get("data") or []
                 for item in items:
                     if isinstance(item, str):
                         label = item.strip()
@@ -244,7 +245,7 @@ async def discover_trending_posts(
 
     async with httpx.AsyncClient(timeout=20.0) as client:
         for term in search_terms:
-            q_param = f"{term}{region_suffix}".strip()
+            q_param = term.strip()
             url = "https://graph.threads.net/v1.0/keyword_search"
             params = {
                 "q": q_param,
