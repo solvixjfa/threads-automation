@@ -57,6 +57,7 @@ async def get_trending_discover(
     q: str = Query(""),
     limit: int = Query(20, ge=5, le=50),
     refresh: bool = Query(False),
+    cache_only: bool = Query(False),
 ):
     try:
         return await discover_trending_posts(
@@ -66,6 +67,7 @@ async def get_trending_discover(
             query=q,
             limit=limit,
             force_refresh=refresh,
+            cache_only=cache_only,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

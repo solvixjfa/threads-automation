@@ -54,12 +54,13 @@
             <div class="flex gap-2">
               <input
                 v-model="searchQuery"
-                @keyup.enter="loadTrending(true)"
+                @keyup.enter="loadTrending(false, false)"
                 type="text"
                 placeholder="Cari topik atau keyword..."
                 class="input text-xs flex-1 min-w-0"
               />
-              <Button size="sm" @click="loadTrending(true)" :loading="loadingPosts">Cari</Button>
+              <Button size="sm" @click="loadTrending(false, false)" :loading="loadingPosts">Cari</Button>
+              <Button size="sm" variant="secondary" @click="loadTrending(true, false)" :loading="loadingPosts">Refresh</Button>
             </div>
           </div>
         </div>
@@ -82,14 +83,18 @@
         </div>
       </Card>
 
+      <div v-if="sandboxOnly" class="p-3.5 rounded-xl border theme-border theme-bg-sec text-xs theme-text-muted">
+        Info Meta API: Izin <strong>threads_keyword_search</strong> masih dalam mode Development/Pre-Review sehingga Meta hanya menampilkan postingan dari akun tester aplikasi. Setelah disetujui Meta App Review, postingan publik seluruh kreator Threads akan otomatis muncul.
+      </div>
+
       <div v-if="loadingPosts" class="grid grid-cols-1 gap-3">
         <div v-for="n in 3" :key="n" class="card p-5 animate-pulse h-32"></div>
       </div>
 
       <EmptyState
         v-else-if="posts.length === 0"
-        title="Belum ada postingan tren ditemukan"
-        description="Coba ganti kategori, wilayah, atau kata kunci pencarian lalu klik Cari."
+        title="Belum ada data tren di cache"
+        description="Pilih kategori atau ketik kata kunci lalu klik Cari untuk memuat hasil."
       />
 
       <div v-else class="space-y-3">
@@ -312,6 +317,7 @@ const quickTopics = ['AI', 'Bisnis', 'Startup', 'Marketing', 'Produktivitas']
 const loadingPosts = ref(false)
 const posts = ref<any[]>([])
 const cacheInfo = ref('')
+const sandboxOnly = ref(false)
 
 const generatingId = ref<string | null>(null)
 const activeReplyPostId = ref<string | null>(null)
@@ -360,7 +366,7 @@ async function resolveAccountId() {
   return acc.id
 }
 
-async function loadTrending(forceRefresh = false) {
+async function loadTrending(forceRefresh = false, cacheOnly = false) {
   loadingPosts.value = true
   try {
     const accId = await resolveAccountId()
@@ -371,12 +377,14 @@ async function loadTrending(forceRefresh = false) {
       q: searchQuery.value.trim(),
       limit: '20',
       refresh: forceRefresh ? 'true' : 'false',
+      cache_only: cacheOnly ? 'true' : 'false',
     })
     const res = await fetch(`${API_BASE}/discover?${params.toString()}`)
     const data = await res.json()
     if (!res.ok) throw new Error(data.detail || 'Gagal memuat topik tren')
     posts.value = data.posts || []
-    cacheInfo.value = data.cached ? 'Dari cache (hemat kuota)' : 'Live dari Threads API'
+    sandboxOnly.value = Boolean(data.sandbox_only)
+    cacheInfo.value = data.cached ? 'Dari cache database (hemat kuota)' : 'Live dari Threads API (tersimpan ke cache 60 mnt)'
   } catch (err: any) {
     showToast(err.message || 'Gagal memuat trending', 'error')
   } finally {
@@ -386,7 +394,7 @@ async function loadTrending(forceRefresh = false) {
 
 function selectQuickTopic(topic: string) {
   searchQuery.value = topic
-  loadTrending(false)
+  loadTrending(false, false)
 }
 
 async function openCreatorProfile(username: string) {
@@ -551,6 +559,6 @@ async function runCampaignNow() {
 }
 
 onMounted(async () => {
-  await Promise.all([loadTrending(false), loadCampaignAndLogs()])
+  await Promise.all([loadTrending(false, true), loadCampaignAndLogs()])
 })
 </script>
