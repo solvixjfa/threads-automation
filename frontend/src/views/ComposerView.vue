@@ -166,6 +166,67 @@
 
       <Textarea v-model="postText" :rows="6" :placeholder="$t('content.composer.draft_ph')" />
 
+      <!-- LOCATION TAGGING -->
+      <div class="mt-3 p-3 rounded-xl border theme-border theme-bg-sec space-y-2">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-[11px] font-bold uppercase tracking-wide theme-text-muted flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            Tag Lokasi (Opsional)
+          </span>
+          <button
+            v-if="selectedLocation"
+            type="button"
+            @click="clearSelectedLocation"
+            class="text-[11px] font-bold theme-text-muted hover:theme-text"
+          >
+            Hapus Lokasi
+          </button>
+        </div>
+
+        <div v-if="selectedLocation" class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border theme-border" style="background: var(--bg);">
+          <div class="min-w-0">
+            <p class="text-xs font-bold theme-text truncate">{{ selectedLocation.name }}</p>
+            <p v-if="selectedLocation.city || selectedLocation.country" class="text-[11px] theme-text-muted truncate">
+              {{ [selectedLocation.city, selectedLocation.country].filter(Boolean).join(', ') }}
+            </p>
+          </div>
+          <span class="badge badge-accent text-[10px] shrink-0">Terpilih</span>
+        </div>
+
+        <div v-else class="space-y-2">
+          <div class="flex gap-2">
+            <input
+              v-model="locationQuery"
+              @keyup.enter="searchLocations"
+              type="text"
+              placeholder="Cari nama tempat atau kota (misal: Jakarta, Surabaya)..."
+              class="input text-xs flex-1 min-w-0"
+            />
+            <Button size="sm" variant="secondary" type="button" @click="searchLocations" :loading="isSearchingLocation">
+              Cari
+            </Button>
+          </div>
+
+          <div v-if="locationResults.length > 0" class="max-h-40 overflow-y-auto rounded-lg border theme-border divide-y" style="background: var(--bg);">
+            <button
+              v-for="loc in locationResults"
+              :key="loc.id"
+              type="button"
+              @click="selectLocation(loc)"
+              class="w-full text-left px-3 py-2 hover:opacity-80 transition flex items-center justify-between gap-2"
+            >
+              <div class="min-w-0">
+                <p class="text-xs font-bold theme-text truncate">{{ loc.name }}</p>
+                <p v-if="loc.address || loc.city || loc.country" class="text-[11px] theme-text-muted truncate">
+                  {{ [loc.address, loc.city, loc.country].filter(Boolean).join(', ') }}
+                </p>
+              </div>
+              <span class="text-[10px] font-bold theme-text-muted shrink-0">Pilih</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div
         @click="shareToInstagram = !shareToInstagram"
         role="switch"
@@ -299,6 +360,51 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const threadParts = ref<string[]>([])
 const scheduledDate = ref('')
 const shareToInstagram = ref(false)
+const locationQuery = ref('')
+const locationResults = ref<any[]>([])
+const selectedLocation = ref<any | null>(null)
+const isSearchingLocation = ref(false)
+
+async function ensureComposerAccountId() {
+  if (currentAccountId.value) return currentAccountId.value
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+  const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id').eq('user_id', user.id).maybeSingle()
+  if (!account) throw new Error('Threads account not connected')
+  currentAccountId.value = account.id
+  return account.id
+}
+
+async function searchLocations() {
+  const q = locationQuery.value.trim()
+  if (!q) return
+  isSearchingLocation.value = true
+  try {
+    const accId = await ensureComposerAccountId()
+    const res = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/threads-extra/locations/search?account_id=${accId}&q=${encodeURIComponent(q)}`)
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.detail || 'Gagal mencari lokasi')
+    locationResults.value = data.locations || []
+    if (locationResults.value.length === 0) {
+      showToast('Lokasi tidak ditemukan, coba kata kunci lain.', 'info')
+    }
+  } catch (err: any) {
+    showToast(err.message || 'Gagal mencari lokasi', 'error')
+  } finally {
+    isSearchingLocation.value = false
+  }
+}
+
+function selectLocation(loc: any) {
+  selectedLocation.value = loc
+  locationResults.value = []
+}
+
+function clearSelectedLocation() {
+  selectedLocation.value = null
+  locationQuery.value = ''
+  locationResults.value = []
+}
 const isSaving = ref(false)
 const isChecking = ref(false)   
 const isDeepScoring = ref(false)                                   
@@ -627,16 +733,23 @@ async function schedulePost() {
     const partsToSchedule = threadParts.value.length > 0 ? threadParts.value : [postText.value]
     let parentId = null
     for (let i = 0; i < partsToSchedule.length; i++) {                 
+      let partMedia: Record<string, any> | null = null
+      if (i === targetImagePart.value && mediaUrl.value) {
+        partMedia = { url: mediaUrl.value, type: 'IMAGE' }
+      }
+      if (i === 0 && selectedLocation.value) {
+        partMedia = { ...(partMedia || {}), location_id: selectedLocation.value.id, location_name: selectedLocation.value.name }
+      }
       const { data: insertedPart, error: insertError } = await supabase.schema('threads').from('scheduled_posts').insert({
-        account_id: targetAccountId, text: partsToSchedule[i], scheduled_for: localDate.toISOString(), media: (i === targetImagePart.value && mediaUrl.value) ? { url: mediaUrl.value, type: 'IMAGE' } : null,
-        status: 'scheduled', share_to_instagram: i === 0 ? shareToInstagram.value : false, parent_id: parentId, sequence_number: i + 1, idempotency_key: crypto.randomUUID()                             
+        account_id: targetAccountId, text: partsToSchedule[i], scheduled_for: localDate.toISOString(), media: partMedia,
+        status: 'scheduled', share_to_instagram: i === 0 ? shareToInstagram.value : false, parent_id: parentId, sequence_number: i + 1, idempotency_key: crypto.randomUUID()
       }).select().single()                                                  
       if (insertError) throw insertError                                 
       if (i === 0) parentId = insertedPart.id
     }                                                              
     
     showToast(`Scheduled ${partsToSchedule.length} thread(s)!`, 'success')
-    postText.value = ''; mediaUrl.value = ''; selectedFile.value = null; targetImagePart.value = 0; if (fileInput.value) fileInput.value.value = ''; shareToInstagram.value = false;
+    postText.value = ''; mediaUrl.value = ''; selectedFile.value = null; targetImagePart.value = 0; if (fileInput.value) fileInput.value.value = ''; shareToInstagram.value = false; clearSelectedLocation();
     mediaUrl.value = ''
     selectedFile.value = null
     if (fileInput.value) fileInput.value.value = ''

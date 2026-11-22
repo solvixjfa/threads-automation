@@ -73,18 +73,86 @@
         <button @click="activeTab = 'history'" class="text-xs font-bold transition whitespace-nowrap pb-1 border-b-2 -mb-[13px] flex items-center gap-1.5 hover:theme-text" :class="tabClass('history')">
           <History class="w-3.5 h-3.5" /> {{ $t('comments.tab_history') }} ({{ historyCount }})
         </button>
+        <button @click="switchToMentions" class="text-xs font-bold transition whitespace-nowrap pb-1 border-b-2 -mb-[13px] flex items-center gap-1.5 hover:theme-text" :class="tabClass('mentions')">
+          <AtSign class="w-3.5 h-3.5" /> Mentions ({{ mentionsList.length }})
+        </button>
       </div>
     </div>
 
     <!-- SELECT ALL -->
-    <div v-if="activeTab !== 'history' && currentReplies.length > 0" class="flex justify-end pt-2">
+    <div v-if="activeTab !== 'history' && activeTab !== 'mentions' && currentReplies.length > 0" class="flex justify-end pt-2">
       <label class="flex items-center gap-2 cursor-pointer text-xs font-bold theme-text-muted hover:theme-text">
         <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll" class="w-4 h-4 rounded border-gray-300 text-black focus:ring-black dark:text-white dark:focus:ring-white" />
         {{ $t('comments.select_all') }}
       </label>
     </div>
 
-    <div v-if="loading" class="p-12 text-center text-xs theme-text-muted animate-pulse">{{ $t('common.loading') }}</div>
+    <div v-if="activeTab === 'mentions'" class="space-y-4">
+      <div class="flex items-center justify-between gap-3 p-3.5 rounded-xl border theme-border theme-bg-sec">
+        <p class="text-xs theme-text-muted">Postingan publik yang menyebut (@mention) akun Threads Anda.</p>
+        <button @click="fetchMentions(true)" :disabled="loadingMentions" class="btn btn-secondary btn-sm shrink-0">
+          <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin': loadingMentions }" />
+          <span>{{ loadingMentions ? 'Memuat...' : 'Refresh Mentions' }}</span>
+        </button>
+      </div>
+
+      <div v-if="loadingMentions" class="p-12 text-center text-xs theme-text-muted animate-pulse">Memuat daftar mentions...</div>
+
+      <div v-else-if="mentionsList.length === 0" class="card p-8 text-center flex flex-col items-center gap-2 text-xs theme-text-muted">
+        <AtSign class="w-8 h-8 opacity-20" />
+        Belum ada mention publik ditemukan untuk akun ini.
+      </div>
+
+      <div v-else class="space-y-4">
+        <div v-for="m in mentionsList" :key="m.id" class="card p-4 md:p-6 space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs font-bold theme-text">@{{ m.username }}</span>
+              <Badge v-if="m.replied" variant="accent">Sudah Dibalas</Badge>
+            </div>
+            <div class="flex items-center gap-3">
+              <span v-if="m.timestamp" class="text-[11px] theme-text-muted">{{ formatDate(m.timestamp) }}</span>
+              <a v-if="m.permalink" :href="m.permalink" target="_blank" rel="noopener noreferrer" class="text-xs font-bold theme-text-muted hover:theme-text">
+                Buka Post
+              </a>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-xl theme-bg-sec border theme-border space-y-2">
+            <p class="text-xs font-medium whitespace-pre-wrap break-words">{{ m.text || '(Media mention)' }}</p>
+          </div>
+
+          <div class="p-3.5 rounded-xl theme-bg-sec border theme-border space-y-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[10px] font-bold uppercase theme-text-sec">Balas Mention</span>
+              <button
+                type="button"
+                @click="generateMentionDraft(m)"
+                :disabled="generatingMentionId === m.id || !m.text"
+                class="btn btn-secondary btn-sm"
+              >
+                <Sparkles class="w-3 h-3" />
+                <span>{{ generatingMentionId === m.id ? 'Generating...' : 'AI Reply' }}</span>
+              </button>
+            </div>
+            <textarea v-model="m.draftText" rows="2" placeholder="Tulis balasan untuk mention ini..." class="textarea w-full text-xs"></textarea>
+            <div class="flex justify-end">
+              <button
+                type="button"
+                @click="sendMentionReply(m)"
+                :disabled="sendingMentionId === m.id || !m.draftText || !m.draftText.trim()"
+                class="btn btn-primary btn-sm"
+              >
+                <Send class="w-3 h-3" />
+                <span>{{ sendingMentionId === m.id ? 'Mengirim...' : 'Kirim Balasan' }}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-else-if="loading" class="p-12 text-center text-xs theme-text-muted animate-pulse">{{ $t('common.loading') }}</div>
 
     <div v-else-if="activeTab !== 'history'" class="space-y-4">
       <div v-if="currentReplies.length === 0" class="card p-8 text-center flex flex-col items-center gap-2 text-xs theme-text-muted">
@@ -199,7 +267,7 @@ import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
 import { useI18n } from 'vue-i18n'
 import { Badge, Select } from '../components/ui'
-import { MessageSquare, RefreshCw, Search, Inbox, AlertTriangle, MessagesSquare, History, Clock, Sparkles, Send, EyeOff } from 'lucide-vue-next'
+import { MessageSquare, RefreshCw, Search, Inbox, AlertTriangle, MessagesSquare, History, Clock, Sparkles, Send, EyeOff , AtSign } from 'lucide-vue-next'
 
 const { showToast, askConfirm } = useNotify()
 const { t } = useI18n()
@@ -207,7 +275,11 @@ const loading = ref(true)
 const isSyncing = ref(false)
 const approvingId = ref<string | null>(null)
 const generatingId = ref<string | null>(null)
-const activeTab = ref<'review' | 'priority' | 'conversation' | 'history'>('review')
+const activeTab = ref<'review' | 'priority' | 'conversation' | 'history' | 'mentions'>('review')
+const mentionsList = ref<any[]>([])
+const loadingMentions = ref(false)
+const generatingMentionId = ref<string | null>(null)
+const sendingMentionId = ref<string | null>(null)
 const repliesData = ref<any[]>([])
 
 const searchQuery = ref('')
@@ -469,7 +541,97 @@ async function handleBulkPublish() {
   })
 }
 
-onMounted(() => fetchReplies())
+async function resolveInboxAccountId() {
+  if (currentAccountId.value) return currentAccountId.value
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('User belum login')
+  const { data: acc } = await supabase.schema('threads').from('threads_accounts').select('id').eq('user_id', user.id).maybeSingle()
+  if (!acc?.id) throw new Error('Akun Threads belum terhubung')
+  currentAccountId.value = acc.id
+  return acc.id
+}
+
+async function fetchMentions(notifyOnError = false) {
+  loadingMentions.value = true
+  try {
+    const accId = await resolveInboxAccountId()
+    const res = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/threads-extra/mentions?account_id=${accId}&limit=25`)
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.detail || 'Gagal memuat mentions')
+    mentionsList.value = (data.mentions || []).map((item: any) => ({
+      ...item,
+      draftText: '',
+      replied: false,
+    }))
+  } catch (err: any) {
+    if (notifyOnError) showToast(err.message || 'Gagal memuat mentions', 'error')
+  } finally {
+    loadingMentions.value = false
+  }
+}
+
+async function switchToMentions() {
+  activeTab.value = 'mentions'
+  if (mentionsList.value.length === 0) {
+    await fetchMentions(true)
+  }
+}
+
+async function generateMentionDraft(m: any) {
+  generatingMentionId.value = m.id
+  try {
+    const accId = await resolveInboxAccountId()
+    const res = await fetch('https://threads-automation-r9so.onrender.com/api/v1/threads-extra/mentions/generate-reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        account_id: accId,
+        mention_text: m.text || '',
+        author_username: m.username || 'user',
+        provider: aiProvider.value,
+        model_name: aiModel.value || undefined,
+      }),
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.detail || 'Gagal generate AI reply')
+    m.draftText = data.reply_text || ''
+  } catch (err: any) {
+    showToast(err.message || 'Gagal generate balasan mention', 'error')
+  } finally {
+    generatingMentionId.value = null
+  }
+}
+
+async function sendMentionReply(m: any) {
+  if (!m.draftText?.trim()) return
+  sendingMentionId.value = m.id
+  try {
+    const accId = await resolveInboxAccountId()
+    const res = await fetch('https://threads-automation-r9so.onrender.com/api/v1/threads-extra/mentions/reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        account_id: accId,
+        mention_media_id: m.id,
+        reply_text: m.draftText.trim(),
+      }),
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.detail || 'Gagal membalas mention')
+    m.replied = true
+    m.draftText = ''
+    showToast('Balasan mention terkirim ke Threads!', 'success')
+  } catch (err: any) {
+    showToast(err.message || 'Gagal mengirim balasan mention', 'error')
+  } finally {
+    sendingMentionId.value = null
+  }
+}
+
+onMounted(() => {
+  fetchReplies()
+  fetchMentions(false)
+})
 onUnmounted(() => {
   if (cooldownInterval) clearInterval(cooldownInterval)
 })
