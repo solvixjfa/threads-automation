@@ -55,6 +55,7 @@ serve(async (req) => {
           if (post.media?.url) {
             bodyParams.image_url = post.media.url;
           }
+          if (post.media?.location_id) bodyParams.location_id = String(post.media.location_id);
           if (replyToMediaId) bodyParams.reply_to_id = replyToMediaId;
           if (post.share_to_instagram) bodyParams.crossreshare_to_ig = "true";
 
