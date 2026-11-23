@@ -1,33 +1,58 @@
 <template>
   <div class="min-h-screen font-sans selection:bg-[var(--text)] selection:text-[var(--bg)] bg-[var(--bg)] text-[var(--text)] overflow-x-hidden">
-    
     <!-- NAVBAR -->
     <AppNavbar />
 
     <main class="pt-24 md:pt-32">
       <!-- HERO -->
-      <section class="max-w-[1120px] mx-auto px-6 pb-20 md:pb-32 flex flex-col md:flex-row items-center gap-12">
+      <section class="max-w-[1120px] mx-auto px-6 pb-20 md:pb-28 flex flex-col md:flex-row items-center gap-12">
         <div class="flex-1 space-y-6 text-center md:text-left fade-in">
-          <div class="inline-flex items-center px-3 py-1 rounded-full border border-[var(--line)] text-xs font-bold tracking-widest text-[var(--muted)] uppercase">{{ $t('landing.hero.badge') }}</div>
-          
-          <h1 class="font-display text-5xl md:text-7xl leading-[1.05]">
-            {{ $t('landing.hero.title_1') }} <br class="hidden md:block"/>
-            <span class="italic text-[var(--text)]">{{ $t('landing.hero.title_2') }}</span>
-          </h1>
-          
-          <p class="text-lg text-[var(--muted)] leading-relaxed max-w-xl mx-auto md:mx-0">{{ $t('landing.hero.subtitle') }}</p>
-          
-          <div class="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4 pt-4">
-            <a href="https://app.ixiera.online/login" class="w-full sm:w-auto px-8 py-3.5 rounded-full text-base font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">{{ $t('landing.hero.cta_primary') }}</a>
-            <a href="#contoh" class="w-full sm:w-auto px-8 py-3.5 rounded-full text-base font-bold border border-[var(--line)] hover:bg-[var(--surface-2)] transition">{{ $t('landing.hero.cta_secondary') }}</a>
+          <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-[var(--line)] bg-[var(--surface)] text-xs font-bold tracking-widest text-[var(--muted)] uppercase">
+            <span class="w-1.5 h-1.5 rounded-full bg-[var(--text)]"></span>
+            {{ locale === 'id' ? 'OFFICIAL THREADS API • GEMINI & GROQ' : 'OFFICIAL THREADS API • GEMINI & GROQ' }}
           </div>
-          
-          <p class="text-xs text-[var(--muted)] pt-2">{{ $t('landing.hero.microcopy') }}</p>
-          
-          <div class="flex flex-col sm:flex-row gap-4 pt-8 text-xs text-[var(--muted)] justify-center md:justify-start">
-            <span class="flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> {{ $t('landing.hero.trust_1') }}</span>
-            <span class="flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> {{ $t('landing.hero.trust_2') }}</span>
-            <span class="flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> {{ $t('landing.hero.trust_3') }}</span>
+
+          <h1 class="font-display text-5xl md:text-7xl leading-[1.05]">
+            {{ locale === 'id' ? 'Ubah akun Threads' : 'Turn your Threads' }} <br class="hidden md:block"/>
+            <span class="italic text-[var(--text)]">
+              {{ locale === 'id' ? 'jadi mesin closing.' : 'into a growth engine.' }}
+            </span>
+          </h1>
+
+          <p class="text-lg text-[var(--muted)] leading-relaxed max-w-xl mx-auto md:mx-0">
+            {{ locale === 'id'
+              ? 'Riset topik yang sedang naik, susun rencana konten 3 hari sesuai gaya bahasamu, cross-post ke Instagram, hingga balas ratusan komentar & mention otomatis dalam hitungan detik.'
+              : 'Spot live trending topics, build 3-day content plans matched to your voice, cross-post to Instagram, and auto-reply to comments & mentions in seconds.' }}
+          </p>
+
+          <div class="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4 pt-3">
+            <a href="https://app.ixiera.online/login" class="w-full sm:w-auto px-8 py-3.5 rounded-full text-base font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">
+              {{ locale === 'id' ? 'Mulai Trial Gratis 7 Hari' : 'Start 7-Day Free Trial' }}
+            </a>
+            <a href="#contoh" class="w-full sm:w-auto px-8 py-3.5 rounded-full text-base font-bold border border-[var(--line)] hover:bg-[var(--surface-2)] transition">
+              {{ locale === 'id' ? 'Lihat Cara Kerja' : 'See How It Works' }}
+            </a>
+          </div>
+
+          <p class="text-xs text-[var(--muted)] pt-1">
+            {{ locale === 'id'
+              ? 'Gratis 7 hari + 20 kredit AI • Tanpa kartu kredit • Aktif dalam 30 detik'
+              : 'Free 7-day trial + 20 AI credits • No credit card • Live in 30 seconds' }}
+          </p>
+
+          <div class="flex flex-col sm:flex-row gap-4 pt-6 text-xs text-[var(--muted)] justify-center md:justify-start">
+            <span class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-[var(--text)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+              {{ $t('landing.hero.trust_1') }}
+            </span>
+            <span class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-[var(--text)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+              {{ $t('landing.hero.trust_2') }}
+            </span>
+            <span class="flex items-center gap-2">
+              <svg class="w-4 h-4 text-[var(--text)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+              {{ $t('landing.hero.trust_3') }}
+            </span>
           </div>
         </div>
 
@@ -48,7 +73,7 @@
                 </div>
                 <div class="bg-[#000] border border-[#1a1a1a] rounded-xl p-3">
                   <p class="text-[10px] text-[#666] mb-1">AVG ENGAGEMENT</p>
-                  <p class="text-xl font-bold text-white tracking-tight">0.97%</p>
+                  <p class="text-xl font-bold text-white tracking-tight">3.42%</p>
                 </div>
               </div>
               <div class="bg-[#000] border border-[#1a1a1a] rounded-xl p-4">
@@ -60,12 +85,12 @@
                 </div>
                 <svg viewBox="0 0 400 80" class="w-full" preserveAspectRatio="none" style="height: 60px;">
                   <defs>
-                    <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id="chartGradientHero" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stop-color="#ffffff" stop-opacity="0.2" />
                       <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
                     </linearGradient>
                   </defs>
-                  <path d="M0,60 Q50,55 80,45 T160,35 T240,20 T320,15 L400,10 L400,80 L0,80 Z" fill="url(#chartGradient)" />
+                  <path d="M0,60 Q50,55 80,45 T160,35 T240,20 T320,15 L400,10 L400,80 L0,80 Z" fill="url(#chartGradientHero)" />
                   <path d="M0,60 Q50,55 80,45 T160,35 T240,20 T320,15 L400,10" stroke="#ffffff" stroke-width="1.5" fill="none" />
                 </svg>
               </div>
@@ -74,24 +99,85 @@
         </div>
       </section>
 
-      <!-- FITUR -->
-      <section id="contoh" class="scroll-mt-16 py-20 md:py-32 border-t border-[var(--line)]">
+      <!-- POWERED BY GEMINI & GROQ (MONOCHROME BADGES) -->
+      <section class="border-y border-[var(--line)] bg-[var(--surface)] py-8">
+        <div class="max-w-[1120px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+          <p class="text-xs font-mono font-bold uppercase tracking-widest text-[var(--muted)] text-center md:text-left">
+            {{ locale === 'id' ? 'Ditenagai Arsitektur Dual-AI & API Resmi' : 'Powered by Dual-AI Engine & Official API' }}
+          </p>
+
+          <div class="flex flex-wrap items-center justify-center gap-3 md:gap-4">
+            <!-- GOOGLE GEMINI MONOCHROME ICON -->
+            <div class="flex items-center gap-2.5 px-4 py-2 rounded-full border border-[var(--line)] bg-[var(--bg)] text-[var(--text)]">
+              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2C12.35 7.25 16.75 11.65 22 12C16.75 12.35 12.35 16.75 12 22C11.65 16.75 7.25 12.35 2 12C7.25 11.65 11.65 7.25 12 2Z"/>
+              </svg>
+              <span class="text-xs font-bold tracking-tight">Google Gemini</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--surface-2)] text-[var(--muted)]">
+                3-Day Planner & RAG
+              </span>
+            </div>
+
+            <!-- GROQ LPU MONOCHROME ICON -->
+            <div class="flex items-center gap-2.5 px-4 py-2 rounded-full border border-[var(--line)] bg-[var(--bg)] text-[var(--text)]">
+              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+              <span class="text-xs font-bold tracking-tight">Groq LPU™</span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--surface-2)] text-[var(--muted)]">
+                Sub-Second Reply
+              </span>
+            </div>
+
+            <!-- OFFICIAL META THREADS OAUTH -->
+            <div class="flex items-center gap-2.5 px-4 py-2 rounded-full border border-[var(--line)] bg-[var(--bg)] text-[var(--text)]">
+              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <path d="m9 12 2 2 4-4"/>
+              </svg>
+              <span class="text-xs font-bold tracking-tight">Meta Threads API</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FITUR UTAMA (UPDATED WITH ALL NEW FEATURES) -->
+      <section id="contoh" class="scroll-mt-16 py-20 md:py-32">
         <span id="fitur"></span>
         <div class="max-w-[1120px] mx-auto px-6">
           <div class="text-center mb-20 fade-in">
-            <h2 class="font-display text-4xl md:text-5xl">{{ $t('landing.features.title') }}</h2>
-            <p class="text-lg text-[var(--muted)] mt-4">{{ $t('landing.features.subtitle') }}</p>
+            <h2 class="font-display text-4xl md:text-5xl">
+              {{ locale === 'id' ? 'Bukan sekadar scheduler biasa.' : 'Far more than a basic scheduler.' }}
+            </h2>
+            <p class="text-lg text-[var(--muted)] mt-4 max-w-2xl mx-auto">
+              {{ locale === 'id'
+                ? 'Riset topik tren, tulis draf berkarakter, cross-post ke Instagram, hingga balas komentar & mention dari satu layar.'
+                : 'Spot trending topics, draft in your own voice, cross-post to Instagram, and reply to comments & mentions in one flow.' }}
+            </p>
           </div>
 
           <div class="space-y-32">
-            <!-- Fitur 1: Content (PIXEL PERFECT COMPOSER) -->
+            <!-- Fitur 1: Composer + Location Tagging + Cross-Post IG -->
             <div class="flex flex-col md:flex-row items-center gap-12">
               <div class="flex-1 space-y-4 fade-in">
-                <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">01 · Content</span>
-                <h3 class="font-display text-3xl">{{ $t('landing.features.f1_title') }}</h3>
-                <p class="text-[var(--muted)] leading-relaxed">{{ $t('landing.features.f1_desc') }}</p>
+                <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">01 · AI Composer & Cross-Post</span>
+                <h3 class="font-display text-3xl md:text-4xl">
+                  {{ locale === 'id'
+                    ? 'Dari satu ide jadi rencana 3 hari, tayang di Threads & Instagram.'
+                    : 'Turn one topic into a 3-day plan, live on Threads & Instagram.' }}
+                </h3>
+                <p class="text-[var(--muted)] leading-relaxed">
+                  {{ locale === 'id'
+                    ? 'Gemini menyusun rencana konten 3 hari sesuai Knowledge Base kamu. Cek Quick Score gratis sebelum tayang, sematkan Location Tag terverifikasi Meta, dan aktifkan toggle Share to Instagram untuk distribusi ganda tanpa kerja dua kali.'
+                    : 'Gemini drafts a 3-day plan matched to your Knowledge Base. Check free Quick Score, attach verified Meta Location Tags, and toggle Share to Instagram for effortless cross-posting.' }}
+                </p>
+                <div class="flex flex-wrap gap-2 pt-2">
+                  <span class="text-xs font-mono px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--surface)]">3-Day AI Planner</span>
+                  <span class="text-xs font-mono px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--surface)]">Location Tagging</span>
+                  <span class="text-xs font-mono px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--surface)]">Share to Instagram</span>
+                </div>
               </div>
-              
+
               <div class="flex-1 w-full">
                 <div class="border border-[#222] rounded-xl overflow-hidden bg-[#050607] shadow-2xl">
                   <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[#1a1a1a] bg-[#0a0a0a]">
@@ -99,44 +185,43 @@
                     <span class="ml-2 text-[10px] text-[#666] font-mono">app.ixiera.online/content/create</span>
                   </div>
                   <div class="p-5">
-                    <div class="mb-4">
-                      <h3 class="text-sm font-bold text-white mb-1">Composer</h3>
-                      <p class="text-[10px] text-[#666]">Tulis atau generate draf otomatis pakai AI, pecah utasan, dan jadwalkan postingan.</p>
-                    </div>
-                    
                     <div class="border border-[#222] rounded-xl p-4 bg-[#0a0a0a] mb-4">
-                      <div class="text-[10px] font-bold text-white mb-3 flex items-center gap-2">
-                        <span class="w-2 h-2 rounded-full bg-white"></span> AI CONTENT PLANNER
+                      <div class="text-[10px] font-bold text-white mb-3 flex items-center justify-between">
+                        <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-white"></span> AI CONTENT PLANNER</span>
+                        <span class="text-[9px] font-mono text-[#888]">GEMINI PRO</span>
                       </div>
                       <div class="grid grid-cols-2 gap-3 mb-3">
                         <div>
                           <label class="text-[9px] text-[#666] block mb-1">Topik / Ide Singkat</label>
-                          <div class="w-full bg-[#000] border border-[#222] rounded-md px-2 py-1.5 text-[10px] text-[#666]">Masukkan topik singkat...</div>
+                          <div class="w-full bg-[#000] border border-[#222] rounded-md px-2 py-1.5 text-[10px] text-white">Strategi jualan organik</div>
                         </div>
                         <div>
-                          <label class="text-[9px] text-[#666] block mb-1">Gaya Bahasa</label>
+                          <label class="text-[9px] text-[#666] block mb-1">Tag Lokasi</label>
                           <div class="w-full bg-[#000] border border-[#222] rounded-md px-2 py-1.5 text-[10px] text-white flex justify-between items-center">
-                            <span>Edukasi & Insight</span>
-                            <svg class="w-3 h-3 text-[#666]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            <span>Jakarta, Indonesia</span>
+                            <span class="text-[8px] text-[#888]">VERIFIED</span>
                           </div>
                         </div>
                       </div>
-                      <div class="flex justify-end mt-2">
+                      <div class="flex items-center justify-between pt-2 border-t border-[#1a1a1a]">
+                        <span class="text-[10px] text-[#999] flex items-center gap-1.5">
+                          <span class="w-6 h-3.5 rounded-full bg-white inline-flex items-center justify-end p-0.5"><span class="w-2.5 h-2.5 rounded-full bg-black"></span></span>
+                          Share to Instagram
+                        </span>
                         <button class="bg-white text-black text-[10px] font-bold px-3 py-1.5 rounded-md">Bikin Rencana 3 Hari</button>
                       </div>
                     </div>
 
                     <div class="border border-[#222] rounded-xl p-4 bg-[#0a0a0a]">
-                      <div class="text-[10px] font-bold text-white mb-3 flex justify-between">
+                      <div class="text-[10px] font-bold text-white mb-2 flex justify-between">
                         <span>TEKS POSTINGAN UTAMA</span>
-                        <span class="text-[#666] font-normal">0 Karakter</span>
+                        <span class="text-[#666] font-normal">312 / 500 Karakter</span>
                       </div>
-                      <div class="w-full bg-[#000] border border-[#222] rounded-md p-2 text-[10px] text-[#666] h-16 mb-3">Tulis draf kamu di sini...</div>
-                      <div class="flex justify-between items-center pt-3 border-t border-[#222]">
-                        <div class="flex gap-2 text-[9px] text-[#666]">
-                          <span class="bg-[#1a1a1a] px-2 py-1 rounded">Best time hari ini 17:00</span>
-                          <span class="bg-[#1a1a1a] px-2 py-1 rounded">Pakai Insight</span>
-                        </div>
+                      <div class="w-full bg-[#000] border border-[#222] rounded-md p-2.5 text-[10px] text-[#ccc] leading-relaxed mb-3">
+                        3 kesalahan yang bikin akun Threads sepi interaksi padahal posting tiap hari...
+                      </div>
+                      <div class="flex justify-between items-center pt-2 border-t border-[#222]">
+                        <span class="bg-[#1a1a1a] text-[9px] text-[#aaa] px-2 py-1 rounded">Quick Score: 92/100</span>
                         <button class="bg-white text-black text-[10px] font-bold px-3 py-1.5 rounded-md">Jadwalkan</button>
                       </div>
                     </div>
@@ -145,59 +230,65 @@
               </div>
             </div>
 
-            <!-- Fitur 2: Komentar (PIXEL PERFECT INBOX) -->
+            <!-- Fitur 2: Smart Inbox (Comments + Public Mentions) -->
             <div class="flex flex-col md:flex-row-reverse items-center gap-12">
               <div class="flex-1 space-y-4 fade-in">
-                <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">02 · Komentar</span>
-                <h3 class="font-display text-3xl">{{ $t('landing.features.f2_title') }}</h3>
-                <p class="text-[var(--muted)] leading-relaxed">{{ $t('landing.features.f2_desc') }}</p>
+                <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">02 · Smart Inbox & Mentions</span>
+                <h3 class="font-display text-3xl md:text-4xl">
+                  {{ locale === 'id'
+                    ? 'Komentar & public @mentions terjawab cepat sebelum momentum hilang.'
+                    : 'Comments & public @mentions answered before momentum fades.' }}
+                </h3>
+                <p class="text-[var(--muted)] leading-relaxed">
+                  {{ locale === 'id'
+                    ? 'Tarik komentar postingan sekaligus public mentions dari seluruh Threads dalam satu inbox. Groq mengklasifikasikan pertanyaan calon pembeli vs pujian vs spam dalam milidetik—pilih Review Manual atau Full Auto dengan batas per jam.'
+                    : 'Pull post comments and public mentions across Threads into one unified inbox. Groq classifies buyer questions, praise, and spam in milliseconds—choose Manual Review or Full Auto with hourly rate caps.' }}
+                </p>
+                <div class="flex flex-wrap gap-2 pt-2">
+                  <span class="text-xs font-mono px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--surface)]">Comment Auto-Sort</span>
+                  <span class="text-xs font-mono px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--surface)]">Public Mentions Tab</span>
+                  <span class="text-xs font-mono px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--surface)]">Kill Switch Aman</span>
+                </div>
               </div>
-              
+
               <div class="flex-1 w-full">
                 <div class="border border-[#222] rounded-xl overflow-hidden bg-[#050607] shadow-2xl">
                   <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[#1a1a1a] bg-[#0a0a0a]">
                     <div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div>
-                    <span class="ml-2 text-[10px] text-[#666] font-mono">app.ixiera.online/comment</span>
+                    <span class="ml-2 text-[10px] text-[#666] font-mono">app.ixiera.online/inbox</span>
                   </div>
                   <div class="p-5">
-                    <div class="mb-4">
-                      <h3 class="text-sm font-bold text-white mb-1">Komentar</h3>
-                      <p class="text-[10px] text-[#666]">Balas komentar di postingan kamu pakai draf AI atau template.</p>
-                    </div>
-
                     <div class="flex gap-4 border-b border-[#222] pb-2 mb-4 text-[10px] font-bold">
-                      <span class="text-white border-b-2 border-white pb-2 -mb-[10px]">Review (1)</span>
-                      <span class="text-[#666]">Prioritas (0)</span>
-                      <span class="text-[#666]">Percakapan (1)</span>
-                      <span class="text-[#666]">Riwayat (48)</span>
+                      <span class="text-white border-b-2 border-white pb-2 -mb-[10px]">Comments (4)</span>
+                      <span class="text-[#aaa]">Mentions (2)</span>
+                      <span class="text-[#666]">Priority (1)</span>
+                      <span class="text-[#666]">History (48)</span>
                     </div>
 
                     <div class="border border-[#222] rounded-xl p-4 bg-[#0a0a0a]">
-                      <div class="flex items-center gap-2 mb-3">
-                        <div class="w-5 h-5 rounded-full bg-[#222]"></div>
-                        <span class="text-[10px] font-bold text-white">@username</span>
-                        <span class="text-[9px] font-bold text-[#9984d8] bg-[#9984d8]/10 px-2 py-0.5 rounded border border-[#9984d8]/20">PRAISE</span>
+                      <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                          <div class="w-5 h-5 rounded-full bg-[#222]"></div>
+                          <span class="text-[10px] font-bold text-white">@founder_lokal</span>
+                        </div>
+                        <span class="text-[9px] font-mono font-bold text-white bg-[#1a1a1a] px-2 py-0.5 rounded border border-[#333]">QUESTION • GROQ</span>
                       </div>
-                      
-                      <div class="bg-[#000] border border-[#222] rounded-lg p-2 text-[10px] text-white mb-3">
-                        Kontennya sangat membantu, kak! Ditunggu update selanjutnya.
+
+                      <div class="bg-[#000] border border-[#222] rounded-lg p-2.5 text-[10px] text-white mb-3">
+                        Ini bisa dipakai buat jadwalin utasan panjang sekaligus cross-post IG?
                       </div>
-                      
+
                       <div class="border border-[#222] rounded-lg bg-[#000] p-3">
                         <div class="flex justify-between items-center mb-2">
-                          <span class="text-[9px] font-bold text-[#666]">DRAF BALASAN <span class="text-[#444]">| DARI TEMPLATE</span></span>
-                          <button class="text-[9px] font-bold text-white bg-[#1a1a1a] px-2 py-1 rounded flex items-center gap-1 border border-[#333]">
-                            <svg class="w-3 h-3 text-[#9984d8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Bikin Ulang AI
-                          </button>
+                          <span class="text-[9px] font-bold text-[#666]">DRAF BALASAN • KNOWLEDGE BASE</span>
+                          <span class="text-[9px] font-mono text-[#888]">0.18s</span>
                         </div>
-                        <div class="text-[10px] text-[#999] bg-[#111] border border-[#222] rounded p-2 h-10 mb-3">
-                          Terima kasih banyak, kak! Senang bisa membantu.
+                        <div class="text-[10px] text-[#ccc] bg-[#111] border border-[#222] rounded p-2 mb-3">
+                          Bisa banget! Tinggal pecah utasan di Composer dan aktifkan toggle Share to Instagram. Bisa coba gratis 7 hari di ixiera.online.
                         </div>
                         <div class="flex justify-end gap-2">
                           <button class="text-[9px] font-bold text-[#666] px-2 py-1">Abaikan</button>
-                          <button class="bg-white text-black text-[9px] font-bold px-3 py-1.5 rounded-md flex items-center gap-1">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg> Kirim ke Threads
-                          </button>
+                          <button class="bg-white text-black text-[9px] font-bold px-3 py-1.5 rounded-md">Kirim ke Threads</button>
                         </div>
                       </div>
                     </div>
@@ -206,69 +297,58 @@
               </div>
             </div>
 
-            <!-- Fitur 3: Analytics (PIXEL PERFECT BEST TIME) -->
+            <!-- Fitur 3: Trending Topics Radar, Keyword Search & Analytics -->
             <div class="flex flex-col md:flex-row items-center gap-12">
               <div class="flex-1 space-y-4 fade-in">
-                <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">03 · Analytics</span>
-                <h3 class="font-display text-3xl">{{ $t('landing.features.f3_title') }}</h3>
-                <p class="text-[var(--muted)] leading-relaxed">{{ $t('landing.features.f3_desc') }}</p>
+                <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">03 · Trending Radar & Analytics</span>
+                <h3 class="font-display text-3xl md:text-4xl">
+                  {{ locale === 'id'
+                    ? 'Riset topik yang sedang viral & ukur performa dengan data nyata.'
+                    : 'Ride live trending topics & measure what converts with real data.' }}
+                </h3>
+                <p class="text-[var(--muted)] leading-relaxed">
+                  {{ locale === 'id'
+                    ? 'Pantau daftar Trending Topics resmi Threads, cari postingan kompetitor lewat Keyword Search, inspeksi profil kreator lewat Profile Discovery, dan temukan jam posting terbaik (WIB) dari heatmap akunmu sendiri.'
+                    : 'Monitor official Threads Trending Topics, search posts by keyword, inspect creator profiles via Profile Discovery, and pinpoint your peak posting hours from your own account heatmap.' }}
+                </p>
+                <div class="flex flex-wrap gap-2 pt-2">
+                  <span class="text-xs font-mono px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--surface)]">Trending Topics</span>
+                  <span class="text-xs font-mono px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--surface)]">Profile Discovery</span>
+                  <span class="text-xs font-mono px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--surface)]">Best Time Heatmap</span>
+                </div>
               </div>
-              
+
               <div class="flex-1 w-full">
                 <div class="border border-[#222] rounded-xl overflow-hidden bg-[#050607] shadow-2xl">
                   <div class="flex items-center gap-1.5 px-4 py-3 border-b border-[#1a1a1a] bg-[#0a0a0a]">
                     <div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div><div class="w-2.5 h-2.5 rounded-full bg-[#333]"></div>
-                    <span class="ml-2 text-[10px] text-[#666] font-mono">app.ixiera.online/analytics/best-time</span>
+                    <span class="ml-2 text-[10px] text-[#666] font-mono">app.ixiera.online/content/trending</span>
                   </div>
-                  <div class="p-5">
-                    <div class="mb-4">
-                      <h3 class="text-sm font-bold text-white mb-1">Waktu Terbaik</h3>
-                      <p class="text-[10px] text-[#666]">Tren engagement berdasarkan jam (WIB).</p>
-                    </div>
-
-                    <!-- Best Time Card -->
-                    <div class="border border-[#9984d8] rounded-xl p-4 bg-[#9984d8]/5 mb-4 relative overflow-hidden">
-                      <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-[#9984d8] to-transparent"></div>
-                      <div class="text-[9px] text-[#9984d8] bg-[#9984d8]/20 px-2 py-0.5 rounded font-bold uppercase tracking-wider mb-2 inline-block">Waktu Terbaik Berikutnya</div>
-                      <div class="text-lg font-bold text-white mb-1">Selasa, 08:00–12:00 WIB</div>
-                      <div class="text-[10px] text-[#999] mb-3">3.20% Rata-rata ER • 8 post (Pagi)</div>
-                      <button class="bg-white text-black text-[10px] font-bold px-3 py-1.5 rounded-md">Jadwalkan Sekarang</button>
-                    </div>
-
-                    <!-- Chart -->
-                    <div class="border border-[#222] rounded-xl p-4 bg-[#0a0a0a] mb-4">
-                      <div class="text-[10px] font-bold text-white mb-3 flex justify-between items-center">
-                        <span>Waktu Terbaik untuk Posting</span>
-                        <span class="text-[8px] bg-[#1a1a1a] text-[#666] px-1.5 py-0.5 rounded">DATA LENGKAP</span>
-                      </div>
-                      <svg viewBox="0 0 400 80" class="w-full" preserveAspectRatio="none" style="height: 60px;">
-                        <defs>
-                          <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.2" />
-                            <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
-                          </linearGradient>
-                        </defs>
-                        <path d="M0,60 Q50,55 80,45 T160,35 T240,20 T320,15 L400,10 L400,80 L0,80 Z" fill="url(#chartGradient)" />
-                        <path d="M0,60 Q50,55 80,45 T160,35 T240,20 T320,15 L400,10" stroke="#ffffff" stroke-width="1.5" fill="none" />
-                      </svg>
-                      <div class="flex justify-between mt-2 text-[8px] text-[#666]">
-                        <span>00:00</span><span>09:00</span><span>12:00</span><span>18:00</span><span>21:00</span>
-                      </div>
-                    </div>
-                    
-                    <!-- List -->
+                  <div class="p-5 space-y-4">
                     <div class="border border-[#222] rounded-xl p-4 bg-[#0a0a0a]">
-                      <div class="text-[10px] font-bold text-white mb-3">Waktu Terbaik Per Hari</div>
+                      <div class="text-[9px] text-[#888] font-mono uppercase tracking-wider mb-2">TRENDING TOPICS HARI INI</div>
+                      <div class="flex flex-wrap gap-1.5">
+                        <span class="text-[10px] font-bold bg-white text-black px-2.5 py-1 rounded-full">#SaaSIndonesia</span>
+                        <span class="text-[10px] bg-[#141414] text-[#ccc] border border-[#222] px-2.5 py-1 rounded-full">#CreatorEconomy</span>
+                        <span class="text-[10px] bg-[#141414] text-[#ccc] border border-[#222] px-2.5 py-1 rounded-full">#AIWorkflow</span>
+                        <span class="text-[10px] bg-[#141414] text-[#ccc] border border-[#222] px-2.5 py-1 rounded-full">#DigitalMarketing</span>
+                      </div>
+                    </div>
+
+                    <div class="border border-[#222] rounded-xl p-4 bg-[#0a0a0a]">
+                      <div class="flex justify-between items-center mb-2">
+                        <span class="text-[10px] font-bold text-white">Waktu Terbaik Posting (WIB)</span>
+                        <span class="text-[9px] font-mono text-[#888]">3.20% AVG ER</span>
+                      </div>
+                      <div class="text-sm font-bold text-white mb-3">Selasa & Kamis, 08:00–12:00 WIB</div>
                       <div class="space-y-2">
                         <div class="flex items-center justify-between bg-[#111] p-2 rounded border border-[#222]">
-                          <div class="flex items-center gap-2">
-                            <span class="w-4 h-4 rounded-full bg-[#222] flex items-center justify-center text-[8px] text-white">3</span>
-                            <span class="text-[10px] text-white">Selasa (11:00)</span>
-                          </div>
-                          <div class="flex items-center gap-3">
-                            <span class="text-[10px] font-bold text-[#3fcb7f]">13.64%</span>
-                            <button class="bg-[#222] text-white text-[8px] px-2 py-1 rounded">Jadwalkan</button>
-                          </div>
+                          <span class="text-[10px] text-white">Hook Pertanyaan (2.92% ER)</span>
+                          <span class="text-[9px] font-mono text-white bg-[#222] px-2 py-0.5 rounded">2.1x Lebih Tinggi</span>
+                        </div>
+                        <div class="flex items-center justify-between bg-[#111] p-2 rounded border border-[#222]">
+                          <span class="text-[10px] text-white">Panjang 300–500 Karakter (2.96% ER)</span>
+                          <span class="text-[9px] font-mono text-white bg-[#222] px-2 py-0.5 rounded">Optimal</span>
                         </div>
                       </div>
                     </div>
@@ -276,6 +356,141 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PRICING SECTION (TRANSPARENT & DETAILED ON LANDING) -->
+      <section id="pricing" class="py-20 md:py-32 border-t border-[var(--line)] bg-[var(--surface)]">
+        <div class="max-w-[1120px] mx-auto px-6">
+          <div class="text-center mb-16 fade-in">
+            <span class="text-xs font-mono font-bold uppercase tracking-widest text-[var(--muted)]">
+              {{ locale === 'id' ? 'HARGA TRANSPARAN • TANPA AUTO-RENEW' : 'TRANSPARENT PRICING • NO AUTO-RENEW' }}
+            </span>
+            <h2 class="font-display text-4xl md:text-5xl mt-2">
+              {{ locale === 'id' ? 'Mulai gratis, upgrade kapan siap.' : 'Start free, upgrade when ready.' }}
+            </h2>
+            <p class="text-base text-[var(--muted)] mt-3 max-w-xl mx-auto">
+              {{ locale === 'id'
+                ? 'Coba semua fitur selama 7 hari tanpa kartu kredit. Setelah itu pilih paket 30 hari sekali bayar tanpa langganan otomatis.'
+                : 'Try every feature for 7 days with no credit card. Afterward, pick a one-time 30-day pass with zero auto-renewal.' }}
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            <!-- Trial -->
+            <div class="border border-[var(--line)] rounded-2xl p-8 bg-[var(--bg)] flex flex-col">
+              <div class="text-xs font-mono uppercase text-[var(--muted)] mb-1">7-Day Trial</div>
+              <div class="text-3xl font-bold mb-2">Rp 0</div>
+              <p class="text-xs text-[var(--muted)] mb-6">
+                {{ locale === 'id' ? '7 hari penuh + 20 kredit AI gratis.' : 'Full 7 days + 20 free AI credits.' }}
+              </p>
+              <ul class="space-y-2.5 text-sm text-[var(--muted)] mb-8 border-t border-[var(--line)] pt-5">
+                <li>✓ 20 Kredit AI (Gemini & Groq)</li>
+                <li>✓ Semua Fitur Composer, Inbox & Analytics</li>
+                <li>✓ Location Tag & Cross-Post Instagram</li>
+                <li>✓ Tanpa Kartu Kredit</li>
+              </ul>
+              <a href="https://app.ixiera.online/login" class="mt-auto block text-center py-3 rounded-full text-sm font-bold border border-[var(--line)] hover:bg-[var(--surface-2)] transition">
+                {{ locale === 'id' ? 'Mulai Trial Gratis' : 'Start Free Trial' }}
+              </a>
+            </div>
+
+            <!-- Pro -->
+            <div class="border-2 border-[var(--text)] rounded-2xl p-8 bg-[var(--bg)] relative shadow-xl flex flex-col">
+              <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-[var(--text)] text-[var(--bg)] text-[10px] font-bold px-3 py-1 rounded-full uppercase">
+                {{ locale === 'id' ? 'Paling Laris' : 'Most Popular' }}
+              </div>
+              <div class="text-xs font-mono uppercase text-[var(--muted)] mb-1">Pro (30 Hari)</div>
+              <div class="text-3xl font-bold mb-2">Rp 29.000<span class="text-xs font-normal text-[var(--muted)]"> / 30 hari</span></div>
+              <p class="text-xs text-[var(--muted)] mb-6">
+                {{ locale === 'id' ? 'Langsung pakai tanpa perlu API key sendiri.' : 'Plug-and-play AI without managing API keys.' }}
+              </p>
+              <ul class="space-y-2.5 text-sm text-[var(--muted)] mb-8 border-t border-[var(--line)] pt-5">
+                <li>✓ <strong class="text-[var(--text)]">100 Kredit AI / bulan</strong> (Gemini + Groq)</li>
+                <li>✓ Unlimited Jadwal Post & IG Cross-Post</li>
+                <li>✓ Full Auto Reply + Custom Knowledge Base</li>
+                <li>✓ Trending Radar, Search & Profile Discovery</li>
+              </ul>
+              <a href="https://app.ixiera.online/login" class="mt-auto block text-center py-3 rounded-full text-sm font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">
+                {{ locale === 'id' ? 'Pilih Paket Pro' : 'Choose Pro Plan' }}
+              </a>
+            </div>
+
+            <!-- BYOK -->
+            <div class="border border-[var(--line)] rounded-2xl p-8 bg-[var(--bg)] flex flex-col">
+              <div class="text-xs font-mono uppercase text-[var(--muted)] mb-1">BYOK (30 Hari)</div>
+              <div class="text-3xl font-bold mb-2">Rp 19.000<span class="text-xs font-normal text-[var(--muted)]"> / 30 hari</span></div>
+              <p class="text-xs text-[var(--muted)] mb-6">
+                {{ locale === 'id' ? 'Gunakan API key Gemini / Groq milikmu sendiri.' : 'Use your own Gemini / Groq API keys.' }}
+              </p>
+              <ul class="space-y-2.5 text-sm text-[var(--muted)] mb-8 border-t border-[var(--line)] pt-5">
+                <li>✓ <strong class="text-[var(--text)]">Tanpa Batas Kredit</strong> (kuota API sendiri)</li>
+                <li>✓ Semua Fitur Otomatisasi Terbuka Penuh</li>
+                <li>✓ Smart Inbox, Mentions & Knowledge Base</li>
+                <li>✓ Cocok untuk Power User & Agency</li>
+              </ul>
+              <a href="https://app.ixiera.online/login" class="mt-auto block text-center py-3 rounded-full text-sm font-bold border border-[var(--line)] hover:bg-[var(--surface-2)] transition">
+                {{ locale === 'id' ? 'Pilih Paket BYOK' : 'Choose BYOK Plan' }}
+              </a>
+            </div>
+          </div>
+
+          <div class="text-center mt-8">
+            <RouterLink to="/pricing" class="text-xs font-bold underline underline-offset-4 text-[var(--muted)] hover:text-[var(--text)] transition">
+              {{ locale === 'id' ? 'Lihat tabel perbandingan fitur lengkap & aturan kredit →' : 'View full feature comparison table & credit rules →' }}
+            </RouterLink>
+          </div>
+        </div>
+      </section>
+
+      <!-- BLOG & FREE RESOURCES SECTION -->
+      <section id="resources" class="py-20 md:py-32 border-t border-[var(--line)] bg-[var(--bg)]">
+        <div class="max-w-[1120px] mx-auto px-6">
+          <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4 fade-in">
+            <div>
+              <span class="text-xs font-mono font-bold uppercase tracking-widest text-[var(--muted)]">
+                PLAYBOOK & FREE RESOURCES
+              </span>
+              <h2 class="font-display text-4xl md:text-5xl mt-2">
+                {{ locale === 'id' ? 'Panduan & template siap pakai.' : 'Guides & ready-to-use templates.' }}
+              </h2>
+            </div>
+            <RouterLink to="/blog" class="text-sm font-bold underline underline-offset-4 hover:opacity-80 transition">
+              {{ locale === 'id' ? 'Lihat Semua Artikel & Resource →' : 'Browse All Articles & Resources →' }}
+            </RouterLink>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <RouterLink
+              v-for="post in featuredPosts"
+              :key="post.slug"
+              :to="`/blog/${post.slug}`"
+              class="border rounded-2xl p-6 bg-[var(--surface)] hover:border-[var(--text)] transition flex flex-col justify-between group"
+              :class="post.isResource ? 'border-[var(--text)]' : 'border-[var(--line)]'"
+            >
+              <div>
+                <div class="flex items-center justify-between text-xs mb-4">
+                  <span
+                    class="font-mono font-bold uppercase px-2 py-0.5 rounded"
+                    :class="post.isResource ? 'bg-[var(--text)] text-[var(--bg)]' : 'bg-[var(--surface-2)] text-[var(--muted)]'"
+                  >
+                    {{ locale === 'id' ? post.category.id : post.category.en }}
+                  </span>
+                  <span class="text-[var(--muted)]">{{ locale === 'id' ? post.readTime.id : post.readTime.en }}</span>
+                </div>
+                <h3 class="text-lg font-bold leading-snug mb-2 group-hover:underline underline-offset-4">
+                  {{ locale === 'id' ? post.title.id : post.title.en }}
+                </h3>
+                <p class="text-sm text-[var(--muted)] leading-relaxed">
+                  {{ locale === 'id' ? post.excerpt.id : post.excerpt.en }}
+                </p>
+              </div>
+              <div class="mt-6 pt-4 border-t border-[var(--line)] text-xs font-bold flex items-center justify-between">
+                <span>{{ post.isResource ? (locale === 'id' ? 'Ambil Template Gratis' : 'Get Free Templates') : (locale === 'id' ? 'Baca Panduan' : 'Read Guide') }}</span>
+                <span>&rarr;</span>
+              </div>
+            </RouterLink>
           </div>
         </div>
       </section>
@@ -288,7 +503,7 @@
             <div v-for="i in 9" :key="i" class="border border-[var(--line)] rounded-lg bg-[var(--bg)] overflow-hidden">
               <button @click="faqOpen = faqOpen === i ? null : i" class="w-full px-6 py-4 text-left flex justify-between items-center font-bold hover:bg-[var(--surface-2)] transition">
                 <span>{{ $t('landing.faq.q' + i) }}</span>
-                <svg class="w-5 h-5 transition-transform duration-300" :class="{'rotate-180': faqOpen === i}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                <svg class="w-5 h-5 transition-transform duration-300 shrink-0 ml-4" :class="{'rotate-180': faqOpen === i}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
               </button>
               <div v-if="faqOpen === i" class="px-6 pb-4 text-sm text-[var(--muted)] leading-relaxed">{{ $t('landing.faq.a' + i) }}</div>
             </div>
@@ -296,6 +511,25 @@
         </div>
       </section>
 
+      <!-- FINAL CTA -->
+      <section class="py-20 md:py-28 border-t border-[var(--line)] bg-[var(--bg)] text-center px-6">
+        <div class="max-w-2xl mx-auto space-y-6 fade-in">
+          <h2 class="font-display text-4xl md:text-6xl">
+            {{ locale === 'id' ? 'Siap bikin akun Threads ' : 'Ready to put your Threads ' }}
+            <span class="italic">{{ locale === 'id' ? 'kerja otomatis?' : 'on autopilot?' }}</span>
+          </h2>
+          <p class="text-base text-[var(--muted)]">
+            {{ locale === 'id'
+              ? 'Daftar dalam 30 detik, hubungkan akun lewat OAuth resmi Meta, dan klaim 20 kredit AI gratis sekarang.'
+              : 'Sign up in 30 seconds, connect via official Meta OAuth, and claim 20 free AI credits today.' }}
+          </p>
+          <div class="pt-2">
+            <a href="https://app.ixiera.online/login" class="inline-block px-10 py-4 rounded-full text-base font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">
+              {{ locale === 'id' ? 'Mulai Trial Gratis 7 Hari' : 'Start 7-Day Free Trial' }}
+            </a>
+          </div>
+        </div>
+      </section>
     </main>
 
     <!-- FOOTER -->
@@ -304,42 +538,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import AppNavbar from '../components/layouts/AppNavbar.vue'
 import AppFooter from '../components/layouts/AppFooter.vue'
-import { RouterLink } from 'vue-router'
+import { blogPosts } from '../data/blogPosts'
 
+const { locale } = useI18n({ useScope: 'global' })
 const faqOpen = ref<number | null>(1)
-
-const hookData = ref([
-  { label: 'Question', er: 2.92, n: 6 },
-  { label: 'Story', er: 1.36, n: 32 },
-])
-const lengthData = ref([
-  { label: '300–500 char', er: 2.96, n: 10 },
-  { label: '100–300 char', er: 1.12, n: 25 },
-])
-
-function getBarWidth(er: number) {
-  const maxER = 3.5
-  const pct = (er / maxER) * 100
-  return `${Math.min(pct, 100)}%`
-}
-
-
+const featuredPosts = computed(() => blogPosts.slice(0, 3))
 
 onMounted(() => {
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         entry.target.classList.add('visible')
-        entry.target.querySelectorAll('.bar-grow').forEach(bar => {
-          const width = (bar as HTMLElement).style.width
-          ;(bar as HTMLElement).style.width = '0%'
-          setTimeout(() => {
-            (bar as HTMLElement).style.width = width
-          }, 50)
-        })
         observer.unobserve(entry.target)
       }
     })
@@ -385,11 +599,8 @@ body {
   opacity: 1;
   transform: translateY(0);
 }
-.bar-grow {
-  transition: width 800ms cubic-bezier(0.4, 0, 0.2, 1);
-}
 @media (prefers-reduced-motion: reduce) {
-  .fade-in, .bar-grow {
+  .fade-in {
     transition: none !important;
     animation: none !important;
     opacity: 1 !important;

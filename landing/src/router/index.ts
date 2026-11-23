@@ -8,10 +8,12 @@ import PrivacyView from '../views/PrivacyView.vue'
 import TermsView from '../views/TermsView.vue'
 import DataDeletionView from '../views/DataDeletionView.vue'
 import FeatureDetailView from '../views/FeatureDetailView.vue'
+import BlogView from '../views/BlogView.vue'
+import BlogPostView from '../views/BlogPostView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
-  scrollBehavior(to, from, savedPosition) {
+  scrollBehavior(to) {
     if (to.hash) return { el: to.hash, behavior: 'smooth' }
     return { top: 0 }
   },
@@ -22,6 +24,8 @@ const router = createRouter({
     { path: '/how-it-works', name: 'how-it-works', component: HowItWorksView },
     { path: '/faq', name: 'faq', component: FaqView },
     { path: '/pricing', name: 'pricing', component: PricingView },
+    { path: '/blog', name: 'blog', component: BlogView },
+    { path: '/blog/:slug', name: 'blog-post', component: BlogPostView },
     { path: '/privacy', name: 'privacy', component: PrivacyView },
     { path: '/terms', name: 'terms', component: TermsView },
     { path: '/data-deletion', name: 'data-deletion', component: DataDeletionView },

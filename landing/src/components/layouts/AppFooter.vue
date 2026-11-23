@@ -1,10 +1,7 @@
 <template>
   <footer class="border-t border-[var(--line)] bg-[var(--bg)] py-12 md:py-16">
     <div class="max-w-[1120px] mx-auto px-6">
-      
-      <!-- Grid 4 Kolom -->
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 md:gap-8">
-        
         <!-- 1. Brand -->
         <div class="space-y-4">
           <a href="/" class="flex items-center gap-2">
@@ -12,17 +9,18 @@
             <span class="font-bold text-xl tracking-tight">Ixiera</span>
           </a>
           <p class="text-sm text-[var(--muted)] leading-relaxed pr-4">
-            Platform all-in-one untuk mengelola dan mengotomatisasi akun Threads kamu.
+            Asisten AI & otomatisasi berbasis API resmi Meta untuk mengubah akun Threads jadi mesin traffic dan penjualan.
           </p>
         </div>
 
-        <!-- 2. Produk -->
+        <!-- 2. Produk & Resource -->
         <div>
-          <h4 class="font-bold text-sm mb-4">Produk</h4>
+          <h4 class="font-bold text-sm mb-4">Produk & Resource</h4>
           <ul class="space-y-3 text-sm text-[var(--muted)]">
             <li><a href="/features" class="hover:text-[var(--text)] transition">Fitur</a></li>
             <li><a href="/how-it-works" class="hover:text-[var(--text)] transition">Cara Kerja</a></li>
-            <li><a href="/pricing" class="hover:text-[var(--text)] transition">Harga</a></li>
+            <li><a href="/pricing" class="hover:text-[var(--text)] transition">Harga & Paket</a></li>
+            <li><a href="/blog" class="hover:text-[var(--text)] transition">Blog & Playbook Gratis</a></li>
             <li><a href="/faq" class="hover:text-[var(--text)] transition">FAQ</a></li>
           </ul>
         </div>
@@ -78,14 +76,13 @@
           </ul>
         </div>
       </div>
-      
-      <!-- Footer Bottom (Copyright & Disclaimer) -->
+
       <div class="mt-16 pt-8 border-t border-[var(--line)] flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
         <p class="text-xs text-[var(--muted)] font-medium">
           &copy; 2026 Ixiera. All rights reserved.
         </p>
         <p class="text-[11px] text-[var(--muted)] md:max-w-lg">
-          Ixiera adalah produk independen dan tidak berafiliasi dengan Meta Platforms. Threads adalah merek dagang Meta.
+          Ixiera adalah produk independen dan tidak berafiliasi dengan Meta Platforms. Threads is a trademark of Meta.
         </p>
       </div>
     </div>
