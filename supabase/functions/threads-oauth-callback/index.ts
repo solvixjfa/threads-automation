@@ -59,44 +59,58 @@ serve(async (req) => {
 
     const expiresAt = new Date(Date.now() + (longTokenData.expires_in || 5184000) * 1000).toISOString();
 
-    // 5. Cek ketersediaan akun berdasarkan user_id
-    const { data: existingAccount } = await supabase
+    // 5. Cek ketersediaan akun berdasarkan user_id maupun threads_user_id
+    const { data: existingByUser } = await supabase
       .schema("threads")
       .from("threads_accounts")
       .select("id, settings")
       .eq("user_id", stateData.user_id)
       .maybeSingle();
 
-    const currentSettings = existingAccount?.settings && typeof existingAccount.settings === 'object' ? existingAccount.settings : {};
+    const { data: existingByThreads } = await supabase
+      .schema("threads")
+      .from("threads_accounts")
+      .select("id, settings")
+      .eq("threads_user_id", profileData.id)
+      .maybeSingle();
+
+    const targetExisting = existingByThreads || existingByUser;
+    const currentSettings = targetExisting?.settings && typeof targetExisting.settings === 'object' ? targetExisting.settings : {};
     const updatedSettings = { ...currentSettings, access_token: longToken };
 
     const accountPayload = {
+      user_id: stateData.user_id,
       threads_user_id: profileData.id,
       username: profileData.username,
       connection_status: "connected",
       connected_at: new Date().toISOString(),
       token_expires_at: expiresAt,
       kill_switch: false,
-      settings: updatedSettings, // Long token disimpan di sini!
+      settings: updatedSettings,
       last_error: null
     };
 
-    if (existingAccount) {
+    if (existingByUser && existingByThreads && existingByUser.id !== existingByThreads.id) {
+      await supabase
+        .schema("threads")
+        .from("threads_accounts")
+        .delete()
+        .eq("id", existingByUser.id);
+    }
+
+    if (targetExisting) {
       const { error: updateError } = await supabase
         .schema("threads")
         .from("threads_accounts")
         .update(accountPayload)
-        .eq("id", existingAccount.id);
+        .eq("id", targetExisting.id);
 
       if (updateError) throw new Error("DB Update Error: " + updateError.message);
     } else {
       const { error: insertError } = await supabase
         .schema("threads")
         .from("threads_accounts")
-        .insert({
-          user_id: stateData.user_id,
-          ...accountPayload
-        });
+        .insert(accountPayload);
 
       if (insertError) throw new Error("DB Insert Error: " + insertError.message);
     }
