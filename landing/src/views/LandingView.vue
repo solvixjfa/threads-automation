@@ -7,9 +7,8 @@
       <!-- HERO -->
       <section class="max-w-[1120px] mx-auto px-6 pb-20 md:pb-28 flex flex-col md:flex-row items-center gap-12">
         <div class="flex-1 space-y-6 text-center md:text-left fade-in">
-          <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-[var(--line)] bg-[var(--surface)] text-xs font-bold tracking-widest text-[var(--muted)] uppercase">
-            <span class="w-1.5 h-1.5 rounded-full bg-[var(--text)]"></span>
-            {{ locale === 'id' ? 'OFFICIAL THREADS API • GEMINI & GROQ' : 'OFFICIAL THREADS API • GEMINI & GROQ' }}
+          <div class="inline-flex items-center px-3 py-1 rounded-full border border-[var(--line)] text-xs font-bold tracking-widest text-[var(--muted)] uppercase">
+            {{ $t('landing.hero.badge') }}
           </div>
 
           <h1 class="font-display text-5xl md:text-7xl leading-[1.05]">
@@ -21,8 +20,8 @@
 
           <p class="text-lg text-[var(--muted)] leading-relaxed max-w-xl mx-auto md:mx-0">
             {{ locale === 'id'
-              ? 'Riset topik yang sedang naik, susun rencana konten 3 hari sesuai gaya bahasamu, cross-post ke Instagram, hingga balas ratusan komentar & mention otomatis dalam hitungan detik.'
-              : 'Spot live trending topics, build 3-day content plans matched to your voice, cross-post to Instagram, and auto-reply to comments & mentions in seconds.' }}
+              ? 'Cari topik yang lagi ramai, bikin rencana konten 3 hari sesuai gaya bahasamu, posting sekalian ke Instagram, sampai balas ratusan komentar & mention otomatis.'
+              : 'Spot trending topics, build 3-day content plans in your own voice, cross-post to Instagram, and reply to comments & mentions automatically.' }}
           </p>
 
           <div class="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4 pt-3">
@@ -36,8 +35,8 @@
 
           <p class="text-xs text-[var(--muted)] pt-1">
             {{ locale === 'id'
-              ? 'Gratis 7 hari + 20 kredit AI • Tanpa kartu kredit • Aktif dalam 30 detik'
-              : 'Free 7-day trial + 20 AI credits • No credit card • Live in 30 seconds' }}
+              ? 'Gratis 7 hari + 20 kredit AI • Tanpa kartu kredit • Langsung aktif'
+              : 'Free 7-day trial + 20 AI credits • No credit card • Instant access' }}
           </p>
 
           <div class="flex flex-col sm:flex-row gap-4 pt-6 text-xs text-[var(--muted)] justify-center md:justify-start">
@@ -99,49 +98,88 @@
         </div>
       </section>
 
-      <!-- POWERED BY GEMINI & GROQ (MONOCHROME BADGES) -->
-      <section class="border-y border-[var(--line)] bg-[var(--surface)] py-8">
-        <div class="max-w-[1120px] mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
-          <p class="text-xs font-mono font-bold uppercase tracking-widest text-[var(--muted)] text-center md:text-left">
-            {{ locale === 'id' ? 'Ditenagai Arsitektur Dual-AI & API Resmi' : 'Powered by Dual-AI Engine & Official API' }}
+      <!-- SPONSOR-STYLE MOVING MARQUEE: GEMINI & GROQ -->
+      <section class="border-y border-[var(--line)] bg-[var(--surface)] py-7 overflow-hidden">
+        <div class="max-w-[1120px] mx-auto px-6 mb-4 text-center">
+          <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--muted)]">
+            {{ locale === 'id' ? 'Ditenagai Teknologi AI Terbaik' : 'Powered by Leading AI Models' }}
           </p>
+        </div>
 
-          <div class="flex flex-wrap items-center justify-center gap-3 md:gap-4">
-            <!-- GOOGLE GEMINI MONOCHROME ICON -->
-            <div class="flex items-center gap-2.5 px-4 py-2 rounded-full border border-[var(--line)] bg-[var(--bg)] text-[var(--text)]">
-              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <div class="relative flex overflow-hidden marquee-mask select-none">
+          <!-- Track 1 -->
+          <div class="flex shrink-0 items-center gap-12 pr-12 animate-marquee">
+            <div class="flex items-center gap-3 text-[var(--text)]">
+              <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M12 2C12.35 7.25 16.75 11.65 22 12C16.75 12.35 12.35 16.75 12 22C11.65 16.75 7.25 12.35 2 12C7.25 11.65 11.65 7.25 12 2Z"/>
               </svg>
-              <span class="text-xs font-bold tracking-tight">Google Gemini</span>
-              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--surface-2)] text-[var(--muted)]">
-                3-Day Planner & RAG
-              </span>
+              <span class="text-base font-bold tracking-tight">Google Gemini</span>
+              <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Ide & Rencana Konten' : 'Content & Idea Planning' }}</span>
             </div>
 
-            <!-- GROQ LPU MONOCHROME ICON -->
-            <div class="flex items-center gap-2.5 px-4 py-2 rounded-full border border-[var(--line)] bg-[var(--bg)] text-[var(--text)]">
-              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <div class="flex items-center gap-3 text-[var(--text)]">
+              <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
               </svg>
-              <span class="text-xs font-bold tracking-tight">Groq LPU™</span>
-              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--surface-2)] text-[var(--muted)]">
-                Sub-Second Reply
-              </span>
+              <span class="text-base font-bold tracking-tight">Groq</span>
+              <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Balas Komentar Kilat' : 'Instant Comment Replies' }}</span>
             </div>
 
-            <!-- OFFICIAL META THREADS OAUTH -->
-            <div class="flex items-center gap-2.5 px-4 py-2 rounded-full border border-[var(--line)] bg-[var(--bg)] text-[var(--text)]">
-              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                <path d="m9 12 2 2 4-4"/>
+            <div class="flex items-center gap-3 text-[var(--text)]">
+              <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2C12.35 7.25 16.75 11.65 22 12C16.75 12.35 12.35 16.75 12 22C11.65 16.75 7.25 12.35 2 12C7.25 11.65 11.65 7.25 12 2Z"/>
               </svg>
-              <span class="text-xs font-bold tracking-tight">Meta Threads API</span>
+              <span class="text-base font-bold tracking-tight">Google Gemini</span>
+              <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Belajar Gaya Bahasamu' : 'Learns Your Writing Style' }}</span>
+            </div>
+
+            <div class="flex items-center gap-3 text-[var(--text)]">
+              <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+              <span class="text-base font-bold tracking-tight">Groq</span>
+              <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Respon Otomatis 24/7' : '24/7 Auto Responses' }}</span>
+            </div>
+          </div>
+
+          <!-- Track 2 (Duplicate for seamless infinite loop) -->
+          <div class="flex shrink-0 items-center gap-12 pr-12 animate-marquee" aria-hidden="true">
+            <div class="flex items-center gap-3 text-[var(--text)]">
+              <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C12.35 7.25 16.75 11.65 22 12C16.75 12.35 12.35 16.75 12 22C11.65 16.75 7.25 12.35 2 12C7.25 11.65 11.65 7.25 12 2Z"/>
+              </svg>
+              <span class="text-base font-bold tracking-tight">Google Gemini</span>
+              <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Ide & Rencana Konten' : 'Content & Idea Planning' }}</span>
+            </div>
+
+            <div class="flex items-center gap-3 text-[var(--text)]">
+              <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+              <span class="text-base font-bold tracking-tight">Groq</span>
+              <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Balas Komentar Kilat' : 'Instant Comment Replies' }}</span>
+            </div>
+
+            <div class="flex items-center gap-3 text-[var(--text)]">
+              <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C12.35 7.25 16.75 11.65 22 12C16.75 12.35 12.35 16.75 12 22C11.65 16.75 7.25 12.35 2 12C7.25 11.65 11.65 7.25 12 2Z"/>
+              </svg>
+              <span class="text-base font-bold tracking-tight">Google Gemini</span>
+              <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Belajar Gaya Bahasamu' : 'Learns Your Writing Style' }}</span>
+            </div>
+
+            <div class="flex items-center gap-3 text-[var(--text)]">
+              <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+              <span class="text-base font-bold tracking-tight">Groq</span>
+              <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Respon Otomatis 24/7' : '24/7 Auto Responses' }}</span>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- FITUR UTAMA (UPDATED WITH ALL NEW FEATURES) -->
+      <!-- FITUR UTAMA -->
       <section id="contoh" class="scroll-mt-16 py-20 md:py-32">
         <span id="fitur"></span>
         <div class="max-w-[1120px] mx-auto px-6">
@@ -151,7 +189,7 @@
             </h2>
             <p class="text-lg text-[var(--muted)] mt-4 max-w-2xl mx-auto">
               {{ locale === 'id'
-                ? 'Riset topik tren, tulis draf berkarakter, cross-post ke Instagram, hingga balas komentar & mention dari satu layar.'
+                ? 'Riset topik yang lagi ramai, tulis draf pakai gayamu sendiri, tayang sekalian ke Instagram, sampai balas komentar & mention dari satu layar.'
                 : 'Spot trending topics, draft in your own voice, cross-post to Instagram, and reply to comments & mentions in one flow.' }}
             </p>
           </div>
@@ -160,7 +198,7 @@
             <!-- Fitur 1: Composer + Location Tagging + Cross-Post IG -->
             <div class="flex flex-col md:flex-row items-center gap-12">
               <div class="flex-1 space-y-4 fade-in">
-                <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">01 · AI Composer & Cross-Post</span>
+                <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">01 · AI Composer & Instagram</span>
                 <h3 class="font-display text-3xl md:text-4xl">
                   {{ locale === 'id'
                     ? 'Dari satu ide jadi rencana 3 hari, tayang di Threads & Instagram.'
@@ -168,8 +206,8 @@
                 </h3>
                 <p class="text-[var(--muted)] leading-relaxed">
                   {{ locale === 'id'
-                    ? 'Gemini menyusun rencana konten 3 hari sesuai Knowledge Base kamu. Cek Quick Score gratis sebelum tayang, sematkan Location Tag terverifikasi Meta, dan aktifkan toggle Share to Instagram untuk distribusi ganda tanpa kerja dua kali.'
-                    : 'Gemini drafts a 3-day plan matched to your Knowledge Base. Check free Quick Score, attach verified Meta Location Tags, and toggle Share to Instagram for effortless cross-posting.' }}
+                    ? 'Gemini menyusun rencana konten 3 hari sesuai karakter tulisanmu. Cek Quick Score gratis sebelum tayang, tambah tag lokasi, dan aktifkan Share to Instagram biar sekali tulis langsung tayang di dua platform.'
+                    : 'Gemini drafts a 3-day plan matched to your voice. Check free Quick Score, add location tags, and toggle Share to Instagram to publish on both platforms at once.' }}
                 </p>
                 <div class="flex flex-wrap gap-2 pt-2">
                   <span class="text-xs font-mono px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--surface)]">3-Day AI Planner</span>
@@ -188,7 +226,7 @@
                     <div class="border border-[#222] rounded-xl p-4 bg-[#0a0a0a] mb-4">
                       <div class="text-[10px] font-bold text-white mb-3 flex items-center justify-between">
                         <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-white"></span> AI CONTENT PLANNER</span>
-                        <span class="text-[9px] font-mono text-[#888]">GEMINI PRO</span>
+                        <span class="text-[9px] font-mono text-[#888]">GEMINI</span>
                       </div>
                       <div class="grid grid-cols-2 gap-3 mb-3">
                         <div>
@@ -199,7 +237,7 @@
                           <label class="text-[9px] text-[#666] block mb-1">Tag Lokasi</label>
                           <div class="w-full bg-[#000] border border-[#222] rounded-md px-2 py-1.5 text-[10px] text-white flex justify-between items-center">
                             <span>Jakarta, Indonesia</span>
-                            <span class="text-[8px] text-[#888]">VERIFIED</span>
+                            <span class="text-[8px] text-[#888]">LOKASI</span>
                           </div>
                         </div>
                       </div>
@@ -236,17 +274,17 @@
                 <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">02 · Smart Inbox & Mentions</span>
                 <h3 class="font-display text-3xl md:text-4xl">
                   {{ locale === 'id'
-                    ? 'Komentar & public @mentions terjawab cepat sebelum momentum hilang.'
-                    : 'Comments & public @mentions answered before momentum fades.' }}
+                    ? 'Komentar & @mentions terjawab cepat sebelum momentum hilang.'
+                    : 'Comments & @mentions answered before momentum fades.' }}
                 </h3>
                 <p class="text-[var(--muted)] leading-relaxed">
                   {{ locale === 'id'
-                    ? 'Tarik komentar postingan sekaligus public mentions dari seluruh Threads dalam satu inbox. Groq mengklasifikasikan pertanyaan calon pembeli vs pujian vs spam dalam milidetik—pilih Review Manual atau Full Auto dengan batas per jam.'
-                    : 'Pull post comments and public mentions across Threads into one unified inbox. Groq classifies buyer questions, praise, and spam in milliseconds—choose Manual Review or Full Auto with hourly rate caps.' }}
+                    ? 'Semua komentar post dan mention publik masuk ke satu inbox rapi. AI langsung memilah pertanyaan calon pembeli, pujian, hingga spam—kamu tinggal klik kirim atau aktifkan balas otomatis dengan batas aman per jam.'
+                    : 'All post comments and public mentions land in one clean inbox. AI sorts buyer questions, praise, and spam—approve in one click or turn on auto-reply with safe hourly caps.' }}
                 </p>
                 <div class="flex flex-wrap gap-2 pt-2">
-                  <span class="text-xs font-mono px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--surface)]">Comment Auto-Sort</span>
-                  <span class="text-xs font-mono px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--surface)]">Public Mentions Tab</span>
+                  <span class="text-xs font-mono px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--surface)]">Filter Komentar Otomatis</span>
+                  <span class="text-xs font-mono px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--surface)]">Tab Public Mentions</span>
                   <span class="text-xs font-mono px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--surface)]">Kill Switch Aman</span>
                 </div>
               </div>
@@ -271,7 +309,7 @@
                           <div class="w-5 h-5 rounded-full bg-[#222]"></div>
                           <span class="text-[10px] font-bold text-white">@founder_lokal</span>
                         </div>
-                        <span class="text-[9px] font-mono font-bold text-white bg-[#1a1a1a] px-2 py-0.5 rounded border border-[#333]">QUESTION • GROQ</span>
+                        <span class="text-[9px] font-mono font-bold text-white bg-[#1a1a1a] px-2 py-0.5 rounded border border-[#333]">PERTANYAAN • GROQ</span>
                       </div>
 
                       <div class="bg-[#000] border border-[#222] rounded-lg p-2.5 text-[10px] text-white mb-3">
@@ -280,8 +318,8 @@
 
                       <div class="border border-[#222] rounded-lg bg-[#000] p-3">
                         <div class="flex justify-between items-center mb-2">
-                          <span class="text-[9px] font-bold text-[#666]">DRAF BALASAN • KNOWLEDGE BASE</span>
-                          <span class="text-[9px] font-mono text-[#888]">0.18s</span>
+                          <span class="text-[9px] font-bold text-[#666]">DRAF BALASAN • SESUAI GAYA KAMU</span>
+                          <span class="text-[9px] font-mono text-[#888]">INSTAN</span>
                         </div>
                         <div class="text-[10px] text-[#ccc] bg-[#111] border border-[#222] rounded p-2 mb-3">
                           Bisa banget! Tinggal pecah utasan di Composer dan aktifkan toggle Share to Instagram. Bisa coba gratis 7 hari di ixiera.online.
@@ -300,16 +338,16 @@
             <!-- Fitur 3: Trending Topics Radar, Keyword Search & Analytics -->
             <div class="flex flex-col md:flex-row items-center gap-12">
               <div class="flex-1 space-y-4 fade-in">
-                <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">03 · Trending Radar & Analytics</span>
+                <span class="text-xs font-bold uppercase tracking-widest text-[var(--muted)]">03 · Trending & Analytics</span>
                 <h3 class="font-display text-3xl md:text-4xl">
                   {{ locale === 'id'
-                    ? 'Riset topik yang sedang viral & ukur performa dengan data nyata.'
+                    ? 'Ikuti topik yang lagi naik & baca performa pakai data nyata.'
                     : 'Ride live trending topics & measure what converts with real data.' }}
                 </h3>
                 <p class="text-[var(--muted)] leading-relaxed">
                   {{ locale === 'id'
-                    ? 'Pantau daftar Trending Topics resmi Threads, cari postingan kompetitor lewat Keyword Search, inspeksi profil kreator lewat Profile Discovery, dan temukan jam posting terbaik (WIB) dari heatmap akunmu sendiri.'
-                    : 'Monitor official Threads Trending Topics, search posts by keyword, inspect creator profiles via Profile Discovery, and pinpoint your peak posting hours from your own account heatmap.' }}
+                    ? 'Pantau daftar topik yang lagi ramai di Threads, cari postingan lewat kata kunci, intip profil kreator di niche kamu, dan temukan jam terbaik untuk posting dari data akunmu sendiri.'
+                    : 'Track live trending topics on Threads, search posts by keyword, inspect creator profiles in your niche, and find your best posting hours from your own account data.' }}
                 </p>
                 <div class="flex flex-wrap gap-2 pt-2">
                   <span class="text-xs font-mono px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--surface)]">Trending Topics</span>
@@ -360,7 +398,7 @@
         </div>
       </section>
 
-      <!-- PRICING SECTION (TRANSPARENT & DETAILED ON LANDING) -->
+      <!-- PRICING SECTION -->
       <section id="pricing" class="py-20 md:py-32 border-t border-[var(--line)] bg-[var(--surface)]">
         <div class="max-w-[1120px] mx-auto px-6">
           <div class="text-center mb-16 fade-in">
@@ -409,8 +447,8 @@
               <ul class="space-y-2.5 text-sm text-[var(--muted)] mb-8 border-t border-[var(--line)] pt-5">
                 <li>✓ <strong class="text-[var(--text)]">100 Kredit AI / bulan</strong> (Gemini + Groq)</li>
                 <li>✓ Unlimited Jadwal Post & IG Cross-Post</li>
-                <li>✓ Full Auto Reply + Custom Knowledge Base</li>
-                <li>✓ Trending Radar, Search & Profile Discovery</li>
+                <li>✓ Full Auto Reply + Knowledge Base</li>
+                <li>✓ Trending Topics, Search & Profile Discovery</li>
               </ul>
               <a href="https://app.ixiera.online/login" class="mt-auto block text-center py-3 rounded-full text-sm font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">
                 {{ locale === 'id' ? 'Pilih Paket Pro' : 'Choose Pro Plan' }}
@@ -520,8 +558,8 @@
           </h2>
           <p class="text-base text-[var(--muted)]">
             {{ locale === 'id'
-              ? 'Daftar dalam 30 detik, hubungkan akun lewat OAuth resmi Meta, dan klaim 20 kredit AI gratis sekarang.'
-              : 'Sign up in 30 seconds, connect via official Meta OAuth, and claim 20 free AI credits today.' }}
+              ? 'Daftar dalam 30 detik, hubungkan akun lewat login resmi Meta, dan klaim 20 kredit AI gratis sekarang.'
+              : 'Sign up in 30 seconds, connect via official Meta login, and claim 20 free AI credits today.' }}
           </p>
           <div class="pt-2">
             <a href="https://app.ixiera.online/login" class="inline-block px-10 py-4 rounded-full text-base font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">
@@ -599,12 +637,32 @@ body {
   opacity: 1;
   transform: translateY(0);
 }
+
+/* Sponsor-style smooth infinite marquee */
+.marquee-mask {
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+@keyframes marqueeScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+.animate-marquee {
+  animation: marqueeScroll 26s linear infinite;
+}
+.marquee-mask:hover .animate-marquee {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fade-in {
     transition: none !important;
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
+  }
+  .animate-marquee {
+    animation: none !important;
   }
 }
 </style>

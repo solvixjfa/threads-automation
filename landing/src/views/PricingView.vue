@@ -189,7 +189,7 @@ const comparisonRows = [
     pro: { id: 'Termasuk', en: 'Included' }
   },
   {
-    feature: { id: 'Custom Knowledge Base (RAG Persona)', en: 'Custom Knowledge Base (RAG Persona)' },
+    feature: { id: 'Knowledge Base (Belajar Gaya Bahasamu)', en: 'Knowledge Base (Belajar Gaya Bahasamu)' },
     trial: { id: 'Termasuk', en: 'Included' },
     byok: { id: 'Termasuk', en: 'Included' },
     pro: { id: 'Termasuk', en: 'Included' }

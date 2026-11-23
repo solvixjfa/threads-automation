@@ -4,7 +4,7 @@
     <main class="pt-32 pb-24 px-6 max-w-[1120px] mx-auto">
       <div class="text-center mb-20">
         <div class="inline-flex items-center px-3 py-1 rounded-full border border-[var(--line)] text-xs font-bold tracking-widest text-[var(--muted)] uppercase mb-4">
-          GEMINI + GROQ • OFFICIAL THREADS API
+          PUBLIC BETA
         </div>
         <h1 class="font-display text-5xl md:text-6xl mb-6">
           {{ locale === 'id' ? 'Satu platform, ' : 'One platform, ' }}
