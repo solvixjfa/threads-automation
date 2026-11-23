@@ -106,79 +106,96 @@
           </p>
         </div>
 
-        <div class="relative flex overflow-hidden marquee-mask select-none">
-          <!-- Track 1 -->
-          <div class="flex shrink-0 items-center gap-12 pr-12 animate-marquee">
-            <div class="flex items-center gap-3 text-[var(--text)]">
-              <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M12 2C12.35 7.25 16.75 11.65 22 12C16.75 12.35 12.35 16.75 12 22C11.65 16.75 7.25 12.35 2 12C7.25 11.65 11.65 7.25 12 2Z"/>
-              </svg>
-              <span class="text-base font-bold tracking-tight">Google Gemini</span>
-              <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Ide & Rencana Konten' : 'Content & Idea Planning' }}</span>
+        <div class="ix-marquee-wrap select-none">
+          <div class="ix-marquee-track">
+            <!-- Group A -->
+            <div class="ix-marquee-group">
+              <div class="flex items-center gap-3">
+                <svg class="w-6 h-6 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="geminiColorA" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                      <stop offset="0%" stop-color="#4285F4"/>
+                      <stop offset="45%" stop-color="#9B72CB"/>
+                      <stop offset="80%" stop-color="#D96570"/>
+                      <stop offset="100%" stop-color="#F49C46"/>
+                    </linearGradient>
+                  </defs>
+                  <path d="M12 2C12.35 7.25 16.75 11.65 22 12C16.75 12.35 12.35 16.75 12 22C11.65 16.75 7.25 12.35 2 12C7.25 11.65 11.65 7.25 12 2Z" fill="url(#geminiColorA)"/>
+                </svg>
+                <span class="text-base font-bold tracking-tight text-[var(--text)]">Google Gemini</span>
+                <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Ide & Rencana Konten' : 'Content & Idea Planning' }}</span>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <span class="w-6 h-6 rounded-md bg-[#F55036] text-white inline-flex items-center justify-center shrink-0">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M13 2L4 14h7l-1 8 10-12h-7l0-8z"/>
+                  </svg>
+                </span>
+                <span class="text-base font-bold tracking-tight text-[var(--text)]">Groq</span>
+                <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Balas Komentar Kilat' : 'Instant Comment Replies' }}</span>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <svg class="w-6 h-6 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 2C12.35 7.25 16.75 11.65 22 12C16.75 12.35 12.35 16.75 12 22C11.65 16.75 7.25 12.35 2 12C7.25 11.65 11.65 7.25 12 2Z" fill="url(#geminiColorA)"/>
+                </svg>
+                <span class="text-base font-bold tracking-tight text-[var(--text)]">Google Gemini</span>
+                <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Belajar Gaya Bahasamu' : 'Learns Your Writing Style' }}</span>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <span class="w-6 h-6 rounded-md bg-[#F55036] text-white inline-flex items-center justify-center shrink-0">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M13 2L4 14h7l-1 8 10-12h-7l0-8z"/>
+                  </svg>
+                </span>
+                <span class="text-base font-bold tracking-tight text-[var(--text)]">Groq</span>
+                <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Respon Otomatis 24/7' : '24/7 Auto Responses' }}</span>
+              </div>
             </div>
 
-            <div class="flex items-center gap-3 text-[var(--text)]">
-              <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-              </svg>
-              <span class="text-base font-bold tracking-tight">Groq</span>
-              <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Balas Komentar Kilat' : 'Instant Comment Replies' }}</span>
-            </div>
+            <!-- Group B (Exact clone for seamless loop) -->
+            <div class="ix-marquee-group" aria-hidden="true">
+              <div class="flex items-center gap-3">
+                <svg class="w-6 h-6 shrink-0" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2C12.35 7.25 16.75 11.65 22 12C16.75 12.35 12.35 16.75 12 22C11.65 16.75 7.25 12.35 2 12C7.25 11.65 11.65 7.25 12 2Z" fill="url(#geminiColorA)"/>
+                </svg>
+                <span class="text-base font-bold tracking-tight text-[var(--text)]">Google Gemini</span>
+                <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Ide & Rencana Konten' : 'Content & Idea Planning' }}</span>
+              </div>
 
-            <div class="flex items-center gap-3 text-[var(--text)]">
-              <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M12 2C12.35 7.25 16.75 11.65 22 12C16.75 12.35 12.35 16.75 12 22C11.65 16.75 7.25 12.35 2 12C7.25 11.65 11.65 7.25 12 2Z"/>
-              </svg>
-              <span class="text-base font-bold tracking-tight">Google Gemini</span>
-              <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Belajar Gaya Bahasamu' : 'Learns Your Writing Style' }}</span>
-            </div>
+              <div class="flex items-center gap-3">
+                <span class="w-6 h-6 rounded-md bg-[#F55036] text-white inline-flex items-center justify-center shrink-0">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M13 2L4 14h7l-1 8 10-12h-7l0-8z"/>
+                  </svg>
+                </span>
+                <span class="text-base font-bold tracking-tight text-[var(--text)]">Groq</span>
+                <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Balas Komentar Kilat' : 'Instant Comment Replies' }}</span>
+              </div>
 
-            <div class="flex items-center gap-3 text-[var(--text)]">
-              <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-              </svg>
-              <span class="text-base font-bold tracking-tight">Groq</span>
-              <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Respon Otomatis 24/7' : '24/7 Auto Responses' }}</span>
-            </div>
-          </div>
+              <div class="flex items-center gap-3">
+                <svg class="w-6 h-6 shrink-0" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2C12.35 7.25 16.75 11.65 22 12C16.75 12.35 12.35 16.75 12 22C11.65 16.75 7.25 12.35 2 12C7.25 11.65 11.65 7.25 12 2Z" fill="url(#geminiColorA)"/>
+                </svg>
+                <span class="text-base font-bold tracking-tight text-[var(--text)]">Google Gemini</span>
+                <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Belajar Gaya Bahasamu' : 'Learns Your Writing Style' }}</span>
+              </div>
 
-          <!-- Track 2 (Duplicate for seamless infinite loop) -->
-          <div class="flex shrink-0 items-center gap-12 pr-12 animate-marquee" aria-hidden="true">
-            <div class="flex items-center gap-3 text-[var(--text)]">
-              <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C12.35 7.25 16.75 11.65 22 12C16.75 12.35 12.35 16.75 12 22C11.65 16.75 7.25 12.35 2 12C7.25 11.65 11.65 7.25 12 2Z"/>
-              </svg>
-              <span class="text-base font-bold tracking-tight">Google Gemini</span>
-              <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Ide & Rencana Konten' : 'Content & Idea Planning' }}</span>
-            </div>
-
-            <div class="flex items-center gap-3 text-[var(--text)]">
-              <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-              </svg>
-              <span class="text-base font-bold tracking-tight">Groq</span>
-              <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Balas Komentar Kilat' : 'Instant Comment Replies' }}</span>
-            </div>
-
-            <div class="flex items-center gap-3 text-[var(--text)]">
-              <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C12.35 7.25 16.75 11.65 22 12C16.75 12.35 12.35 16.75 12 22C11.65 16.75 7.25 12.35 2 12C7.25 11.65 11.65 7.25 12 2Z"/>
-              </svg>
-              <span class="text-base font-bold tracking-tight">Google Gemini</span>
-              <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Belajar Gaya Bahasamu' : 'Learns Your Writing Style' }}</span>
-            </div>
-
-            <div class="flex items-center gap-3 text-[var(--text)]">
-              <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-              </svg>
-              <span class="text-base font-bold tracking-tight">Groq</span>
-              <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Respon Otomatis 24/7' : '24/7 Auto Responses' }}</span>
+              <div class="flex items-center gap-3">
+                <span class="w-6 h-6 rounded-md bg-[#F55036] text-white inline-flex items-center justify-center shrink-0">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M13 2L4 14h7l-1 8 10-12h-7l0-8z"/>
+                  </svg>
+                </span>
+                <span class="text-base font-bold tracking-tight text-[var(--text)]">Groq</span>
+                <span class="text-xs text-[var(--muted)]">• {{ locale === 'id' ? 'Respon Otomatis 24/7' : '24/7 Auto Responses' }}</span>
+              </div>
             </div>
           </div>
         </div>
       </section>
-
       <!-- FITUR UTAMA -->
       <section id="contoh" class="scroll-mt-16 py-20 md:py-32">
         <span id="fitur"></span>
@@ -639,19 +656,31 @@ body {
 }
 
 /* Sponsor-style smooth infinite marquee */
-.marquee-mask {
-  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
-  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+.ix-marquee-wrap {
+  width: 100%;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
 }
-@keyframes marqueeScroll {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-100%); }
+.ix-marquee-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: ixMarqueeMove 24s linear infinite;
 }
-.animate-marquee {
-  animation: marqueeScroll 26s linear infinite;
-}
-.marquee-mask:hover .animate-marquee {
+.ix-marquee-wrap:hover .ix-marquee-track {
   animation-play-state: paused;
+}
+.ix-marquee-group {
+  display: flex;
+  align-items: center;
+  gap: 3rem;
+  padding-right: 3rem;
+  flex-shrink: 0;
+}
+@keyframes ixMarqueeMove {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -660,9 +689,6 @@ body {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
-  }
-  .animate-marquee {
-    animation: none !important;
   }
 }
 </style>
