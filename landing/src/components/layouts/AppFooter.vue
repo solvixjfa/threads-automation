@@ -9,18 +9,22 @@
             <span class="font-bold text-xl tracking-tight">Ixiera</span>
           </a>
           <p class="text-sm text-[var(--muted)] leading-relaxed pr-4">
-            Asisten AI & otomatisasi berbasis API resmi Meta untuk mengubah akun Threads jadi mesin traffic dan penjualan.
+            {{ locale === 'id'
+              ? 'Asisten AI & otomatisasi berbasis API resmi Meta untuk mengubah akun Threads jadi mesin traffic dan penjualan.'
+              : 'Official Meta API-powered AI assistant & automation to turn your Threads account into a traffic and sales engine.' }}
           </p>
         </div>
 
         <!-- 2. Produk & Resource -->
         <div>
-          <h4 class="font-bold text-sm mb-4">Produk & Resource</h4>
+          <h4 class="font-bold text-sm mb-4">
+            {{ locale === 'id' ? 'Produk & Resource' : 'Product & Resources' }}
+          </h4>
           <ul class="space-y-3 text-sm text-[var(--muted)]">
-            <li><a href="/features" class="hover:text-[var(--text)] transition">Fitur</a></li>
-            <li><a href="/how-it-works" class="hover:text-[var(--text)] transition">Cara Kerja</a></li>
-            <li><a href="/pricing" class="hover:text-[var(--text)] transition">Harga & Paket</a></li>
-            <li><a href="/blog" class="hover:text-[var(--text)] transition">Blog & Playbook Gratis</a></li>
+            <li><a href="/features" class="hover:text-[var(--text)] transition">{{ locale === 'id' ? 'Fitur' : 'Features' }}</a></li>
+            <li><a href="/how-it-works" class="hover:text-[var(--text)] transition">{{ locale === 'id' ? 'Cara Kerja' : 'How it Works' }}</a></li>
+            <li><a href="/pricing" class="hover:text-[var(--text)] transition">{{ locale === 'id' ? 'Harga & Paket' : 'Pricing & Plans' }}</a></li>
+            <li><a href="/blog" class="hover:text-[var(--text)] transition">{{ locale === 'id' ? 'Blog & Playbook Gratis' : 'Blog & Free Playbooks' }}</a></li>
             <li><a href="/faq" class="hover:text-[var(--text)] transition">FAQ</a></li>
           </ul>
         </div>
@@ -29,15 +33,17 @@
         <div>
           <h4 class="font-bold text-sm mb-4">Legal</h4>
           <ul class="space-y-3 text-sm text-[var(--muted)]">
-            <li><a href="/privacy" class="hover:text-[var(--text)] transition">Kebijakan Privasi</a></li>
-            <li><a href="/terms" class="hover:text-[var(--text)] transition">Syarat & Ketentuan</a></li>
-            <li><a href="/data-deletion" class="hover:text-[var(--text)] transition">Hapus Data</a></li>
+            <li><a href="/privacy" class="hover:text-[var(--text)] transition">{{ locale === 'id' ? 'Kebijakan Privasi' : 'Privacy Policy' }}</a></li>
+            <li><a href="/terms" class="hover:text-[var(--text)] transition">{{ locale === 'id' ? 'Syarat & Ketentuan' : 'Terms & Conditions' }}</a></li>
+            <li><a href="/data-deletion" class="hover:text-[var(--text)] transition">{{ locale === 'id' ? 'Hapus Data' : 'Data Deletion' }}</a></li>
           </ul>
         </div>
 
         <!-- 4. Hubungi Kami -->
         <div>
-          <h4 class="font-bold text-sm mb-4">Hubungi Kami</h4>
+          <h4 class="font-bold text-sm mb-4">
+            {{ locale === 'id' ? 'Hubungi Kami' : 'Contact Us' }}
+          </h4>
           <ul class="space-y-3 text-sm text-[var(--muted)]">
             <li>
               <a href="https://instagram.com/ixiera.id" target="_blank" rel="noopener" class="flex items-center gap-3 hover:text-[var(--text)] transition">
@@ -82,9 +88,17 @@
           &copy; 2026 Ixiera. All rights reserved.
         </p>
         <p class="text-[11px] text-[var(--muted)] md:max-w-lg">
-          Ixiera adalah produk independen dan tidak berafiliasi dengan Meta Platforms. Threads is a trademark of Meta.
+          {{ locale === 'id'
+            ? 'Ixiera adalah produk independen dan tidak berafiliasi dengan Meta Platforms. Threads adalah merek dagang Meta.'
+            : 'Ixiera is an independent product and is not affiliated with Meta Platforms. Threads is a trademark of Meta.' }}
         </p>
       </div>
     </div>
   </footer>
 </template>
+
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { locale } = useI18n({ useScope: 'global' })
+</script>
