@@ -10,8 +10,8 @@
           </a>
           <p class="text-sm text-[var(--muted)] leading-relaxed pr-4">
             {{ locale === 'id'
-              ? 'Asisten AI & otomatisasi berbasis API resmi Meta untuk mengubah akun Threads jadi mesin traffic dan penjualan.'
-              : 'Official Meta API-powered AI assistant & automation to turn your Threads account into a traffic and sales engine.' }}
+              ? 'Asisten AI & otomatisasi yang terintegrasi dengan Threads API untuk mengubah akun Threads jadi mesin traffic dan penjualan.'
+              : 'AI assistant & automation to turn your Threads account into a traffic and sales engine.' }}
           </p>
         </div>
 
