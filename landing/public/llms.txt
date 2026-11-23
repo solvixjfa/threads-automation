@@ -1,0 +1,14 @@
+# Ixiera
+> AI-powered Threads content planning, scheduling, reply automation, and analytics platform for creators and businesses.
+
+## Official URLs
+- Website: https://ixiera.online
+- Web Application: https://app.ixiera.online
+- Privacy Policy: https://ixiera.online/privacy
+- Terms of Service: https://ixiera.online/terms
+
+## Core Features
+- AI 3-Day Content Planner & Quick Score post evaluation
+- Automated Threads post scheduling, location tagging, and cross-posting to Instagram
+- AI comment & mention management (Manual Review and Full Auto modes with custom brand Knowledge Base)
+- Official Threads Trending Topics discovery & account/media performance analytics

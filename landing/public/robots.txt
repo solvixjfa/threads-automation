@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://ixiera.id/sitemap.xml
+Sitemap: https://ixiera.online/sitemap.xml

@@ -51,7 +51,7 @@ async def send_approval_email(email: str, plan_name: str):
         <p>Kabar baik! Akun Ixiera kamu sudah berhasil di-upgrade ke paket <strong>{plan_name}</strong>.</p>
         <p>Sekarang kamu bisa menikmati semua fitur AI (Generate, Repurpose, Auto-Reply) tanpa batas.</p>
         <br/>
-        <a href="https://meta.ixiera.id/dashboard" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Buka Dashboard</a>
+        <a href="https://app.ixiera.online/dashboard" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Buka Dashboard</a>
         <br/><br/>
         <p style="font-size: 12px; color: #666;">Jika ada kendala, balas email ini atau hubungi WhatsApp Admin.</p>
     </div>
