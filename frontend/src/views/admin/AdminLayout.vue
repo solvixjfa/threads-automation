@@ -17,6 +17,9 @@
         <RouterLink to="/admin/crm" active-class="bg-[var(--bg-sec)] font-bold" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm theme-text-muted hover:theme-text transition-colors">
           <MessageSquare class="w-4 h-4" /> CRM Leads
         </RouterLink>
+        <RouterLink to="/admin/templates" active-class="bg-[var(--bg-sec)] font-bold" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm theme-text-muted hover:theme-text transition-colors">
+          <FileText class="w-4 h-4" /> Outreach Templates
+        </RouterLink>
       </nav>
 
       <div class="p-4 border-t theme-border space-y-2">
@@ -29,16 +32,17 @@
     <!-- MAIN CONTENT ADMIN -->
     <main class="flex-1 h-[100dvh] overflow-y-auto flex flex-col">
 
-      <!-- HEADER MOBILE (TAB NAVIGASI) -->
+      <!-- HEADER MOBILE (TAB NAVIGASI SCROLLABLE) -->
       <header class="md:hidden border-b theme-border bg-[var(--bg)] sticky top-0 z-20 shrink-0">
         <div class="h-14 flex items-center justify-between px-4">
           <span class="font-black tracking-widest uppercase">Admin Panel</span>
           <RouterLink to="/dashboard" class="text-xs font-bold underline text-[var(--accent)]">Back to App</RouterLink>
         </div>
-        <div class="flex px-4 gap-4 pb-2">
+        <div class="flex px-4 gap-4 pb-2 overflow-x-auto whitespace-nowrap">
           <RouterLink to="/admin" exact-active-class="border-[var(--accent)] text-[var(--accent)]" class="text-sm font-bold pb-1 border-b-2 border-transparent theme-text-muted">Overview</RouterLink>
           <RouterLink to="/admin/users" exact-active-class="border-[var(--accent)] text-[var(--accent)]" class="text-sm font-bold pb-1 border-b-2 border-transparent theme-text-muted">Users</RouterLink>
           <RouterLink to="/admin/crm" exact-active-class="border-[var(--accent)] text-[var(--accent)]" class="text-sm font-bold pb-1 border-b-2 border-transparent theme-text-muted">CRM</RouterLink>
+          <RouterLink to="/admin/templates" exact-active-class="border-[var(--accent)] text-[var(--accent)]" class="text-sm font-bold pb-1 border-b-2 border-transparent theme-text-muted">Templates</RouterLink>
         </div>
       </header>
 
@@ -51,5 +55,5 @@
 
 <script setup lang="ts">
 import { RouterView, RouterLink } from 'vue-router'
-import { BarChart3, Users, MessageSquare, ArrowLeft } from 'lucide-vue-next'
+import { BarChart3, Users, MessageSquare, FileText, ArrowLeft } from 'lucide-vue-next'
 </script>

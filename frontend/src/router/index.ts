@@ -24,6 +24,7 @@ import AdminLayout from '../views/admin/AdminLayout.vue'
 import AdminOverview from '../views/admin/AdminOverview.vue'
 import AdminUsers from '../views/admin/AdminUsers.vue'
 import AdminCrm from '../views/admin/AdminCrm.vue'
+import AdminTemplates from '../views/admin/AdminTemplates.vue'
 
 import ContentLayout from '../views/content/ContentLayout.vue'
 import QueueView from '../views/content/QueueView.vue'
@@ -54,6 +55,7 @@ const router = createRouter({
         { path: '', name: 'admin-overview', component: AdminOverview },
         { path: 'users', name: 'admin-users', component: AdminUsers },
         { path: 'crm', name: 'admin-crm', component: AdminCrm },
+        { path: 'templates', name: 'admin-templates', component: AdminTemplates },
       ]
     },
     { path: '/pricing', name: 'pricing', component: PricingView, meta: { requiresAuth: true } },
