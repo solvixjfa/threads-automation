@@ -58,7 +58,7 @@ const chartData = computed(() => {
       borderWidth: 2,
       tension: 0.35,
       fill: true,
-      pointRadius: props.data.length <= 5 ? 4 : 0,
+      pointRadius: props.data.length <= 14 ? 3 : 0,
       pointHoverRadius: 6,
       pointHoverBackgroundColor: textColor,
       pointHoverBorderColor: cssVar('--bg', isDark ? '#0f0f0f' : '#ffffff'),

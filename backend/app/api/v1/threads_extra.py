@@ -203,6 +203,7 @@ async def sync_account_full(req: SyncAccountRequest):
     today_str = now_dt.date().isoformat()
     cutoff_90d = now_dt - timedelta(days=95)
 
+    threads_uid = str(acc.get("threads_user_id") or "me")
     profile_pic = None
     followers_count = None
     discovered = 0
@@ -230,7 +231,7 @@ async def sync_account_full(req: SyncAccountRequest):
         # 2. Tarik followers_count dari /me/threads_insights
         try:
             f_res = await client.get(
-                "https://graph.threads.net/v1.0/me/threads_insights",
+                f"https://graph.threads.net/v1.0/{threads_uid}/threads_insights",
                 params={"metric": "followers_count", "access_token": token},
             )
             if f_res.status_code == 200:
@@ -252,7 +253,7 @@ async def sync_account_full(req: SyncAccountRequest):
                 until_ts = now_unix - (w * 30 * 86400)
                 since_ts = until_ts - (30 * 86400)
                 v_res = await client.get(
-                    "https://graph.threads.net/v1.0/me/threads_insights",
+                    f"https://graph.threads.net/v1.0/{threads_uid}/threads_insights",
                     params={
                         "metric": "views",
                         "since": str(since_ts),
@@ -463,13 +464,19 @@ async def sync_account_full(req: SyncAccountRequest):
             }).execute()
             synced_metrics += 1
 
-        # 6. Simpan riwayat harian ke account_insights_daily
-        all_dates = sorted(set(daily_views_map.keys()) | set(post_daily_agg.keys()) | {today_str})
+        # 6. Simpan riwayat harian 90 hari ke account_insights_daily (key seragam agar PostgREST bulk upsert sukses)
+        continuous_dates = {(now_dt.date() - timedelta(days=i)).isoformat() for i in range(90)}
+        all_dates = sorted(continuous_dates | set(daily_views_map.keys()) | set(post_daily_agg.keys()))
         upsert_rows = []
         for d_key in all_dates:
             p_agg = post_daily_agg.get(d_key, {})
-            views_val = daily_views_map[d_key] if d_key in daily_views_map else (p_agg.get("views", 0) if daily_views_map else (total_post_views if d_key == today_str else 0))
-            row_obj = {
+            if d_key in daily_views_map:
+                views_val = daily_views_map[d_key]
+            elif daily_views_map:
+                views_val = p_agg.get("views", 0)
+            else:
+                views_val = p_agg.get("views", 0)
+            upsert_rows.append({
                 "account_id": req.account_id,
                 "date": d_key,
                 "views": views_val,
@@ -477,10 +484,7 @@ async def sync_account_full(req: SyncAccountRequest):
                 "replies": p_agg.get("replies", 0),
                 "reposts": p_agg.get("reposts", 0),
                 "quotes": p_agg.get("quotes", 0),
-            }
-            if d_key == today_str and followers_count is not None:
-                row_obj["followers_count"] = followers_count
-            upsert_rows.append(row_obj)
+            })
 
         if upsert_rows:
             try:
@@ -489,7 +493,15 @@ async def sync_account_full(req: SyncAccountRequest):
                     on_conflict="account_id,date",
                 ).execute()
             except Exception as d_err:
-                logging.warning(f"[SyncAccount] Bulk daily upsert warning: {d_err}")
+                logging.error(f"[SyncAccount] Bulk daily upsert error: {d_err}")
+
+        if followers_count is not None:
+            try:
+                db.schema("threads").from_("account_insights_daily").update({
+                    "followers_count": followers_count
+                }).eq("account_id", req.account_id).eq("date", today_str).execute()
+            except Exception as f_err:
+                logging.warning(f"[SyncAccount] Followers update warning: {f_err}")
 
     return {
         "success": True,
