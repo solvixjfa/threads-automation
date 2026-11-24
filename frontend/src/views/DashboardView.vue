@@ -561,6 +561,9 @@ async function loadAllDashboardData() {
       if (analyticsData?.success) {
         if (analyticsData.overview) overview.value = analyticsData.overview
         if (analyticsData.all_posts) allPosts.value = analyticsData.all_posts
+        if (Array.isArray(analyticsData.daily_trends) && analyticsData.daily_trends.length > dailyInsights.value.length) {
+          dailyInsights.value = analyticsData.daily_trends
+        }
       }
     }
 

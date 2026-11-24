@@ -199,6 +199,7 @@ async def sync_account_full(req: SyncAccountRequest):
     now_iso = datetime.now(timezone.utc).isoformat()
     today_str = datetime.now(timezone.utc).date().isoformat()
     profile_pic = None
+    followers_count = None
     discovered = 0
     synced_metrics = 0
 
@@ -207,11 +208,12 @@ async def sync_account_full(req: SyncAccountRequest):
         try:
             me_res = await client.get(
                 "https://graph.threads.net/v1.0/me",
-                params={"fields": "id,username,threads_profile_picture_url", "access_token": token},
+                params={"fields": "id,username,threads_profile_picture_url,followers_count", "access_token": token},
             )
             if me_res.status_code == 200:
                 me_data = me_res.json()
                 profile_pic = me_data.get("threads_profile_picture_url")
+                followers_count = me_data.get("followers_count")
                 upd = {"last_refresh_at": now_iso}
                 if me_data.get("username"):
                     upd["username"] = me_data["username"]
@@ -280,7 +282,8 @@ async def sync_account_full(req: SyncAccountRequest):
                         .limit(1)
                         .execute()
                     )
-                    safe_text = (post_text or "Postingan Tanpa Teks")[:500]
+                    fallback_label = "[Media Post]" if media_type in ("IMAGE", "VIDEO", "CAROUSEL_ALBUM") else "[Post]"
+                    safe_text = (post_text or fallback_label)[:500]
                     if not existing_sp.data:
                         try:
                             db.schema("threads").from_("scheduled_posts").insert({
@@ -383,6 +386,7 @@ async def sync_account_full(req: SyncAccountRequest):
                         "replies": daily_replies,
                         "reposts": daily_reposts,
                         "quotes": daily_quotes,
+                        **({"followers_count": followers_count} if followers_count is not None else {}),
                     },
                     on_conflict="account_id,date",
                 ).execute()

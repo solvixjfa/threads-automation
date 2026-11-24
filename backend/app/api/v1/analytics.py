@@ -714,6 +714,27 @@ async def get_account_overview_cached(account_id: str):
             total_replies += d.get("replies") or 0
             total_reposts += d.get("reposts") or 0
 
+    daily_trends = list(reversed(daily_rows))
+    if len(daily_trends) < 2 and formatted_posts:
+        by_day = {}
+        for p in formatted_posts:
+            ts = str(p.get("posted_at") or "")
+            if not ts:
+                continue
+            try:
+                dt_wib = datetime.fromisoformat(ts.replace("Z", "+00:00")) + timedelta(hours=7)
+                day_key = dt_wib.date().isoformat()
+            except Exception:
+                day_key = ts[:10]
+            bucket = by_day.setdefault(day_key, {"date": day_key, "views": 0, "likes": 0, "replies": 0, "reposts": 0})
+            m = p.get("metrics") or {}
+            bucket["views"] += m.get("views") or 0
+            bucket["likes"] += m.get("likes") or 0
+            bucket["replies"] += m.get("replies") or 0
+            bucket["reposts"] += m.get("reposts") or 0
+        if len(by_day) >= 2:
+            daily_trends = [by_day[k] for k in sorted(by_day.keys())]
+
     formatted_posts.sort(key=lambda x: str(x.get("posted_at") or ""), reverse=True)
     avg_er = round(sum(p["engagement_rate"] for p in formatted_posts) / len(formatted_posts), 2) if formatted_posts else 0.0
 
@@ -728,5 +749,5 @@ async def get_account_overview_cached(account_id: str):
             "avg_engagement_rate": avg_er,
         },
         "all_posts": formatted_posts[:50],
-        "daily_trends": list(reversed(daily_rows)),
+        "daily_trends": daily_trends,
     }
