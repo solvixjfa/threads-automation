@@ -113,6 +113,9 @@ import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
 import { useI18n } from 'vue-i18n'
 import { Card, Button, Textarea, Badge, Select } from '../components/ui'
+import { useAccountStore } from '../stores/accounts'
+
+const accountStore = useAccountStore()
 
 const router = useRouter()
 const { showToast } = useNotify()
@@ -246,17 +249,14 @@ function sendToComposer(text: string) {
 }
 
 onMounted(async () => {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (user) {
-    const { data: acc } = await supabase.schema('threads').from('threads_accounts').select('id, credit_balance, custom_gemini_key, custom_groq_key, ai_provider').eq('user_id', user.id).maybeSingle()
-    if (acc) {
-      currentAccountId.value = acc.id
-      aiCredits.value = acc.credit_balance ?? 20
-      customGeminiKey.value = acc.custom_gemini_key || ''
-      customGroqKey.value = acc.custom_groq_key || ''
-      if (acc.ai_provider) aiProvider.value = acc.ai_provider
-      await Promise.all([fetchModels(), fetchRecommendations()])
-    }
+  const acc = await accountStore.ensureActiveAccount()
+  if (acc) {
+    currentAccountId.value = acc.id
+    aiCredits.value = acc.credit_balance ?? 20
+    customGeminiKey.value = acc.custom_gemini_key || ''
+    customGroqKey.value = acc.custom_groq_key || ''
+    if (acc.ai_provider) aiProvider.value = acc.ai_provider
+    await Promise.all([fetchModels(), fetchRecommendations()])
   }
 })
 </script>

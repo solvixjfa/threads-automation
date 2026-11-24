@@ -348,6 +348,9 @@ import { useNotify } from '../composables/useNotify'
 import { useI18n } from 'vue-i18n'
 import BestTimeChip from '../components/BestTimeChip.vue'
 import { Card, Button, Input, Textarea, Badge, Select } from '../components/ui'
+import { useAccountStore } from '../stores/accounts'
+
+const accountStore = useAccountStore()
                                                                   
 const { showToast } = useNotify()
 const { t } = useI18n()
@@ -368,9 +371,7 @@ const isSearchingLocation = ref(false)
 
 async function ensureComposerAccountId() {
   if (currentAccountId.value) return currentAccountId.value
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Not authenticated')
-  const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id').eq('user_id', user.id).maybeSingle()
+  const account = await accountStore.ensureActiveAccount()
   if (!account) throw new Error('Threads account not connected')
   currentAccountId.value = account.id
   return account.id
@@ -741,15 +742,7 @@ async function schedulePost() {
 
   isSaving.value = true
   try {
-    let targetAccountId = currentAccountId.value
-    if (!targetAccountId) {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')    
-      const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id').eq('user_id', user.id).maybeSingle()
-      if (!account) throw new Error('Threads account not connected')
-      targetAccountId = account.id
-      currentAccountId.value = targetAccountId
-    }
+    const targetAccountId = await ensureComposerAccountId()
 
     const partsToSchedule = threadParts.value.length > 0 ? threadParts.value : [postText.value]
     let parentId = null
@@ -788,17 +781,14 @@ async function schedulePost() {
 }
 
 onMounted(async () => {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (user) {
-    const { data: acc } = await supabase.schema('threads').from('threads_accounts').select('id, credit_balance, custom_gemini_key, custom_groq_key, ai_provider').eq('user_id', user.id).maybeSingle()
-    if (acc) {
-      currentAccountId.value = acc.id
-      aiCredits.value = acc.credit_balance ?? 20
-      customGeminiKey.value = acc.custom_gemini_key || ''
-      customGroqKey.value = acc.custom_groq_key || ''
-      if (acc.ai_provider) aiProvider.value = acc.ai_provider
-      await fetchModels()
-    }
+  const acc = await accountStore.ensureActiveAccount()
+  if (acc) {
+    currentAccountId.value = acc.id
+    aiCredits.value = acc.credit_balance ?? 20
+    customGeminiKey.value = acc.custom_gemini_key || ''
+    customGroqKey.value = acc.custom_groq_key || ''
+    if (acc.ai_provider) aiProvider.value = acc.ai_provider
+    await fetchModels()
   }
 
   const savedRepurpose = localStorage.getItem('draft_repurpose')

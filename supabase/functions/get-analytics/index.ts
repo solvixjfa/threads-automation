@@ -9,6 +9,17 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return new Response(JSON.stringify({ error: "Missing Authorization header" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    const url = new URL(req.url);
+    let requestedAccountId = url.searchParams.get("account_id") || "";
+    if (!requestedAccountId && req.method !== "GET") {
+      try {
+        const body = await req.json();
+        requestedAccountId = body?.account_id || "";
+      } catch {
+        // Ignore empty body
+      }
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -18,9 +29,15 @@ serve(async (req) => {
     if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
-    const { data: account, error: accErr } = await supabase.schema("threads").from("threads_accounts").select("id").eq("user_id", user.id).maybeSingle();
+    let accQuery = supabase.schema("threads").from("threads_accounts").select("id").eq("user_id", user.id);
+    if (requestedAccountId) {
+      accQuery = accQuery.eq("id", requestedAccountId);
+    } else {
+      accQuery = accQuery.order("created_at", { ascending: true }).limit(1);
+    }
+    const { data: account, error: accErr } = await accQuery.maybeSingle();
 
-    if (accErr || !account) return new Response(JSON.stringify({ error: "Threads account not found" }), { status: 444, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (accErr || !account) return new Response(JSON.stringify({ error: "Threads account not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const { data: publishedScheduled } = await supabase.schema("threads").from("scheduled_posts").select("id, text, published_media_id, scheduled_for, created_at").eq("account_id", account.id).eq("status", "published");
     const { data: postsWithMetrics } = await supabase.schema("threads").from("posts").select(`id, threads_media_id, created_at, post_metrics (views, likes, replies, reposts, quotes, snapshot_label)`).eq("account_id", account.id);
@@ -47,7 +64,7 @@ serve(async (req) => {
         id: p.id,
         threads_media_id: p.threads_media_id,
         text: sp?.text || `Post Without Text (ID: ${p.threads_media_id?.slice(0, 8) || 'Unknown'})`,
-        permalink: p.threads_media_id ? `https://www.threads.net/post/${p.threads_media_id}` : null, // FIX LINK
+        permalink: p.threads_media_id ? `https://www.threads.net/post/${p.threads_media_id}` : null,
         posted_at: sp?.scheduled_for || p.created_at || new Date().toISOString(),
         metrics: latestMetrics,
         engagement_rate: parseFloat(engagement.toFixed(2))

@@ -5,7 +5,7 @@
       <div>
         <h1 class="text-xl md:text-2xl font-bold tracking-tight">Pipeline Leads</h1>
         <p class="text-xs theme-text-muted mt-0.5">
-          {{ leads.length }} total leads • <span class="text-amber-500 font-bold">{{ dueFollowUpCount }} perlu follow-up</span>
+          {{ leads.length }} total leads • <span class="text-amber-500 font-bold">{{ dueFollowUpCount }} perlu follow-up</span> • <span class="text-emerald-500 font-bold">{{ registeredLeadsCount }} terdaftar Ixiera</span>
         </p>
       </div>
 
@@ -91,7 +91,7 @@
       </div>
 
       <!-- COLLAPSIBLE ADVANCED FILTERS -->
-      <div v-if="showFilters" class="card p-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div v-if="showFilters" class="card p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
         <div>
           <label class="block text-[10px] font-bold uppercase theme-text-muted mb-1">Komunikasi</label>
           <select v-model="commFilter" class="input w-full text-xs">
@@ -111,6 +111,15 @@
           <select v-model="channelFilter" class="input w-full text-xs">
             <option value="ALL">Semua Channel</option>
             <option v-for="ch in CHANNEL_OPTIONS" :key="ch" :value="ch">{{ ch }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold uppercase theme-text-muted mb-1">Akun Ixiera</label>
+          <select v-model="appStatusFilter" class="input w-full text-xs">
+            <option value="ALL">Semua Lead</option>
+            <option value="REGISTERED">Sudah Daftar Ixiera</option>
+            <option value="MULTI_ACCOUNT">Multi-Account (>1 Akun)</option>
+            <option value="UNREGISTERED">Belum Daftar</option>
           </select>
         </div>
       </div>
@@ -162,6 +171,32 @@
               <span v-if="lead.niche" class="text-[10px] px-2 py-0.5 rounded theme-bg-sec theme-text-muted">
                 {{ lead.niche }}
               </span>
+            </div>
+
+            <!-- IXIERA APP MULTI-ACCOUNT MATCH BADGE -->
+            <div v-if="getIxieraUser(lead.threads_handle)" class="flex items-center gap-1.5 flex-wrap pt-0.5">
+              <span
+                class="text-[10px] font-bold px-2 py-0.5 rounded border"
+                :class="getIxieraBadgeClass(getIxieraUser(lead.threads_handle)!)"
+              >
+                App: {{ formatIxieraPlan(getIxieraUser(lead.threads_handle)!.plan) }} ({{ getIxieraUser(lead.threads_handle)!.account_count }}/{{ getQuotaLimit(getIxieraUser(lead.threads_handle)!.plan, getIxieraUser(lead.threads_handle)!.role) }} akun)
+              </span>
+
+              <span
+                v-if="getIxieraUser(lead.threads_handle)!.sibling_handles.length > 0"
+                class="text-[10px] theme-text-muted"
+              >
+                Akun lain: {{ getIxieraUser(lead.threads_handle)!.sibling_handles.map(h => '@' + h).join(', ') }}
+              </span>
+
+              <button
+                v-if="getSuggestedConversion(lead, getIxieraUser(lead.threads_handle)!)"
+                type="button"
+                @click="updateLeadField(lead, 'conversion_status', getSuggestedConversion(lead, getIxieraUser(lead.threads_handle)!)!)"
+                class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500 text-white hover:opacity-90 transition"
+              >
+                Sync -> {{ getSuggestedConversion(lead, getIxieraUser(lead.threads_handle)!) }}
+              </button>
             </div>
 
             <div class="flex flex-wrap items-center gap-2 text-[11px] theme-text-muted">
@@ -504,6 +539,17 @@ interface CrmInteraction {
   next_followup_at: string | null
 }
 
+interface IxieraAccountMatch {
+  user_id: string
+  email: string
+  username: string
+  plan: string
+  role: string
+  credit_balance: number
+  account_count: number
+  sibling_handles: string[]
+}
+
 const CHANNEL_OPTIONS = ['Cold DM', 'Contextual Comment', 'Contextual Reply', 'Inbound', 'Referral', 'Other']
 const INTEREST_OPTIONS = ['Low', 'Medium', 'High']
 const COMM_STATUS_OPTIONS = ['Not Contacted', 'Contacted', 'Replied', 'No Response', 'Not Interested', 'Follow-up Needed']
@@ -518,10 +564,13 @@ const FOLLOWUP_TABS = [
   { label: 'Tanpa Jadwal', value: 'NONE' },
 ]
 
+const ADMIN_API_BASE = 'https://threads-automation-r9so.onrender.com/api/v1/admin'
+
 const { showToast } = useNotify()
 
 const leads = ref<CrmLead[]>([])
 const interactionCounts = ref<Record<string, number>>({})
+const ixieraAccountMap = ref<Record<string, IxieraAccountMatch>>({})
 const loading = ref(true)
 const saving = ref(false)
 const accessDenied = ref(false)
@@ -534,6 +583,7 @@ const followUpFilter = ref('ALL')
 const commFilter = ref('ALL')
 const convFilter = ref('ALL')
 const channelFilter = ref('ALL')
+const appStatusFilter = ref('ALL')
 const searchQuery = ref('')
 
 const showLeadModal = ref(false)
@@ -569,8 +619,52 @@ const activeFilterCount = computed(() => {
   if (commFilter.value !== 'ALL') c++
   if (convFilter.value !== 'ALL') c++
   if (channelFilter.value !== 'ALL') c++
+  if (appStatusFilter.value !== 'ALL') c++
   return c
 })
+
+function getQuotaLimit(plan: string, role = 'user'): number {
+  if (role === 'admin') return 50
+  if (plan === 'paid_credit') return 10
+  if (plan === 'paid_byok') return 3
+  return 1
+}
+
+function formatIxieraPlan(plan: string): string {
+  if (plan === 'paid_credit') return 'Pro Credit'
+  if (plan === 'paid_byok') return 'Pro BYOK'
+  if (plan === 'trial') return 'Trial'
+  return 'Free'
+}
+
+function getIxieraUser(handle: string): IxieraAccountMatch | null {
+  if (!handle) return null
+  return ixieraAccountMap.value[handle.toLowerCase()] || null
+}
+
+function getIxieraBadgeClass(match: IxieraAccountMatch): string {
+  if (match.plan === 'paid_credit' || match.plan === 'paid_byok') {
+    return 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30'
+  }
+  if (match.plan === 'trial') {
+    return 'bg-blue-500/15 text-blue-400 border-blue-500/30'
+  }
+  return 'theme-bg-sec theme-text-muted theme-border'
+}
+
+function getSuggestedConversion(lead: CrmLead, match: IxieraAccountMatch): string | null {
+  if ((match.plan === 'paid_credit' || match.plan === 'paid_byok') && lead.conversion_status !== 'Paid') {
+    return 'Paid'
+  }
+  if (match.plan === 'trial' && ['Potential', 'Interested'].includes(lead.conversion_status)) {
+    return 'Trial Started'
+  }
+  return null
+}
+
+const registeredLeadsCount = computed(() =>
+  leads.value.filter(l => !!getIxieraUser(l.threads_handle)).length
+)
 
 function toLocalDatetimeInput(iso: string | null | undefined): string {
   if (!iso) return ''
@@ -649,9 +743,15 @@ const filteredLeads = computed(() => {
     if (convFilter.value !== 'ALL' && lead.conversion_status !== convFilter.value) return false
     if (channelFilter.value !== 'ALL' && (lead.outreach_channel || 'Cold DM') !== channelFilter.value) return false
 
+    const matchedApp = getIxieraUser(lead.threads_handle)
+    if (appStatusFilter.value === 'REGISTERED' && !matchedApp) return false
+    if (appStatusFilter.value === 'MULTI_ACCOUNT' && (!matchedApp || matchedApp.account_count <= 1)) return false
+    if (appStatusFilter.value === 'UNREGISTERED' && !!matchedApp) return false
+
     if (searchQuery.value) {
       const q = searchQuery.value.toLowerCase().replace(/^@/, '')
-      const haystack = [lead.threads_handle, lead.niche, lead.pain_point, lead.notes, lead.next_action]
+      const siblings = matchedApp ? matchedApp.sibling_handles.join(' ') : ''
+      const haystack = [lead.threads_handle, lead.niche, lead.pain_point, lead.notes, lead.next_action, siblings]
         .filter(Boolean)
         .join(' ')
         .toLowerCase()
@@ -683,6 +783,47 @@ function formatDateTime(iso: string | null) {
   })
 }
 
+async function fetchIxieraAccountsMap() {
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.access_token) return
+    const res = await fetch(`${ADMIN_API_BASE}/users`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+    if (!res.ok) return
+    const payload = await res.json()
+    if (!payload.success || !Array.isArray(payload.users)) return
+
+    const byUserId: Record<string, string[]> = {}
+    for (const u of payload.users) {
+      const uname = (u.username || '').toLowerCase()
+      if (!uname || uname === '-') continue
+      if (!byUserId[u.user_id]) byUserId[u.user_id] = []
+      byUserId[u.user_id].push(uname)
+    }
+
+    const map: Record<string, IxieraAccountMatch> = {}
+    for (const u of payload.users) {
+      const uname = (u.username || '').toLowerCase()
+      if (!uname || uname === '-') continue
+      const allHandles = byUserId[u.user_id] || [uname]
+      map[uname] = {
+        user_id: u.user_id,
+        email: u.email || '',
+        username: uname,
+        plan: u.plan || 'none',
+        role: u.role || 'user',
+        credit_balance: u.credit_balance || 0,
+        account_count: u.account_count || allHandles.length,
+        sibling_handles: allHandles.filter(h => h !== uname),
+      }
+    }
+    ixieraAccountMap.value = map
+  } catch (err) {
+    console.warn('[CRM] Skip Ixiera user lookup:', err)
+  }
+}
+
 async function fetchLeads() {
   loading.value = true
   accessDenied.value = false
@@ -690,6 +831,7 @@ async function fetchLeads() {
     const [leadsRes, countsRes] = await Promise.all([
       supabase.from('crm_leads').select('*').order('last_contacted_at', { ascending: false }),
       supabase.from('crm_interactions').select('lead_id'),
+      fetchIxieraAccountsMap(),
     ])
 
     if (leadsRes.error) {
@@ -732,6 +874,11 @@ async function quickAddLead() {
   saving.value = true
   try {
     const nowIso = new Date().toISOString()
+    const matched = getIxieraUser(handle)
+    const initialConv = matched
+      ? (matched.plan === 'paid_credit' || matched.plan === 'paid_byok' ? 'Paid' : matched.plan === 'trial' ? 'Trial Started' : 'Potential')
+      : 'Potential'
+
     const { data, error } = await supabase
       .from('crm_leads')
       .insert({
@@ -740,7 +887,7 @@ async function quickAddLead() {
         status: 'Contacted',
         outreach_channel: quickChannel.value,
         comm_status: 'Contacted',
-        conversion_status: 'Potential',
+        conversion_status: initialConv,
         interest_level: 'Medium',
         last_contacted_at: nowIso,
       })
@@ -971,8 +1118,8 @@ async function addInteraction() {
     const autoComm = interactionForm.value.prospect_response.trim()
       ? 'Replied'
       : lead.comm_status === 'Not Contacted'
-        ? 'Contacted'
-        : lead.comm_status
+      ? 'Contacted'
+      : lead.comm_status
 
     const leadUpdate: Record<string, any> = {
       last_contacted_at: interactionIso,

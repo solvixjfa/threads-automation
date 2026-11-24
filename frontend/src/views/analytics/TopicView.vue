@@ -101,6 +101,9 @@ import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
 import { useNotify } from '../../composables/useNotify'
 import { useI18n } from 'vue-i18n'
+import { useAccountStore } from '../../stores/accounts'
+
+const accountStore = useAccountStore()
 import { Card, Badge, Button, EmptyState } from '../../components/ui'
 import { Target, PenLine } from 'lucide-vue-next'
 
@@ -147,11 +150,7 @@ function createWithTopic(topic: string) {
 
 async function loadData() {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { data: acc } = await supabase.schema('threads').from('threads_accounts')
-      .select('id, credit_balance, custom_gemini_key, custom_groq_key, ai_provider, topic_labels_cache, topic_labels_cached_at')
-      .eq('user_id', user.id).maybeSingle()
+    const acc = await accountStore.ensureActiveAccount() as any
     if (!acc) return
     
     currentAccountId.value = acc.id

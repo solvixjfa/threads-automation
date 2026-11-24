@@ -2,10 +2,33 @@
   <div class="space-y-6">
     <div class="flex flex-wrap justify-between items-center gap-4">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight">Admin Panel</h1>
-        <p class="text-sm theme-text-muted mt-1">Manage users, plans, and credits.</p>
+        <h1 class="text-2xl font-bold tracking-tight">Users & Plans</h1>
+        <p class="text-sm theme-text-muted mt-1">Manage users, multi-account quotas, plans, and shared credits.</p>
       </div>
       <button @click="loadData" :disabled="loading" class="btn btn-secondary btn-sm">Refresh</button>
+    </div>
+
+    <!-- FILTER BAR -->
+    <div v-if="isAuthorized" class="flex flex-col sm:flex-row gap-2.5">
+      <input
+        v-model.trim="searchQuery"
+        type="text"
+        placeholder="Cari email atau @username..."
+        class="input flex-1 text-sm"
+      />
+      <div class="flex gap-1.5 overflow-x-auto pb-1">
+        <button
+          v-for="tab in FILTER_TABS"
+          :key="tab.value"
+          @click="filterMode = tab.value"
+          class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-colors"
+          :class="filterMode === tab.value
+            ? 'bg-[var(--accent)] text-[var(--bg)] border-[var(--accent)]'
+            : 'theme-bg theme-border theme-text-muted hover:theme-text'"
+        >
+          {{ tab.label }} ({{ getFilterCount(tab.value) }})
+        </button>
+      </div>
     </div>
 
     <div v-if="loading" class="p-12 text-center text-sm theme-text-muted animate-pulse">Loading users...</div>
@@ -16,7 +39,7 @@
         <table class="w-full text-left text-sm">
           <thead class="theme-bg-sec border-b theme-border">
             <tr>
-              <th class="p-4 font-bold text-xs uppercase theme-text-muted">User</th>
+              <th class="p-4 font-bold text-xs uppercase theme-text-muted">User & Akun</th>
               <th class="p-4 font-bold text-xs uppercase theme-text-muted">Status</th>
               <th class="p-4 font-bold text-xs uppercase theme-text-muted">Plan</th>
               <th class="p-4 font-bold text-xs uppercase theme-text-muted">Expires</th>
@@ -25,18 +48,25 @@
             </tr>
           </thead>
           <tbody class="divide-y theme-border">
-            <tr v-for="u in users" :key="u.id" class="hover:bg-[var(--bg-sec)] transition-colors">
+            <tr v-for="u in filteredUsers" :key="u.id" class="hover:bg-[var(--bg-sec)] transition-colors">
               <td class="p-4">
                 <div class="font-bold">{{ u.email }}</div>
-                <div class="text-xs theme-text-muted">@{{ u.username || 'unlinked' }}</div>
-                <!-- PENDING REQUEST BADGE -->
+                <div class="flex items-center gap-1.5 flex-wrap mt-0.5">
+                  <span class="text-xs theme-text-muted">@{{ u.username || 'unlinked' }}</span>
+                  <span
+                    class="text-[10px] font-bold px-1.5 py-0.5 rounded border theme-border"
+                    :class="(u.account_count || 1) > 1 ? 'bg-blue-500/15 text-blue-400 border-blue-500/30' : 'theme-text-muted'"
+                  >
+                    {{ u.account_count || 1 }}/{{ getQuotaLimit(u.plan, u.role) }} akun
+                  </span>
+                </div>
                 <div v-if="u.pending_plan" class="mt-1 inline-block bg-amber-500 text-white text-[9px] font-bold px-2 py-0.5 rounded">
                   Request: {{ getPlanLabel(u.pending_plan) }}
                 </div>
               </td>
               <td class="p-4">
                 <Badge :variant="u.connection_status === 'connected' ? 'success' : 'default'">{{ u.connection_status }}</Badge>
-                <div v-if="u.last_error" class="text-[10px] text-red-500 font-bold mt-1" :title="u.last_error">⚠️ Error</div>
+                <div v-if="u.last_error" class="text-[10px] text-red-500 font-bold mt-1" :title="u.last_error">Error</div>
               </td>
               <td class="p-4"><Badge :variant="u.plan !== 'none' ? 'accent' : 'default'">{{ getPlanLabel(u.plan) }}</Badge></td>
               <td class="p-4 text-xs">{{ u.plan_expires_at ? formatDate(u.plan_expires_at) : '-' }}</td>
@@ -49,6 +79,9 @@
                 <button @click="handleDowngrade(u)" :disabled="isProcessing" class="text-xs font-bold text-red-500 underline hover:text-red-700 disabled:opacity-50">Downgrade</button>
               </td>
             </tr>
+            <tr v-if="filteredUsers.length === 0">
+              <td colspan="6" class="p-8 text-center text-xs theme-text-muted">Tidak ada akun yang cocok dengan filter.</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -59,13 +92,18 @@
       <div v-if="selectedUser && modalType === 'extend'" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="card max-w-sm w-full p-6 space-y-4 bg-[var(--bg)]">
           <h3 class="text-lg font-bold">Approve / Extend Plan</h3>
-          <p class="text-xs theme-text-muted">{{ selectedUser.email }}</p>
+          <p class="text-xs theme-text-muted">{{ selectedUser.email }} (@{{ selectedUser.username }})</p>
           <Select v-model="extendType" label="Plan Type" :options="[
-            {label: 'Free Trial (20 Kredit, 7 Hari)', value: 'trial'},
-            {label: 'Pro Credit (Rp29k)', value: 'paid_credit'},
-            {label: 'Pro BYOK (Rp19k)', value: 'paid_byok'}
+            {label: 'Free Trial (20 Kredit, 7 Hari, Maks 1 Akun)', value: 'trial'},
+            {label: 'Pro Credit (Rp29k, Maks 10 Akun)', value: 'paid_credit'},
+            {label: 'Pro BYOK (Rp19k, Maks 3 Akun)', value: 'paid_byok'}
           ]" />
-          <p class="text-xs theme-text-muted">Menambah 30 hari dan me-reset kredit.</p>
+          <p class="text-xs theme-text-muted">
+            Menambah masa aktif dan me-reset kredit.
+            <span v-if="(selectedUser.account_count || 1) > 1" class="font-bold text-blue-400">
+              Otomatis sinkron ke seluruh {{ selectedUser.account_count }} akun milik user ini.
+            </span>
+          </p>
           <div class="flex justify-end gap-3 pt-2">
             <Button variant="secondary" @click="selectedUser = null">Cancel</Button>
             <Button @click="handleExtend" :loading="isProcessing">Confirm</Button>
@@ -79,6 +117,9 @@
       <div v-if="selectedUser && modalType === 'credits'" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="card max-w-sm w-full p-6 space-y-4 bg-[var(--bg)]">
           <h3 class="text-lg font-bold">Adjust Credits: {{ selectedUser.email }}</h3>
+          <p v-if="(selectedUser.account_count || 1) > 1" class="text-xs text-blue-400 font-bold">
+            Saldo kredit bersama akan diperbarui untuk seluruh {{ selectedUser.account_count }} akun user ini.
+          </p>
           <div class="space-y-1"><label class="label">Amount (+/-)</label><input v-model.number="creditAmount" type="number" class="input w-full" /></div>
           <div class="space-y-1"><label class="label">Note</label><input v-model="creditNote" type="text" class="input w-full" /></div>
           <div class="flex justify-end gap-3 pt-2"><Button variant="secondary" @click="selectedUser = null">Cancel</Button><Button @click="handleAdjustCredits" :disabled="!creditNote || !creditAmount">Save</Button></div>
@@ -105,15 +146,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
 import { useNotify } from '../../composables/useNotify'
 import { Button, Badge, Select } from '../../components/ui'
+
+const FILTER_TABS = [
+  { label: 'Semua', value: 'all' },
+  { label: 'Pending', value: 'pending' },
+  { label: 'Multi-Account', value: 'multi' },
+  { label: 'Pro', value: 'pro' },
+]
 
 const { showToast } = useNotify()
 const users = ref<any[]>([])
 const loading = ref(true)
 const isAuthorized = ref(false)
+const searchQuery = ref('')
+const filterMode = ref('all')
 
 const selectedUser = ref<any>(null)
 const modalType = ref<'extend' | 'credits' | 'ledger' | null>(null)
@@ -125,6 +175,13 @@ const isProcessing = ref(false)
 
 const API_BASE = 'https://threads-automation-r9so.onrender.com/api/v1/admin'
 
+function getQuotaLimit(plan: string, role = 'user'): number {
+  if (role === 'admin') return 50
+  if (plan === 'paid_credit') return 10
+  if (plan === 'paid_byok') return 3
+  return 1
+}
+
 function getPlanLabel(plan: string) {
   if (!plan || plan === 'none') return 'Free'
   if (plan === 'trial') return 'Trial (20 Kredit)'
@@ -132,6 +189,29 @@ function getPlanLabel(plan: string) {
   if (plan === 'paid_byok') return 'Pro BYOK'
   return plan
 }
+
+function matchesFilter(u: any, mode: string): boolean {
+  if (mode === 'pending') return !!u.pending_plan
+  if (mode === 'multi') return (u.account_count || 1) > 1
+  if (mode === 'pro') return u.plan === 'paid_credit' || u.plan === 'paid_byok'
+  return true
+}
+
+function getFilterCount(mode: string): number {
+  return users.value.filter(u => matchesFilter(u, mode)).length
+}
+
+const filteredUsers = computed(() => {
+  return users.value.filter(u => {
+    if (!matchesFilter(u, filterMode.value)) return false
+    if (searchQuery.value) {
+      const q = searchQuery.value.toLowerCase().replace(/^@/, '')
+      const hay = `${u.email || ''} ${u.username || ''}`.toLowerCase()
+      if (!hay.includes(q)) return false
+    }
+    return true
+  })
+})
 
 function formatDate(iso: string) {
   if (!iso) return ''
@@ -194,7 +274,7 @@ async function handleExtend() {
     })
     const data = await res.json()
     if (!res.ok) throw new Error(data.detail)
-    showToast('Plan extended successfully.', 'success')
+    showToast('Plan extended across all user accounts.', 'success')
     selectedUser.value = null
     await loadData()
   } catch (err: any) { showToast('Failed: ' + err.message, 'error') } finally { isProcessing.value = false }
@@ -211,15 +291,14 @@ async function handleAdjustCredits() {
     })
     const data = await res.json()
     if (!res.ok) throw new Error(data.detail)
-    showToast('Credits adjusted.', 'success')
+    showToast('Shared credits adjusted.', 'success')
     selectedUser.value = null
     await loadData()
   } catch (err: any) { showToast('Failed: ' + err.message, 'error') } finally { isProcessing.value = false }
 }
 
-// FUNGSI BARU 1: FORCE SYNC
 async function handleForceSync(user: any) {
-  if (!confirm(`Tarik data Meta (Avatar & Username) manual untuk ${user.email}?`)) return
+  if (!confirm(`Tarik data Meta (Avatar & Username) manual untuk @${user.username}?`)) return
   isProcessing.value = true
   try {
     const headers = await getAuthHeader()
@@ -229,14 +308,14 @@ async function handleForceSync(user: any) {
     })
     const data = await res.json()
     if (!res.ok) throw new Error(data.detail)
-    showToast('Sync berhasil! Cek avatar/username di tabel.', 'success')
+    showToast('Sync berhasil!', 'success')
     await loadData()
   } catch (err: any) { showToast('Failed: ' + err.message, 'error') } finally { isProcessing.value = false }
 }
 
-// FUNGSI BARU 2: DOWNGRADE
 async function handleDowngrade(user: any) {
-  if (!confirm(`Yakin mau downgrade ${user.email} ke Free? Kredit bakal di-reset ke 0.`)) return
+  const count = user.account_count || 1
+  if (!confirm(`Yakin downgrade ${user.email} (${count} akun) ke Free? Kredit akan di-reset ke 0.`)) return
   isProcessing.value = true
   try {
     const headers = await getAuthHeader()

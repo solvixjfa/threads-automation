@@ -315,6 +315,9 @@ import { useRouter } from 'vue-router'
 import { supabase } from '../../lib/supabase'
 import { useNotify } from '../../composables/useNotify'
 import { Card, Button, Badge, EmptyState } from '../../components/ui'
+import { useAccountStore } from '../../stores/accounts'
+
+const accountStore = useAccountStore()
 
 const API_BASE = 'https://threads-automation-r9so.onrender.com/api/v1/trending'
 const router = useRouter()
@@ -365,14 +368,7 @@ function formatDate(iso: string) {
 
 async function resolveAccountId() {
   if (accountId.value) return accountId.value
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('User belum login')
-  const { data: acc } = await supabase
-    .schema('threads')
-    .from('threads_accounts')
-    .select('id')
-    .eq('user_id', user.id)
-    .maybeSingle()
+  const acc = await accountStore.ensureActiveAccount()
   if (!acc?.id) throw new Error('Akun Threads belum terhubung')
   accountId.value = acc.id
   return acc.id

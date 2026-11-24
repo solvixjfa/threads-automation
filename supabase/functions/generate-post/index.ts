@@ -71,7 +71,7 @@ serve(async (req) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || serviceRoleKey;
     const geminiApiKey = Deno.env.get("GEMINI_API_KEY")!;
 
-    const { topic, tone } = await req.json();
+    const { topic, tone, account_id } = await req.json();
     if (!topic) {
       return new Response(
         JSON.stringify({ error: "Topik tidak boleh kosong." }),
@@ -90,13 +90,19 @@ serve(async (req) => {
       const { data: { user } } = await userClient.auth.getUser();
 
       if (user) {
-        const { data: account } = await supabase
+        let accQuery = supabase
           .schema("threads")
           .from("threads_accounts")
           .select("id")
-          .eq("user_id", user.id)
-          .limit(1)
-          .maybeSingle();
+          .eq("user_id", user.id);
+
+        if (account_id) {
+          accQuery = accQuery.eq("id", account_id);
+        } else {
+          accQuery = accQuery.order("created_at", { ascending: true }).limit(1);
+        }
+
+        const { data: account } = await accQuery.maybeSingle();
 
         if (account) {
           const { data: settings } = await supabase
@@ -108,7 +114,6 @@ serve(async (req) => {
 
           if (settings) userTonePrompt = settings.tone_prompt || "";
 
-          // SEMANTIC VECTOR SEARCH (Threshold diturunkan ke 0.15)
           const topicVector = await getEmbedding(topic, geminiApiKey);
           if (topicVector) {
             const { data: matchedDocs } = await supabase.rpc("match_brand_knowledge", {

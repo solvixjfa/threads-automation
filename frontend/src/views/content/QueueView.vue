@@ -184,6 +184,9 @@ import { supabase } from '../../lib/supabase'
 import { useNotify } from '../../composables/useNotify'
 import { useI18n } from 'vue-i18n'
 import { Card, Button, Textarea, Badge } from '../../components/ui'
+import { useAccountStore } from '../../stores/accounts'
+
+const accountStore = useAccountStore()
 
 const { showToast, askConfirm } = useNotify()
 const { t } = useI18n()
@@ -310,9 +313,7 @@ function statusVariant(status: string) {
 
 async function ensureAccount() {
   if (currentAccountId.value) return currentAccountId.value
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return null
-  const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id, ai_provider').eq('user_id', user.id).maybeSingle()
+  const account = await accountStore.ensureActiveAccount()
   if (!account) return null
   currentAccountId.value = account.id
   if (account.ai_provider) aiProvider.value = account.ai_provider

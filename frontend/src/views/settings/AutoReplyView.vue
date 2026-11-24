@@ -67,6 +67,9 @@ import { ref, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
 import { useNotify } from '../../composables/useNotify'
 import { Card, Button, Select } from '../../components/ui'
+import { useAccountStore } from '../../stores/accounts'
+
+const accountStore = useAccountStore()
 
 const { showToast } = useNotify()
 const loading = ref(true)
@@ -77,9 +80,7 @@ const autoReply = ref({ enabled: true, mode: 'review', max_per_hour: 10, tone_pr
 async function load() {
   loading.value = true
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id').eq('user_id', user.id).maybeSingle()
+    const account = await accountStore.ensureActiveAccount()
     if (!account) return
     accountId.value = account.id
 

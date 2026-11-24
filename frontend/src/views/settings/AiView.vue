@@ -110,6 +110,9 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { supabase } from '../../lib/supabase'
 import { useNotify } from '../../composables/useNotify'
 import { Card, Button, Badge } from '../../components/ui'
+import { useAccountStore } from '../../stores/accounts'
+
+const accountStore = useAccountStore()
 
 const { showToast } = useNotify()
 const loading = ref(true)
@@ -148,15 +151,8 @@ function getWaLink(msg: string) {
 async function load(isSilent = false) {
   if (!isSilent) loading.value = true
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    const { data: account, error } = await supabase
-      .schema('threads').from('threads_accounts')
-      .select('id, plan, pending_plan, plan_expires_at, credit_balance, custom_gemini_key, custom_groq_key')
-      .eq('user_id', user.id).maybeSingle()
-
-    if (error) throw error
+    await accountStore.fetchAccounts(true)
+    const account = accountStore.activeAccount
 
     if (account) {
       const oldPlan = plan.value
@@ -209,6 +205,7 @@ async function saveKey(provider: 'gemini' | 'groq') {
     showToast(`${provider.toUpperCase()} Key berhasil disimpan!`, 'success')
     if (provider === 'gemini') { hasGeminiKey.value = true; geminiKey.value = '********'; }
     if (provider === 'groq') { hasGroqKey.value = true; groqKey.value = '********'; }
+    await accountStore.fetchAccounts(true)
   } catch (err: any) {
     showToast('Gagal: ' + err.message, 'error')
   } finally { saving.value = false }
@@ -224,6 +221,7 @@ async function removeKey(provider: 'gemini' | 'groq') {
     showToast(`${provider.toUpperCase()} Key dihapus.`, 'info')
     if (provider === 'gemini') { hasGeminiKey.value = false; geminiKey.value = ''; }
     if (provider === 'groq') { hasGroqKey.value = false; groqKey.value = ''; }
+    await accountStore.fetchAccounts(true)
   } catch (err: any) {
     showToast('Gagal hapus: ' + err.message, 'error')
   } finally { saving.value = false }

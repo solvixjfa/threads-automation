@@ -115,6 +115,9 @@ import { ref, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
 import { useNotify } from '../../composables/useNotify'
 import { Card, Button, Badge, Select } from '../../components/ui'
+import { useAccountStore } from '../../stores/accounts'
+
+const accountStore = useAccountStore()
 
 const { showToast, askConfirm } = useNotify()
 const loadingRag = ref(true)
@@ -131,9 +134,7 @@ const dragActive = ref(false)
 const uploadProgress = ref<Array<{ name: string; status: 'pending' | 'uploading' | 'done' | 'error'; inserted?: number; message?: string }>>([])
 
 async function initAccount() {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return
-  const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id').eq('user_id', user.id).maybeSingle()
+  const account = await accountStore.ensureActiveAccount()
   if (account) accountId.value = account.id
 }
 

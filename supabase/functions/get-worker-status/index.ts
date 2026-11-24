@@ -29,6 +29,17 @@ serve(async (req) => {
       });
     }
 
+    const url = new URL(req.url);
+    let requestedAccountId = url.searchParams.get("account_id") || "";
+    if (!requestedAccountId && req.method !== "GET") {
+      try {
+        const body = await req.json();
+        requestedAccountId = body?.account_id || "";
+      } catch {
+        // Ignore empty body
+      }
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -47,12 +58,19 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const { data: account } = await supabase
+    let accQuery = supabase
       .schema("threads")
       .from("threads_accounts")
       .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
+      .eq("user_id", user.id);
+
+    if (requestedAccountId) {
+      accQuery = accQuery.eq("id", requestedAccountId);
+    } else {
+      accQuery = accQuery.order("created_at", { ascending: true }).limit(1);
+    }
+
+    const { data: account } = await accQuery.maybeSingle();
 
     if (!account) {
       return new Response(JSON.stringify({ error: "Threads account not found" }), {

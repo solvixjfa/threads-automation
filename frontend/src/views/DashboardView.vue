@@ -332,6 +332,9 @@ import DoughnutChart from '../components/DoughnutChart.vue'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
 import { useI18n } from 'vue-i18n'
+import { useAccountStore } from '../stores/accounts'
+
+const accountStore = useAccountStore()
 import { 
   CalendarClock, CheckCircle2, AlertCircle, Activity, Eye, Heart, 
   MessageCircle, Repeat2, BarChart3, LineChart, RotateCcw, 
@@ -445,9 +448,7 @@ async function loadAllDashboardData() {
   loading.value = true
   toastMessage.value = ''
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id, last_synced_at').eq('user_id', user.id).maybeSingle()
+    const account = await accountStore.ensureActiveAccount()
     if (account) {
       currentAccountId.value = account.id
       lastSyncedAt.value = account.last_synced_at

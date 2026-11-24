@@ -72,6 +72,9 @@ import { ref, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
 import { Card, Button, Badge, Select } from './ui'
+import { useAccountStore } from '../stores/accounts'
+
+const accountStore = useAccountStore()
 
 const { showToast } = useNotify()
 const loading = ref(true)
@@ -101,9 +104,7 @@ function initState(rules: any = {}) {
 async function load() {
   loading.value = true
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id').eq('user_id', user.id).maybeSingle()
+    const account = await accountStore.ensureActiveAccount()
     if (!account) { initState({}); return }
     accountId.value = account.id
     const { data: settings } = await supabase.schema('threads').from('auto_reply_settings').select('rules').eq('account_id', account.id).maybeSingle()

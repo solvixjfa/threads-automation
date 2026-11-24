@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { supabase } from '../lib/supabase'
+import { useAccountStore } from './accounts'
 
 export interface AccountInfo {
   id: string
@@ -25,13 +26,8 @@ export const useSettingsStore = defineStore('settings', () => {
   async function fetchAccountAndSettings() {
     loading.value = true
     try {
-      const { data: accData } = await supabase
-        .schema('threads')
-        .from('threads_accounts')
-        .select('id, username, connection_status, kill_switch')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
+      const accountStore = useAccountStore()
+      const accData = await accountStore.ensureActiveAccount()
 
       if (accData) {
         account.value = {

@@ -5,12 +5,8 @@
     :class="open ? 'translate-x-0' : '-translate-x-full'"
     class="md:translate-x-0 fixed md:static inset-y-0 left-0 z-50 w-64 flex flex-col transition-transform duration-300 ease-in-out border-r theme-border theme-bg h-[100dvh] md:h-full"
   >
-    <div class="h-16 hidden md:flex items-center px-5 border-b theme-border shrink-0">
-      <div v-if="avatarUrl" class="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-[var(--border)]">
-        <img :src="avatarUrl" class="w-full h-full object-cover" />
-      </div>
-      <div v-else class="w-7 h-7 flex items-center justify-center rounded text-xs font-black theme-accent shrink-0">IX</div>
-      <span v-if="username" class="ml-3 font-bold tracking-tight">@{{ username }}</span>
+    <div class="hidden md:flex items-center px-3 py-3 border-b theme-border shrink-0">
+      <AccountSwitcher />
     </div>
 
     <div class="md:hidden h-16 flex items-center justify-between px-4 border-b theme-border shrink-0">
@@ -47,8 +43,6 @@
     </nav>
 
     <div class="p-3 border-t theme-border space-y-1 shrink-0 bg-inherit">
-      
-      <!-- TOMBOL ADMIN PANEL -->
       <RouterLink v-if="isAdmin" to="/admin" class="flex items-center justify-center w-full gap-2 px-3 py-2 mb-2 rounded-lg text-sm font-bold text-white bg-black hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 transition">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
         Admin Panel
@@ -87,12 +81,13 @@
 </template>
 
 <script setup lang="ts">
-import { h, ref, onMounted } from 'vue'
+import { h, ref, computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useTheme } from '../composables/useTheme'
 import { Select } from './ui'
-import { supabase } from '../lib/supabase'
+import AccountSwitcher from './AccountSwitcher.vue'
+import { useAccountStore } from '../stores/accounts'
 import { Sun, Moon } from 'lucide-vue-next'
 
 defineProps<{ open: boolean; email?: string; isAdmin?: boolean }>()
@@ -100,11 +95,13 @@ defineEmits<{ (e: 'close'): void; (e: 'logout'): void }>()
 
 const route = useRoute()
 const { theme, toggle: toggleTheme } = useTheme()
+const accountStore = useAccountStore()
 
 const { locale } = useI18n()
 const currentLang = ref(locale.value)
-const avatarUrl = ref('')
-const username = ref('')
+
+const avatarUrl = computed(() => accountStore.activeAccount?.profile_picture_url || '')
+const username = computed(() => accountStore.activeAccount?.username || '')
 
 function changeLang(val: string) {
   locale.value = val
@@ -144,15 +141,4 @@ const items = [
   { labelKey: 'menu.analytics', path: '/analytics', icon: IconAnalytics },
   { labelKey: 'menu.profile', path: '/profile', icon: IconSettings },
 ]
-
-onMounted(async () => {
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return
-  const { data } = await supabase.schema('threads').from('threads_accounts').select('profile_picture_url, username').eq('user_id', user.id).maybeSingle()
-  if (data) {
-    avatarUrl.value = data.profile_picture_url || ''
-    username.value = data.username || ''
-  }
-})
-
 </script>

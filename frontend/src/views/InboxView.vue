@@ -267,6 +267,9 @@ import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
 import { useI18n } from 'vue-i18n'
 import { Badge, Select } from '../components/ui'
+import { useAccountStore } from '../stores/accounts'
+
+const accountStore = useAccountStore()
 import { MessageSquare, RefreshCw, Search, Inbox, AlertTriangle, MessagesSquare, History, Clock, Sparkles, Send, EyeOff , AtSign } from 'lucide-vue-next'
 
 const { showToast, askConfirm } = useNotify()
@@ -398,10 +401,8 @@ async function safeSaveLog(payload: any) {
 
 async function fetchReplies() {
   loading.value = true
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return
-  const { data: account } = await supabase.schema('threads').from('threads_accounts').select('id, credit_balance, custom_gemini_key, custom_groq_key, ai_provider').eq('user_id', user.id).maybeSingle()
-  if (!account) return
+  const account = await accountStore.ensureActiveAccount()
+  if (!account) { loading.value = false; return }
 
   currentAccountId.value = account.id
   aiCredits.value = account.credit_balance ?? 20
@@ -543,9 +544,7 @@ async function handleBulkPublish() {
 
 async function resolveInboxAccountId() {
   if (currentAccountId.value) return currentAccountId.value
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('User belum login')
-  const { data: acc } = await supabase.schema('threads').from('threads_accounts').select('id').eq('user_id', user.id).maybeSingle()
+  const acc = await accountStore.ensureActiveAccount()
   if (!acc?.id) throw new Error('Akun Threads belum terhubung')
   currentAccountId.value = acc.id
   return acc.id

@@ -36,6 +36,9 @@
 import { ref, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
+import { useAccountStore } from '../stores/accounts'
+
+const accountStore = useAccountStore()
 
 const emit = defineEmits(['apply'])
 const { showToast } = useNotify() // Import composable Toast
@@ -46,16 +49,7 @@ const fallbackDayOffset = ref(0)
 
 onMounted(async () => {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    const { data: account } = await supabase
-      .schema('threads')
-      .from('threads_accounts')
-      .select('id')
-      .eq('user_id', user.id)
-      .maybeSingle()
-
+    const account = await accountStore.ensureActiveAccount()
     if (!account) return
 
     const { data, error } = await supabase.functions.invoke('get-best-time', {

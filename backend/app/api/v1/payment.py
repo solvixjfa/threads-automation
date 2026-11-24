@@ -7,7 +7,6 @@ from typing import Optional
 import hashlib
 import httpx
 import os
-import time
 import logging
 
 router = APIRouter()
@@ -119,38 +118,69 @@ async def duitku_callback(
             now = datetime.now(timezone.utc)
             credits = PAID_CREDITS if plan_type == "paid_credit" else 0
 
-            # 1. Update profiles
-            db.schema("threads").from_("profiles").update({"plan": plan_type}).eq("id", user_id).execute()
+            # Cek masa aktif tertinggi dari semua akun milik user maupun profiles
+            accs = (
+                db.schema("threads")
+                .from_("threads_accounts")
+                .select("id, plan_expires_at, created_at")
+                .eq("user_id", user_id)
+                .order("created_at", desc=False)
+                .execute()
+            )
+            prof = (
+                db.schema("threads")
+                .from_("profiles")
+                .select("plan_expires_at")
+                .eq("id", user_id)
+                .limit(1)
+                .execute()
+            )
 
-            # 2. Update threads_accounts jika sudah terhubung
-            acc = db.schema("threads").from_("threads_accounts").select("id, plan_expires_at").eq("user_id", user_id).limit(1).execute()
-            if acc.data:
-                acc_id = acc.data[0]["id"]
-                current_exp = acc.data[0].get("plan_expires_at")
-                if current_exp:
-                    try:
-                        exp_dt = datetime.fromisoformat(current_exp.replace("Z", "+00:00"))
-                        new_exp = exp_dt + timedelta(days=PAID_DAYS) if exp_dt > now else now + timedelta(days=PAID_DAYS)
-                    except ValueError:
-                        new_exp = now + timedelta(days=PAID_DAYS)
-                else:
-                    new_exp = now + timedelta(days=PAID_DAYS)
+            latest_exp = None
+            candidates = [a.get("plan_expires_at") for a in (accs.data or []) if a.get("plan_expires_at")]
+            if prof.data and prof.data[0].get("plan_expires_at"):
+                candidates.append(prof.data[0]["plan_expires_at"])
 
+            for exp_str in candidates:
+                try:
+                    dt = datetime.fromisoformat(exp_str.replace("Z", "+00:00"))
+                    if latest_exp is None or dt > latest_exp:
+                        latest_exp = dt
+                except ValueError:
+                    continue
+
+            if latest_exp and latest_exp > now:
+                new_exp = latest_exp + timedelta(days=PAID_DAYS)
+            else:
+                new_exp = now + timedelta(days=PAID_DAYS)
+
+            # 1. Update profiles (cadangan terpusat jika akun Threads belum terhubung)
+            db.schema("threads").from_("profiles").update({
+                "plan": plan_type,
+                "plan_started_at": now.isoformat(),
+                "plan_expires_at": new_exp.isoformat(),
+                "credit_balance": credits,
+                "pending_plan": None,
+            }).eq("id", user_id).execute()
+
+            # 2. Update seluruh threads_accounts milik user_id
+            if accs.data:
+                primary_acc_id = accs.data[0]["id"]
                 db.schema("threads").from_("threads_accounts").update({
                     "plan": plan_type,
                     "plan_started_at": now.isoformat(),
                     "plan_expires_at": new_exp.isoformat(),
                     "credit_balance": credits,
                     "pending_plan": None,
-                }).eq("id", acc_id).execute()
+                }).eq("user_id", user_id).execute()
 
                 db.schema("threads").from_("credit_ledger").insert({
-                    "account_id": acc_id,
+                    "account_id": primary_acc_id,
                     "delta": credits,
                     "reason": "renewal_reset",
                     "note": f"Duitku paid {plan_type} ({merchantOrderId})",
                 }).execute()
 
-            logger.info(f"Duitku payment success: user={user_id}, plan={plan_type}, order={merchantOrderId}")
+            logger.info(f"Duitku payment success: user={user_id}, plan={plan_type}, accounts={len(accs.data or [])}, order={merchantOrderId}")
 
     return "OK"

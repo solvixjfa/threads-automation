@@ -27,6 +27,7 @@
       <div class="card p-5 space-y-1">
         <span class="text-[10px] font-bold uppercase theme-text-muted">Total Users</span>
         <p class="text-2xl font-black">{{ stats.total_users }}</p>
+        <div class="text-[10px] theme-text-muted">{{ stats.total_accounts ?? stats.total_users }} akun Threads terhubung</div>
       </div>
       <div class="card p-5 space-y-1">
         <span class="text-[10px] font-bold uppercase theme-text-muted">Pro Users</span>

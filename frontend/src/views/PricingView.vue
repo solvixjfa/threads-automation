@@ -66,6 +66,9 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
+import { useAccountStore } from '../stores/accounts'
+
+const accountStore = useAccountStore()
 
 const route = useRoute()
 const { showToast } = useNotify()
@@ -83,19 +86,8 @@ onMounted(async () => {
       paymentSuccess.value = true
     }
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    const { data: acc } = await supabase.schema('threads').from('threads_accounts')
-      .select('plan').eq('user_id', user.id).maybeSingle()
-
-    if (acc?.plan && acc.plan !== 'none') {
-      currentPlan.value = acc.plan
-    } else {
-      const { data: prof } = await supabase.schema('threads').from('profiles')
-        .select('plan').eq('id', user.id).maybeSingle()
-      if (prof?.plan) currentPlan.value = prof.plan
-    }
+    await accountStore.fetchAccounts()
+    currentPlan.value = accountStore.effectivePlan || 'free'
   } finally {
     loading.value = false
   }

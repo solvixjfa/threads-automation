@@ -164,6 +164,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '../../lib/supabase'
 import { useI18n } from 'vue-i18n'
+import { useAccountStore } from '../../stores/accounts'
+
+const accountStore = useAccountStore()
 import { Card, Badge, Button, EmptyState } from '../../components/ui'
 import BestTimeLineChart from '../../components/BestTimeLineChart.vue'
 import BestTimeChart from '../../components/BestTimeChart.vue'
@@ -236,9 +239,7 @@ async function loadData() {
   loading.value = true
   error.value = ''
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { data: acc } = await supabase.schema('threads').from('threads_accounts').select('id').eq('user_id', user.id).maybeSingle()
+    const acc = await accountStore.ensureActiveAccount()
     if (!acc) throw new Error("Account not found")
     const res = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/analytics/best-time/${acc.id}`)
     const data = await res.json()

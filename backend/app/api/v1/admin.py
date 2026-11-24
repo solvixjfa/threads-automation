@@ -29,8 +29,23 @@ def verify_admin(authorization: Optional[str] = Header(None)):
         user_res = db.auth.get_user(token)
         if not user_res or not user_res.user:
             raise HTTPException(status_code=401, detail="Invalid token")
-        acc = db.schema("threads").from_("threads_accounts").select("role").eq("user_id", user_res.user.id).limit(1).execute()
-        if not acc.data or acc.data[0].get("role") != "admin":
+
+        uid = user_res.user.id
+        prof = db.schema("threads").from_("profiles").select("role").eq("id", uid).limit(1).execute()
+        is_prof_admin = bool(prof.data and prof.data[0].get("role") == "admin")
+
+        acc = (
+            db.schema("threads")
+            .from_("threads_accounts")
+            .select("role")
+            .eq("user_id", uid)
+            .eq("role", "admin")
+            .limit(1)
+            .execute()
+        )
+        is_acc_admin = bool(acc.data)
+
+        if not is_prof_admin and not is_acc_admin:
             raise HTTPException(status_code=403, detail="Admin access required")
         return user_res.user
     except HTTPException:
@@ -42,14 +57,14 @@ async def send_approval_email(email: str, plan_name: str):
     api_key = os.getenv("RESEND_API_KEY")
     from_email = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
     if not api_key:
-        logger.error("❌ RESEND_API_KEY tidak ditemukan di env Railway!")
+        logger.error("RESEND_API_KEY tidak ditemukan di env server")
         return
     html_content = f"""
     <div style="font-family: sans-serif; color: #111; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-        <h2 style="color: #000;">Pembayaran Berhasil! 🎉</h2>
+        <h2 style="color: #000;">Pembayaran Berhasil!</h2>
         <p>Halo Kreator,</p>
         <p>Kabar baik! Akun Ixiera kamu sudah berhasil di-upgrade ke paket <strong>{plan_name}</strong>.</p>
-        <p>Sekarang kamu bisa menikmati semua fitur AI (Generate, Repurpose, Auto-Reply) tanpa batas.</p>
+        <p>Sekarang kamu bisa menikmati semua fitur AI (Generate, Repurpose, Auto-Reply) di seluruh akun Threads yang terhubung.</p>
         <br/>
         <a href="https://app.ixiera.online/dashboard" style="background: #000; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Buka Dashboard</a>
         <br/><br/>
@@ -65,11 +80,11 @@ async def send_approval_email(email: str, plan_name: str):
                 timeout=10.0
             )
             if res.status_code == 200:
-                logger.info(f"✅ Email sukses terkirim ke {email}")
+                logger.info(f"Email sukses terkirim ke {email}")
             else:
-                logger.error(f"❌ Gagal kirim email via Resend: {res.text}")
+                logger.error(f"Gagal kirim email via Resend: {res.text}")
     except Exception as e:
-        logger.error(f"❌ Error saat kirim email: {str(e)}")
+        logger.error(f"Error saat kirim email: {str(e)}")
 
 @router.get("/users")
 async def get_users(user = Depends(verify_admin)):
@@ -81,12 +96,20 @@ async def get_users(user = Depends(verify_admin)):
         user_map = {u.id: u.email for u in users_list}
     except Exception:
         user_map = {}
+
+    accounts_data = accs.data or []
+    account_counts = {}
+    for acc in accounts_data:
+        uid = acc["user_id"]
+        account_counts[uid] = account_counts.get(uid, 0) + 1
+
     results = []
-    for acc in (accs.data or []):
+    for acc in accounts_data:
+        uid = acc["user_id"]
         results.append({
             "id": acc["id"],
-            "user_id": acc["user_id"],
-            "email": user_map.get(acc["user_id"], "Unknown"),
+            "user_id": uid,
+            "email": user_map.get(uid, "Unknown"),
             "username": acc.get("username", "-"),
             "role": acc.get("role", "user"),
             "connection_status": acc.get("connection_status", "-"),
@@ -94,6 +117,7 @@ async def get_users(user = Depends(verify_admin)):
             "pending_plan": acc.get("pending_plan"),
             "plan_expires_at": acc.get("plan_expires_at"),
             "credit_balance": acc.get("credit_balance", 0),
+            "account_count": account_counts.get(uid, 1),
             "last_error": acc.get("last_error"),
             "created_at": acc.get("created_at")
         })
@@ -104,7 +128,8 @@ async def get_users(user = Depends(verify_admin)):
 async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin)):
     db = get_supabase()
     acc = db.schema("threads").from_("threads_accounts").select("plan_expires_at, user_id").eq("id", payload.account_id).limit(1).execute()
-    if not acc.data: raise HTTPException(404, "Account not found")
+    if not acc.data:
+        raise HTTPException(404, "Account not found")
 
     if payload.plan_type == 'trial':
         days = 7
@@ -114,18 +139,28 @@ async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin))
         credits = PAID_CREDITS if payload.plan_type == 'paid_credit' else 0
 
     now = datetime.now(timezone.utc)
-    current_exp = acc.data[0].get("plan_expires_at")
     target_user_id = acc.data[0].get("user_id")
 
-    if current_exp:
+    # Cek masa aktif tertinggi di semua akun milik user ini
+    siblings = db.schema("threads").from_("threads_accounts").select("plan_expires_at").eq("user_id", target_user_id).execute()
+    latest_exp = None
+    for row in (siblings.data or []):
+        exp_str = row.get("plan_expires_at")
+        if not exp_str:
+            continue
         try:
-            exp_dt = datetime.fromisoformat(current_exp.replace("Z", "+00:00"))
-            new_exp = exp_dt + timedelta(days=days) if exp_dt > now else now + timedelta(days=days)
+            dt = datetime.fromisoformat(exp_str.replace("Z", "+00:00"))
+            if latest_exp is None or dt > latest_exp:
+                latest_exp = dt
         except ValueError:
-            new_exp = now + timedelta(days=days)
+            continue
+
+    if latest_exp and latest_exp > now:
+        new_exp = latest_exp + timedelta(days=days)
     else:
         new_exp = now + timedelta(days=days)
 
+    # Trigger database trg_sync_user_plan_across_accounts otomatis menyinkronkan ke seluruh akun milik user_id & profiles
     db.schema("threads").from_("threads_accounts").update({
         "plan": payload.plan_type,
         "plan_started_at": now.isoformat(),
@@ -135,7 +170,9 @@ async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin))
     }).eq("id", payload.account_id).execute()
 
     db.schema("threads").from_("credit_ledger").insert({
-        "account_id": payload.account_id, "delta": credits, "reason": "renewal_reset",
+        "account_id": payload.account_id,
+        "delta": credits,
+        "reason": "renewal_reset",
         "note": f"Admin extended to {payload.plan_type}"
     }).execute()
 
@@ -145,7 +182,7 @@ async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin))
             plan_name = "Pro Credit" if payload.plan_type == 'paid_credit' else "Pro BYOK" if payload.plan_type == 'paid_byok' else "Trial"
             await send_approval_email(user_res.user.email, plan_name)
     except Exception as e:
-        logger.error(f"❌ Gagal ambil data user untuk email: {str(e)}")
+        logger.error(f"Gagal ambil data user untuk email: {str(e)}")
 
     return {"success": True, "new_expires": new_exp.isoformat(), "credits": credits}
 
@@ -153,15 +190,19 @@ async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin))
 async def adjust_credits(payload: AdjustCreditRequest, user = Depends(verify_admin)):
     db = get_supabase()
     acc = db.schema("threads").from_("threads_accounts").select("credit_balance").eq("id", payload.account_id).limit(1).execute()
-    if not acc.data: raise HTTPException(404, "Account not found")
-    
-    current = acc.data[0].get("credit_balance", 0)
-    new_bal = current + payload.delta
-    if new_bal < 0: new_bal = 0
+    if not acc.data:
+        raise HTTPException(404, "Account not found")
 
+    current = acc.data[0].get("credit_balance", 0)
+    new_bal = max(0, current + payload.delta)
+
+    # Trigger database otomatis menyinkronkan saldo kredit baru ke semua akun milik user_id
     db.schema("threads").from_("threads_accounts").update({"credit_balance": new_bal}).eq("id", payload.account_id).execute()
     db.schema("threads").from_("credit_ledger").insert({
-        "account_id": payload.account_id, "delta": payload.delta, "reason": "manual_adjust", "note": payload.note
+        "account_id": payload.account_id,
+        "delta": payload.delta,
+        "reason": "manual_adjust",
+        "note": payload.note
     }).execute()
 
     return {"success": True, "new_balance": new_bal}
@@ -176,7 +217,10 @@ async def get_ledger(account_id: str, user = Depends(verify_admin)):
 async def downgrade_plan(payload: AdminActionRequest, user = Depends(verify_admin)):
     db = get_supabase()
     db.schema("threads").from_("threads_accounts").update({
-        "plan": "none", "plan_expires_at": None, "credit_balance": 0, "pending_plan": None
+        "plan": "none",
+        "plan_expires_at": None,
+        "credit_balance": 0,
+        "pending_plan": None
     }).eq("id", payload.account_id).execute()
     return {"success": True, "message": "Downgraded to free"}
 
@@ -184,11 +228,12 @@ async def downgrade_plan(payload: AdminActionRequest, user = Depends(verify_admi
 async def force_sync_user(payload: AdminActionRequest, user = Depends(verify_admin)):
     db = get_supabase()
     acc_res = db.schema('threads').from_('threads_accounts').select('settings, id').eq('id', payload.account_id).maybe_single().execute()
-    if not acc_res.data: raise HTTPException(404, "Account not found")
+    if not acc_res.data:
+        raise HTTPException(404, "Account not found")
     token = (acc_res.data.get('settings') or {}).get('access_token')
-    if not token: raise HTTPException(400, "No access token")
+    if not token:
+        raise HTTPException(400, "No access token")
     from app.workers.replies import sync_profile_and_metrics
-    import httpx
     async with httpx.AsyncClient() as client:
         await sync_profile_and_metrics(db, client, payload.account_id, token)
     return {"success": True, "message": "Profile & Metrics synced manually"}
@@ -196,63 +241,91 @@ async def force_sync_user(payload: AdminActionRequest, user = Depends(verify_adm
 @router.get("/stats")
 async def get_admin_stats(user = Depends(verify_admin)):
     db = get_supabase()
-    accs = db.schema("threads").from_("threads_accounts").select("plan, pending_plan, credit_balance").execute()
-    total_users = len(accs.data or [])
-    total_pro_credit = 0
-    total_pro_byok = 0
-    total_pending = 0
-    for acc in (accs.data or []):
-        if acc.get("plan") == "paid_credit": total_pro_credit += 1
-        if acc.get("plan") == "paid_byok": total_pro_byok += 1
-        if acc.get("pending_plan"): total_pending += 1
+    accs = db.schema("threads").from_("threads_accounts").select("user_id, plan, pending_plan, credit_balance").execute()
+    rows = accs.data or []
+    total_accounts = len(rows)
+
+    user_plans = {}
+    pending_users = set()
+    for acc in rows:
+        uid = acc.get("user_id")
+        if not uid:
+            continue
+        p = acc.get("plan")
+        if p == "paid_credit":
+            user_plans[uid] = "paid_credit"
+        elif p == "paid_byok" and user_plans.get(uid) != "paid_credit":
+            user_plans[uid] = "paid_byok"
+        elif uid not in user_plans:
+            user_plans[uid] = p or "none"
+
+        if acc.get("pending_plan"):
+            pending_users.add(uid)
+
+    total_users = len(user_plans)
+    total_pro_credit = sum(1 for p in user_plans.values() if p == "paid_credit")
+    total_pro_byok = sum(1 for p in user_plans.values() if p == "paid_byok")
+    total_pending = len(pending_users)
     mrr_est = (total_pro_credit * 29000) + (total_pro_byok * 19000)
+
     return {
         "success": True,
-        "stats": {"total_users": total_users, "pro_credit": total_pro_credit, "pro_byok": total_pro_byok, "pending_requests": total_pending, "mrr_estimate": mrr_est}
+        "stats": {
+            "total_users": total_users,
+            "total_accounts": total_accounts,
+            "pro_credit": total_pro_credit,
+            "pro_byok": total_pro_byok,
+            "pending_requests": total_pending,
+            "mrr_estimate": mrr_est
+        }
     }
-
 
 @router.get("/token-stats")
 async def get_token_stats(user = Depends(verify_admin)):
     db = get_supabase()
-    from datetime import datetime, timezone, timedelta
     thirty_days_ago = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
-    
-    # Ambil logs
-    res_logs = db.schema("threads").from_("api_call_logs") \
-        .select("account_id, prompt_tokens, completion_tokens") \
-        .eq("endpoint", "generate_post") \
-        .gte("created_at", thirty_days_ago) \
+
+    res_logs = (
+        db.schema("threads")
+        .from_("api_call_logs")
+        .select("account_id, prompt_tokens, completion_tokens")
+        .eq("endpoint", "generate_post")
+        .gte("created_at", thirty_days_ago)
         .execute()
-        
+    )
     logs = res_logs.data or []
-    
-    # Ambil username
+
     res_users = db.schema("threads").from_("threads_accounts").select("id, username").execute()
     users = {u['id']: u.get('username', 'Unknown') for u in (res_users.data or [])}
-    
+
     per_user_dict = {}
     total_prompt = 0
     total_comp = 0
-    
+
     for l in logs:
         acc_id = l.get('account_id')
         pt = l.get('prompt_tokens', 0) or 0
         ct = l.get('completion_tokens', 0) or 0
-        
+
         total_prompt += pt
         total_comp += ct
-        
+
         if acc_id not in per_user_dict:
-            per_user_dict[acc_id] = {"account_id": acc_id, "username": users.get(acc_id, 'Unknown'), "generates": 0, "prompt": 0, "completion": 0}
-            
+            per_user_dict[acc_id] = {
+                "account_id": acc_id,
+                "username": users.get(acc_id, 'Unknown'),
+                "generates": 0,
+                "prompt": 0,
+                "completion": 0
+            }
+
         per_user_dict[acc_id]["generates"] += 1
         per_user_dict[acc_id]["prompt"] += pt
         per_user_dict[acc_id]["completion"] += ct
-        
+
     per_user_list = list(per_user_dict.values())
     per_user_list.sort(key=lambda x: x["prompt"] + x["completion"], reverse=True)
-    
+
     return {
         "success": True,
         "stats": {
