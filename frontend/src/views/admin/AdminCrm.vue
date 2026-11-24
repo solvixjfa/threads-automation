@@ -13,7 +13,7 @@
         <button
           @click="fetchLeads"
           :disabled="loading"
-          class="p-2 rounded-lg border theme-border bg-[var(--bg)] theme-text-muted hover:theme-text"
+          class="p-2 rounded-lg border theme-border theme-bg theme-text-muted hover:theme-text"
           title="Refresh data"
         >
           <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': loading }" />
@@ -58,7 +58,7 @@
           class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-colors flex items-center gap-1.5"
           :class="followUpFilter === tab.value
             ? 'bg-[var(--accent)] text-[var(--bg)] border-[var(--accent)]'
-            : 'bg-[var(--bg)] theme-border theme-text-muted hover:theme-text'"
+            : 'theme-bg theme-border theme-text-muted hover:theme-text'"
         >
           <span>{{ tab.label }}</span>
           <span class="text-[10px] opacity-80">({{ getFollowUpTabCount(tab.value) }})</span>
@@ -148,7 +148,7 @@
                 <ExternalLink class="w-3.5 h-3.5 theme-text-muted" />
               </a>
 
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-[var(--bg-sec)] border theme-border">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded theme-bg-sec border theme-border">
                 {{ lead.outreach_channel || 'Cold DM' }}
               </span>
 
@@ -159,7 +159,7 @@
                 {{ lead.interest_level || 'Medium' }}
               </span>
 
-              <span v-if="lead.niche" class="text-[10px] px-2 py-0.5 rounded bg-[var(--bg-sec)] theme-text-muted">
+              <span v-if="lead.niche" class="text-[10px] px-2 py-0.5 rounded theme-bg-sec theme-text-muted">
                 {{ lead.niche }}
               </span>
             </div>
@@ -174,7 +174,7 @@
 
           <button
             @click="deleteLead(lead)"
-            class="p-1.5 rounded-lg theme-text-muted hover:text-red-500 hover:bg-[var(--bg-sec)] transition-colors shrink-0"
+            class="p-1.5 rounded-lg theme-text-muted hover:text-red-500 hover:theme-bg-sec transition-colors shrink-0"
             title="Hapus lead"
           >
             <Trash2 class="w-4 h-4" />
@@ -182,7 +182,7 @@
         </div>
 
         <!-- CONTEXT (ONLY IF FILLED) -->
-        <div v-if="lead.pain_point || lead.next_action" class="space-y-1.5 text-xs bg-[var(--bg-sec)] p-2.5 rounded-lg border theme-border">
+        <div v-if="lead.pain_point || lead.next_action" class="space-y-1.5 text-xs theme-bg-sec p-2.5 rounded-lg border theme-border">
           <div v-if="lead.pain_point">
             <span class="font-bold theme-text-muted">Pain:</span> {{ lead.pain_point }}
           </div>
@@ -198,7 +198,7 @@
           @keyup.enter="($event.target as HTMLInputElement).blur()"
           type="text"
           placeholder="Tulis catatan singkat..."
-          class="w-full text-xs bg-[var(--bg-sec)] border theme-border rounded-lg px-3 py-2 focus:outline-none focus:border-[var(--accent)]"
+          class="w-full text-xs theme-bg-sec border theme-border rounded-lg px-3 py-2 focus:outline-none focus:border-[var(--accent)]"
         />
 
         <!-- DUAL STATUS SELECTORS -->
@@ -249,7 +249,7 @@
     <!-- MODAL CREATE / EDIT LEAD -->
     <Teleport to="body">
       <div v-if="showLeadModal" class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
-        <div class="card w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl p-5 space-y-4 bg-[var(--bg)] max-h-[92dvh] overflow-y-auto">
+        <div class="card w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl p-5 space-y-4 theme-bg max-h-[92dvh] overflow-y-auto">
           <div class="flex items-center justify-between">
             <h3 class="text-base font-bold">
               {{ editingLead ? `Edit @${editingLead.threads_handle}` : 'Tambah Lead Baru' }}
@@ -351,7 +351,7 @@
     <!-- MODAL INTERACTION HISTORY -->
     <Teleport to="body">
       <div v-if="historyLead" class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
-        <div class="card w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl p-5 space-y-4 bg-[var(--bg)] max-h-[92dvh] flex flex-col">
+        <div class="card w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl p-5 space-y-4 theme-bg max-h-[92dvh] flex flex-col">
           <div class="flex items-center justify-between shrink-0">
             <div>
               <h3 class="text-base font-bold">Riwayat: @{{ historyLead.threads_handle }}</h3>
@@ -364,7 +364,7 @@
 
           <div class="flex-1 overflow-y-auto space-y-5 pr-1">
             <!-- LOG NEW INTERACTION FORM -->
-            <form @submit.prevent="addInteraction" class="p-3.5 rounded-xl bg-[var(--bg-sec)] border theme-border space-y-3">
+            <form @submit.prevent="addInteraction" class="p-3.5 rounded-xl theme-bg-sec border theme-border space-y-3">
               <div class="text-xs font-bold uppercase tracking-wider">Catat Interaksi Baru</div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -426,7 +426,7 @@
                 v-else
                 v-for="item in interactions"
                 :key="item.id"
-                class="p-3.5 rounded-xl border theme-border bg-[var(--bg)] space-y-2 text-xs"
+                class="p-3.5 rounded-xl border theme-border theme-bg space-y-2 text-xs"
               >
                 <div class="flex items-center justify-between gap-2">
                   <div class="flex items-center gap-2">
@@ -440,7 +440,7 @@
                   </button>
                 </div>
 
-                <div v-if="item.message_sent" class="p-2.5 rounded bg-[var(--bg-sec)] whitespace-pre-line">
+                <div v-if="item.message_sent" class="p-2.5 rounded theme-bg-sec whitespace-pre-line">
                   <span class="font-bold text-[10px] uppercase theme-text-muted block mb-0.5">Dikirim:</span>
                   {{ item.message_sent }}
                 </div>

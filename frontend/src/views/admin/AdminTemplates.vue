@@ -22,7 +22,7 @@
           class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-colors"
           :class="selectedCategory === cat
             ? 'bg-[var(--accent)] text-[var(--bg)] border-[var(--accent)]'
-            : 'bg-[var(--bg)] theme-border theme-text-muted hover:theme-text'"
+            : 'theme-bg theme-border theme-text-muted hover:theme-text'"
         >
           {{ cat }}
         </button>
@@ -57,14 +57,14 @@
         <div class="space-y-2.5">
           <div class="flex items-start justify-between gap-2">
             <div>
-              <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-[var(--bg-sec)] theme-text-muted">
+              <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded theme-bg-sec theme-text-muted">
                 {{ tpl.category }}
               </span>
               <h3 class="font-bold text-sm mt-1.5">{{ tpl.name }}</h3>
             </div>
           </div>
 
-          <div class="p-3 rounded-lg bg-[var(--bg-sec)] border theme-border text-xs leading-relaxed whitespace-pre-line select-all">
+          <div class="p-3 rounded-lg theme-bg-sec border theme-border text-xs leading-relaxed whitespace-pre-line select-all">
             {{ tpl.content }}
           </div>
         </div>
@@ -102,7 +102,7 @@
     <!-- MODAL CREATE / EDIT TEMPLATE -->
     <Teleport to="body">
       <div v-if="showModal" class="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
-        <div class="card w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl p-5 space-y-4 bg-[var(--bg)] max-h-[90dvh] overflow-y-auto">
+        <div class="card w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl p-5 space-y-4 theme-bg max-h-[90dvh] overflow-y-auto">
           <div class="flex items-center justify-between">
             <h3 class="text-base font-bold">{{ editingId ? 'Edit Template' : 'Tambah Template Baru' }}</h3>
             <button @click="showModal = false" class="p-1 theme-text-muted hover:theme-text">

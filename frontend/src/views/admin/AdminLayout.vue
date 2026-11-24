@@ -1,8 +1,11 @@
 <template>
-  <div class="min-h-[100dvh] flex bg-[var(--bg-sec)] theme-text">
+  <div class="min-h-[100dvh] flex theme-bg-sec theme-text" style="background-color: var(--bg-sec, #09090b);">
 
     <!-- DESKTOP SIDEBAR -->
-    <aside class="w-64 border-r theme-border bg-[var(--bg)] hidden md:flex flex-col shrink-0 h-[100dvh] sticky top-0">
+    <aside
+      class="w-64 border-r theme-border theme-bg hidden md:flex flex-col shrink-0 h-[100dvh] sticky top-0"
+      style="background-color: var(--bg, var(--bg-primary, #0f0f11));"
+    >
       <div class="h-16 flex items-center justify-between px-6 border-b theme-border">
         <div>
           <span class="font-black text-base tracking-widest uppercase block leading-none">Ixiera<span class="text-[var(--accent)]">.</span></span>
@@ -18,16 +21,16 @@
           </div>
           <RouterLink
             to="/admin"
-            exact-active-class="bg-[var(--bg-sec)] font-bold theme-text border theme-border"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm theme-text-muted hover:theme-text hover:bg-[var(--bg-sec)] transition-colors"
+            exact-active-class="theme-bg-sec font-bold theme-text border theme-border"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm theme-text-muted hover:theme-text transition-colors"
           >
             <BarChart3 class="w-4 h-4 shrink-0" />
             <span>Overview</span>
           </RouterLink>
           <RouterLink
             to="/admin/users"
-            active-class="bg-[var(--bg-sec)] font-bold theme-text border theme-border"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm theme-text-muted hover:theme-text hover:bg-[var(--bg-sec)] transition-colors"
+            active-class="theme-bg-sec font-bold theme-text border theme-border"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm theme-text-muted hover:theme-text transition-colors"
           >
             <Users class="w-4 h-4 shrink-0" />
             <span>Users & Plans</span>
@@ -41,24 +44,24 @@
           </div>
           <RouterLink
             to="/admin/crm"
-            exact-active-class="bg-[var(--bg-sec)] font-bold theme-text border theme-border"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm theme-text-muted hover:theme-text hover:bg-[var(--bg-sec)] transition-colors"
+            exact-active-class="theme-bg-sec font-bold theme-text border theme-border"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm theme-text-muted hover:theme-text transition-colors"
           >
             <MessageSquare class="w-4 h-4 shrink-0" />
             <span>Pipeline Leads</span>
           </RouterLink>
           <RouterLink
             to="/admin/templates"
-            active-class="bg-[var(--bg-sec)] font-bold theme-text border theme-border"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm theme-text-muted hover:theme-text hover:bg-[var(--bg-sec)] transition-colors"
+            active-class="theme-bg-sec font-bold theme-text border theme-border"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm theme-text-muted hover:theme-text transition-colors"
           >
             <FileText class="w-4 h-4 shrink-0" />
             <span>Outreach Templates</span>
           </RouterLink>
           <RouterLink
             to="/admin/analytics"
-            active-class="bg-[var(--bg-sec)] font-bold theme-text border theme-border"
-            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm theme-text-muted hover:theme-text hover:bg-[var(--bg-sec)] transition-colors"
+            active-class="theme-bg-sec font-bold theme-text border theme-border"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm theme-text-muted hover:theme-text transition-colors"
           >
             <TrendingUp class="w-4 h-4 shrink-0" />
             <span>Sales Analytics</span>
@@ -69,7 +72,7 @@
       <div class="p-4 border-t theme-border">
         <RouterLink
           to="/dashboard"
-          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold theme-text-muted hover:theme-text hover:bg-[var(--bg-sec)] transition-colors"
+          class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold theme-text-muted hover:theme-text transition-colors"
         >
           <ArrowLeft class="w-4 h-4 shrink-0" />
           <span>Kembali ke App</span>
@@ -79,15 +82,18 @@
 
     <!-- MOBILE DRAWER SIDEBAR -->
     <Teleport to="body">
-      <div v-if="drawerOpen" class="fixed inset-0 z-[90] md:hidden flex">
-        <!-- Backdrop -->
+      <div v-if="drawerOpen" class="fixed inset-0 z-[999] md:hidden flex">
+        <!-- Solid Dark Backdrop -->
         <div
           @click="drawerOpen = false"
-          class="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+          class="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity"
         ></div>
 
-        <!-- Drawer Panel -->
-        <aside class="relative w-72 max-w-[82vw] bg-[var(--bg)] border-r theme-border h-[100dvh] flex flex-col z-10 shadow-2xl">
+        <!-- Opaque Drawer Panel -->
+        <aside
+          class="relative w-72 max-w-[82vw] theme-bg theme-text border-r theme-border h-[100dvh] flex flex-col z-10 shadow-2xl"
+          style="background-color: var(--bg, var(--bg-primary, #0f0f11));"
+        >
           <div class="h-14 flex items-center justify-between px-5 border-b theme-border shrink-0">
             <div>
               <span class="font-black text-base tracking-widest uppercase block leading-none">Ixiera<span class="text-[var(--accent)]">.</span></span>
@@ -95,10 +101,10 @@
             </div>
             <button
               @click="drawerOpen = false"
-              class="p-2 rounded-lg theme-text-muted hover:theme-text hover:bg-[var(--bg-sec)]"
+              class="p-2 rounded-lg theme-bg-sec border theme-border theme-text"
               aria-label="Tutup menu"
             >
-              <X class="w-5 h-5" />
+              <X class="w-4 h-4" />
             </button>
           </div>
 
@@ -111,7 +117,7 @@
               <RouterLink
                 to="/admin"
                 @click="drawerOpen = false"
-                exact-active-class="bg-[var(--bg-sec)] font-bold theme-text border theme-border"
+                exact-active-class="theme-bg-sec font-bold theme-text border theme-border"
                 class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm theme-text-muted hover:theme-text transition-colors"
               >
                 <BarChart3 class="w-4 h-4 shrink-0" />
@@ -120,7 +126,7 @@
               <RouterLink
                 to="/admin/users"
                 @click="drawerOpen = false"
-                active-class="bg-[var(--bg-sec)] font-bold theme-text border theme-border"
+                active-class="theme-bg-sec font-bold theme-text border theme-border"
                 class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm theme-text-muted hover:theme-text transition-colors"
               >
                 <Users class="w-4 h-4 shrink-0" />
@@ -136,7 +142,7 @@
               <RouterLink
                 to="/admin/crm"
                 @click="drawerOpen = false"
-                exact-active-class="bg-[var(--bg-sec)] font-bold theme-text border theme-border"
+                exact-active-class="theme-bg-sec font-bold theme-text border theme-border"
                 class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm theme-text-muted hover:theme-text transition-colors"
               >
                 <MessageSquare class="w-4 h-4 shrink-0" />
@@ -145,7 +151,7 @@
               <RouterLink
                 to="/admin/templates"
                 @click="drawerOpen = false"
-                active-class="bg-[var(--bg-sec)] font-bold theme-text border theme-border"
+                active-class="theme-bg-sec font-bold theme-text border theme-border"
                 class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm theme-text-muted hover:theme-text transition-colors"
               >
                 <FileText class="w-4 h-4 shrink-0" />
@@ -154,7 +160,7 @@
               <RouterLink
                 to="/admin/analytics"
                 @click="drawerOpen = false"
-                active-class="bg-[var(--bg-sec)] font-bold theme-text border theme-border"
+                active-class="theme-bg-sec font-bold theme-text border theme-border"
                 class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm theme-text-muted hover:theme-text transition-colors"
               >
                 <TrendingUp class="w-4 h-4 shrink-0" />
@@ -167,7 +173,7 @@
             <RouterLink
               to="/dashboard"
               @click="drawerOpen = false"
-              class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold theme-text-muted hover:theme-text bg-[var(--bg-sec)]"
+              class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-bold theme-text theme-bg-sec border theme-border"
             >
               <ArrowLeft class="w-4 h-4 shrink-0" />
               <span>Kembali ke App Utama</span>
@@ -180,12 +186,15 @@
     <!-- MAIN CONTENT AREA -->
     <main class="flex-1 min-w-0 h-[100dvh] overflow-y-auto flex flex-col">
 
-      <!-- MOBILE TOP BAR -->
-      <header class="md:hidden h-14 border-b theme-border bg-[var(--bg)] sticky top-0 z-20 shrink-0 px-4 flex items-center justify-between gap-3">
+      <!-- SOLID MOBILE TOP BAR -->
+      <header
+        class="md:hidden h-14 border-b theme-border theme-bg sticky top-0 z-20 shrink-0 px-4 flex items-center justify-between gap-3"
+        style="background-color: var(--bg, var(--bg-primary, #0f0f11));"
+      >
         <div class="flex items-center gap-3 min-w-0">
           <button
             @click="drawerOpen = true"
-            class="p-2 -ml-2 rounded-lg border theme-border bg-[var(--bg-sec)] theme-text active:scale-95 transition-transform"
+            class="p-2 -ml-2 rounded-lg border theme-border theme-bg-sec theme-text active:scale-95 transition-transform"
             aria-label="Buka sidebar"
           >
             <Menu class="w-5 h-5" />
@@ -202,7 +211,7 @@
 
         <RouterLink
           to="/dashboard"
-          class="text-xs font-bold px-2.5 py-1.5 rounded-lg border theme-border theme-text-muted hover:theme-text shrink-0"
+          class="text-xs font-bold px-2.5 py-1.5 rounded-lg border theme-border theme-bg-sec theme-text shrink-0"
         >
           App
         </RouterLink>

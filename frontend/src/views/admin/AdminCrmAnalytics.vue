@@ -62,7 +62,7 @@
               <span class="font-bold text-sm">{{ row.channel }}</span>
               <span class="text-xs font-bold text-emerald-500">{{ row.paid }} Paid ({{ row.paidRate }}%)</span>
             </div>
-            <div class="grid grid-cols-3 gap-2 text-xs bg-[var(--bg-sec)] p-2.5 rounded-lg">
+            <div class="grid grid-cols-3 gap-2 text-xs theme-bg-sec p-2.5 rounded-lg">
               <div>
                 <div class="text-[10px] theme-text-muted">Leads</div>
                 <div class="font-bold">{{ row.total }}</div>
@@ -82,7 +82,7 @@
         <!-- Desktop Table -->
         <div class="hidden md:block overflow-x-auto">
           <table class="w-full text-left text-sm">
-            <thead class="bg-[var(--bg-sec)] border-b theme-border text-xs uppercase theme-text-muted">
+            <thead class="theme-bg-sec border-b theme-border text-xs uppercase theme-text-muted">
               <tr>
                 <th class="p-4 font-bold">Outreach Channel</th>
                 <th class="p-4 font-bold text-right">Total Leads</th>
@@ -93,7 +93,7 @@
               </tr>
             </thead>
             <tbody class="divide-y theme-border">
-              <tr v-for="row in channelBreakdown" :key="row.channel" class="hover:bg-[var(--bg-sec)] transition-colors">
+              <tr v-for="row in channelBreakdown" :key="row.channel" class="hover:theme-bg-sec transition-colors">
                 <td class="p-4 font-bold">{{ row.channel }}</td>
                 <td class="p-4 text-right">{{ row.total }}</td>
                 <td class="p-4 text-right">{{ row.replied }} ({{ row.replyRate }}%)</td>
@@ -116,7 +116,7 @@
                 <span class="font-medium">{{ item.label }}</span>
                 <span class="font-bold">{{ item.count }} ({{ item.pct }}%)</span>
               </div>
-              <div class="w-full h-2 rounded-full bg-[var(--bg-sec)] overflow-hidden">
+              <div class="w-full h-2 rounded-full theme-bg-sec overflow-hidden">
                 <div class="h-full bg-[var(--accent)] rounded-full" :style="{ width: item.pct + '%' }"></div>
               </div>
             </div>
@@ -131,7 +131,7 @@
                 <span class="font-medium">{{ item.label }}</span>
                 <span class="font-bold">{{ item.count }} ({{ item.pct }}%)</span>
               </div>
-              <div class="w-full h-2 rounded-full bg-[var(--bg-sec)] overflow-hidden">
+              <div class="w-full h-2 rounded-full theme-bg-sec overflow-hidden">
                 <div class="h-full bg-[var(--accent)] rounded-full" :style="{ width: item.pct + '%' }"></div>
               </div>
             </div>
