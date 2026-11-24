@@ -351,11 +351,13 @@ async def sync_profile_and_metrics(db, client, acc_id: str, token: str):
         res = await client.get(prof_url, timeout=10.0)
         if res.status_code == 200:
             data = res.json()
-            db.schema('threads').from_('threads_accounts').update({
+            update_payload = {
                 "username": data.get("username"),
-                "profile_picture_url": data.get("threads_profile_picture_url"),
-                "biography": data.get("threads_biography")
-            }).eq("id", acc_id).execute()
+                "last_refresh_at": datetime.now(timezone.utc).isoformat(),
+            }
+            if data.get("threads_profile_picture_url"):
+                update_payload["profile_picture_url"] = data.get("threads_profile_picture_url")
+            db.schema('threads').from_('threads_accounts').update(update_payload).eq("id", acc_id).execute()
     except Exception as e:
         logging.error(f"[Sync Profile] Error {acc_id}: {e}")
 

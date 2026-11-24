@@ -461,19 +461,16 @@ async function loadAllDashboardData() {
     const account = await accountStore.ensureActiveAccount()
     if (account) {
       currentAccountId.value = account.id
-      lastSyncedAt.value = account.last_synced_at
+      lastSyncedAt.value = account.last_refresh_at || account.last_synced_at || null
       
-      if (!account.last_synced_at) {
-        await accountStore.syncAccountData(account.id, 2000)
+      // Cache-first: hanya sync otomatis jika akun benar-benar baru dan belum pernah refresh sama sekali
+      if (!account.last_refresh_at) {
+        await accountStore.syncAccountData(account.id, 1800)
+        const updated = accountStore.activeAccount
+        if (updated) {
+          lastSyncedAt.value = updated.last_refresh_at || null
+        }
       }
-      // Sinkronkan avatar & profil di latar belakang tanpa menahan cache DB
-      fetch('https://threads-automation-r9so.onrender.com/api/v1/metrics/sync-profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ account_id: account.id })
-      })
-        .then(() => accountStore.fetchAccounts(true))
-        .catch(err => console.log('Profile sync error:', err))
 
       await Promise.all([fetchQueueMetricsAndFailed(account.id), fetchDailyInsights(account.id)])
 
@@ -558,10 +555,13 @@ async function loadAllDashboardData() {
         }
       } catch (e) { console.warn('[dashboard] best time', e) }
     }
-    const { data: analyticsData, error: analyticsErr } = await supabase.functions.invoke('get-analytics', { body: account ? { account_id: account.id } : {} })
-    if (!analyticsErr && analyticsData?.success) {
-      if (analyticsData.overview) overview.value = analyticsData.overview
-      if (analyticsData.all_posts) allPosts.value = analyticsData.all_posts
+    if (account) {
+      const ovRes = await fetch(`https://threads-automation-r9so.onrender.com/api/v1/analytics/overview/${account.id}`)
+      const analyticsData = await ovRes.json()
+      if (analyticsData?.success) {
+        if (analyticsData.overview) overview.value = analyticsData.overview
+        if (analyticsData.all_posts) allPosts.value = analyticsData.all_posts
+      }
     }
 
     // Override total_replies: exclude own replies (edge function gak filter)

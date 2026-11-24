@@ -631,3 +631,102 @@ async def get_followers_stats(account_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+
+@router.get("/overview/{account_id}")
+async def get_account_overview_cached(account_id: str):
+    db = get_supabase()
+    sp_res = (
+        db.schema("threads")
+        .from_("scheduled_posts")
+        .select("id, text, published_media_id, scheduled_for, created_at")
+        .eq("account_id", account_id)
+        .eq("status", "published")
+        .execute()
+    )
+    posts_res = (
+        db.schema("threads")
+        .from_("posts")
+        .select("id, threads_media_id, text, permalink, posted_at, created_at, post_metrics(views, likes, replies, reposts, quotes, snapshot_label)")
+        .eq("account_id", account_id)
+        .execute()
+    )
+
+    sp_map = {
+        str(row["published_media_id"]): row
+        for row in (sp_res.data or [])
+        if row.get("published_media_id")
+    }
+
+    total_views = total_likes = total_replies = total_reposts = 0
+    formatted_posts = []
+
+    for p in (posts_res.data or []):
+        media_id = str(p.get("threads_media_id") or "")
+        sp = sp_map.get(media_id)
+        metrics_arr = [m for m in (p.get("post_metrics") or []) if m]
+        latest = next((m for m in metrics_arr if m.get("snapshot_label") == "latest"), None)
+        if not latest and metrics_arr:
+            latest = metrics_arr[0]
+        if not latest:
+            latest = {"views": 0, "likes": 0, "replies": 0, "reposts": 0, "quotes": 0}
+
+        v = latest.get("views") or 0
+        l = latest.get("likes") or 0
+        r = latest.get("replies") or 0
+        rp = latest.get("reposts") or 0
+
+        total_views += v
+        total_likes += l
+        total_replies += r
+        total_reposts += rp
+
+        er = ((l + r + rp) / v * 100) if v > 0 else 0.0
+        resolved_text = (sp.get("text") if sp else None) or p.get("text") or f"Post Without Text (ID: {media_id[:8] or 'Unknown'})"
+        resolved_permalink = p.get("permalink") or (f"https://www.threads.com/post/{media_id}" if media_id else None)
+        resolved_date = (sp.get("scheduled_for") if sp else None) or p.get("posted_at") or p.get("created_at")
+
+        formatted_posts.append({
+            "id": p.get("id"),
+            "threads_media_id": media_id,
+            "text": resolved_text,
+            "permalink": resolved_permalink,
+            "posted_at": resolved_date,
+            "metrics": latest,
+            "engagement_rate": round(er, 2),
+        })
+
+    daily_res = (
+        db.schema("threads")
+        .from_("account_insights_daily")
+        .select("*")
+        .eq("account_id", account_id)
+        .order("date", desc=True)
+        .limit(90)
+        .execute()
+    )
+    daily_rows = daily_res.data or []
+
+    if total_views == 0 and total_likes == 0 and daily_rows:
+        for d in daily_rows:
+            total_views += d.get("views") or 0
+            total_likes += d.get("likes") or 0
+            total_replies += d.get("replies") or 0
+            total_reposts += d.get("reposts") or 0
+
+    formatted_posts.sort(key=lambda x: str(x.get("posted_at") or ""), reverse=True)
+    avg_er = round(sum(p["engagement_rate"] for p in formatted_posts) / len(formatted_posts), 2) if formatted_posts else 0.0
+
+    return {
+        "success": True,
+        "overview": {
+            "total_posts": max(len(sp_res.data or []), len(formatted_posts)),
+            "total_views": total_views,
+            "total_likes": total_likes,
+            "total_replies": total_replies,
+            "total_reposts": total_reposts,
+            "avg_engagement_rate": avg_er,
+        },
+        "all_posts": formatted_posts[:50],
+        "daily_trends": list(reversed(daily_rows)),
+    }

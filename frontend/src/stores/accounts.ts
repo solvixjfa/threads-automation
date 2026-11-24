@@ -10,6 +10,7 @@ export interface ThreadsAccount {
   profile_picture_url: string | null
   connection_status: string
   token_expires_at: string | null
+  last_refresh_at?: string | null
   last_synced_at?: string | null
   last_error?: string | null
   kill_switch: boolean
@@ -85,8 +86,10 @@ export const useAccountStore = defineStore('accounts', () => {
 
     try {
       await Promise.all([
-        supabase.functions.invoke('worker-metrics', {
-          body: { account_id: targetId },
+        fetch('https://threads-automation-r9so.onrender.com/api/v1/threads-extra/sync-account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ account_id: targetId }),
         }),
         new Promise(resolve => setTimeout(resolve, minDelayMs)),
       ])
