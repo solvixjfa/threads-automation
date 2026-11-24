@@ -247,7 +247,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { supabase } from '../../lib/supabase'
 import { useNotify } from '../../composables/useNotify'
