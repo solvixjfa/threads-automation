@@ -64,9 +64,9 @@
             >
               Gunakan Akun
             </button>
-            <button @click="handleConnect" class="btn btn-secondary text-xs">
+            <div class="flex items-center gap-2"><button @click="handleConnect" class="btn btn-secondary text-xs">
               Reconnect
-            </button>
+            </button><button type="button" :disabled="disconnectingId === acc.id" @click="handleDisconnectAccount(acc)" class="px-3 py-1.5 rounded-lg text-xs font-medium border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition">{{ disconnectingId === acc.id ? 'Memutus...' : 'Putus' }}</button></div>
           </div>
         </div>
 
@@ -149,6 +149,100 @@
         Logout
       </button>
     </div>
+  
+    <!-- Zona Bahaya: Hapus Akun & Hapus Full Data -->
+    <div class="rounded-2xl border border-red-500/25 bg-zinc-900/60 p-5 space-y-4 mt-6">
+      <div>
+        <h3 class="text-base font-semibold text-red-400">Zona Bahaya</h3>
+        <p class="text-xs text-zinc-400 mt-1">
+          Kelola penghapusan akun Ixiera dan data yang terhubung. Tindakan ini bersifat permanen.
+        </p>
+      </div>
+
+      <div class="space-y-3 pt-1">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3.5 rounded-xl border border-zinc-800 bg-zinc-950/60">
+          <div>
+            <p class="text-sm font-medium text-zinc-100">Hapus Akun Saja</p>
+            <p class="text-xs text-zinc-400 mt-0.5">
+              Hapus akun login Ixiera dan putus koneksi Threads. Riwayat analitik sistem tetap disimpan secara anonim.
+            </p>
+          </div>
+          <button
+            type="button"
+            @click="openDeleteModal('account_only')"
+            class="shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold border border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition"
+          >
+            Hapus Akun Saja
+          </button>
+        </div>
+
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3.5 rounded-xl border border-red-500/30 bg-red-950/20">
+          <div>
+            <p class="text-sm font-medium text-red-300">Hapus Full Data</p>
+            <p class="text-xs text-zinc-400 mt-0.5">
+              Hapus permanen akun Ixiera beserta seluruh akun Threads, jadwal konten, auto-reply, knowledge base, dan riwayat kredit.
+            </p>
+          </div>
+          <button
+            type="button"
+            @click="openDeleteModal('full_data')"
+            class="shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold bg-red-600 text-white hover:bg-red-500 transition"
+          >
+            Hapus Full Data
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Konfirmasi Hapus Akun -->
+    <div
+      v-if="deleteModalMode"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+    >
+      <div class="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-5 space-y-4 shadow-2xl">
+        <h4 class="text-base font-semibold text-white">
+          {{ deleteModalMode === 'full_data' ? 'Konfirmasi Hapus Full Data' : 'Konfirmasi Hapus Akun Saja' }}
+        </h4>
+        <p class="text-xs text-zinc-300 leading-relaxed">
+          {{
+            deleteModalMode === 'full_data'
+              ? 'Seluruh data akun, koneksi Threads, jadwal post, auto-reply, knowledge base, dan sisa kredit akan dihapus permanen dan tidak bisa dikembalikan.'
+              : 'Akun login Ixiera Anda akan dihapus dan koneksi Threads diputus secara permanen.'
+          }}
+        </p>
+        <div>
+          <label class="block text-xs text-zinc-400 mb-1.5">
+            Ketik <span class="font-bold text-red-400">HAPUS</span> untuk melanjutkan:
+          </label>
+          <input
+            v-model="deleteConfirmInput"
+            type="text"
+            placeholder="HAPUS"
+            class="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-white focus:border-red-500 focus:outline-none"
+          />
+        </div>
+        <p v-if="deleteErrorMsg" class="text-xs text-red-400">{{ deleteErrorMsg }}</p>
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button
+            type="button"
+            :disabled="isDeletingAccount"
+            @click="deleteModalMode = null"
+            class="px-4 py-2 rounded-xl text-xs font-medium border border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            :disabled="deleteConfirmInput !== 'HAPUS' || isDeletingAccount"
+            @click="executeAccountDeletion"
+            class="px-4 py-2 rounded-xl text-xs font-semibold bg-red-600 text-white hover:bg-red-500 disabled:opacity-40"
+          >
+            {{ isDeletingAccount ? 'Menghapus...' : 'Konfirmasi Hapus' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -222,4 +316,63 @@ onMounted(async () => {
     router.replace({ path: '/profile/account', query: {} })
   }
 })
+
+
+const disconnectingId = ref<string | null>(null)
+const deleteModalMode = ref<'account_only' | 'full_data' | null>(null)
+const deleteConfirmInput = ref('')
+const isDeletingAccount = ref(false)
+const deleteErrorMsg = ref('')
+
+function openDeleteModal(mode: 'account_only' | 'full_data') {
+  deleteModalMode.value = mode
+  deleteConfirmInput.value = ''
+  deleteErrorMsg.value = ''
+}
+
+async function handleDisconnectAccount(accItem: { id: string; username?: string }) {
+  if (!accItem?.id) return
+  const uname = accItem.username ? `@${accItem.username}` : 'akun ini'
+  if (!window.confirm(`Putus koneksi ${uname} dari Ixiera?`)) return
+
+  disconnectingId.value = accItem.id
+  try {
+    const { data, error } = await supabase.functions.invoke('delete-account', {
+      body: { mode: 'disconnect_account', account_id: accItem.id },
+    })
+    if (error || data?.error) {
+      throw new Error(data?.error || error?.message || 'Gagal memutus koneksi akun')
+    }
+    if (localStorage.getItem('ixiera_active_account_id') === accItem.id) {
+      localStorage.removeItem('ixiera_active_account_id')
+    }
+    window.location.reload()
+  } catch (err: any) {
+    alert(err?.message || 'Gagal memutus koneksi akun Threads')
+  } finally {
+    disconnectingId.value = null
+  }
+}
+
+async function executeAccountDeletion() {
+  if (!deleteModalMode.value || deleteConfirmInput.value !== 'HAPUS') return
+  isDeletingAccount.value = true
+  deleteErrorMsg.value = ''
+  try {
+    const { data, error } = await supabase.functions.invoke('delete-account', {
+      body: { mode: deleteModalMode.value },
+    })
+    if (error || data?.error) {
+      throw new Error(data?.error || error?.message || 'Gagal menghapus akun')
+    }
+    localStorage.clear()
+    await supabase.auth.signOut()
+    window.location.href = '/login'
+  } catch (err: any) {
+    deleteErrorMsg.value = err?.message || 'Terjadi kesalahan saat menghapus akun'
+  } finally {
+    isDeletingAccount.value = false
+  }
+}
+
 </script>
