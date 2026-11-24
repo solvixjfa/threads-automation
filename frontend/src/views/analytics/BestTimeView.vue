@@ -161,7 +161,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { supabase } from '../../lib/supabase'
 import { useI18n } from 'vue-i18n'
 import { useAccountStore } from '../../stores/accounts'
@@ -252,5 +252,14 @@ async function loadData() {
     confidence.value = data.confidence || 'low'
   } catch (err: any) { error.value = err.message } finally { loading.value = false }
 }
+watch(
+  () => [accountStore.activeAccountId, accountStore.isSyncing] as const,
+  ([newId, syncing], [oldId, wasSyncing]) => {
+    if (!newId || syncing) return
+    if (newId !== oldId || wasSyncing) {
+      loadData()
+    }
+  }
+)
 onMounted(loadData)
 </script>

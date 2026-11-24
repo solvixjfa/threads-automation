@@ -72,7 +72,7 @@ serve(async (req) => {
     const longToken = longTokenData.access_token;
 
     // 4. Ambil Profil User
-    const profileRes = await fetch(`https://graph.threads.net/v1.0/me?fields=id,username&access_token=${longToken}`);
+    const profileRes = await fetch(`https://graph.threads.net/v1.0/me?fields=id,username,threads_profile_picture_url&access_token=${longToken}`);
     const profileData = await profileRes.json();
     if (profileData.error) throw new Error(profileData.error.message || JSON.stringify(profileData.error));
 
@@ -173,6 +173,7 @@ serve(async (req) => {
         user_id: stateData.user_id,
         threads_user_id: profileData.id,
         username: profileData.username,
+        profile_picture_url: profileData.threads_profile_picture_url || null,
         connection_status: "connected",
         connected_at: new Date().toISOString(),
         token_expires_at: expiresAt,

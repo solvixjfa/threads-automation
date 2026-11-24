@@ -39,6 +39,8 @@ export const useAccountStore = defineStore('accounts', () => {
   const activeAccountId = ref<string>(localStorage.getItem(STORAGE_KEY) || '')
   const loading = ref(false)
   const initialized = ref(false)
+  const isSyncing = ref(false)
+  const syncStatusText = ref('')
   const profilePlan = ref<string>('free')
   const profileRole = ref<string>('user')
 
@@ -72,10 +74,39 @@ export const useAccountStore = defineStore('accounts', () => {
     return accounts.value.length < maxAccounts.value
   })
 
-  function setActiveAccount(id: string) {
+  async function syncAccountData(accountId?: string, minDelayMs = 2500) {
+    const targetId = accountId || activeAccountId.value
+    if (!targetId) return
+    const targetAcc = accounts.value.find(a => a.id === targetId)
+    isSyncing.value = true
+    syncStatusText.value = targetAcc?.username
+      ? `Menyinkronkan data @${targetAcc.username}...`
+      : 'Menyinkronkan data akun...'
+
+    try {
+      await Promise.all([
+        supabase.functions.invoke('worker-metrics', {
+          body: { account_id: targetId },
+        }),
+        new Promise(resolve => setTimeout(resolve, minDelayMs)),
+      ])
+      await fetchAccounts(true)
+    } catch (err) {
+      console.warn('[useAccountStore] syncAccountData warning:', err)
+    } finally {
+      isSyncing.value = false
+      syncStatusText.value = ''
+    }
+  }
+
+  async function setActiveAccount(id: string, withSync = false) {
     if (!id) return
+    const changed = activeAccountId.value !== id
     activeAccountId.value = id
     localStorage.setItem(STORAGE_KEY, id)
+    if (withSync && changed) {
+      await syncAccountData(id, 2500)
+    }
   }
 
   async function fetchAccounts(force = false): Promise<ThreadsAccount[]> {
@@ -115,7 +146,8 @@ export const useAccountStore = defineStore('accounts', () => {
       if (list.length > 0) {
         const exists = list.some(a => a.id === activeAccountId.value)
         if (!exists) {
-          setActiveAccount(list[0].id)
+          activeAccountId.value = list[0].id
+          localStorage.setItem(STORAGE_KEY, list[0].id)
         }
       } else {
         activeAccountId.value = ''
@@ -143,6 +175,8 @@ export const useAccountStore = defineStore('accounts', () => {
     accounts.value = []
     activeAccountId.value = ''
     initialized.value = false
+    isSyncing.value = false
+    syncStatusText.value = ''
     localStorage.removeItem(STORAGE_KEY)
   }
 
@@ -152,11 +186,14 @@ export const useAccountStore = defineStore('accounts', () => {
     activeAccount,
     loading,
     initialized,
+    isSyncing,
+    syncStatusText,
     effectivePlan,
     effectiveRole,
     maxAccounts,
     canAddAccount,
     setActiveAccount,
+    syncAccountData,
     fetchAccounts,
     ensureActiveAccount,
     reset,

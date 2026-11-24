@@ -341,7 +341,13 @@
     "heatmap_high": "Tinggi",
     "heatmap_day": "Hari",
     "hourly_trend_sub": "Tren engagement berdasarkan jam (WIB)",
-    "schedule_popup_title": "Jadwalkan Postingan"
+    "schedule_popup_title": "Jadwalkan Postingan",
+    "lowdata_title": "Data Masih Sedikit",
+    "lowdata_desc": "Terus posting minimal 2 minggu untuk membuka rekomendasi jam terbaik personal. Sementara, ini benchmark industri Threads:",
+    "industry_best": "Jam Terbaik Industri:",
+    "industry_note": "Benchmark industri Threads: pagi hari kerja (09:00-11:00 WIB) dan malam akhir pekan memiliki engagement tertinggi.",
+    "length_industry_best": "Panjang Optimal Industri:",
+    "length_industry_note": "Benchmark industri Threads: 150-250 karakter biasanya paling optimal."
   },
   "settings": {
     "title": "Pengaturan",

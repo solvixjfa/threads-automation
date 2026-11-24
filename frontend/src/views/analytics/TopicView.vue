@@ -97,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { supabase } from '../../lib/supabase'
 import { useNotify } from '../../composables/useNotify'
 import { useI18n } from 'vue-i18n'
@@ -233,5 +233,14 @@ async function enhanceNames() {
   }
 }
 
+watch(
+  () => [accountStore.activeAccountId, accountStore.isSyncing] as const,
+  ([newId, syncing], [oldId, wasSyncing]) => {
+    if (!newId || syncing) return
+    if (newId !== oldId || wasSyncing) {
+      loadData()
+    }
+  }
+)
 onMounted(loadData)
 </script>

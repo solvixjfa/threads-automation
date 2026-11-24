@@ -26,18 +26,32 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    console.log("[worker-metrics] Starting metrics sync worker...");
+    let targetAccountId = "";
+    if (req.method !== "GET") {
+      try {
+        const body = await req.json();
+        targetAccountId = body?.account_id || "";
+      } catch {
+        // Ignore empty body
+      }
+    }
 
-    const { data: accounts, error: accErr } = await supabase
+    let accQuery = supabase
       .schema("threads")
       .from("threads_accounts")
       .select("*")
       .eq("connection_status", "connected");
 
+    if (targetAccountId) {
+      accQuery = accQuery.eq("id", targetAccountId);
+    }
+
+    const { data: accounts, error: accErr } = await accQuery;
     if (accErr) console.error("[worker-metrics] Error fetching accounts:", accErr.message);
     if (!accounts || accounts.length === 0) {
-      return new Response(JSON.stringify({ message: "Tidak ada akun connected." }), {
-        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ success: true, message: "Tidak ada akun connected." }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -45,7 +59,6 @@ Deno.serve(async (req) => {
     let skippedPostsCount = 0;
     let newlyDiscoveredCount = 0;
     const todayStr = new Date().toISOString().split("T")[0];
-
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -53,6 +66,87 @@ Deno.serve(async (req) => {
       const accessToken = acc.settings?.access_token;
       if (!accessToken) continue;
 
+      // 1. Sinkronkan foto profil & username terbaru dari Threads API
+      try {
+        const meRes = await fetchWithTimeout(
+          `https://graph.threads.net/v1.0/me?fields=id,username,threads_profile_picture_url&access_token=${accessToken}`,
+          {},
+          5000
+        );
+        const meData = await meRes.json();
+        if (meData && !meData.error) {
+          const updatePayload: Record<string, any> = {
+            last_synced_at: new Date().toISOString(),
+          };
+          if (meData.username) updatePayload.username = meData.username;
+          if (meData.threads_profile_picture_url) {
+            updatePayload.profile_picture_url = meData.threads_profile_picture_url;
+          }
+          await supabase
+            .schema("threads")
+            .from("threads_accounts")
+            .update(updatePayload)
+            .eq("id", acc.id);
+        }
+      } catch (meErr: any) {
+        console.warn(`[worker-metrics] Profile sync skipped for ${acc.username}:`, meErr.message);
+      }
+
+      // 2. Tarik daftar postingan terbaru dari Threads API (penting untuk akun baru)
+      try {
+        const mediaListUrl = `https://graph.threads.net/v1.0/me/threads?fields=id,text,permalink,timestamp&limit=25&access_token=${accessToken}`;
+        const mediaRes = await fetchWithTimeout(mediaListUrl, {}, 6000);
+        const mediaJson = await mediaRes.json();
+
+        if (Array.isArray(mediaJson?.data)) {
+          for (const item of mediaJson.data) {
+            const mediaId = String(item.id || "");
+            if (!mediaId) continue;
+
+            const { data: existingPost } = await supabase
+              .schema("threads")
+              .from("posts")
+              .select("id")
+              .eq("account_id", acc.id)
+              .eq("threads_media_id", mediaId)
+              .maybeSingle();
+
+            if (!existingPost) {
+              const postedTs = item.timestamp || new Date().toISOString();
+              await supabase.schema("threads").from("posts").insert({
+                account_id: acc.id,
+                threads_media_id: mediaId,
+                posted_at: postedTs,
+                created_at: postedTs,
+              });
+              newlyDiscoveredCount++;
+            }
+
+            const { data: existingSp } = await supabase
+              .schema("threads")
+              .from("scheduled_posts")
+              .select("id")
+              .eq("account_id", acc.id)
+              .eq("published_media_id", mediaId)
+              .maybeSingle();
+
+            if (!existingSp) {
+              await supabase.schema("threads").from("scheduled_posts").insert({
+                account_id: acc.id,
+                text: item.text || "Postingan Tanpa Teks",
+                status: "published",
+                published_media_id: mediaId,
+                scheduled_for: item.timestamp || new Date().toISOString(),
+                sequence_number: 0,
+              });
+            }
+          }
+        }
+      } catch (listErr: any) {
+        console.warn(`[worker-metrics] Media list fetch skipped for ${acc.username}:`, listErr.message);
+      }
+
+      // 3. Tarik Insights (Views, Likes, Replies, Reposts, Quotes) untuk semua post 30 hari terakhir
       const { data: allPosts } = await supabase
         .schema("threads")
         .from("posts")
@@ -74,7 +168,6 @@ Deno.serve(async (req) => {
         if (!mediaId) continue;
 
         try {
-          // 1. Tarik Insights (Views/Likes)
           const insightUrl = `https://graph.threads.net/v1.0/${mediaId}/insights?metric=views,likes,replies,reposts,quotes&access_token=${accessToken}`;
           const res = await fetchWithTimeout(insightUrl, {}, 5000);
           const resData = await res.json();
@@ -93,11 +186,21 @@ Deno.serve(async (req) => {
             accDailyReposts += metricsObj.reposts || 0;
             accDailyQuotes += metricsObj.quotes || 0;
 
-            // Update Metric
-            await supabase.schema("threads").from("post_metrics").delete().eq("post_id", post.id).eq("snapshot_label", "latest");
+            await supabase
+              .schema("threads")
+              .from("post_metrics")
+              .delete()
+              .eq("post_id", post.id)
+              .eq("snapshot_label", "latest");
+
             await supabase.schema("threads").from("post_metrics").insert({
-              post_id: post.id, snapshot_label: "latest", views: metricsObj.views || 0,
-              likes: metricsObj.likes || 0, replies: metricsObj.replies || 0, reposts: metricsObj.reposts || 0, quotes: metricsObj.quotes || 0,
+              post_id: post.id,
+              snapshot_label: "latest",
+              views: metricsObj.views || 0,
+              likes: metricsObj.likes || 0,
+              replies: metricsObj.replies || 0,
+              reposts: metricsObj.reposts || 0,
+              quotes: metricsObj.quotes || 0,
               captured_at: new Date().toISOString(),
             });
 
@@ -105,51 +208,40 @@ Deno.serve(async (req) => {
           } else {
             skippedPostsCount++;
           }
-
-          // 2. TARIK TEKS (Untuk Postingan Manual yang gak ada di scheduled_posts)
-          const { data: existingSp } = await supabase
-            .schema("threads")
-            .from("scheduled_posts")
-            .select("id")
-            .eq("published_media_id", mediaId)
-            .maybeSingle();
-
-          if (!existingSp) {
-            const detailsUrl = `https://graph.threads.net/v1.0/${mediaId}?fields=text,permalink,timestamp&access_token=${accessToken}`;
-            const detailsRes = await fetchWithTimeout(detailsUrl, {}, 5000);
-            const detailsData = await detailsRes.json();
-
-            if (detailsData && detailsData.id) {
-              // Otomatis masukin ke scheduled_posts biar kebaca di dashboard
-              await supabase.schema("threads").from("scheduled_posts").insert({
-                account_id: acc.id,
-                text: detailsData.text || "Postingan Tanpa Teks",
-                status: 'published',
-                published_media_id: mediaId,
-                scheduled_for: detailsData.timestamp || post.created_at,
-                sequence_number: 0 // Default untuk post manual
-              });
-              newlyDiscoveredCount++;
-            }
-          }
-
         } catch (apiErr: any) {
           console.error(`[worker-metrics] Error API for ${mediaId}:`, apiErr.message);
           skippedPostsCount++;
         }
       }
 
-      await supabase.schema("threads").from("account_insights_daily").upsert({
-        account_id: acc.id, date: todayStr, views: accDailyViews, likes: accDailyLikes,
-        replies: accDailyReplies, reposts: accDailyReposts, quotes: accDailyQuotes,
-      }, { onConflict: "account_id,date" });
+      await supabase.schema("threads").from("account_insights_daily").upsert(
+        {
+          account_id: acc.id,
+          date: todayStr,
+          views: accDailyViews,
+          likes: accDailyLikes,
+          replies: accDailyReplies,
+          reposts: accDailyReposts,
+          quotes: accDailyQuotes,
+        },
+        { onConflict: "account_id,date" }
+      );
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: `Synced ${syncedPostsCount} metrics, discovered ${newlyDiscoveredCount} manual posts.`, synced: syncedPostsCount, skipped: skippedPostsCount }),
+      JSON.stringify({
+        success: true,
+        message: `Synced ${syncedPostsCount} metrics, discovered ${newlyDiscoveredCount} posts.`,
+        synced: syncedPostsCount,
+        discovered: newlyDiscoveredCount,
+        skipped: skippedPostsCount,
+      }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

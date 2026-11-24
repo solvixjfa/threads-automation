@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, RouterView, RouterLink } from 'vue-router'
 import { BarChart3, Clock, Anchor, AlignLeft, Hash, ChevronRight, ChevronLeft, Smile } from 'lucide-vue-next'
 

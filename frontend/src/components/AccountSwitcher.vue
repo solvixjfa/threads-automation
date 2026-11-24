@@ -2,15 +2,16 @@
   <div ref="containerRef" class="relative w-full">
     <button
       type="button"
+      :disabled="store.isSyncing"
       @click="open = !open"
-      class="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl border theme-border bg-[var(--surface-2)] hover:border-[var(--border-strong)] transition text-left"
+      class="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl border theme-border bg-[var(--surface-2)] hover:border-[var(--border-strong)] disabled:opacity-75 transition text-left"
     >
       <div class="flex items-center gap-2.5 min-w-0">
         <div
           v-if="active?.profile_picture_url"
           class="w-7 h-7 rounded-full overflow-hidden shrink-0 border border-[var(--border)]"
         >
-          <img :src="active.profile_picture_url" class="w-full h-full object-cover" />
+          <img :src="active.profile_picture_url" referrerpolicy="no-referrer" class="w-full h-full object-cover" />
         </div>
         <div
           v-else
@@ -24,16 +25,27 @@
             {{ active?.username ? '@' + active.username : 'Hubungkan Akun' }}
           </div>
           <div class="text-[10px] theme-text-muted truncate">
-            {{ store.accounts.length }}/{{ store.maxAccounts }} akun aktif
+            {{ store.isSyncing ? 'Menyinkronkan data...' : `${store.accounts.length}/${store.maxAccounts} akun aktif` }}
           </div>
         </div>
       </div>
 
+      <RefreshCw v-if="store.isSyncing" class="w-3.5 h-3.5 theme-text-muted shrink-0 animate-spin" />
       <ChevronDown
+        v-else
         class="w-4 h-4 theme-text-muted shrink-0 transition-transform duration-150"
         :class="open ? 'rotate-180' : ''"
       />
     </button>
+
+    <!-- Banner indikator jeda sinkronisasi saat berpindah akun -->
+    <div
+      v-if="store.isSyncing"
+      class="fixed top-3 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2 px-4 py-2 rounded-full border border-zinc-700 bg-zinc-900/95 text-white text-xs font-medium shadow-2xl backdrop-blur"
+    >
+      <RefreshCw class="w-3.5 h-3.5 animate-spin text-emerald-400 shrink-0" />
+      <span>{{ store.syncStatusText || 'Menyinkronkan data akun...' }}</span>
+    </div>
 
     <div
       v-if="open"
@@ -61,7 +73,7 @@
             v-if="acc.profile_picture_url"
             class="w-6 h-6 rounded-full overflow-hidden shrink-0 border border-[var(--border)]"
           >
-            <img :src="acc.profile_picture_url" class="w-full h-full object-cover" />
+            <img :src="acc.profile_picture_url" referrerpolicy="no-referrer" class="w-full h-full object-cover" />
           </div>
           <div
             v-else
@@ -97,7 +109,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { RouterLink } from 'vue-router'
-import { ChevronDown, Check, Plus } from 'lucide-vue-next'
+import { ChevronDown, Check, Plus, RefreshCw } from 'lucide-vue-next'
 import { useAccountStore } from '../stores/accounts'
 
 const store = useAccountStore()
@@ -106,9 +118,9 @@ const containerRef = ref<HTMLElement | null>(null)
 
 const active = computed(() => store.activeAccount)
 
-function selectAccount(id: string) {
-  store.setActiveAccount(id)
+async function selectAccount(id: string) {
   open.value = false
+  await store.setActiveAccount(id, true)
 }
 
 function handleClickOutside(e: MouseEvent) {

@@ -28,7 +28,7 @@
         >
           <div class="flex items-center gap-3.5 min-w-0">
             <div v-if="acc.profile_picture_url" class="w-12 h-12 rounded-full overflow-hidden shrink-0 border theme-border">
-              <img :src="acc.profile_picture_url" alt="Profile" class="w-full h-full object-cover" />
+              <img :src="acc.profile_picture_url" referrerpolicy="no-referrer" alt="Profile" class="w-full h-full object-cover" />
             </div>
             <div v-else class="w-12 h-12 rounded-full flex items-center justify-center bg-[var(--text)] text-[var(--bg)] text-base font-black shrink-0">
               {{ acc.username ? acc.username.charAt(0).toUpperCase() : 'IX' }}

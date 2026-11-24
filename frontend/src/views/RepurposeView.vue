@@ -107,7 +107,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
 import { useNotify } from '../composables/useNotify'
@@ -248,8 +248,9 @@ function sendToComposer(text: string) {
   router.push('/content/create')
 }
 
-onMounted(async () => {
+async function initRepurposeAccount() {
   const acc = await accountStore.ensureActiveAccount()
+  recommendations.value = []
   if (acc) {
     currentAccountId.value = acc.id
     aiCredits.value = acc.credit_balance ?? 20
@@ -258,5 +259,17 @@ onMounted(async () => {
     if (acc.ai_provider) aiProvider.value = acc.ai_provider
     await Promise.all([fetchModels(), fetchRecommendations()])
   }
-})
+}
+
+watch(
+  () => [accountStore.activeAccountId, accountStore.isSyncing] as const,
+  ([newId, syncing], [oldId, wasSyncing]) => {
+    if (!newId || syncing) return
+    if (newId !== oldId || wasSyncing) {
+      initRepurposeAccount()
+    }
+  }
+)
+
+onMounted(initRepurposeAccount)
 </script>

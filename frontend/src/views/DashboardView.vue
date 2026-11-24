@@ -447,6 +447,16 @@ async function fetchDailyInsights(accountId: string) {
 async function loadAllDashboardData() {
   loading.value = true
   toastMessage.value = ''
+  allPosts.value = []
+  dailyInsights.value = []
+  failedPosts.value = []
+  trialInfo.value = null
+  nextBestTime.value = null
+  pendingRepliesCount.value = 0
+  followers.value = { current: 0, delta_7d: 0, delta_30d: 0 }
+  sentimentMix.value = { labels: [], values: [] }
+  topicMix.value = { labels: [], values: [] }
+  overview.value = { total_posts: 0, total_views: 0, total_likes: 0, total_replies: 0, total_reposts: 0, avg_engagement_rate: 0 }
   try {
     const account = await accountStore.ensureActiveAccount()
     if (account) {
@@ -543,7 +553,7 @@ async function loadAllDashboardData() {
         }
       } catch (e) { console.warn('[dashboard] best time', e) }
     }
-    const { data: analyticsData, error: analyticsErr } = await supabase.functions.invoke('get-analytics')
+    const { data: analyticsData, error: analyticsErr } = await supabase.functions.invoke('get-analytics', { body: account ? { account_id: account.id } : {} })
     if (!analyticsErr && analyticsData?.success) {
       if (analyticsData.overview) overview.value = analyticsData.overview
       if (analyticsData.all_posts) allPosts.value = analyticsData.all_posts
@@ -599,6 +609,15 @@ async function handleManualRefresh() {
 }
 
 watch(timeRange, () => applyRangeTotals())
+watch(
+  () => [accountStore.activeAccountId, accountStore.isSyncing] as const,
+  ([newId, syncing], [oldId, wasSyncing]) => {
+    if (!newId || syncing) return
+    if (newId !== oldId || wasSyncing) {
+      loadAllDashboardData()
+    }
+  }
+)
 
 onMounted(() => loadAllDashboardData())
 onUnmounted(() => {

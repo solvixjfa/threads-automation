@@ -341,7 +341,13 @@
     "heatmap_high": "High",
     "heatmap_day": "Day",
     "hourly_trend_sub": "Engagement trend by hour (WIB)",
-    "schedule_popup_title": "Schedule Post At"
+    "schedule_popup_title": "Schedule Post At",
+    "lowdata_title": "Not Enough Data Yet",
+    "lowdata_desc": "Keep posting for at least 2 weeks to unlock personalized best-time recommendations. Meanwhile, here is the Threads industry benchmark:",
+    "industry_best": "Industry Best Hours:",
+    "industry_note": "Threads industry benchmark: weekday mornings (09:00-11:00 WIB) and weekend evenings drive the highest engagement.",
+    "length_industry_best": "Industry Optimal Length:",
+    "length_industry_note": "Threads industry benchmark: 150-250 characters usually performs best."
   },
   "settings": {
     "title": "Settings",
