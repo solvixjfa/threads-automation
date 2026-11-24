@@ -120,7 +120,7 @@ const active = computed(() => store.activeAccount)
 
 async function selectAccount(id: string) {
   open.value = false
-  await store.setActiveAccount(id, true)
+  await store.setActiveAccount(id, false)
 }
 
 function handleClickOutside(e: MouseEvent) {

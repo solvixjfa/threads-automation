@@ -463,12 +463,17 @@ async function loadAllDashboardData() {
       currentAccountId.value = account.id
       lastSyncedAt.value = account.last_synced_at
       
-      // Tembak sinkron profile & metrics secara paralel
+      if (!account.last_synced_at) {
+        await accountStore.syncAccountData(account.id, 2000)
+      }
+      // Sinkronkan avatar & profil di latar belakang tanpa menahan cache DB
       fetch('https://threads-automation-r9so.onrender.com/api/v1/metrics/sync-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ account_id: account.id })
-      }).catch(err => console.log('Profile sync error:', err))
+      })
+        .then(() => accountStore.fetchAccounts(true))
+        .catch(err => console.log('Profile sync error:', err))
 
       await Promise.all([fetchQueueMetricsAndFailed(account.id), fetchDailyInsights(account.id)])
 
@@ -596,10 +601,13 @@ async function handleRetryPost(postId: string) {
 
 async function handleManualRefresh() {
   refreshing.value = true
-  toastMessage.value = 'Memuat ulang data dari database...'
+  toastMessage.value = 'Menyinkronkan data terbaru dari Threads...'
   try {
+    if (currentAccountId.value) {
+      await accountStore.syncAccountData(currentAccountId.value, 1500)
+    }
     await loadAllDashboardData()
-    toastMessage.value = 'Data berhasil dimuat ulang dari cache.'
+    toastMessage.value = 'Data berhasil disinkronkan.'
     setTimeout(() => { toastMessage.value = '' }, 3000)
   } catch (err: any) {
     toastMessage.value = 'Gagal memuat data: ' + err.message

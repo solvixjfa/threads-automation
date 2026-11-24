@@ -39,8 +39,18 @@ serve(async (req) => {
 
     if (accErr || !account) return new Response(JSON.stringify({ error: "Threads account not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { data: publishedScheduled } = await supabase.schema("threads").from("scheduled_posts").select("id, text, published_media_id, scheduled_for, created_at").eq("account_id", account.id).eq("status", "published");
-    const { data: postsWithMetrics } = await supabase.schema("threads").from("posts").select(`id, threads_media_id, created_at, post_metrics (views, likes, replies, reposts, quotes, snapshot_label)`).eq("account_id", account.id);
+    const { data: publishedScheduled } = await supabase
+      .schema("threads")
+      .from("scheduled_posts")
+      .select("id, text, published_media_id, scheduled_for, created_at")
+      .eq("account_id", account.id)
+      .eq("status", "published");
+
+    const { data: postsWithMetrics } = await supabase
+      .schema("threads")
+      .from("posts")
+      .select("id, threads_media_id, text, permalink, posted_at, created_at, post_metrics (views, likes, replies, reposts, quotes, snapshot_label)")
+      .eq("account_id", account.id);
 
     const scheduledMap = new Map();
     (publishedScheduled || []).forEach((sp: any) => {
@@ -51,39 +61,65 @@ serve(async (req) => {
 
     const formattedPosts = (postsWithMetrics || []).map((p: any) => {
       const sp = scheduledMap.get(String(p.threads_media_id));
-      const latestMetrics = p.post_metrics?.find((m: any) => m.snapshot_label === 'latest') || p.post_metrics?.[0] || { views: 0, likes: 0, replies: 0, reposts: 0, quotes: 0 };
+      const latestMetrics = p.post_metrics?.find((m: any) => m.snapshot_label === "latest") || p.post_metrics?.[0] || { views: 0, likes: 0, replies: 0, reposts: 0, quotes: 0 };
 
       totalViews += latestMetrics.views || 0;
       totalLikes += latestMetrics.likes || 0;
       totalReplies += latestMetrics.replies || 0;
       totalReposts += latestMetrics.reposts || 0;
 
-      const engagement = (latestMetrics.views > 0) ? ((latestMetrics.likes + latestMetrics.replies + latestMetrics.reposts) / latestMetrics.views) * 100 : 0;
+      const engagement = (latestMetrics.views > 0)
+        ? ((latestMetrics.likes + latestMetrics.replies + latestMetrics.reposts) / latestMetrics.views) * 100
+        : 0;
+
+      const resolvedText = sp?.text || p.text || `Post Without Text (ID: ${p.threads_media_id?.slice(0, 8) || "Unknown"})`;
+      const resolvedPermalink = p.permalink || (p.threads_media_id ? `https://www.threads.com/post/${p.threads_media_id}` : null);
+      const resolvedDate = sp?.scheduled_for || p.posted_at || p.created_at || new Date().toISOString();
 
       return {
         id: p.id,
         threads_media_id: p.threads_media_id,
-        text: sp?.text || `Post Without Text (ID: ${p.threads_media_id?.slice(0, 8) || 'Unknown'})`,
-        permalink: p.threads_media_id ? `https://www.threads.net/post/${p.threads_media_id}` : null,
-        posted_at: sp?.scheduled_for || p.created_at || new Date().toISOString(),
+        text: resolvedText,
+        permalink: resolvedPermalink,
+        posted_at: resolvedDate,
         metrics: latestMetrics,
-        engagement_rate: parseFloat(engagement.toFixed(2))
+        engagement_rate: parseFloat(engagement.toFixed(2)),
       };
     });
 
-    const { data: dailyInsights } = await supabase.schema("threads").from("account_insights_daily").select("*").eq("account_id", account.id).order("date", { ascending: false }).limit(90);
+    const { data: dailyInsights } = await supabase
+      .schema("threads")
+      .from("account_insights_daily")
+      .select("*")
+      .eq("account_id", account.id)
+      .order("date", { ascending: false })
+      .limit(90);
+
     if (totalViews === 0 && totalLikes === 0 && dailyInsights && dailyInsights.length > 0) {
-      dailyInsights.forEach((d: any) => { totalViews += d.views || 0; totalLikes += d.likes || 0; totalReplies += d.replies || 0; totalReposts += d.reposts || 0; });
+      dailyInsights.forEach((d: any) => {
+        totalViews += d.views || 0;
+        totalLikes += d.likes || 0;
+        totalReplies += d.replies || 0;
+        totalReposts += d.reposts || 0;
+      });
     }
 
     const sortedByDate = [...formattedPosts].sort((a, b) => new Date(b.posted_at).getTime() - new Date(a.posted_at).getTime());
     const overview = {
-      total_posts: publishedScheduled?.length || formattedPosts.length || 0,
-      total_views: totalViews, total_likes: totalLikes, total_replies: totalReplies, total_reposts: totalReposts,
-      avg_engagement_rate: formattedPosts.length > 0 ? parseFloat((formattedPosts.reduce((acc, p) => acc + p.engagement_rate, 0) / formattedPosts.length).toFixed(2)) : 0
+      total_posts: Math.max(publishedScheduled?.length || 0, formattedPosts.length || 0),
+      total_views: totalViews,
+      total_likes: totalLikes,
+      total_replies: totalReplies,
+      total_reposts: totalReposts,
+      avg_engagement_rate: formattedPosts.length > 0
+        ? parseFloat((formattedPosts.reduce((acc, p) => acc + p.engagement_rate, 0) / formattedPosts.length).toFixed(2))
+        : 0,
     };
 
-    return new Response(JSON.stringify({ success: true, overview, all_posts: sortedByDate.slice(0, 50), daily_trends: (dailyInsights || []).slice().reverse() }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(
+      JSON.stringify({ success: true, overview, all_posts: sortedByDate.slice(0, 50), daily_trends: (dailyInsights || []).slice().reverse() }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }

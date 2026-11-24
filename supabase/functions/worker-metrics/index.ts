@@ -92,9 +92,9 @@ Deno.serve(async (req) => {
         console.warn(`[worker-metrics] Profile sync skipped for ${acc.username}:`, meErr.message);
       }
 
-      // 2. Tarik daftar postingan terbaru dari Threads API (penting untuk akun baru)
+      // 2. Tarik dan lengkapi daftar postingan terbaru di tabel threads.posts
       try {
-        const mediaListUrl = `https://graph.threads.net/v1.0/me/threads?fields=id,text,permalink,timestamp&limit=25&access_token=${accessToken}`;
+        const mediaListUrl = `https://graph.threads.net/v1.0/me/threads?fields=id,text,permalink,timestamp,media_type&limit=25&access_token=${accessToken}`;
         const mediaRes = await fetchWithTimeout(mediaListUrl, {}, 6000);
         const mediaJson = await mediaRes.json();
 
@@ -103,42 +103,37 @@ Deno.serve(async (req) => {
             const mediaId = String(item.id || "");
             if (!mediaId) continue;
 
+            const postedTs = item.timestamp || new Date().toISOString();
             const { data: existingPost } = await supabase
               .schema("threads")
               .from("posts")
-              .select("id")
+              .select("id, text, permalink")
               .eq("account_id", acc.id)
               .eq("threads_media_id", mediaId)
               .maybeSingle();
 
             if (!existingPost) {
-              const postedTs = item.timestamp || new Date().toISOString();
               await supabase.schema("threads").from("posts").insert({
                 account_id: acc.id,
                 threads_media_id: mediaId,
+                text: item.text || null,
+                media_type: item.media_type || null,
+                permalink: item.permalink || null,
                 posted_at: postedTs,
-                created_at: postedTs,
+                source: "imported",
               });
               newlyDiscoveredCount++;
-            }
-
-            const { data: existingSp } = await supabase
-              .schema("threads")
-              .from("scheduled_posts")
-              .select("id")
-              .eq("account_id", acc.id)
-              .eq("published_media_id", mediaId)
-              .maybeSingle();
-
-            if (!existingSp) {
-              await supabase.schema("threads").from("scheduled_posts").insert({
-                account_id: acc.id,
-                text: item.text || "Postingan Tanpa Teks",
-                status: "published",
-                published_media_id: mediaId,
-                scheduled_for: item.timestamp || new Date().toISOString(),
-                sequence_number: 0,
-              });
+            } else {
+              await supabase
+                .schema("threads")
+                .from("posts")
+                .update({
+                  text: item.text || existingPost.text || null,
+                  media_type: item.media_type || null,
+                  permalink: item.permalink || existingPost.permalink || null,
+                  posted_at: postedTs,
+                })
+                .eq("id", existingPost.id);
             }
           }
         }
@@ -146,7 +141,7 @@ Deno.serve(async (req) => {
         console.warn(`[worker-metrics] Media list fetch skipped for ${acc.username}:`, listErr.message);
       }
 
-      // 3. Tarik Insights (Views, Likes, Replies, Reposts, Quotes) untuk semua post 30 hari terakhir
+      // 3. Tarik Insights (Views, Likes, Replies, Reposts, Quotes) untuk post 30 hari terakhir
       const { data: allPosts } = await supabase
         .schema("threads")
         .from("posts")
