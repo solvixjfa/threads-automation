@@ -178,7 +178,9 @@ class SyncAccountRequest(BaseModel):
 
 @router.post("/sync-account")
 async def sync_account_full(req: SyncAccountRequest):
-    from datetime import datetime, timezone
+    import asyncio
+    from datetime import datetime, timezone, timedelta
+
     db = get_supabase()
     acc_res = (
         db.schema("threads")
@@ -196,24 +198,26 @@ async def sync_account_full(req: SyncAccountRequest):
     if not token:
         raise HTTPException(status_code=400, detail="Access token not found")
 
-    now_iso = datetime.now(timezone.utc).isoformat()
-    today_str = datetime.now(timezone.utc).date().isoformat()
+    now_dt = datetime.now(timezone.utc)
+    now_iso = now_dt.isoformat()
+    today_str = now_dt.date().isoformat()
+    cutoff_90d = now_dt - timedelta(days=95)
+
     profile_pic = None
     followers_count = None
     discovered = 0
     synced_metrics = 0
 
     async with httpx.AsyncClient(timeout=20.0) as client:
-        # 1. Sync profil & foto profil terbaru
+        # 1. Sync profil & avatar terbaru
         try:
             me_res = await client.get(
                 "https://graph.threads.net/v1.0/me",
-                params={"fields": "id,username,threads_profile_picture_url,followers_count", "access_token": token},
+                params={"fields": "id,username,threads_profile_picture_url", "access_token": token},
             )
             if me_res.status_code == 200:
                 me_data = me_res.json()
                 profile_pic = me_data.get("threads_profile_picture_url")
-                followers_count = me_data.get("followers_count")
                 upd = {"last_refresh_at": now_iso}
                 if me_data.get("username"):
                     upd["username"] = me_data["username"]
@@ -223,18 +227,70 @@ async def sync_account_full(req: SyncAccountRequest):
         except Exception as e:
             logging.warning(f"[SyncAccount] Profile fetch warning: {e}")
 
-        # 2. Tarik daftar post dari /me/threads dan simpan teks + timestamp asli
+        # 2. Tarik followers_count dari /me/threads_insights
         try:
-            media_res = await client.get(
-                "https://graph.threads.net/v1.0/me/threads",
-                params={
-                    "fields": "id,text,permalink,timestamp,media_type",
-                    "limit": "50",
-                    "access_token": token,
-                },
+            f_res = await client.get(
+                "https://graph.threads.net/v1.0/me/threads_insights",
+                params={"metric": "followers_count", "access_token": token},
             )
-            if media_res.status_code == 200:
-                items = media_res.json().get("data") or []
+            if f_res.status_code == 200:
+                for item in (f_res.json().get("data") or []):
+                    if item.get("name") == "followers_count":
+                        tv = item.get("total_value") or {}
+                        if isinstance(tv, dict) and tv.get("value") is not None:
+                            followers_count = int(tv["value"])
+                        elif item.get("values"):
+                            followers_count = int(item["values"][-1].get("value") or 0)
+        except Exception as e:
+            logging.warning(f"[SyncAccount] Followers fetch warning: {e}")
+
+        # 3. Tarik daily views 90 hari terakhir dari /me/threads_insights (3 window x 30 hari)
+        daily_views_map = {}
+        try:
+            now_unix = int(now_dt.timestamp())
+            for w in range(3):
+                until_ts = now_unix - (w * 30 * 86400)
+                since_ts = until_ts - (30 * 86400)
+                v_res = await client.get(
+                    "https://graph.threads.net/v1.0/me/threads_insights",
+                    params={
+                        "metric": "views",
+                        "since": str(since_ts),
+                        "until": str(until_ts),
+                        "access_token": token,
+                    },
+                )
+                if v_res.status_code == 200:
+                    for item in (v_res.json().get("data") or []):
+                        if item.get("name") == "views":
+                            for val_obj in (item.get("values") or []):
+                                end_t = str(val_obj.get("end_time") or "")
+                                if len(end_t) >= 10:
+                                    d_key = end_t[:10]
+                                    daily_views_map[d_key] = int(val_obj.get("value") or 0)
+        except Exception as e:
+            logging.warning(f"[SyncAccount] Daily insights series warning: {e}")
+
+        # 4. Tarik daftar post dengan pagination (maks 4 halaman = 200 post)
+        try:
+            next_url = "https://graph.threads.net/v1.0/me/threads"
+            next_params = {
+                "fields": "id,text,permalink,timestamp,media_type",
+                "limit": "50",
+                "access_token": token,
+            }
+            pages = 0
+            while next_url and pages < 4:
+                media_res = await client.get(next_url, params=next_params)
+                next_params = None
+                if media_res.status_code != 200:
+                    break
+                payload_json = media_res.json()
+                items = payload_json.get("data") or []
+                if not items:
+                    break
+
+                reached_old = False
                 for item in items:
                     media_id = str(item.get("id") or "")
                     if not media_id:
@@ -243,6 +299,12 @@ async def sync_account_full(req: SyncAccountRequest):
                     permalink = item.get("permalink") or f"https://www.threads.com/post/{media_id}"
                     posted_at = item.get("timestamp") or now_iso
                     media_type = item.get("media_type") or "TEXT"
+
+                    try:
+                        if datetime.fromisoformat(posted_at.replace("Z", "+00:00")) < cutoff_90d:
+                            reached_old = True
+                    except Exception:
+                        pass
 
                     existing_post = (
                         db.schema("threads")
@@ -272,7 +334,6 @@ async def sync_account_full(req: SyncAccountRequest):
                             "posted_at": posted_at,
                         }).eq("id", existing_post.data[0]["id"]).execute()
 
-                    # Sinkronkan juga ke scheduled_posts dengan idempotency_key wajib
                     existing_sp = (
                         db.schema("threads")
                         .from_("scheduled_posts")
@@ -294,15 +355,14 @@ async def sync_account_full(req: SyncAccountRequest):
                                 "published_media_id": media_id,
                                 "idempotency_key": f"meta_{req.account_id}_{media_id}",
                             }).execute()
-                        except Exception as sp_err:
-                            logging.warning(f"[SyncAccount] scheduled_posts insert skip: {sp_err}")
-                    elif post_text and (not existing_sp.data[0].get("text") or existing_sp.data[0].get("text") == "Postingan Tanpa Teks"):
+                        except Exception:
+                            pass
+                    elif post_text and existing_sp.data[0].get("text") in (None, "", "Postingan Tanpa Teks", "[Media Post]", "[Post]"):
                         db.schema("threads").from_("scheduled_posts").update({
                             "text": safe_text,
                             "scheduled_for": posted_at,
                         }).eq("id", existing_sp.data[0]["id"]).execute()
 
-                    # Simpan ke post_history untuk RAG
                     if post_text and len(post_text.strip()) >= 5:
                         try:
                             from app.services.rag import save_post_to_history_sync
@@ -314,89 +374,129 @@ async def sync_account_full(req: SyncAccountRequest):
                             )
                         except Exception:
                             pass
+
+                pages += 1
+                next_url = (payload_json.get("paging") or {}).get("next")
+                if reached_old:
+                    break
         except Exception as e:
             logging.warning(f"[SyncAccount] Media list warning: {e}")
 
-        # 3. Tarik metrik views/likes/replies/reposts/quotes untuk 30 post terbaru
+        # 5. Tarik metrik hingga 120 post terbaru secara paralel (Semaphore 10)
         posts_rows = (
             db.schema("threads")
             .from_("posts")
-            .select("id, threads_media_id")
+            .select("id, threads_media_id, posted_at")
             .eq("account_id", req.account_id)
             .order("posted_at", desc=True)
-            .limit(30)
+            .limit(120)
             .execute()
         ).data or []
 
-        daily_views = daily_likes = daily_replies = daily_reposts = daily_quotes = 0
-        for p in posts_rows:
-            media_id = p.get("threads_media_id")
+        sem = asyncio.Semaphore(10)
+
+        async def fetch_one_metric(p_row):
+            media_id = p_row.get("threads_media_id")
             if not media_id:
-                continue
-            try:
-                ins_res = await client.get(
-                    f"https://graph.threads.net/v1.0/{media_id}/insights",
-                    params={
-                        "metric": "views,likes,replies,reposts,quotes",
-                        "access_token": token,
-                    },
-                )
-                if ins_res.status_code == 200:
+                return None
+            async with sem:
+                try:
+                    ins_res = await client.get(
+                        f"https://graph.threads.net/v1.0/{media_id}/insights",
+                        params={
+                            "metric": "views,likes,replies,reposts,quotes",
+                            "access_token": token,
+                        },
+                    )
+                    if ins_res.status_code != 200:
+                        return None
                     ins_data = ins_res.json().get("data") or []
                     metrics = {
                         item["name"]: item["values"][0]["value"]
                         for item in ins_data
                         if item.get("name") and item.get("values")
                     }
-                    v = metrics.get("views", 0)
-                    l = metrics.get("likes", 0)
-                    r = metrics.get("replies", 0)
-                    rp = metrics.get("reposts", 0)
-                    q = metrics.get("quotes", 0)
+                    return (p_row, metrics)
+                except Exception:
+                    return None
 
-                    daily_views += v
-                    daily_likes += l
-                    daily_replies += r
-                    daily_reposts += rp
-                    daily_quotes += q
+        metric_results = await asyncio.gather(*(fetch_one_metric(p) for p in posts_rows))
 
-                    db.schema("threads").from_("post_metrics").delete().eq("post_id", p["id"]).eq("snapshot_label", "latest").execute()
-                    db.schema("threads").from_("post_metrics").insert({
-                        "post_id": p["id"],
-                        "snapshot_label": "latest",
-                        "views": v,
-                        "likes": l,
-                        "replies": r,
-                        "reposts": rp,
-                        "quotes": q,
-                        "captured_at": now_iso,
-                    }).execute()
-                    synced_metrics += 1
-            except Exception as m_err:
-                logging.warning(f"[SyncAccount] Metrics skip {media_id}: {m_err}")
+        post_daily_agg = {}
+        total_post_views = total_post_likes = total_post_replies = total_post_reposts = total_post_quotes = 0
 
-        if posts_rows:
+        for item in metric_results:
+            if not item:
+                continue
+            p_row, metrics = item
+            v = int(metrics.get("views") or 0)
+            l = int(metrics.get("likes") or 0)
+            r = int(metrics.get("replies") or 0)
+            rp = int(metrics.get("reposts") or 0)
+            q = int(metrics.get("quotes") or 0)
+
+            total_post_views += v
+            total_post_likes += l
+            total_post_replies += r
+            total_post_reposts += rp
+            total_post_quotes += q
+
+            ts = str(p_row.get("posted_at") or today_str)
+            d_key = ts[:10] if len(ts) >= 10 else today_str
+            agg = post_daily_agg.setdefault(d_key, {"views": 0, "likes": 0, "replies": 0, "reposts": 0, "quotes": 0})
+            agg["views"] += v
+            agg["likes"] += l
+            agg["replies"] += r
+            agg["reposts"] += rp
+            agg["quotes"] += q
+
+            db.schema("threads").from_("post_metrics").delete().eq("post_id", p_row["id"]).eq("snapshot_label", "latest").execute()
+            db.schema("threads").from_("post_metrics").insert({
+                "post_id": p_row["id"],
+                "snapshot_label": "latest",
+                "views": v,
+                "likes": l,
+                "replies": r,
+                "reposts": rp,
+                "quotes": q,
+                "captured_at": now_iso,
+            }).execute()
+            synced_metrics += 1
+
+        # 6. Simpan riwayat harian ke account_insights_daily
+        all_dates = sorted(set(daily_views_map.keys()) | set(post_daily_agg.keys()) | {today_str})
+        upsert_rows = []
+        for d_key in all_dates:
+            p_agg = post_daily_agg.get(d_key, {})
+            views_val = daily_views_map[d_key] if d_key in daily_views_map else (p_agg.get("views", 0) if daily_views_map else (total_post_views if d_key == today_str else 0))
+            row_obj = {
+                "account_id": req.account_id,
+                "date": d_key,
+                "views": views_val,
+                "likes": p_agg.get("likes", 0),
+                "replies": p_agg.get("replies", 0),
+                "reposts": p_agg.get("reposts", 0),
+                "quotes": p_agg.get("quotes", 0),
+            }
+            if d_key == today_str and followers_count is not None:
+                row_obj["followers_count"] = followers_count
+            upsert_rows.append(row_obj)
+
+        if upsert_rows:
             try:
                 db.schema("threads").from_("account_insights_daily").upsert(
-                    {
-                        "account_id": req.account_id,
-                        "date": today_str,
-                        "views": daily_views,
-                        "likes": daily_likes,
-                        "replies": daily_replies,
-                        "reposts": daily_reposts,
-                        "quotes": daily_quotes,
-                        **({"followers_count": followers_count} if followers_count is not None else {}),
-                    },
+                    upsert_rows,
                     on_conflict="account_id,date",
                 ).execute()
             except Exception as d_err:
-                logging.warning(f"[SyncAccount] Daily insights upsert skip: {d_err}")
+                logging.warning(f"[SyncAccount] Bulk daily upsert warning: {d_err}")
 
     return {
         "success": True,
         "discovered": discovered,
         "synced": synced_metrics,
+        "followers_count": followers_count,
+        "days_synced": len(daily_views_map),
         "profile_picture_url": profile_pic,
         "last_refresh_at": now_iso,
     }

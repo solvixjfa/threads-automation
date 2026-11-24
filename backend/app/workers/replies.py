@@ -389,13 +389,20 @@ async def sync_profile_and_metrics(db, client, acc_id: str, token: str):
 
 
 async def sync_followers(db, client, acc_id: str, token: str):
-    """Fetch followers_count dari Meta API → update account_insights_daily hari ini"""
+    """Fetch followers_count dari Meta Threads Insights API → update account_insights_daily hari ini"""
     try:
-        url = f"https://graph.threads.net/v1.0/me?fields=followers_count&access_token={token}"
+        url = f"https://graph.threads.net/v1.0/me/threads_insights?metric=followers_count&access_token={token}"
         res = await client.get(url, timeout=10.0)
         if res.status_code != 200:
             return
-        followers = res.json().get("followers_count")
+        followers = None
+        for item in (res.json().get("data") or []):
+            if item.get("name") == "followers_count":
+                tv = item.get("total_value") or {}
+                if isinstance(tv, dict) and tv.get("value") is not None:
+                    followers = int(tv["value"])
+                elif item.get("values"):
+                    followers = int(item["values"][-1].get("value") or 0)
         if followers is None:
             return
         
