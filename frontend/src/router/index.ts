@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { supabase } from '../lib/supabase'
 
-// LandingView udah nggak di-import disini karena udah pindah ke project landing
 import TutorialView from '../views/TutorialView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import ProfileLayout from '../views/settings/ProfileLayout.vue'
@@ -25,6 +24,7 @@ import AdminOverview from '../views/admin/AdminOverview.vue'
 import AdminUsers from '../views/admin/AdminUsers.vue'
 import AdminCrm from '../views/admin/AdminCrm.vue'
 import AdminTemplates from '../views/admin/AdminTemplates.vue'
+import AdminCrmAnalytics from '../views/admin/AdminCrmAnalytics.vue'
 
 import ContentLayout from '../views/content/ContentLayout.vue'
 import QueueView from '../views/content/QueueView.vue'
@@ -40,8 +40,7 @@ import SentimentView from '../views/analytics/SentimentView.vue'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    // UBAH DISINI: Path '/' langsung redirect ke dashboard
-    { path: '/', redirect: '/dashboard' }, 
+    { path: '/', redirect: '/dashboard' },
     { path: '/login', name: 'login', component: LoginView },
     { path: '/update-password', name: 'update-password', component: UpdatePasswordView },
     { path: '/privacy', name: 'privacy', component: PrivacyView },
@@ -56,6 +55,7 @@ const router = createRouter({
         { path: 'users', name: 'admin-users', component: AdminUsers },
         { path: 'crm', name: 'admin-crm', component: AdminCrm },
         { path: 'templates', name: 'admin-templates', component: AdminTemplates },
+        { path: 'analytics', name: 'admin-analytics', component: AdminCrmAnalytics },
       ]
     },
     { path: '/pricing', name: 'pricing', component: PricingView, meta: { requiresAuth: true } },
