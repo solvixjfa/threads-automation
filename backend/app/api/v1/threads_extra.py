@@ -208,53 +208,40 @@ async def sync_account_full(req: SyncAccountRequest):
     followers_count = None
     discovered = 0
     synced_metrics = 0
+    daily_views_map = {}
+    insights_errors = []
 
     async with httpx.AsyncClient(timeout=20.0) as client:
-        # 1. Sync profil & avatar terbaru
-        try:
-            me_res = await client.get(
+        # 1. Tarik profil, followers_count, dan 90-day daily views (3x30d) secara paralel
+        now_unix = int(now_dt.timestamp())
+
+        async def fetch_profile():
+            return await client.get(
                 "https://graph.threads.net/v1.0/me",
                 params={"fields": "id,username,threads_profile_picture_url", "access_token": token},
             )
-            if me_res.status_code == 200:
-                me_data = me_res.json()
-                profile_pic = me_data.get("threads_profile_picture_url")
-                upd = {"last_refresh_at": now_iso}
-                if me_data.get("username"):
-                    upd["username"] = me_data["username"]
-                if profile_pic:
-                    upd["profile_picture_url"] = profile_pic
-                db.schema("threads").from_("threads_accounts").update(upd).eq("id", req.account_id).execute()
-        except Exception as e:
-            logging.warning(f"[SyncAccount] Profile fetch warning: {e}")
 
-        # 2. Tarik followers_count dari /me/threads_insights
-        try:
-            f_res = await client.get(
+        async def fetch_followers():
+            return await client.get(
                 f"https://graph.threads.net/v1.0/{threads_uid}/threads_insights",
                 params={"metric": "followers_count", "access_token": token},
             )
-            if f_res.status_code == 200:
-                for item in (f_res.json().get("data") or []):
-                    if item.get("name") == "followers_count":
-                        tv = item.get("total_value") or {}
-                        if isinstance(tv, dict) and tv.get("value") is not None:
-                            followers_count = int(tv["value"])
-                        elif item.get("values"):
-                            followers_count = int(item["values"][-1].get("value") or 0)
-        except Exception as e:
-            logging.warning(f"[SyncAccount] Followers fetch warning: {e}")
 
-        # 3. Tarik daily views 90 hari terakhir dari /threads_insights (3 window x 30 hari)
-        daily_views_map = {}
-        insights_errors = []
-        try:
-            now_unix = int(now_dt.timestamp())
-            for w in range(3):
-                until_ts = now_unix - (w * 30 * 86400)
-                since_ts = until_ts - (30 * 86400)
-                v_res = await client.get(
-                    f"https://graph.threads.net/v1.0/{threads_uid}/threads_insights",
+        async def fetch_views_window(w: int):
+            until_ts = now_unix - (w * 30 * 86400)
+            since_ts = until_ts - (30 * 86400)
+            res = await client.get(
+                f"https://graph.threads.net/v1.0/{threads_uid}/threads_insights",
+                params={
+                    "metric": "views",
+                    "since": str(since_ts),
+                    "until": str(until_ts),
+                    "access_token": token,
+                },
+            )
+            if res.status_code != 200 and threads_uid != "me":
+                res = await client.get(
+                    "https://graph.threads.net/v1.0/me/threads_insights",
                     params={
                         "metric": "views",
                         "since": str(since_ts),
@@ -262,21 +249,136 @@ async def sync_account_full(req: SyncAccountRequest):
                         "access_token": token,
                     },
                 )
-                if v_res.status_code == 200:
-                    for item in (v_res.json().get("data") or []):
-                        if item.get("name") == "views":
-                            for val_obj in (item.get("values") or []):
-                                end_t = str(val_obj.get("end_time") or "")
-                                if len(end_t) >= 10:
-                                    d_key = end_t[:10]
-                                    daily_views_map[d_key] = int(val_obj.get("value") or 0)
-                else:
-                    insights_errors.append(f"w{w}:{v_res.status_code}:{v_res.text[:160]}")
-        except Exception as e:
-            insights_errors.append(f"exc:{str(e)[:160]}")
+            return w, res
 
-        # 4. Tarik daftar post dengan pagination (maks 4 halaman = 200 post)
+        top_results = await asyncio.gather(
+            fetch_profile(),
+            fetch_followers(),
+            fetch_views_window(0),
+            fetch_views_window(1),
+            fetch_views_window(2),
+            return_exceptions=True,
+        )
+
+        # Proses profil
+        me_res = top_results[0]
+        if not isinstance(me_res, Exception) and me_res.status_code == 200:
+            me_data = me_res.json()
+            profile_pic = me_data.get("threads_profile_picture_url")
+            upd = {"last_refresh_at": now_iso, "last_synced_at": now_iso}
+            if me_data.get("username"):
+                upd["username"] = me_data["username"]
+            if profile_pic:
+                upd["profile_picture_url"] = profile_pic
+            db.schema("threads").from_("threads_accounts").update(upd).eq("id", req.account_id).execute()
+
+        # Proses followers_count
+        f_res = top_results[1]
+        if not isinstance(f_res, Exception) and f_res.status_code == 200:
+            for item in (f_res.json().get("data") or []):
+                if item.get("name") == "followers_count":
+                    tv = item.get("total_value") or {}
+                    if isinstance(tv, dict) and tv.get("value") is not None:
+                        followers_count = int(tv["value"])
+                    elif item.get("values"):
+                        followers_count = int(item["values"][-1].get("value") or 0)
+
+        # Proses 90-day daily views time series
+        for win_res in top_results[2:]:
+            if isinstance(win_res, Exception):
+                insights_errors.append(str(win_res)[:160])
+                continue
+            w_idx, v_res = win_res
+            if v_res.status_code == 200:
+                for item in (v_res.json().get("data") or []):
+                    if item.get("name") == "views":
+                        for val_obj in (item.get("values") or []):
+                            end_t = str(val_obj.get("end_time") or "")
+                            if len(end_t) >= 10:
+                                d_key = end_t[:10]
+                                daily_views_map[d_key] = int(val_obj.get("value") or 0)
+            else:
+                insights_errors.append(f"w{w_idx}:{v_res.status_code}:{v_res.text[:140]}")
+
+        # 2. Langsung simpan 90 hari ke account_insights_daily SEBELUM sync post agar anti-timeout
+        existing_daily_map = {}
         try:
+            ex_rows = (
+                db.schema("threads")
+                .from_("account_insights_daily")
+                .select("date, views, likes, replies, reposts, quotes, followers_count, demographics")
+                .eq("account_id", req.account_id)
+                .execute()
+            ).data or []
+            for r in ex_rows:
+                if r.get("date"):
+                    existing_daily_map[str(r["date"])[:10]] = r
+        except Exception:
+            pass
+
+        continuous_dates = {(now_dt.date() - timedelta(days=i)).isoformat() for i in range(90)}
+        all_dates = sorted(continuous_dates | set(daily_views_map.keys()) | set(existing_daily_map.keys()))
+
+        def build_daily_rows(post_agg_map: dict):
+            rows = []
+            for d_key in sorted(set(all_dates) | set(post_agg_map.keys())):
+                p_agg = post_agg_map.get(d_key, {})
+                prev = existing_daily_map.get(d_key, {})
+                views_val = max(
+                    int(daily_views_map.get(d_key) or 0),
+                    int(p_agg.get("views") or 0),
+                    int(prev.get("views") or 0),
+                )
+                f_val = prev.get("followers_count")
+                if d_key == today_str and followers_count is not None:
+                    f_val = int(followers_count)
+                elif f_val is None:
+                    f_val = 0
+
+                rows.append({
+                    "account_id": req.account_id,
+                    "date": d_key,
+                    "views": views_val,
+                    "likes": max(int(p_agg.get("likes") or 0), int(prev.get("likes") or 0)),
+                    "replies": max(int(p_agg.get("replies") or 0), int(prev.get("replies") or 0)),
+                    "reposts": max(int(p_agg.get("reposts") or 0), int(prev.get("reposts") or 0)),
+                    "quotes": max(int(p_agg.get("quotes") or 0), int(prev.get("quotes") or 0)),
+                    "followers_count": int(f_val),
+                    "demographics": prev.get("demographics") if isinstance(prev.get("demographics"), dict) else {},
+                })
+            return rows
+
+        upsert_error = None
+        initial_rows = build_daily_rows({})
+        try:
+            db.schema("threads").from_("account_insights_daily").upsert(
+                initial_rows,
+                on_conflict="account_id,date",
+            ).execute()
+        except Exception as d_err:
+            upsert_error = str(d_err)[:300]
+            logging.error(f"[SyncAccount] Initial 90d upsert error: {d_err}")
+
+        # 3. Tarik daftar post dengan pagination (maks 4 halaman = 200 post) & bulk insert
+        try:
+            existing_posts_res = (
+                db.schema("threads")
+                .from_("posts")
+                .select("id, threads_media_id, text")
+                .eq("account_id", req.account_id)
+                .execute()
+            ).data or []
+            existing_posts_map = {str(r["threads_media_id"]): r for r in existing_posts_res if r.get("threads_media_id")}
+
+            existing_sp_res = (
+                db.schema("threads")
+                .from_("scheduled_posts")
+                .select("id, published_media_id, text")
+                .eq("account_id", req.account_id)
+                .execute()
+            ).data or []
+            existing_sp_map = {str(r["published_media_id"]): r for r in existing_sp_res if r.get("published_media_id")}
+
             next_url = "https://graph.threads.net/v1.0/me/threads"
             next_params = {
                 "fields": "id,text,permalink,timestamp,media_type",
@@ -284,6 +386,10 @@ async def sync_account_full(req: SyncAccountRequest):
                 "access_token": token,
             }
             pages = 0
+            new_posts_batch = []
+            new_sp_batch = []
+            seen_media_ids = set()
+
             while next_url and pages < 4:
                 media_res = await client.get(next_url, params=next_params)
                 next_params = None
@@ -297,8 +403,10 @@ async def sync_account_full(req: SyncAccountRequest):
                 reached_old = False
                 for item in items:
                     media_id = str(item.get("id") or "")
-                    if not media_id:
+                    if not media_id or media_id in seen_media_ids:
                         continue
+                    seen_media_ids.add(media_id)
+
                     post_text = item.get("text") or ""
                     permalink = item.get("permalink") or f"https://www.threads.com/post/{media_id}"
                     posted_at = item.get("timestamp") or now_iso
@@ -310,17 +418,8 @@ async def sync_account_full(req: SyncAccountRequest):
                     except Exception:
                         pass
 
-                    existing_post = (
-                        db.schema("threads")
-                        .from_("posts")
-                        .select("id, text")
-                        .eq("account_id", req.account_id)
-                        .eq("threads_media_id", media_id)
-                        .limit(1)
-                        .execute()
-                    )
-                    if not existing_post.data:
-                        db.schema("threads").from_("posts").insert({
+                    if media_id not in existing_posts_map:
+                        new_posts_batch.append({
                             "account_id": req.account_id,
                             "threads_media_id": media_id,
                             "text": post_text or None,
@@ -328,76 +427,48 @@ async def sync_account_full(req: SyncAccountRequest):
                             "permalink": permalink,
                             "posted_at": posted_at,
                             "source": "imported",
-                        }).execute()
+                        })
                         discovered += 1
-                    else:
-                        db.schema("threads").from_("posts").update({
-                            "text": post_text or existing_post.data[0].get("text"),
-                            "media_type": media_type,
-                            "permalink": permalink,
-                            "posted_at": posted_at,
-                        }).eq("id", existing_post.data[0]["id"]).execute()
 
-                    existing_sp = (
-                        db.schema("threads")
-                        .from_("scheduled_posts")
-                        .select("id, text")
-                        .eq("account_id", req.account_id)
-                        .eq("published_media_id", media_id)
-                        .limit(1)
-                        .execute()
-                    )
                     fallback_label = "[Media Post]" if media_type in ("IMAGE", "VIDEO", "CAROUSEL_ALBUM") else "[Post]"
                     safe_text = (post_text or fallback_label)[:500]
-                    if not existing_sp.data:
-                        try:
-                            db.schema("threads").from_("scheduled_posts").insert({
-                                "account_id": req.account_id,
-                                "text": safe_text,
-                                "scheduled_for": posted_at,
-                                "status": "published",
-                                "published_media_id": media_id,
-                                "idempotency_key": f"meta_{req.account_id}_{media_id}",
-                            }).execute()
-                        except Exception:
-                            pass
-                    elif post_text and existing_sp.data[0].get("text") in (None, "", "Postingan Tanpa Teks", "[Media Post]", "[Post]"):
-                        db.schema("threads").from_("scheduled_posts").update({
+                    if media_id not in existing_sp_map:
+                        new_sp_batch.append({
+                            "account_id": req.account_id,
                             "text": safe_text,
                             "scheduled_for": posted_at,
-                        }).eq("id", existing_sp.data[0]["id"]).execute()
-
-                    if post_text and len(post_text.strip()) >= 5:
-                        try:
-                            from app.services.rag import save_post_to_history_sync
-                            save_post_to_history_sync(
-                                account_id=req.account_id,
-                                threads_media_id=media_id,
-                                text=post_text,
-                                posted_at=posted_at,
-                            )
-                        except Exception:
-                            pass
+                            "status": "published",
+                            "published_media_id": media_id,
+                            "idempotency_key": f"meta_{req.account_id}_{media_id}",
+                        })
 
                 pages += 1
                 next_url = (payload_json.get("paging") or {}).get("next")
                 if reached_old:
                     break
+
+            if new_posts_batch:
+                db.schema("threads").from_("posts").insert(new_posts_batch).execute()
+            if new_sp_batch:
+                try:
+                    db.schema("threads").from_("scheduled_posts").insert(new_sp_batch).execute()
+                except Exception:
+                    pass
         except Exception as e:
             logging.warning(f"[SyncAccount] Media list warning: {e}")
 
-        # 5. Tarik metrik hingga 120 post terbaru secara paralel (Semaphore 10)
+        # 4. Tarik metrik hingga 100 post terbaru secara paralel (Semaphore 15) & bulk insert post_metrics
         posts_rows = (
             db.schema("threads")
             .from_("posts")
             .select("id, threads_media_id, posted_at")
             .eq("account_id", req.account_id)
             .order("posted_at", desc=True)
-            .limit(120)
+            .limit(100)
             .execute()
         ).data or []
 
-        sem = asyncio.Semaphore(10)
+        sem = asyncio.Semaphore(15)
 
         async def fetch_one_metric(p_row):
             media_id = p_row.get("threads_media_id")
@@ -427,7 +498,8 @@ async def sync_account_full(req: SyncAccountRequest):
         metric_results = await asyncio.gather(*(fetch_one_metric(p) for p in posts_rows))
 
         post_daily_agg = {}
-        total_post_views = total_post_likes = total_post_replies = total_post_reposts = total_post_quotes = 0
+        metrics_insert_batch = []
+        synced_post_ids = []
 
         for item in metric_results:
             if not item:
@@ -439,12 +511,6 @@ async def sync_account_full(req: SyncAccountRequest):
             rp = int(metrics.get("reposts") or 0)
             q = int(metrics.get("quotes") or 0)
 
-            total_post_views += v
-            total_post_likes += l
-            total_post_replies += r
-            total_post_reposts += rp
-            total_post_quotes += q
-
             ts = str(p_row.get("posted_at") or today_str)
             d_key = ts[:10] if len(ts) >= 10 else today_str
             agg = post_daily_agg.setdefault(d_key, {"views": 0, "likes": 0, "replies": 0, "reposts": 0, "quotes": 0})
@@ -454,8 +520,8 @@ async def sync_account_full(req: SyncAccountRequest):
             agg["reposts"] += rp
             agg["quotes"] += q
 
-            db.schema("threads").from_("post_metrics").delete().eq("post_id", p_row["id"]).eq("snapshot_label", "latest").execute()
-            db.schema("threads").from_("post_metrics").insert({
+            synced_post_ids.append(p_row["id"])
+            metrics_insert_batch.append({
                 "post_id": p_row["id"],
                 "snapshot_label": "latest",
                 "views": v,
@@ -464,64 +530,25 @@ async def sync_account_full(req: SyncAccountRequest):
                 "reposts": rp,
                 "quotes": q,
                 "captured_at": now_iso,
-            }).execute()
+            })
             synced_metrics += 1
 
-        # 6. Simpan riwayat harian 90 hari ke account_insights_daily (aman terhadap NOT NULL & data historis)
-        existing_daily_map = {}
-        try:
-            ex_rows = (
-                db.schema("threads")
-                .from_("account_insights_daily")
-                .select("date, views, likes, replies, reposts, quotes, followers_count, demographics")
-                .eq("account_id", req.account_id)
-                .execute()
-            ).data or []
-            for r in ex_rows:
-                if r.get("date"):
-                    existing_daily_map[str(r["date"])[:10]] = r
-        except Exception:
-            pass
-
-        continuous_dates = {(now_dt.date() - timedelta(days=i)).isoformat() for i in range(90)}
-        all_dates = sorted(continuous_dates | set(daily_views_map.keys()) | set(post_daily_agg.keys()) | set(existing_daily_map.keys()))
-        upsert_rows = []
-        for d_key in all_dates:
-            p_agg = post_daily_agg.get(d_key, {})
-            prev = existing_daily_map.get(d_key, {})
-            views_val = max(
-                int(daily_views_map.get(d_key) or 0),
-                int(p_agg.get("views") or 0),
-                int(prev.get("views") or 0),
-            )
-            f_val = prev.get("followers_count")
-            if d_key == today_str and followers_count is not None:
-                f_val = int(followers_count)
-            elif f_val is None:
-                f_val = 0
-
-            upsert_rows.append({
-                "account_id": req.account_id,
-                "date": d_key,
-                "views": views_val,
-                "likes": max(int(p_agg.get("likes") or 0), int(prev.get("likes") or 0)),
-                "replies": max(int(p_agg.get("replies") or 0), int(prev.get("replies") or 0)),
-                "reposts": max(int(p_agg.get("reposts") or 0), int(prev.get("reposts") or 0)),
-                "quotes": max(int(p_agg.get("quotes") or 0), int(prev.get("quotes") or 0)),
-                "followers_count": int(f_val),
-                "demographics": prev.get("demographics") if isinstance(prev.get("demographics"), dict) else {},
-            })
-
-        upsert_error = None
-        if upsert_rows:
+        if synced_post_ids:
             try:
-                db.schema("threads").from_("account_insights_daily").upsert(
-                    upsert_rows,
-                    on_conflict="account_id,date",
-                ).execute()
-            except Exception as d_err:
-                upsert_error = str(d_err)[:300]
-                logging.error(f"[SyncAccount] Bulk daily upsert error: {d_err}")
+                db.schema("threads").from_("post_metrics").delete().in_("post_id", synced_post_ids).eq("snapshot_label", "latest").execute()
+                db.schema("threads").from_("post_metrics").insert(metrics_insert_batch).execute()
+            except Exception as m_err:
+                logging.warning(f"[SyncAccount] Bulk post_metrics warning: {m_err}")
+
+        # 5. Update ulang account_insights_daily dengan agregat likes/replies/reposts/quotes harian
+        final_rows = build_daily_rows(post_daily_agg)
+        try:
+            db.schema("threads").from_("account_insights_daily").upsert(
+                final_rows,
+                on_conflict="account_id,date",
+            ).execute()
+        except Exception as d_err:
+            upsert_error = str(d_err)[:300]
 
     return {
         "success": True,
@@ -529,7 +556,7 @@ async def sync_account_full(req: SyncAccountRequest):
         "synced": synced_metrics,
         "followers_count": followers_count,
         "days_synced": len(daily_views_map),
-        "rows_upserted": len(upsert_rows),
+        "rows_upserted": len(final_rows),
         "upsert_error": upsert_error,
         "insights_errors": insights_errors,
         "profile_picture_url": profile_pic,
