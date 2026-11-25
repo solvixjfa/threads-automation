@@ -245,8 +245,9 @@ async def sync_account_full(req: SyncAccountRequest):
         except Exception as e:
             logging.warning(f"[SyncAccount] Followers fetch warning: {e}")
 
-        # 3. Tarik daily views 90 hari terakhir dari /me/threads_insights (3 window x 30 hari)
+        # 3. Tarik daily views 90 hari terakhir dari /threads_insights (3 window x 30 hari)
         daily_views_map = {}
+        insights_errors = []
         try:
             now_unix = int(now_dt.timestamp())
             for w in range(3):
@@ -269,8 +270,10 @@ async def sync_account_full(req: SyncAccountRequest):
                                 if len(end_t) >= 10:
                                     d_key = end_t[:10]
                                     daily_views_map[d_key] = int(val_obj.get("value") or 0)
+                else:
+                    insights_errors.append(f"w{w}:{v_res.status_code}:{v_res.text[:160]}")
         except Exception as e:
-            logging.warning(f"[SyncAccount] Daily insights series warning: {e}")
+            insights_errors.append(f"exc:{str(e)[:160]}")
 
         # 4. Tarik daftar post dengan pagination (maks 4 halaman = 200 post)
         try:
@@ -464,28 +467,52 @@ async def sync_account_full(req: SyncAccountRequest):
             }).execute()
             synced_metrics += 1
 
-        # 6. Simpan riwayat harian 90 hari ke account_insights_daily (key seragam agar PostgREST bulk upsert sukses)
+        # 6. Simpan riwayat harian 90 hari ke account_insights_daily (aman terhadap NOT NULL & data historis)
+        existing_daily_map = {}
+        try:
+            ex_rows = (
+                db.schema("threads")
+                .from_("account_insights_daily")
+                .select("date, views, likes, replies, reposts, quotes, followers_count, demographics")
+                .eq("account_id", req.account_id)
+                .execute()
+            ).data or []
+            for r in ex_rows:
+                if r.get("date"):
+                    existing_daily_map[str(r["date"])[:10]] = r
+        except Exception:
+            pass
+
         continuous_dates = {(now_dt.date() - timedelta(days=i)).isoformat() for i in range(90)}
-        all_dates = sorted(continuous_dates | set(daily_views_map.keys()) | set(post_daily_agg.keys()))
+        all_dates = sorted(continuous_dates | set(daily_views_map.keys()) | set(post_daily_agg.keys()) | set(existing_daily_map.keys()))
         upsert_rows = []
         for d_key in all_dates:
             p_agg = post_daily_agg.get(d_key, {})
-            if d_key in daily_views_map:
-                views_val = daily_views_map[d_key]
-            elif daily_views_map:
-                views_val = p_agg.get("views", 0)
-            else:
-                views_val = p_agg.get("views", 0)
+            prev = existing_daily_map.get(d_key, {})
+            views_val = max(
+                int(daily_views_map.get(d_key) or 0),
+                int(p_agg.get("views") or 0),
+                int(prev.get("views") or 0),
+            )
+            f_val = prev.get("followers_count")
+            if d_key == today_str and followers_count is not None:
+                f_val = int(followers_count)
+            elif f_val is None:
+                f_val = 0
+
             upsert_rows.append({
                 "account_id": req.account_id,
                 "date": d_key,
                 "views": views_val,
-                "likes": p_agg.get("likes", 0),
-                "replies": p_agg.get("replies", 0),
-                "reposts": p_agg.get("reposts", 0),
-                "quotes": p_agg.get("quotes", 0),
+                "likes": max(int(p_agg.get("likes") or 0), int(prev.get("likes") or 0)),
+                "replies": max(int(p_agg.get("replies") or 0), int(prev.get("replies") or 0)),
+                "reposts": max(int(p_agg.get("reposts") or 0), int(prev.get("reposts") or 0)),
+                "quotes": max(int(p_agg.get("quotes") or 0), int(prev.get("quotes") or 0)),
+                "followers_count": int(f_val),
+                "demographics": prev.get("demographics") if isinstance(prev.get("demographics"), dict) else {},
             })
 
+        upsert_error = None
         if upsert_rows:
             try:
                 db.schema("threads").from_("account_insights_daily").upsert(
@@ -493,15 +520,8 @@ async def sync_account_full(req: SyncAccountRequest):
                     on_conflict="account_id,date",
                 ).execute()
             except Exception as d_err:
+                upsert_error = str(d_err)[:300]
                 logging.error(f"[SyncAccount] Bulk daily upsert error: {d_err}")
-
-        if followers_count is not None:
-            try:
-                db.schema("threads").from_("account_insights_daily").update({
-                    "followers_count": followers_count
-                }).eq("account_id", req.account_id).eq("date", today_str).execute()
-            except Exception as f_err:
-                logging.warning(f"[SyncAccount] Followers update warning: {f_err}")
 
     return {
         "success": True,
@@ -509,6 +529,9 @@ async def sync_account_full(req: SyncAccountRequest):
         "synced": synced_metrics,
         "followers_count": followers_count,
         "days_synced": len(daily_views_map),
+        "rows_upserted": len(upsert_rows),
+        "upsert_error": upsert_error,
+        "insights_errors": insights_errors,
         "profile_picture_url": profile_pic,
         "last_refresh_at": now_iso,
     }
