@@ -55,8 +55,10 @@ async def create_invoice(payload: CreateInvoiceRequest, authorization: Optional[
     if not merchant_code or not api_key:
         raise HTTPException(status_code=500, detail="Konfigurasi Duitku belum diisi di server")
 
-    # Format orderId: IX--<user_id>--<plan_type>--<timestamp>
-    merchant_order_id = f"IX--{user.id}--{payload.plan_type}--{int(time.time())}"
+    # Format orderId <= 50 chars: IX-<32_hex_uid>-<pc|pb>-<timestamp> (49 chars)
+    uid_hex = str(user.id).replace("-", "")
+    plan_code = "pc" if payload.plan_type == "paid_credit" else "pb"
+    merchant_order_id = f"IX-{uid_hex}-{plan_code}-{int(time.time())}"
     amount = selected["amount"]
     signature = _md5(f"{merchant_code}{merchant_order_id}{amount}{api_key}")
 
@@ -111,10 +113,21 @@ async def duitku_callback(
         raise HTTPException(status_code=400, detail="Invalid signature")
 
     if resultCode == "00":
-        parts = merchantOrderId.split("--")
-        if len(parts) >= 3:
-            user_id = parts[1]
-            plan_type = parts[2]
+        user_id = None
+        plan_type = None
+        if merchantOrderId.startswith("IX-"):
+            parts = merchantOrderId.split("-")
+            if len(parts) >= 4 and len(parts[1]) == 32:
+                raw_uid = parts[1]
+                user_id = f"{raw_uid[:8]}-{raw_uid[8:12]}-{raw_uid[12:16]}-{raw_uid[16:20]}-{raw_uid[20:]}"
+                plan_type = {"pc": "paid_credit", "pb": "paid_byok"}.get(parts[2])
+        elif "--" in merchantOrderId:
+            parts = merchantOrderId.split("--")
+            if len(parts) >= 3:
+                user_id = parts[1]
+                plan_type = parts[2]
+
+        if user_id and plan_type:
             db = get_supabase()
             now = datetime.now(timezone.utc)
             credits = PAID_CREDITS if plan_type == "paid_credit" else 0
