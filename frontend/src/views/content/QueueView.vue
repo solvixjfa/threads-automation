@@ -94,7 +94,7 @@
                     <Button variant="danger" size="sm" @click="confirmDeletePost(post.id)">{{ $t('content.queue.delete') }}</Button>
                   </div>
                   <div v-else-if="post.published_media_id" class="flex items-center gap-3 flex-wrap">
-                    <a :href="'https://www.threads.net/post/' + post.published_media_id" target="_blank" class="text-xs font-bold hover:underline">
+                    <a :href="post.permalink && post.permalink.includes('/@') ? post.permalink.replace('threads.net', 'threads.com') : (currentAccount?.username ? 'https://www.threads.com/@' + currentAccount.username : 'https://www.threads.com')" target="_blank" class="text-xs font-bold hover:underline">
                       {{ $t('content.queue.view_threads') }}
                     </a>
                     <Button variant="danger" size="sm" @click="confirmDeleteFromThreads(post.id)" :loading="deletingThreadsId === post.id">

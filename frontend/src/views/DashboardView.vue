@@ -393,6 +393,7 @@ const filteredChartData = computed(() => {
 
 function safePermalink(url: string | null | undefined): string | null {
   if (!url) return null
+  if (/\/post\/\d+/.test(url) || !url.includes('/@')) return null
   return url.replace('://www.threads.net/', '://www.threads.com/')
              .replace('://threads.net/', '://www.threads.com/')
              .replace('://threads.com/', '://www.threads.com/')

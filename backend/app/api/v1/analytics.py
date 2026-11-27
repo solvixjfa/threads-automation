@@ -652,6 +652,44 @@ async def get_account_overview_cached(account_id: str):
         .execute()
     )
 
+    # Auto-heal missing/invalid permalinks (must contain /@username/post/shortcode)
+    missing_perm = [
+        p for p in (posts_res.data or [])
+        if p.get("threads_media_id") and not (
+            isinstance(p.get("permalink"), str)
+            and "/@" in p["permalink"]
+            and "/post/" in p["permalink"]
+        )
+    ]
+    if missing_perm:
+        try:
+            import httpx
+            acc_tok_res = (
+                db.schema("threads")
+                .from_("threads_accounts")
+                .select("settings")
+                .eq("id", account_id)
+                .limit(1)
+                .execute()
+            )
+            tok = ((acc_tok_res.data or [{}])[0].get("settings") or {}).get("access_token")
+            if tok:
+                with httpx.Client(timeout=4.0) as client:
+                    for mp in missing_perm[:8]:
+                        mid = str(mp["threads_media_id"])
+                        r = client.get(
+                            f"https://graph.threads.net/v1.0/{mid}",
+                            params={"fields": "permalink", "access_token": tok},
+                        )
+                        if r.status_code == 200:
+                            perm = (r.json().get("permalink") or "").strip()
+                            if "/@" in perm and "/post/" in perm:
+                                perm = perm.replace("://www.threads.net/", "://www.threads.com/").replace("://threads.net/", "://www.threads.com/")
+                                mp["permalink"] = perm
+                                db.schema("threads").from_("posts").update({"permalink": perm}).eq("id", mp["id"]).execute()
+        except Exception:
+            pass
+
     sp_map = {
         str(row["published_media_id"]): row
         for row in (sp_res.data or [])
@@ -683,7 +721,12 @@ async def get_account_overview_cached(account_id: str):
 
         er = ((l + r + rp) / v * 100) if v > 0 else 0.0
         resolved_text = (sp.get("text") if sp else None) or p.get("text") or f"Post Without Text (ID: {media_id[:8] or 'Unknown'})"
-        resolved_permalink = p.get("permalink") or (f"https://www.threads.com/post/{media_id}" if media_id else None)
+        raw_perm = (p.get("permalink") or "").strip()
+        resolved_permalink = (
+            raw_perm.replace("://www.threads.net/", "://www.threads.com/").replace("://threads.net/", "://www.threads.com/")
+            if ("/@" in raw_perm and "/post/" in raw_perm)
+            else None
+        )
         resolved_date = (sp.get("scheduled_for") if sp else None) or p.get("posted_at") or p.get("created_at")
 
         formatted_posts.append({

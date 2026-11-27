@@ -408,7 +408,8 @@ async def sync_account_full(req: SyncAccountRequest):
                     seen_media_ids.add(media_id)
 
                     post_text = item.get("text") or ""
-                    permalink = item.get("permalink") or f"https://www.threads.com/post/{media_id}"
+                    raw_perm = (item.get("permalink") or "").strip()
+                    permalink = raw_perm.replace("://www.threads.net/", "://www.threads.com/") if ("/@" in raw_perm and "/post/" in raw_perm) else ""
                     posted_at = item.get("timestamp") or now_iso
                     media_type = item.get("media_type") or "TEXT"
 
