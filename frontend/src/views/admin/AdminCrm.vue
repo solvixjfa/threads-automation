@@ -48,24 +48,27 @@
       </div>
     </form>
 
-    <!-- 1-TAP OUTREACH TEMPLATE BAR -->
-    <div class="card p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-[var(--border-strong)]">
-      <div class="flex items-center gap-2 text-xs font-bold shrink-0">
-        <Zap class="w-4 h-4 text-amber-400 shrink-0" />
-        <span>1-Tap Outreach:</span>
+    <!-- 1-TAP OUTREACH BAR -->
+    <div class="card p-3 space-y-2">
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5 text-xs font-bold">
+          <Zap class="w-4 h-4 text-amber-400 shrink-0" />
+          <span>1-Tap Outreach</span>
+        </div>
+        <span class="text-[11px] theme-text-muted">Salin, log & buka Threads</span>
       </div>
-      <div class="flex flex-1 gap-2 min-w-0">
-        <select v-model="selectedTemplateId" class="input text-xs flex-1 min-w-0 py-1.5">
-          <option v-if="templates.length === 0" value="">Default: Sapaan Kenalan (@username)</option>
+      <div class="grid grid-cols-[1fr_104px] gap-2">
+        <select v-model="selectedTemplateId" class="input text-xs w-full min-w-0 py-2">
+          <option value="">Default: Sapaan Kenalan (@username)</option>
           <option v-for="tpl in templates" :key="tpl.id" :value="tpl.id">
             [{{ tpl.category }}] {{ tpl.name }}
           </option>
         </select>
-        <select v-model.number="autoFollowUpDays" class="input text-xs font-bold w-28 shrink-0 py-1.5">
-          <option :value="2">FU +2 hari</option>
-          <option :value="3">FU +3 hari</option>
-          <option :value="5">FU +5 hari</option>
-          <option :value="0">Tanpa FU</option>
+        <select v-model.number="autoFollowUpDays" class="input text-xs font-bold w-full py-2" title="Jadwal follow-up otomatis">
+          <option :value="2">FU +2h</option>
+          <option :value="3">FU +3h</option>
+          <option :value="5">FU +5h</option>
+          <option :value="0">No FU</option>
         </select>
       </div>
     </div>
@@ -870,14 +873,8 @@ async function fetchLeads() {
     const [leadsRes, countsRes] = await Promise.all([
       supabase.from('crm_leads').select('*').order('last_contacted_at', { ascending: false }),
       supabase.from('crm_interactions').select('lead_id'),
-      supabase.from('crm_templates').select('id, name, category, content').order('created_at', { ascending: false }),
       fetchIxieraAccountsMap(),
     ])
-
-        if (tplRes && !tplRes.error && tplRes.data) {
-      templates.value = tplRes.data as CrmTemplateItem[]
-      if (templates.value.length > 0 && !selectedTemplateId.value) selectedTemplateId.value = templates.value[0].id
-    }
 
     if (leadsRes.error) {
       if (leadsRes.error.code === '42501' || leadsRes.error.message.toLowerCase().includes('permission')) {
@@ -1216,8 +1213,27 @@ async function deleteInteraction(item: CrmInteraction) {
 
 onMounted(fetchLeads)
 
+async function loadOutreachTemplates() {
+  try {
+    const { data, error } = await supabase
+      .from('crm_templates')
+      .select('id, name, category, content')
+      .order('created_at', { ascending: false })
+    if (!error && data) {
+      templates.value = data as CrmTemplateItem[]
+      if (templates.value.length > 0 && !selectedTemplateId.value) {
+        selectedTemplateId.value = templates.value[0].id
+      }
+    }
+  } catch {
+    // fallback ke default template
+  }
+}
+
 async function copyTextSafe(text: string) {
-  try { await navigator.clipboard.writeText(text) } catch {
+  try {
+    await navigator.clipboard.writeText(text)
+  } catch {
     const ta = document.createElement('textarea')
     ta.value = text
     ta.style.position = 'fixed'
@@ -1247,7 +1263,9 @@ async function executeOneTapOutreach(lead: CrmLead) {
   try {
     const now = new Date()
     const nowIso = now.toISOString()
-    const nextFuIso = autoFollowUpDays.value > 0 ? new Date(now.getTime() + autoFollowUpDays.value * 86400000).toISOString() : lead.next_followup_at
+    const nextFuIso = autoFollowUpDays.value > 0
+      ? new Date(now.getTime() + autoFollowUpDays.value * 86400000).toISOString()
+      : lead.next_followup_at
     const ch = (lead.outreach_channel || '').toLowerCase()
     const interactionType = ch.includes('comment') ? 'Comment' : ch.includes('reply') ? 'Reply' : 'DM'
 
@@ -1280,5 +1298,9 @@ async function executeOneTapOutreach(lead: CrmLead) {
     outreachingId.value = ''
   }
 }
+
+onMounted(() => {
+  loadOutreachTemplates()
+})
 
 </script>
