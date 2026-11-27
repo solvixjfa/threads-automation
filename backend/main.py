@@ -2,7 +2,7 @@ import asyncio
 import logging
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1 import rag, history, leads, queue, analytics, admin, payment, trending, threads_extra
+from app.api.v1 import rag, history, leads, queue, analytics, admin, payment, trending, threads_extra, chat
 from app.workers.replies import reply_worker_loop
 
 logging.basicConfig(level=logging.WARNING, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s", force=True)
@@ -28,6 +28,7 @@ app.include_router(admin.router, prefix="/api/v1/admin", tags=["Admin"])
 app.include_router(payment.router, prefix="/api/v1/payment", tags=["Payment"])
 app.include_router(trending.router, prefix="/api/v1/trending", tags=["Trending & Outreach"])
 app.include_router(threads_extra.router, prefix="/api/v1/threads-extra", tags=["Threads Location & Mentions"])
+app.include_router(chat.router, prefix="/api/v1/chat", tags=["Support Chat"])
 
 @app.on_event("startup")
 async def startup_event():

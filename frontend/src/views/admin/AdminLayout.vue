@@ -149,6 +149,15 @@
                 <span>Pipeline Leads</span>
               </RouterLink>
               <RouterLink
+                to="/admin/live-chat"
+                @click="drawerOpen = false"
+                active-class="theme-bg-sec font-bold theme-text border theme-border"
+                class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm theme-text-muted hover:theme-text transition-colors"
+              >
+                <MessageCircle class="w-4 h-4 shrink-0" />
+                <span>Live Chat</span>
+              </RouterLink>
+              <RouterLink
                 to="/admin/templates"
                 @click="drawerOpen = false"
                 active-class="theme-bg-sec font-bold theme-text border theme-border"
@@ -228,7 +237,7 @@
 import { ref, computed, watch } from 'vue'
 import { RouterView, RouterLink, useRoute } from 'vue-router'
 import {
-  BarChart3, Users, MessageSquare, FileText,
+  BarChart3, Users, MessageSquare, MessageCircle, FileText,
   TrendingUp, ArrowLeft, Menu, X
 } from 'lucide-vue-next'
 
@@ -240,7 +249,7 @@ watch(() => route.fullPath, () => {
 })
 
 const currentGroupLabel = computed(() => {
-  if (route.path.startsWith('/admin/crm') || route.path.startsWith('/admin/templates') || route.path.startsWith('/admin/analytics')) {
+  if (route.path.startsWith('/admin/live-chat') || route.path.startsWith('/admin/crm') || route.path.startsWith('/admin/templates') || route.path.startsWith('/admin/analytics')) {
     return 'Sales & CRM'
   }
   return 'Admin Platform'
@@ -248,6 +257,7 @@ const currentGroupLabel = computed(() => {
 
 const currentPageTitle = computed(() => {
   if (route.path === '/admin/users') return 'Users & Plans'
+  if (route.path === '/admin/live-chat') return 'Live Chat'
   if (route.path === '/admin/crm') return 'Pipeline Leads'
   if (route.path === '/admin/templates') return 'Outreach Templates'
   if (route.path === '/admin/analytics') return 'Sales Analytics'
