@@ -91,7 +91,7 @@
               <span v-if="lead.page_url">• {{ lead.page_url }}</span>
             </div>
 
-            <p v-if="lead.first_message" class="text-xs theme-text-muted bg-black/20 border theme-border rounded-lg px-3 py-2 mt-1.5">
+            <p v-if="lead.first_message" class="text-xs theme-text-muted bg-[var(--bg-hover)] text-[var(--text-primary)] border theme-border rounded-lg px-3 py-2 mt-1.5">
               "{{ lead.first_message }}"
             </p>
           </div>

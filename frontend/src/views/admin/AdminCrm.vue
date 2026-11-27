@@ -57,7 +57,7 @@
           @click="followUpFilter = tab.value"
           class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-colors flex items-center gap-1.5"
           :class="followUpFilter === tab.value
-            ? 'bg-[var(--accent)] text-[var(--bg)] border-[var(--accent)]'
+            ? 'bg-[var(--accent)] text-[var(--accent-text)] border-[var(--accent)]'
             : 'theme-bg theme-border theme-text-muted hover:theme-text'"
         >
           <span>{{ tab.label }}</span>
@@ -84,7 +84,7 @@
         >
           <SlidersHorizontal class="w-3.5 h-3.5" />
           <span>Filter</span>
-          <span v-if="activeFilterCount > 0" class="px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--accent)] text-[var(--bg)]">
+          <span v-if="activeFilterCount > 0" class="px-1.5 py-0.2 rounded-full text-[10px] bg-[var(--accent)] text-[var(--accent-text)]">
             {{ activeFilterCount }}
           </span>
         </button>
@@ -465,7 +465,7 @@
               >
                 <div class="flex items-center justify-between gap-2">
                   <div class="flex items-center gap-2">
-                    <span class="font-bold px-2 py-0.5 rounded bg-[var(--accent)] text-[var(--bg)] text-[10px]">
+                    <span class="font-bold px-2 py-0.5 rounded bg-[var(--accent)] text-[var(--accent-text)] text-[10px]">
                       {{ item.interaction_type }}
                     </span>
                     <span class="theme-text-muted text-[11px]">{{ formatDateTime(item.interaction_date) }}</span>

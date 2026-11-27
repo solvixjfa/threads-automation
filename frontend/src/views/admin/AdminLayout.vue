@@ -1,10 +1,10 @@
 <template>
-  <div class="min-h-[100dvh] flex theme-bg-sec theme-text" style="background-color: var(--bg-sec, #09090b);">
+  <div class="min-h-[100dvh] flex theme-bg-sec theme-text" style="background-color: var(--bg-primary);">
 
     <!-- DESKTOP SIDEBAR -->
     <aside
       class="w-64 border-r theme-border theme-bg hidden md:flex flex-col shrink-0 h-[100dvh] sticky top-0"
-      style="background-color: var(--bg, var(--bg-primary, #0f0f11));"
+      style="background-color: var(--bg-elevated);"
     >
       <div class="h-16 flex items-center justify-between px-6 border-b theme-border">
         <div>
@@ -92,7 +92,7 @@
         <!-- Opaque Drawer Panel -->
         <aside
           class="relative w-72 max-w-[82vw] theme-bg theme-text border-r theme-border h-[100dvh] flex flex-col z-10 shadow-2xl"
-          style="background-color: var(--bg, var(--bg-primary, #0f0f11));"
+          style="background-color: var(--bg-elevated);"
         >
           <div class="h-14 flex items-center justify-between px-5 border-b theme-border shrink-0">
             <div>
@@ -207,7 +207,7 @@
       <!-- SOLID MOBILE TOP BAR -->
       <header
         class="md:hidden h-14 border-b theme-border theme-bg sticky top-0 z-20 shrink-0 px-4 flex items-center justify-between gap-3"
-        style="background-color: var(--bg, var(--bg-primary, #0f0f11));"
+        style="background-color: var(--bg-elevated);"
       >
         <div class="flex items-center gap-3 min-w-0">
           <button

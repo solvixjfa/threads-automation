@@ -21,7 +21,7 @@
           @click="selectedCategory = cat"
           class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-colors"
           :class="selectedCategory === cat
-            ? 'bg-[var(--accent)] text-[var(--bg)] border-[var(--accent)]'
+            ? 'bg-[var(--accent)] text-[var(--accent-text)] border-[var(--accent)]'
             : 'theme-bg theme-border theme-text-muted hover:theme-text'"
         >
           {{ cat }}

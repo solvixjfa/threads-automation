@@ -183,3 +183,12 @@ html, body, #app {
   margin: 0;
   padding: 0;
 }
+
+/* --- ADMIN THEME HELPER CLASSES --- */
+.theme-bg { background-color: var(--bg-primary); }
+.theme-bg-sec { background-color: var(--bg-elevated); }
+.theme-text { color: var(--text-primary); }
+.theme-text-muted { color: var(--text-muted); }
+.theme-border { border-color: var(--border); }
+.hover\:theme-text:hover { color: var(--text-primary); }
+.hover\:theme-bg-sec:hover { background-color: var(--bg-hover); }

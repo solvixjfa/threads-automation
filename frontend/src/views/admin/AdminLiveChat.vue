@@ -86,7 +86,7 @@
         :class="[
           !selectedSession ? 'hidden md:flex' : 'flex',
           isFullScreen
-            ? 'fixed inset-0 z-[999] theme-bg flex-col h-[100dvh] w-screen rounded-none border-0'
+            ? 'fixed inset-0 z-[999] bg-[var(--bg-primary)] text-[var(--text-primary)] flex-col h-[100dvh] w-screen rounded-none border-0'
             : 'md:col-span-8 card flex-col overflow-hidden h-[75dvh] md:h-[72dvh]'
         ]"
       >
@@ -153,8 +153,8 @@
                 v-else
                 class="px-3.5 py-2.5 rounded-2xl text-sm max-w-[85%] whitespace-pre-line break-words"
                 :class="m.sender_role === 'admin'
-                  ? 'bg-[var(--accent)] text-[var(--bg)] font-medium rounded-br-sm'
-                  : 'theme-bg-sec border theme-border theme-text rounded-bl-sm'"
+                  ? 'bg-[var(--accent)] text-[var(--accent-text)] font-medium rounded-br-sm shadow-sm'
+                  : 'bg-[var(--bg-hover)] border border-[var(--border-strong)] text-[var(--text-primary)] rounded-bl-sm'"
               >
                 {{ m.message }}
               </div>

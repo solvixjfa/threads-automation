@@ -23,7 +23,7 @@
           @click="filterMode = tab.value"
           class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap border transition-colors"
           :class="filterMode === tab.value
-            ? 'bg-[var(--accent)] text-[var(--bg)] border-[var(--accent)]'
+            ? 'bg-[var(--accent)] text-[var(--accent-text)] border-[var(--accent)]'
             : 'theme-bg theme-border theme-text-muted hover:theme-text'"
         >
           {{ tab.label }} ({{ getFilterCount(tab.value) }})
@@ -90,7 +90,7 @@
     <!-- MODAL EXTEND PLAN -->
     <Teleport to="body">
       <div v-if="selectedUser && modalType === 'extend'" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <div class="card max-w-sm w-full p-6 space-y-4 bg-[var(--bg)]">
+        <div class="card max-w-sm w-full p-6 space-y-4 bg-[var(--bg-primary)]">
           <h3 class="text-lg font-bold">Approve / Extend Plan</h3>
           <p class="text-xs theme-text-muted">{{ selectedUser.email }} (@{{ selectedUser.username }})</p>
           <Select v-model="extendType" label="Plan Type" :options="[
@@ -115,7 +115,7 @@
     <!-- MODAL ADJUST CREDITS -->
     <Teleport to="body">
       <div v-if="selectedUser && modalType === 'credits'" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <div class="card max-w-sm w-full p-6 space-y-4 bg-[var(--bg)]">
+        <div class="card max-w-sm w-full p-6 space-y-4 bg-[var(--bg-primary)]">
           <h3 class="text-lg font-bold">Adjust Credits: {{ selectedUser.email }}</h3>
           <p v-if="(selectedUser.account_count || 1) > 1" class="text-xs text-blue-400 font-bold">
             Saldo kredit bersama akan diperbarui untuk seluruh {{ selectedUser.account_count }} akun user ini.
@@ -130,7 +130,7 @@
     <!-- MODAL LEDGER -->
     <Teleport to="body">
       <div v-if="selectedUser && modalType === 'ledger'" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <div class="card max-w-lg w-full p-6 space-y-4 bg-[var(--bg)] max-h-[80vh] flex flex-col">
+        <div class="card max-w-lg w-full p-6 space-y-4 bg-[var(--bg-primary)] max-h-[80vh] flex flex-col">
           <h3 class="text-lg font-bold">Credit Ledger: {{ selectedUser.email }}</h3>
           <div class="flex-1 overflow-y-auto space-y-2 pr-2">
             <div v-for="l in ledgerData" :key="l.id" class="flex justify-between items-center p-3 rounded-lg theme-bg-sec border theme-border text-xs">
