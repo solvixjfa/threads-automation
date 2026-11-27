@@ -81,10 +81,14 @@
         </div>
       </div>
 
-      <!-- CHAT THREAD -->
+      <!-- CHAT THREAD (SUPPORTS FULL SCREEN) -->
       <div
-        class="md:col-span-8 card flex flex-col overflow-hidden h-[75dvh] md:h-[72dvh]"
-        :class="{ 'hidden md:flex': !selectedSession }"
+        :class="[
+          !selectedSession ? 'hidden md:flex' : 'flex',
+          isFullScreen
+            ? 'fixed inset-0 z-[999] theme-bg flex-col h-[100dvh] w-screen rounded-none border-0'
+            : 'md:col-span-8 card flex-col overflow-hidden h-[75dvh] md:h-[72dvh]'
+        ]"
       >
         <div v-if="!selectedSession" class="flex-1 flex flex-col items-center justify-center p-8 text-center theme-text-muted">
           <MessageCircle class="w-8 h-8 mb-2 opacity-50" />
@@ -94,11 +98,12 @@
 
         <template v-else>
           <!-- THREAD HEADER -->
-          <div class="p-3.5 border-b theme-border flex items-center justify-between gap-3 shrink-0">
-            <div class="flex items-center gap-2.5 min-w-0">
+          <div class="p-3.5 border-b theme-border flex items-center justify-between gap-2 shrink-0">
+            <div class="flex items-center gap-2 min-w-0">
               <button
-                @click="selectedSession = null"
-                class="md:hidden p-1.5 rounded-lg border theme-border theme-bg-sec"
+                @click="closeThread"
+                class="p-1.5 rounded-lg border theme-border theme-bg-sec"
+                :class="{ 'md:hidden': !isFullScreen }"
                 aria-label="Kembali"
               >
                 <ArrowLeft class="w-4 h-4" />
@@ -112,12 +117,22 @@
               </div>
             </div>
 
-            <button
-              @click="toggleSessionStatus"
-              class="btn btn-secondary btn-sm text-xs shrink-0"
-            >
-              {{ selectedSession.status === 'open' ? 'Tutup Sesi' : 'Buka Lagi' }}
-            </button>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button
+                @click="isFullScreen = !isFullScreen"
+                class="p-2 rounded-lg border theme-border theme-bg-sec theme-text hover:opacity-80"
+                :title="isFullScreen ? 'Keluar Full Screen' : 'Mode Full Screen'"
+              >
+                <Minimize2 v-if="isFullScreen" class="w-4 h-4" />
+                <Maximize2 v-else class="w-4 h-4" />
+              </button>
+              <button
+                @click="toggleSessionStatus"
+                class="btn btn-secondary btn-sm text-xs shrink-0"
+              >
+                {{ selectedSession.status === 'open' ? 'Tutup' : 'Buka Lagi' }}
+              </button>
+            </div>
           </div>
 
           <!-- MESSAGES BODY -->
@@ -136,7 +151,7 @@
               </div>
               <div
                 v-else
-                class="px-3.5 py-2.5 rounded-2xl text-sm max-w-[82%] whitespace-pre-line break-words"
+                class="px-3.5 py-2.5 rounded-2xl text-sm max-w-[85%] whitespace-pre-line break-words"
                 :class="m.sender_role === 'admin'
                   ? 'bg-[var(--accent)] text-[var(--bg)] font-medium rounded-br-sm'
                   : 'theme-bg-sec border theme-border theme-text rounded-bl-sm'"
@@ -176,7 +191,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { supabase } from '../../lib/supabase'
-import { RefreshCw, MessageCircle, ArrowLeft, Send } from 'lucide-vue-next'
+import { RefreshCw, MessageCircle, ArrowLeft, Send, Maximize2, Minimize2 } from 'lucide-vue-next'
 
 interface ChatSession {
   id: string
@@ -204,6 +219,7 @@ const sessions = ref<ChatSession[]>([])
 const selectedSession = ref<ChatSession | null>(null)
 const messages = ref<ChatMessage[]>([])
 const statusFilter = ref<'open' | 'closed' | 'all'>('open')
+const isFullScreen = ref(false)
 const loading = ref(true)
 const sending = ref(false)
 const replyText = ref('')
@@ -256,6 +272,11 @@ function scrollToBottom() {
       messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
     }
   })
+}
+
+function closeThread() {
+  isFullScreen.value = false
+  selectedSession.value = null
 }
 
 async function fetchSessions() {

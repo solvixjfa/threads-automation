@@ -36,6 +36,61 @@ class AdminStatusRequest(BaseModel):
     status: str = Field(..., pattern="^(open|closed)$")
 
 
+class AdminUpdateEmailLeadRequest(BaseModel):
+    status: Optional[str] = Field(None, pattern="^(new|contacted|converted|unsubscribed)$")
+    notes: Optional[str] = Field(None, max_length=1000)
+
+
+def sync_visitor_email_to_crm(
+    db,
+    visitor_email: Optional[str],
+    visitor_name: str,
+    page_url: Optional[str],
+    first_message: str,
+    session_id: str,
+):
+    if not visitor_email:
+        return
+    clean_email = visitor_email.strip().lower()
+    if "@" not in clean_email or "." not in clean_email:
+        return
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    try:
+        existing = (
+            db.schema("threads")
+            .from_("crm_email_leads")
+            .select("id, submission_count")
+            .eq("email", clean_email)
+            .limit(1)
+            .execute()
+        )
+        if existing.data:
+            row = existing.data[0]
+            db.schema("threads").from_("crm_email_leads").update({
+                "visitor_name": visitor_name,
+                "page_url": page_url,
+                "last_session_id": session_id,
+                "submission_count": int(row.get("submission_count", 1)) + 1,
+                "updated_at": now_iso,
+            }).eq("id", row["id"]).execute()
+        else:
+            db.schema("threads").from_("crm_email_leads").insert({
+                "email": clean_email,
+                "visitor_name": visitor_name,
+                "source": "live_chat",
+                "page_url": page_url,
+                "first_message": first_message[:500],
+                "last_session_id": session_id,
+                "status": "new",
+                "submission_count": 1,
+                "created_at": now_iso,
+                "updated_at": now_iso,
+            }).execute()
+    except Exception as e:
+        logger.error(f"Gagal auto-sync email ke crm_email_leads: {str(e)}")
+
+
 async def notify_support_email(
     visitor_name: str,
     visitor_email: Optional[str],
@@ -88,9 +143,7 @@ async def notify_support_email(
                 },
                 timeout=10.0,
             )
-            if res.status_code in (200, 201):
-                logger.info(f"Notifikasi live chat terkirim ke {to_email} via {from_email}")
-            else:
+            if res.status_code not in (200, 201):
                 logger.error(f"Resend live chat alert gagal: {res.text}")
     except Exception as e:
         logger.error(f"Error kirim notifikasi live chat: {str(e)}")
@@ -163,6 +216,7 @@ async def start_chat(payload: StartChatRequest):
         .execute()
     )
 
+    sync_visitor_email_to_crm(db, clean_email, clean_name, payload.page_url, clean_msg, session_id)
     await notify_support_email(clean_name, clean_email, clean_msg, payload.page_url, is_followup=False)
     return {"session": session, "message": msg_res.data[0] if msg_res.data else None}
 
@@ -275,3 +329,43 @@ async def admin_update_status(session_id: str, payload: AdminStatusRequest, user
     db = get_supabase()
     db.schema("threads").from_("chat_sessions").update({"status": payload.status}).eq("id", session_id).execute()
     return {"status": payload.status}
+
+
+@router.get("/admin/email-leads")
+async def admin_list_email_leads(user=Depends(verify_admin)):
+    db = get_supabase()
+    res = (
+        db.schema("threads")
+        .from_("crm_email_leads")
+        .select("*")
+        .order("updated_at", desc=True)
+        .limit(500)
+        .execute()
+    )
+    return {"leads": res.data or []}
+
+
+@router.patch("/admin/email-leads/{lead_id}")
+async def admin_update_email_lead(lead_id: str, payload: AdminUpdateEmailLeadRequest, user=Depends(verify_admin)):
+    db = get_supabase()
+    updates = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    if payload.status is not None:
+        updates["status"] = payload.status
+    if payload.notes is not None:
+        updates["notes"] = payload.notes.strip()
+
+    res = (
+        db.schema("threads")
+        .from_("crm_email_leads")
+        .update(updates)
+        .eq("id", lead_id)
+        .execute()
+    )
+    return {"lead": res.data[0] if res.data else None}
+
+
+@router.delete("/admin/email-leads/{lead_id}")
+async def admin_delete_email_lead(lead_id: str, user=Depends(verify_admin)):
+    db = get_supabase()
+    db.schema("threads").from_("crm_email_leads").delete().eq("id", lead_id).execute()
+    return {"deleted": True}

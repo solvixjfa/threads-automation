@@ -1,9 +1,15 @@
 <template>
-  <div class="fixed bottom-4 right-4 z-[990] flex flex-col items-end">
+  <div
+    :class="isFullScreen
+      ? 'fixed inset-0 z-[1000] flex flex-col'
+      : 'fixed bottom-4 right-4 z-[990] flex flex-col items-end'"
+  >
     <!-- CHAT WINDOW -->
     <div
       v-if="isOpen"
-      class="mb-3 w-[calc(100vw-2rem)] sm:w-[370px] max-h-[78dvh] rounded-2xl border border-zinc-800 bg-[#0c0c0e] text-zinc-100 shadow-2xl flex flex-col overflow-hidden"
+      :class="isFullScreen
+        ? 'w-full h-[100dvh] rounded-none border-0 bg-[#0c0c0e] text-zinc-100 flex flex-col overflow-hidden'
+        : 'mb-3 w-[calc(100vw-2rem)] sm:w-[370px] max-h-[78dvh] rounded-2xl border border-zinc-800 bg-[#0c0c0e] text-zinc-100 shadow-2xl flex flex-col overflow-hidden'"
     >
       <!-- HEADER -->
       <div class="px-4 py-3.5 bg-[#121215] border-b border-zinc-800 flex items-center justify-between gap-2 shrink-0">
@@ -29,7 +35,16 @@
             Menu FAQ
           </button>
           <button
-            @click="isOpen = false"
+            @click="isFullScreen = !isFullScreen"
+            class="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+            :title="isFullScreen ? 'Perkecil jendela' : 'Layar penuh'"
+            aria-label="Toggle layar penuh"
+          >
+            <Minimize2 v-if="isFullScreen" class="w-4 h-4" />
+            <Maximize2 v-else class="w-4 h-4" />
+          </button>
+          <button
+            @click="closeWidget"
             class="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
             aria-label="Tutup chat"
           >
@@ -98,7 +113,7 @@
             required
             maxlength="80"
             placeholder="Contoh: Raka"
-            class="w-full px-3 py-2 rounded-xl bg-[#141418] border border-zinc-800 text-xs text-white focus:outline-none focus:border-zinc-500"
+            class="w-full px-3 py-2.5 rounded-xl bg-[#141418] border border-zinc-800 text-sm text-white focus:outline-none focus:border-zinc-500"
           />
         </div>
 
@@ -109,7 +124,7 @@
             type="email"
             maxlength="120"
             placeholder="nama@email.com"
-            class="w-full px-3 py-2 rounded-xl bg-[#141418] border border-zinc-800 text-xs text-white focus:outline-none focus:border-zinc-500"
+            class="w-full px-3 py-2.5 rounded-xl bg-[#141418] border border-zinc-800 text-sm text-white focus:outline-none focus:border-zinc-500"
           />
         </div>
 
@@ -117,11 +132,11 @@
           <label class="block text-[11px] font-bold text-zinc-400 mb-1">Pertanyaan / Kendala *</label>
           <textarea
             v-model.trim="formMessage"
-            rows="3"
+            rows="4"
             required
             maxlength="2000"
             placeholder="Tulis pertanyaan Anda di sini..."
-            class="w-full px-3 py-2 rounded-xl bg-[#141418] border border-zinc-800 text-xs text-white focus:outline-none focus:border-zinc-500 resize-none"
+            class="w-full px-3 py-2.5 rounded-xl bg-[#141418] border border-zinc-800 text-sm text-white focus:outline-none focus:border-zinc-500 resize-none"
           ></textarea>
         </div>
 
@@ -130,7 +145,7 @@
         <button
           type="submit"
           :disabled="submitting || !formName || !formMessage"
-          class="w-full py-2.5 rounded-xl bg-white text-black font-bold text-xs hover:bg-zinc-200 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
+          class="w-full py-3 rounded-xl bg-white text-black font-bold text-xs hover:bg-zinc-200 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5"
         >
           <Send class="w-3.5 h-3.5" />
           <span>{{ submitting ? 'Menghubungkan...' : 'Mulai Chat dengan Admin' }}</span>
@@ -154,7 +169,7 @@
             </div>
             <div
               v-else
-              class="px-3.5 py-2.5 rounded-2xl text-xs leading-relaxed max-w-[85%] whitespace-pre-line break-words"
+              class="px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed max-w-[85%] whitespace-pre-line break-words"
               :class="m.sender_role === 'visitor'
                 ? 'bg-white text-black font-medium rounded-br-sm'
                 : 'bg-[#16161a] border border-zinc-700 text-zinc-100 rounded-bl-sm'"
@@ -173,15 +188,15 @@
             type="text"
             placeholder="Ketik balasan untuk Admin..."
             maxlength="2000"
-            class="flex-1 px-3 py-2 rounded-xl bg-[#18181c] border border-zinc-800 text-xs text-white focus:outline-none focus:border-zinc-600"
+            class="flex-1 px-3 py-2.5 rounded-xl bg-[#18181c] border border-zinc-800 text-sm text-white focus:outline-none focus:border-zinc-600"
           />
           <button
             type="submit"
             :disabled="submitting || !liveInput"
-            class="px-3.5 py-2 rounded-xl bg-white text-black font-bold text-xs hover:bg-zinc-200 disabled:opacity-50 transition-colors shrink-0"
+            class="px-4 py-2.5 rounded-xl bg-white text-black font-bold text-xs hover:bg-zinc-200 disabled:opacity-50 transition-colors shrink-0"
             aria-label="Kirim pesan"
           >
-            <Send class="w-3.5 h-3.5" />
+            <Send class="w-4 h-4" />
           </button>
         </form>
       </template>
@@ -189,6 +204,7 @@
 
     <!-- FLOATING TRIGGER BUTTON -->
     <button
+      v-if="!isFullScreen"
       @click="toggleWidget"
       class="h-12 px-4 rounded-full bg-white text-black font-bold text-xs shadow-xl hover:bg-zinc-200 active:scale-95 transition-all flex items-center gap-2 border border-zinc-300"
     >
@@ -201,7 +217,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { supabase } from '../lib/supabase'
-import { MessageSquare, X, ChevronRight, Headphones, Send } from 'lucide-vue-next'
+import { MessageSquare, X, ChevronRight, Headphones, Send, Maximize2, Minimize2 } from 'lucide-vue-next'
 
 interface FaqOption {
   id: string
@@ -267,6 +283,7 @@ const FAQ_NODES: Record<string, FaqOption> = {
 const ROOT_IDS = ['about', 'pricing', 'safety', 'multi_account']
 
 const isOpen = ref(false)
+const isFullScreen = ref(false)
 const mode = ref<'faq' | 'handover' | 'live'>('faq')
 const faqHistory = ref<FaqHistoryItem[]>([
   { from: 'bot', text: 'Halo! Ada yang bisa dibantu seputar Ixiera? Pilih topik di bawah atau langsung chat dengan Admin.' },
@@ -306,16 +323,23 @@ function scrollContainer(el: HTMLElement | null) {
   })
 }
 
+function closeWidget() {
+  isFullScreen.value = false
+  isOpen.value = false
+}
+
 function toggleWidget() {
   isOpen.value = !isOpen.value
-  if (isOpen.value) {
-    if (sessionId.value) {
-      mode.value = 'live'
-      fetchLiveMessages()
-      scrollContainer(liveBodyRef.value)
-    } else {
-      scrollContainer(faqBodyRef.value)
-    }
+  if (!isOpen.value) {
+    isFullScreen.value = false
+    return
+  }
+  if (sessionId.value) {
+    mode.value = 'live'
+    fetchLiveMessages()
+    scrollContainer(liveBodyRef.value)
+  } else {
+    scrollContainer(faqBodyRef.value)
   }
 }
 
