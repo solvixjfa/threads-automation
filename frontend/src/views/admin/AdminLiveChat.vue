@@ -198,6 +198,8 @@ interface ChatMessage {
   created_at: string
 }
 
+const API_BASE = 'https://threads-automation-r9so.onrender.com/api/v1/chat/admin'
+
 const sessions = ref<ChatSession[]>([])
 const selectedSession = ref<ChatSession | null>(null)
 const messages = ref<ChatMessage[]>([])
@@ -217,6 +219,16 @@ const filteredSessions = computed(() => {
   if (statusFilter.value === 'all') return sessions.value
   return sessions.value.filter(s => s.status === statusFilter.value)
 })
+
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const { data: { session } } = await supabase.auth.getSession()
+  return session
+    ? {
+        Authorization: `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      }
+    : { 'Content-Type': 'application/json' }
+}
 
 function playChime() {
   try {
@@ -249,15 +261,11 @@ function scrollToBottom() {
 async function fetchSessions() {
   loading.value = true
   try {
-    const { data, error } = await supabase
-      .schema('threads')
-      .from('chat_sessions')
-      .select('*')
-      .order('last_message_at', { ascending: false })
-      .limit(100)
-
-    if (!error && data) {
-      sessions.value = data as ChatSession[]
+    const headers = await getAuthHeaders()
+    const res = await fetch(`${API_BASE}/sessions`, { headers })
+    if (res.ok) {
+      const json = await res.json()
+      sessions.value = (json.sessions || []) as ChatSession[]
       if (selectedSession.value) {
         const updated = sessions.value.find(s => s.id === selectedSession.value?.id)
         if (updated) selectedSession.value = updated
@@ -269,36 +277,20 @@ async function fetchSessions() {
 }
 
 async function loadMessages(sessionId: string) {
-  const { data, error } = await supabase
-    .schema('threads')
-    .from('chat_messages')
-    .select('*')
-    .eq('session_id', sessionId)
-    .order('created_at', { ascending: true })
-
-  if (!error && data) {
-    messages.value = data as ChatMessage[]
+  const headers = await getAuthHeaders()
+  const res = await fetch(`${API_BASE}/sessions/${sessionId}/messages`, { headers })
+  if (res.ok) {
+    const json = await res.json()
+    messages.value = (json.messages || []) as ChatMessage[]
+    const target = sessions.value.find(s => s.id === sessionId)
+    if (target) target.unread_admin = 0
     scrollToBottom()
   }
-}
-
-async function markSessionRead(sessionId: string) {
-  await supabase
-    .schema('threads')
-    .from('chat_sessions')
-    .update({ unread_admin: 0 })
-    .eq('id', sessionId)
-
-  const target = sessions.value.find(s => s.id === sessionId)
-  if (target) target.unread_admin = 0
 }
 
 async function selectSession(session: ChatSession) {
   selectedSession.value = session
   await loadMessages(session.id)
-  if (session.unread_admin > 0) {
-    await markSessionRead(session.id)
-  }
 }
 
 async function sendReply() {
@@ -309,30 +301,20 @@ async function sendReply() {
   replyText.value = ''
 
   try {
-    const { data, error } = await supabase
-      .schema('threads')
-      .from('chat_messages')
-      .insert({
-        session_id: sessionId,
-        sender_role: 'admin',
-        message: text,
-      })
-      .select()
-      .single()
+    const headers = await getAuthHeaders()
+    const res = await fetch(`${API_BASE}/sessions/${sessionId}/reply`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ message: text }),
+    })
 
-    if (!error && data) {
-      if (!messages.value.some(m => m.id === data.id)) {
-        messages.value.push(data as ChatMessage)
+    if (res.ok) {
+      const json = await res.json()
+      if (json.message && !messages.value.some(m => m.id === json.message.id)) {
+        messages.value.push(json.message as ChatMessage)
       }
-      await supabase
-        .schema('threads')
-        .from('chat_sessions')
-        .update({
-          last_message_at: new Date().toISOString(),
-          unread_admin: 0,
-        })
-        .eq('id', sessionId)
       scrollToBottom()
+      await fetchSessions()
     }
   } finally {
     sending.value = false
@@ -342,13 +324,14 @@ async function sendReply() {
 async function toggleSessionStatus() {
   if (!selectedSession.value) return
   const nextStatus = selectedSession.value.status === 'open' ? 'closed' : 'open'
-  const { error } = await supabase
-    .schema('threads')
-    .from('chat_sessions')
-    .update({ status: nextStatus })
-    .eq('id', selectedSession.value.id)
+  const headers = await getAuthHeaders()
+  const res = await fetch(`${API_BASE}/sessions/${selectedSession.value.id}/status`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ status: nextStatus }),
+  })
 
-  if (!error) {
+  if (res.ok) {
     selectedSession.value.status = nextStatus
     const item = sessions.value.find(s => s.id === selectedSession.value?.id)
     if (item) item.status = nextStatus
@@ -382,21 +365,8 @@ onMounted(async () => {
           playChime()
         }
         if (selectedSession.value && msg.session_id === selectedSession.value.id) {
-          if (!messages.value.some(m => m.id === msg.id)) {
-            messages.value.push(msg)
-            scrollToBottom()
-          }
-          if (msg.sender_role === 'visitor') {
-            await markSessionRead(msg.session_id)
-          }
+          await loadMessages(msg.session_id)
         }
-        await fetchSessions()
-      }
-    )
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'threads', table: 'chat_sessions' },
-      async () => {
         await fetchSessions()
       }
     )
@@ -407,7 +377,7 @@ onMounted(async () => {
     if (selectedSession.value) {
       await loadMessages(selectedSession.value.id)
     }
-  }, 6000)
+  }, 5000)
 })
 
 onUnmounted(() => {

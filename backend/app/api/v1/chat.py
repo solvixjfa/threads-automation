@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime, timezone
 from app.services.rag import get_supabase
+from app.api.v1.admin import verify_admin
 import httpx
 import os
 import html
@@ -27,9 +28,28 @@ class SendVisitorMessageRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=2000)
 
 
-async def notify_support_email(visitor_name: str, visitor_email: Optional[str], message: str, page_url: Optional[str], is_followup: bool = False):
+class AdminReplyRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=2000)
+
+
+class AdminStatusRequest(BaseModel):
+    status: str = Field(..., pattern="^(open|closed)$")
+
+
+async def notify_support_email(
+    visitor_name: str,
+    visitor_email: Optional[str],
+    message: str,
+    page_url: Optional[str],
+    is_followup: bool = False,
+):
     api_key = os.getenv("RESEND_API_KEY")
-    from_email = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+    raw_from = os.getenv("RESEND_FROM_EMAIL", "").strip()
+    if not raw_from or "resend.dev" in raw_from or "ixiera.id" in raw_from:
+        from_email = "noreply@send.ixiera.online"
+    else:
+        from_email = raw_from
+
     to_email = os.getenv("SUPPORT_ADMIN_EMAIL", "support@ixiera.online")
     if not api_key:
         logger.warning("RESEND_API_KEY tidak tersedia, melewati notifikasi email live chat")
@@ -68,7 +88,9 @@ async def notify_support_email(visitor_name: str, visitor_email: Optional[str], 
                 },
                 timeout=10.0,
             )
-            if res.status_code not in (200, 201):
+            if res.status_code in (200, 201):
+                logger.info(f"Notifikasi live chat terkirim ke {to_email} via {from_email}")
+            else:
                 logger.error(f"Resend live chat alert gagal: {res.text}")
     except Exception as e:
         logger.error(f"Error kirim notifikasi live chat: {str(e)}")
@@ -193,3 +215,63 @@ async def send_visitor_message(payload: SendVisitorMessageRequest):
         )
 
     return {"message": msg_res.data[0] if msg_res.data else None}
+
+
+@router.get("/admin/sessions")
+async def admin_list_sessions(user=Depends(verify_admin)):
+    db = get_supabase()
+    res = (
+        db.schema("threads")
+        .from_("chat_sessions")
+        .select("*")
+        .order("last_message_at", desc=True)
+        .limit(100)
+        .execute()
+    )
+    return {"sessions": res.data or []}
+
+
+@router.get("/admin/sessions/{session_id}/messages")
+async def admin_get_messages(session_id: str, user=Depends(verify_admin)):
+    db = get_supabase()
+    res = (
+        db.schema("threads")
+        .from_("chat_messages")
+        .select("*")
+        .eq("session_id", session_id)
+        .order("created_at", desc=False)
+        .execute()
+    )
+    db.schema("threads").from_("chat_sessions").update({"unread_admin": 0}).eq("id", session_id).execute()
+    return {"messages": res.data or []}
+
+
+@router.post("/admin/sessions/{session_id}/reply")
+async def admin_reply_message(session_id: str, payload: AdminReplyRequest, user=Depends(verify_admin)):
+    db = get_supabase()
+    clean_msg = payload.message.strip()
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    msg_res = (
+        db.schema("threads")
+        .from_("chat_messages")
+        .insert({
+            "session_id": session_id,
+            "sender_role": "admin",
+            "message": clean_msg,
+        })
+        .execute()
+    )
+    db.schema("threads").from_("chat_sessions").update({
+        "last_message_at": now_iso,
+        "unread_admin": 0,
+    }).eq("id", session_id).execute()
+
+    return {"message": msg_res.data[0] if msg_res.data else None}
+
+
+@router.patch("/admin/sessions/{session_id}/status")
+async def admin_update_status(session_id: str, payload: AdminStatusRequest, user=Depends(verify_admin)):
+    db = get_supabase()
+    db.schema("threads").from_("chat_sessions").update({"status": payload.status}).eq("id", session_id).execute()
+    return {"status": payload.status}
