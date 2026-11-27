@@ -23,6 +23,7 @@ import AdminLayout from '../views/admin/AdminLayout.vue'
 import AdminOverview from '../views/admin/AdminOverview.vue'
 import AdminUsers from '../views/admin/AdminUsers.vue'
 import AdminCrm from '../views/admin/AdminCrm.vue'
+import AdminLeadRadar from '../views/admin/AdminLeadRadar.vue'
 import AdminTemplates from '../views/admin/AdminTemplates.vue'
 import AdminCrmAnalytics from '../views/admin/AdminCrmAnalytics.vue'
 import AdminLiveChat from '../views/admin/AdminLiveChat.vue'
@@ -56,6 +57,7 @@ const router = createRouter({
         { path: '', name: 'admin-overview', component: AdminOverview },
         { path: 'users', name: 'admin-users', component: AdminUsers },
         { path: 'crm', name: 'admin-crm', component: AdminCrm },
+        { path: 'lead-radar', name: 'admin-lead-radar', component: AdminLeadRadar },
         { path: 'live-chat', name: 'admin-live-chat', component: AdminLiveChat },
         { path: 'email-leads', name: 'admin-email-leads', component: AdminEmailLeads },
         { path: 'templates', name: 'admin-templates', component: AdminTemplates },

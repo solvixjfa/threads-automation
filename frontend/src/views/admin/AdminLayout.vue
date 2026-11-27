@@ -50,6 +50,14 @@
             <MessageSquare class="w-4 h-4 shrink-0" />
             <span>Pipeline Leads</span>
           </RouterLink>
+<RouterLink
+            to="/admin/lead-radar"
+            active-class="theme-bg-sec font-bold theme-text border theme-border"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm theme-text-muted hover:theme-text transition-colors"
+          >
+            <Radar class="w-4 h-4 shrink-0" />
+            <span>Lead Radar</span>
+          </RouterLink>
           <RouterLink
             to="/admin/templates"
             active-class="theme-bg-sec font-bold theme-text border theme-border"
@@ -147,6 +155,15 @@
               >
                 <MessageSquare class="w-4 h-4 shrink-0" />
                 <span>Pipeline Leads</span>
+              </RouterLink>
+<RouterLink
+                to="/admin/lead-radar"
+                @click="drawerOpen = false"
+                active-class="theme-bg-sec font-bold theme-text border theme-border"
+                class="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm theme-text-muted hover:theme-text transition-colors"
+              >
+                <Radar class="w-4 h-4 shrink-0" />
+                <span>Lead Radar</span>
               </RouterLink>
               <RouterLink
                 to="/admin/live-chat"
@@ -246,7 +263,7 @@
 import { ref, computed, watch } from 'vue'
 import { RouterView, RouterLink, useRoute } from 'vue-router'
 import {
-  BarChart3, Users, MessageSquare, MessageCircle, Mail, FileText,
+  BarChart3, Users, MessageSquare, Radar, MessageCircle, Mail, FileText,
   TrendingUp, ArrowLeft, Menu, X
 } from 'lucide-vue-next'
 
@@ -268,6 +285,7 @@ const currentPageTitle = computed(() => {
   if (route.path === '/admin/users') return 'Users & Plans'
   if (route.path === '/admin/email-leads') return 'Email Leads'
   if (route.path === '/admin/live-chat') return 'Live Chat'
+  if (route.path === '/admin/lead-radar') return 'Lead Radar'
   if (route.path === '/admin/crm') return 'Pipeline Leads'
   if (route.path === '/admin/templates') return 'Outreach Templates'
   if (route.path === '/admin/analytics') return 'Sales Analytics'

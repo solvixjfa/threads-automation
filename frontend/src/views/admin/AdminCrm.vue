@@ -48,6 +48,28 @@
       </div>
     </form>
 
+    <!-- 1-TAP OUTREACH TEMPLATE BAR -->
+    <div class="card p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-[var(--border-strong)]">
+      <div class="flex items-center gap-2 text-xs font-bold shrink-0">
+        <Zap class="w-4 h-4 text-amber-400 shrink-0" />
+        <span>1-Tap Outreach:</span>
+      </div>
+      <div class="flex flex-1 gap-2 min-w-0">
+        <select v-model="selectedTemplateId" class="input text-xs flex-1 min-w-0 py-1.5">
+          <option v-if="templates.length === 0" value="">Default: Sapaan Kenalan (@username)</option>
+          <option v-for="tpl in templates" :key="tpl.id" :value="tpl.id">
+            [{{ tpl.category }}] {{ tpl.name }}
+          </option>
+        </select>
+        <select v-model.number="autoFollowUpDays" class="input text-xs font-bold w-28 shrink-0 py-1.5">
+          <option :value="2">FU +2 hari</option>
+          <option :value="3">FU +3 hari</option>
+          <option :value="5">FU +5 hari</option>
+          <option :value="0">Tanpa FU</option>
+        </select>
+      </div>
+    </div>
+
     <!-- FOLLOW-UP PILLS & SEARCH -->
     <div class="space-y-2.5">
       <div class="flex gap-1.5 overflow-x-auto pb-1">
@@ -261,22 +283,34 @@
         </div>
 
         <!-- CARD ACTIONS -->
-        <div class="grid grid-cols-2 gap-2 pt-2 border-t theme-border">
+        <div class="space-y-2 pt-2 border-t theme-border">
           <button
-            @click="openHistoryModal(lead)"
-            class="btn btn-primary btn-sm flex items-center justify-center gap-1.5 py-2.5"
+            type="button"
+            @click="executeOneTapOutreach(lead)"
+            :disabled="outreachingId === lead.id"
+            class="btn btn-primary btn-sm w-full flex items-center justify-center gap-1.5 py-2.5 font-bold"
           >
-            <History class="w-3.5 h-3.5" />
-            <span>Riwayat ({{ interactionCounts[lead.id] || 0 }})</span>
+            <Zap class="w-3.5 h-3.5" />
+            <span>{{ outreachingId === lead.id ? 'Memproses...' : '1-Tap Outreach (Salin & Buka)' }}</span>
           </button>
 
-          <button
-            @click="openEditLeadModal(lead)"
-            class="btn btn-secondary btn-sm flex items-center justify-center gap-1.5 py-2.5"
-          >
-            <Edit3 class="w-3.5 h-3.5" />
-            <span>Edit & Jadwal FU</span>
-          </button>
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              @click="openHistoryModal(lead)"
+              class="btn btn-secondary btn-sm flex items-center justify-center gap-1.5 py-2"
+            >
+              <History class="w-3.5 h-3.5" />
+              <span>Riwayat ({{ interactionCounts[lead.id] || 0 }})</span>
+            </button>
+
+            <button
+              @click="openEditLeadModal(lead)"
+              class="btn btn-secondary btn-sm flex items-center justify-center gap-1.5 py-2"
+            >
+              <Edit3 class="w-3.5 h-3.5" />
+              <span>Edit & Jadwal FU</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -507,7 +541,7 @@ import { supabase } from '../../lib/supabase'
 import { useNotify } from '../../composables/useNotify'
 import {
   Plus, ExternalLink, Trash2, Search, RefreshCw,
-  SlidersHorizontal, History, Edit3, X, Send
+  SlidersHorizontal, History, Edit3, X, Send, Zap
 } from 'lucide-vue-next'
 
 interface CrmLead {
@@ -568,7 +602,12 @@ const ADMIN_API_BASE = 'https://threads-automation-r9so.onrender.com/api/v1/admi
 
 const { showToast } = useNotify()
 
+interface CrmTemplateItem { id: string; name: string; category: string; content: string }
 const leads = ref<CrmLead[]>([])
+const templates = ref<CrmTemplateItem[]>([])
+const selectedTemplateId = ref('')
+const autoFollowUpDays = ref<number>(3)
+const outreachingId = ref('')
 const interactionCounts = ref<Record<string, number>>({})
 const ixieraAccountMap = ref<Record<string, IxieraAccountMatch>>({})
 const loading = ref(true)
@@ -831,8 +870,14 @@ async function fetchLeads() {
     const [leadsRes, countsRes] = await Promise.all([
       supabase.from('crm_leads').select('*').order('last_contacted_at', { ascending: false }),
       supabase.from('crm_interactions').select('lead_id'),
+      supabase.from('crm_templates').select('id, name, category, content').order('created_at', { ascending: false }),
       fetchIxieraAccountsMap(),
     ])
+
+        if (tplRes && !tplRes.error && tplRes.data) {
+      templates.value = tplRes.data as CrmTemplateItem[]
+      if (templates.value.length > 0 && !selectedTemplateId.value) selectedTemplateId.value = templates.value[0].id
+    }
 
     if (leadsRes.error) {
       if (leadsRes.error.code === '42501' || leadsRes.error.message.toLowerCase().includes('permission')) {
@@ -1170,4 +1215,70 @@ async function deleteInteraction(item: CrmInteraction) {
 }
 
 onMounted(fetchLeads)
+
+async function copyTextSafe(text: string) {
+  try { await navigator.clipboard.writeText(text) } catch {
+    const ta = document.createElement('textarea')
+    ta.value = text
+    ta.style.position = 'fixed'
+    ta.style.opacity = '0'
+    document.body.appendChild(ta)
+    ta.select()
+    document.execCommand('copy')
+    document.body.removeChild(ta)
+  }
+}
+
+async function executeOneTapOutreach(lead: CrmLead) {
+  if (outreachingId.value) return
+  outreachingId.value = lead.id
+  const tpl = templates.value.find(t => t.id === selectedTemplateId.value)
+  const rawTemplate = tpl?.content || 'Halo @username, salam kenal! Lihat konten kamu di Threads relevan banget sama kreator/bisnis yang lagi bangun audiens konsisten.'
+  const handle = lead.threads_handle.replace(/^@/, '')
+  const personalizedMsg = rawTemplate
+    .replace(/\{\{\s*username\s*\}\}/gi, `@${handle}`)
+    .replace(/\{\s*username\s*\}/gi, `@${handle}`)
+    .replace(/\[\s*username\s*\]/gi, `@${handle}`)
+    .replace(/@username\b/gi, `@${handle}`)
+
+  await copyTextSafe(personalizedMsg)
+  window.open(lead.threads_url || `https://www.threads.net/@${handle}`, '_blank', 'noopener,noreferrer')
+
+  try {
+    const now = new Date()
+    const nowIso = now.toISOString()
+    const nextFuIso = autoFollowUpDays.value > 0 ? new Date(now.getTime() + autoFollowUpDays.value * 86400000).toISOString() : lead.next_followup_at
+    const ch = (lead.outreach_channel || '').toLowerCase()
+    const interactionType = ch.includes('comment') ? 'Comment' : ch.includes('reply') ? 'Reply' : 'DM'
+
+    await Promise.all([
+      supabase.from('crm_interactions').insert({
+        lead_id: lead.id,
+        interaction_date: nowIso,
+        interaction_type: interactionType,
+        message_sent: personalizedMsg,
+        prospect_response: '',
+        outcome_notes: tpl ? `1-Tap Outreach (${tpl.name})` : '1-Tap Outreach',
+        next_followup_at: nextFuIso,
+      }),
+      supabase.from('crm_leads').update({
+        comm_status: 'Contacted',
+        status: 'Contacted',
+        last_contacted_at: nowIso,
+        next_followup_at: nextFuIso,
+      }).eq('id', lead.id),
+    ])
+
+    lead.comm_status = 'Contacted'
+    lead.last_contacted_at = nowIso
+    lead.next_followup_at = nextFuIso
+    interactionCounts.value[lead.id] = (interactionCounts.value[lead.id] || 0) + 1
+    showToast(`Pesan @${handle} tersalin${autoFollowUpDays.value > 0 ? ` & FU +${autoFollowUpDays.value}h` : ''}!`, 'success')
+  } catch (err: any) {
+    showToast('Pesan tersalin, gagal update log: ' + err.message, 'error')
+  } finally {
+    outreachingId.value = ''
+  }
+}
+
 </script>
