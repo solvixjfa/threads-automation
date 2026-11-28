@@ -58,8 +58,8 @@
               :style="isUsingOwnKey ? 'border-color: var(--success); color: var(--success);' : (aiCredits > 0 ? 'border-color: var(--accent); color: var(--accent);' : 'border-color: var(--danger); color: var(--danger);')">
               <span class="w-2 h-2 rounded-full" :style="isUsingOwnKey ? 'background: var(--success);' : (aiCredits > 0 ? 'background: var(--accent);' : 'background: var(--danger);')"></span>
               <span v-if="isUsingOwnKey">Unlimited (Own Key)</span>
-              <span v-else-if="aiCredits > 0">{{ aiCredits.toLocaleString('id-ID') }} Credits</span>
-              <span v-else>Out of Credits</span>
+              <span v-else-if="aiCredits > 0">{{ aiCredits.toLocaleString('id-ID') }} Tokens</span>
+              <span v-else>Out of Tokens</span>
             </div>
           </div>
         </div>

@@ -314,7 +314,7 @@
     "deep_notyet": "Analisis AI Belum Aktif",
     "deep_partial": "Analisis AI Parsial ({done}/{total} post)",
     "deep_desc": "Analytics masih pakai klasifikasi regex basic. Jalankan analisis AI untuk akurasi lebih tinggi.",
-    "deep_btn": "Deep Analyze (1 kredit)",
+    "deep_btn": "Deep Analyze ",
     "deep_btn_trial": "Deep Analyze (Gratis Trial)",
     "deep_loading": "Menganalisis...",
     "deep_active": "Analisis AI aktif ({n} post)",
@@ -426,7 +426,7 @@
       "new_ph": "Tulis template baru...",
       "add": "Tambah",
       "remove": "Hapus",
-      "ai_cost": "Kategori ini bakal pakai AI buat balas (potong 1 kredit per balasan, kecuali pakai API key sendiri)."
+      "ai_cost": "Kategori ini bakal pakai AI buat balas (potong 1 token per balasan, kecuali pakai API key sendiri)."
     }
   },
   "landing": {
@@ -490,7 +490,7 @@
       "s1_title": "Daftar dan minta akses.",
       "s1_desc": "Buat akun, lalu kirim {'@'}username Threads kamu. Aku cek manual dan kabari lewat email.",
       "s2_title": "Hubungkan dan ajari gayamu.",
-      "s2_desc": "Setelah disetujui, terima undangan tester di Threads dan login lewat sistem resmi Meta. Unggah contoh post atau tulis aturan gaya, lalu pilih mesin AI: pakai kredit gratis, atau pasang API key sendiri (Gemini/Groq).",
+      "s2_desc": "Setelah disetujui, terima undangan tester di Threads dan login lewat sistem resmi Meta. Unggah contoh post atau tulis aturan gaya, lalu pilih mesin AI: pakai token gratis, atau pasang API key sendiri (Gemini/Groq).",
       "s3_title": "Review dan jalan.",
       "s3_desc": "Setujui draf, atur mode balasan, pantau Analytics di akhir pekan."
     },
@@ -520,7 +520,7 @@
       "q6": "Apa bedanya dengan scheduler biasa?",
       "a6": "Scheduler hanya menjadwalkan. Ixiera belajar dari data akunmu.",
       "q7": "Harus paham teknis?",
-      "a7": "Nggak. Ada panduan langkah demi langkah, dan opsi kredit tanpa urusan API key."
+      "a7": "Nggak. Ada panduan langkah demi langkah, dan opsi token tanpa urusan API key."
     },
     "cta": {
       "title": "Siap berhenti nebak-nebak?",

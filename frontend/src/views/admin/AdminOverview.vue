@@ -32,7 +32,7 @@
       <div class="card p-5 space-y-1">
         <span class="text-[10px] font-bold uppercase theme-text-muted">Pro Users</span>
         <p class="text-2xl font-black">{{ stats.pro_credit + stats.pro_byok }}</p>
-        <div class="text-[10px] theme-text-muted">{{ stats.pro_credit }} Credit / {{ stats.pro_byok }} BYOK</div>
+        <div class="text-[10px] theme-text-muted">{{ stats.pro_credit }} Token / {{ stats.pro_byok }} BYOK</div>
       </div>
       <div class="card p-5 space-y-1 border-l-4" style="border-left-color: var(--warning);">
         <span class="text-[10px] font-bold uppercase theme-text-muted">Pending Requests</span>

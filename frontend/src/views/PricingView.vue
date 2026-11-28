@@ -2,7 +2,7 @@
   <div class="max-w-6xl mx-auto p-6 space-y-8 theme-bg theme-text min-h-screen">
     <div class="text-center space-y-2">
       <h1 class="text-3xl font-bold">Pilih Paket Kamu</h1>
-      <p class="theme-text-muted">1 Credit = 1 Token AI. Pilih kapasitas kredit dan jumlah akun sesuai kebutuhanmu.</p>
+      <p class="theme-text-muted">1 Token = 1 Token AI. Pilih kapasitas token dan jumlah akun sesuai kebutuhanmu.</p>
     </div>
 
     <div v-if="loading" class="text-center py-10 theme-text-muted animate-pulse">Memuat status...</div>
@@ -24,7 +24,7 @@
             <h2 class="text-xl font-bold">Starter</h2>
             <p class="text-2xl font-black mt-2">Rp 59.000 <span class="text-xs font-normal theme-text-muted">/ bulan</span></p>
             <ul class="mt-4 space-y-2 text-sm theme-text-muted">
-              <li class="flex items-center gap-2">✓ <b>100.000</b> Credits AI / bulan</li>
+              <li class="flex items-center gap-2">✓ <b>100.000</b> Tokens AI / bulan</li>
               <li class="flex items-center gap-2">✓ Maksimal <b>2 Akun</b> Threads</li>
               <li class="flex items-center gap-2">✓ Semua fitur AI & Analytics</li>
               <li class="flex items-center gap-2">✓ Tanpa perlu API Key sendiri</li>
@@ -42,7 +42,7 @@
             <h2 class="text-xl font-bold">Pro</h2>
             <p class="text-2xl font-black mt-2">Rp 99.000 <span class="text-xs font-normal theme-text-muted">/ bulan</span></p>
             <ul class="mt-4 space-y-2 text-sm theme-text-muted">
-              <li class="flex items-center gap-2">✓ <b>300.000</b> Credits AI / bulan</li>
+              <li class="flex items-center gap-2">✓ <b>300.000</b> Tokens AI / bulan</li>
               <li class="flex items-center gap-2">✓ Maksimal <b>5 Akun</b> Threads</li>
               <li class="flex items-center gap-2">✓ Semua fitur AI & Analytics</li>
               <li class="flex items-center gap-2">✓ Tanpa perlu API Key sendiri</li>
@@ -59,7 +59,7 @@
             <h2 class="text-xl font-bold">Business</h2>
             <p class="text-2xl font-black mt-2">Rp 179.000 <span class="text-xs font-normal theme-text-muted">/ bulan</span></p>
             <ul class="mt-4 space-y-2 text-sm theme-text-muted">
-              <li class="flex items-center gap-2">✓ <b>750.000</b> Credits AI / bulan</li>
+              <li class="flex items-center gap-2">✓ <b>750.000</b> Tokens AI / bulan</li>
               <li class="flex items-center gap-2">✓ Maksimal <b>20 Akun</b> Threads</li>
               <li class="flex items-center gap-2">✓ Semua fitur AI & Analytics</li>
               <li class="flex items-center gap-2">✓ Tanpa perlu API Key sendiri</li>
@@ -89,7 +89,7 @@
         </div>
       </div>
 
-      <p class="text-xs text-center theme-text-muted mt-6 italic">Pembayaran aman & otomatis diproses via Duitku Payment Gateway. Perpanjangan sebelum masa aktif habis akan mengakumulasi sisa kredit kamu.</p>
+      <p class="text-xs text-center theme-text-muted mt-6 italic">Pembayaran aman & otomatis diproses via Duitku Payment Gateway. Perpanjangan sebelum masa aktif habis akan mengakumulasi sisa token kamu.</p>
     </template>
 
     <div class="text-center pt-6">
@@ -122,7 +122,7 @@ function formatPlanDisplay(p: string) {
     pro: 'Pro',
     business: 'Business',
     agency: 'Agency (BYOK)',
-    paid_credit: 'Pro Credit (Beta)',
+    paid_credit: 'Pro Token (Beta)',
     paid_byok: 'Pro BYOK (Beta)',
     trial: 'Free Trial',
   }

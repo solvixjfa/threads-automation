@@ -74,7 +74,7 @@
         <div class="pt-3 border-t theme-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <p class="text-xs theme-text-muted">
             <template v-if="accountStore.canAddAccount">
-              Semua akun berbagi paket <b>{{ planLabel }}</b>, saldo kredit, dan API key yang sama.
+              Semua akun berbagi paket <b>{{ planLabel }}</b>, saldo token, dan API key yang sama.
             </template>
             <template v-else>
               Batas maksimal paket <b>{{ planLabel }}</b> ({{ accountStore.maxAccounts }} akun) sudah tercapai.
@@ -180,7 +180,7 @@
           <div>
             <p class="text-sm font-medium text-red-300">Hapus Full Data</p>
             <p class="text-xs text-zinc-400 mt-0.5">
-              Hapus permanen akun Ixiera beserta seluruh akun Threads, jadwal konten, auto-reply, knowledge base, dan riwayat kredit.
+              Hapus permanen akun Ixiera beserta seluruh akun Threads, jadwal konten, auto-reply, knowledge base, dan riwayat token.
             </p>
           </div>
           <button
@@ -206,7 +206,7 @@
         <p class="text-xs text-zinc-300 leading-relaxed">
           {{
             deleteModalMode === 'full_data'
-              ? 'Seluruh data akun, koneksi Threads, jadwal post, auto-reply, knowledge base, dan sisa kredit akan dihapus permanen dan tidak bisa dikembalikan.'
+              ? 'Seluruh data akun, koneksi Threads, jadwal post, auto-reply, knowledge base, dan sisa token akan dihapus permanen dan tidak bisa dikembalikan.'
               : 'Akun login Ixiera Anda akan dihapus dan koneksi Threads diputus secara permanen.'
           }}
         </p>
@@ -267,7 +267,7 @@ const planLabel = computed(() => {
   if (p === 'business') return 'Business (Maks 20 Akun)'
   if (p === 'pro') return 'Pro (Maks 5 Akun)'
   if (p === 'starter') return 'Starter (Maks 2 Akun)'
-  if (p === 'paid_credit') return 'Pro Credit (Maks 10 Akun)'
+  if (p === 'paid_credit') return 'Pro Token (Maks 10 Akun)'
   if (p === 'paid_byok') return 'Pro BYOK (Maks 3 Akun)'
   if (p === 'trial') return 'Trial (Maks 1 Akun)'
   return 'Free (Maks 1 Akun)'

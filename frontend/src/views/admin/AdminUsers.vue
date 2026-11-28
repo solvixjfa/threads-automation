@@ -43,7 +43,7 @@
               <th class="p-4 font-bold text-xs uppercase theme-text-muted">Status</th>
               <th class="p-4 font-bold text-xs uppercase theme-text-muted">Plan</th>
               <th class="p-4 font-bold text-xs uppercase theme-text-muted">Expires</th>
-              <th class="p-4 font-bold text-xs uppercase theme-text-muted">Credits</th>
+              <th class="p-4 font-bold text-xs uppercase theme-text-muted">Tokens</th>
               <th class="p-4 font-bold text-xs uppercase theme-text-muted text-right">Actions</th>
             </tr>
           </thead>
@@ -94,16 +94,16 @@
           <h3 class="text-lg font-bold">Approve / Extend Plan</h3>
           <p class="text-xs theme-text-muted">{{ selectedUser.email }} (@{{ selectedUser.username }})</p>
           <Select v-model="extendType" label="Plan Type" :options="[
-            {label: 'Free Trial (15.000 Credits, 7 Hari, Maks 1 Akun)', value: 'trial'},
-            {label: 'Starter (Rp59k, 100.000 Credits, Maks 2 Akun)', value: 'starter'},
-            {label: 'Pro (Rp99k, 300.000 Credits, Maks 5 Akun)', value: 'pro'},
-            {label: 'Business (Rp179k, 750.000 Credits, Maks 20 Akun)', value: 'business'},
+            {label: 'Free Trial (15.000 Tokens, 7 Hari, Maks 1 Akun)', value: 'trial'},
+            {label: 'Starter (Rp59k, 100.000 Tokens, Maks 2 Akun)', value: 'starter'},
+            {label: 'Pro (Rp99k, 300.000 Tokens, Maks 5 Akun)', value: 'pro'},
+            {label: 'Business (Rp179k, 750.000 Tokens, Maks 20 Akun)', value: 'business'},
             {label: 'Agency BYOK (Rp249k, Unlimited, Maks 50 Akun)', value: 'agency'},
-            {label: 'Pro Credit Legacy (100.000 Credits, Maks 10 Akun)', value: 'paid_credit'},
+            {label: 'Pro Token Legacy (100.000 Tokens, Maks 10 Akun)', value: 'paid_credit'},
             {label: 'Pro BYOK Legacy (Unlimited, Maks 3 Akun)', value: 'paid_byok'}
           ]" />
           <p class="text-xs theme-text-muted">
-            Menambah masa aktif dan me-reset kredit.
+            Menambah masa aktif dan me-reset token.
             <span v-if="(selectedUser.account_count || 1) > 1" class="font-bold text-blue-400">
               Otomatis sinkron ke seluruh {{ selectedUser.account_count }} akun milik user ini.
             </span>
@@ -120,9 +120,9 @@
     <Teleport to="body">
       <div v-if="selectedUser && modalType === 'credits'" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="card max-w-sm w-full p-6 space-y-4 bg-[var(--bg-primary)]">
-          <h3 class="text-lg font-bold">Adjust Credits: {{ selectedUser.email }}</h3>
+          <h3 class="text-lg font-bold">Adjust Tokens: {{ selectedUser.email }}</h3>
           <p v-if="(selectedUser.account_count || 1) > 1" class="text-xs text-blue-400 font-bold">
-            Saldo kredit bersama akan diperbarui untuk seluruh {{ selectedUser.account_count }} akun user ini.
+            Saldo token bersama akan diperbarui untuk seluruh {{ selectedUser.account_count }} akun user ini.
           </p>
           <div class="space-y-1"><label class="label">Amount (+/-)</label><input v-model.number="creditAmount" type="number" class="input w-full" /></div>
           <div class="space-y-1"><label class="label">Note</label><input v-model="creditNote" type="text" class="input w-full" /></div>
@@ -135,7 +135,7 @@
     <Teleport to="body">
       <div v-if="selectedUser && modalType === 'ledger'" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="card max-w-lg w-full p-6 space-y-4 bg-[var(--bg-primary)] max-h-[80vh] flex flex-col">
-          <h3 class="text-lg font-bold">Credit Ledger: {{ selectedUser.email }}</h3>
+          <h3 class="text-lg font-bold">Token Ledger: {{ selectedUser.email }}</h3>
           <div class="flex-1 overflow-y-auto space-y-2 pr-2">
             <div v-for="l in ledgerData" :key="l.id" class="flex justify-between items-center p-3 rounded-lg theme-bg-sec border theme-border text-xs">
               <div><div class="font-bold" :class="l.delta > 0 ? 'text-green-500' : 'text-red-500'">{{ l.delta > 0 ? '+' : '' }}{{ l.delta }}</div><div class="theme-text-muted">{{ l.reason }}</div></div>
@@ -197,7 +197,7 @@ function getPlanLabel(plan: string) {
   if (plan === 'pro') return 'Pro'
   if (plan === 'business') return 'Business'
   if (plan === 'agency') return 'Agency (BYOK)'
-  if (plan === 'paid_credit') return 'Pro Credit'
+  if (plan === 'paid_credit') return 'Pro Token'
   if (plan === 'paid_byok') return 'Pro BYOK'
   return plan
 }
@@ -327,7 +327,7 @@ async function handleForceSync(user: any) {
 
 async function handleDowngrade(user: any) {
   const count = user.account_count || 1
-  if (!confirm(`Yakin downgrade ${user.email} (${count} akun) ke Free? Kredit akan di-reset ke 0.`)) return
+  if (!confirm(`Yakin downgrade ${user.email} (${count} akun) ke Free? Token akan di-reset ke 0.`)) return
   isProcessing.value = true
   try {
     const headers = await getAuthHeader()

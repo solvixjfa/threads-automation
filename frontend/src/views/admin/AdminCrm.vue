@@ -681,7 +681,7 @@ function formatIxieraPlan(plan: string): string {
   if (plan === 'business') return 'Business'
   if (plan === 'pro') return 'Pro'
   if (plan === 'starter') return 'Starter'
-  if (plan === 'paid_credit') return 'Pro Credit'
+  if (plan === 'paid_credit') return 'Pro Token'
   if (plan === 'paid_byok') return 'Pro BYOK'
   if (plan === 'trial') return 'Trial'
   return 'Free'

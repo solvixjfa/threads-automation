@@ -214,7 +214,7 @@ async function enhanceNames() {
     }))
     enhanced.value = true
     
-    // Sinkronkan saldo kredit token terbaru dari database
+    // Sinkronkan saldo token token terbaru dari database
     await accountStore.fetchAccounts(true)
     if (accountStore.activeAccount) {
       aiCredits.value = accountStore.activeAccount.credit_balance ?? aiCredits.value

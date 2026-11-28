@@ -314,7 +314,7 @@
     "deep_notyet": "AI Analysis Not Active",
     "deep_partial": "AI Analysis Partial ({done}/{total} posts)",
     "deep_desc": "Analytics currently uses basic regex classification. Run AI analysis for higher accuracy.",
-    "deep_btn": "Deep Analyze (1 credit)",
+    "deep_btn": "Deep Analyze",
     "deep_btn_trial": "Deep Analyze (Free Trial)",
     "deep_loading": "Analyzing...",
     "deep_active": "AI Analysis active ({n} posts)",
@@ -426,7 +426,7 @@
       "new_ph": "Write new template...",
       "add": "Add",
       "remove": "Remove",
-      "ai_cost": "This category will generate replies using AI (costs 1 credit per reply, unless using your own API key)."
+      "ai_cost": "This category will generate replies using AI (deducts tokens per reply, unless using your own API key)."
     }
   },
   "landing": {
@@ -520,7 +520,7 @@
       "q6": "How is this different from a scheduler?",
       "a6": "Schedulers just schedule. Ixiera learns from your account data.",
       "q7": "Do I need technical skills?",
-      "a7": "No. There is a step-by-step guide and a credit option with no API key required."
+      "a7": "No. There is a step-by-step guide and a token plan option with no API key required."
     },
     "cta": {
       "title": "Ready to stop guessing?",

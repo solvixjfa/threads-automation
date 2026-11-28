@@ -47,7 +47,7 @@
                 Unlimited (BYOK Active)
               </div>
               <div v-else class="text-sm theme-text-muted mt-1">
-                {{ creditBalance.toLocaleString('id-ID') }} Credits Remaining
+                {{ creditBalance.toLocaleString('id-ID') }} Tokens Remaining
               </div>
             </div>
             <RouterLink to="/pricing" class="btn btn-primary btn-sm">Upgrade Plan</RouterLink>
@@ -66,7 +66,7 @@
           </div>
 
           <div v-else class="space-y-4 pt-2">
-            <p class="text-xs theme-text-muted mb-2">Gunakan API Key sendiri agar tidak memotong kredit.</p>
+            <p class="text-xs theme-text-muted mb-2">Gunakan API Key sendiri agar tidak memotong token.</p>
             
             <div class="space-y-1">
               <label class="label">Gemini API Key</label>
@@ -138,7 +138,7 @@ function getPlanLabel(p: string) {
   if (p === 'pro') return 'Pro'
   if (p === 'business') return 'Business'
   if (p === 'agency') return 'Agency (BYOK)'
-  if (p === 'paid_credit') return 'Pro Credit'
+  if (p === 'paid_credit') return 'Pro Token'
   if (p === 'paid_byok') return 'Pro BYOK'
   return 'Free'
 }
