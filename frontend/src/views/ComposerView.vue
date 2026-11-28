@@ -76,7 +76,7 @@
             :style="isUsingOwnKey ? 'border-color: var(--success); color: var(--success);' : (aiCredits > 0 ? 'border-color: var(--accent); color: var(--accent);' : 'border-color: var(--danger); color: var(--danger);')">
             <span class="w-2 h-2 rounded-full" :style="isUsingOwnKey ? 'background: var(--success);' : (aiCredits > 0 ? 'background: var(--accent);' : 'background: var(--danger);')"></span>
             <span v-if="isUsingOwnKey">Unlimited (Own Key)</span>
-            <span v-else-if="aiCredits > 0">{{ aiCredits }} Credits</span>
+            <span v-else-if="aiCredits > 0">{{ aiCredits.toLocaleString('id-ID') }} Credits</span>
             <span v-else>Out of Credits</span>
           </div>
 
@@ -632,7 +632,8 @@ async function generateAiIdeas() {
     const resData = await response.json()
     if (resData?.options) {                                              
       aiResults.value = resData.options
-      if (!isUsingOwnKey.value) aiCredits.value = Math.max(0, aiCredits.value - 1)
+      await accountStore.fetchAccounts(true)
+      if (accountStore.activeAccount) aiCredits.value = accountStore.activeAccount.credit_balance ?? aiCredits.value
       showToast('Content Plan generated!', 'success')
     }                                                                
   } catch (err: any) {
@@ -690,7 +691,8 @@ async function deepAiScore() {
     if (!res.ok) throw new Error(data.detail)
 
     scoreResult.value = { score: data.data.score, feedback: data.data.feedback, isAi: true }
-    if (!isUsingOwnKey.value) aiCredits.value = Math.max(0, aiCredits.value - 1)
+    await accountStore.fetchAccounts(true)
+    if (accountStore.activeAccount) aiCredits.value = accountStore.activeAccount.credit_balance ?? aiCredits.value
     showToast('Deep AI Analysis complete!', 'success')
   } catch (err: any) {
     showToast('Deep AI failed: ' + err.message, 'error')

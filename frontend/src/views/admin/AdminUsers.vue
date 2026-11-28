@@ -70,7 +70,7 @@
               </td>
               <td class="p-4"><Badge :variant="u.plan !== 'none' ? 'accent' : 'default'">{{ getPlanLabel(u.plan) }}</Badge></td>
               <td class="p-4 text-xs">{{ u.plan_expires_at ? formatDate(u.plan_expires_at) : '-' }}</td>
-              <td class="p-4 font-bold text-lg">{{ u.credit_balance }}</td>
+              <td class="p-4 font-bold text-lg">{{ (u.credit_balance || 0).toLocaleString('id-ID') }}</td>
               <td class="p-4 text-right space-x-2 whitespace-nowrap">
                 <button @click="openExtendModal(u)" class="text-xs font-bold underline hover:theme-text-muted">Approve / Extend</button>
                 <button @click="openCreditModal(u)" class="text-xs font-bold underline hover:theme-text-muted">Adjust</button>
@@ -94,9 +94,13 @@
           <h3 class="text-lg font-bold">Approve / Extend Plan</h3>
           <p class="text-xs theme-text-muted">{{ selectedUser.email }} (@{{ selectedUser.username }})</p>
           <Select v-model="extendType" label="Plan Type" :options="[
-            {label: 'Free Trial (20 Kredit, 7 Hari, Maks 1 Akun)', value: 'trial'},
-            {label: 'Pro Credit (Rp29k, Maks 10 Akun)', value: 'paid_credit'},
-            {label: 'Pro BYOK (Rp19k, Maks 3 Akun)', value: 'paid_byok'}
+            {label: 'Free Trial (15.000 Credits, 7 Hari, Maks 1 Akun)', value: 'trial'},
+            {label: 'Starter (Rp59k, 100.000 Credits, Maks 2 Akun)', value: 'starter'},
+            {label: 'Pro (Rp99k, 300.000 Credits, Maks 5 Akun)', value: 'pro'},
+            {label: 'Business (Rp179k, 750.000 Credits, Maks 20 Akun)', value: 'business'},
+            {label: 'Agency BYOK (Rp249k, Unlimited, Maks 50 Akun)', value: 'agency'},
+            {label: 'Pro Credit Legacy (100.000 Credits, Maks 10 Akun)', value: 'paid_credit'},
+            {label: 'Pro BYOK Legacy (Unlimited, Maks 3 Akun)', value: 'paid_byok'}
           ]" />
           <p class="text-xs theme-text-muted">
             Menambah masa aktif dan me-reset kredit.
@@ -167,7 +171,7 @@ const filterMode = ref('all')
 
 const selectedUser = ref<any>(null)
 const modalType = ref<'extend' | 'credits' | 'ledger' | null>(null)
-const extendType = ref('paid_credit')
+const extendType = ref('pro')
 const creditAmount = ref<number | null>(null)
 const creditNote = ref('')
 const ledgerData = ref<any[]>([])
@@ -177,6 +181,10 @@ const API_BASE = 'https://threads-automation-r9so.onrender.com/api/v1/admin'
 
 function getQuotaLimit(plan: string, role = 'user'): number {
   if (role === 'admin') return 50
+  if (plan === 'agency') return 50
+  if (plan === 'business') return 20
+  if (plan === 'pro') return 5
+  if (plan === 'starter') return 2
   if (plan === 'paid_credit') return 10
   if (plan === 'paid_byok') return 3
   return 1
@@ -184,7 +192,11 @@ function getQuotaLimit(plan: string, role = 'user'): number {
 
 function getPlanLabel(plan: string) {
   if (!plan || plan === 'none') return 'Free'
-  if (plan === 'trial') return 'Trial (20 Kredit)'
+  if (plan === 'trial') return 'Trial'
+  if (plan === 'starter') return 'Starter'
+  if (plan === 'pro') return 'Pro'
+  if (plan === 'business') return 'Business'
+  if (plan === 'agency') return 'Agency (BYOK)'
   if (plan === 'paid_credit') return 'Pro Credit'
   if (plan === 'paid_byok') return 'Pro BYOK'
   return plan
@@ -193,7 +205,7 @@ function getPlanLabel(plan: string) {
 function matchesFilter(u: any, mode: string): boolean {
   if (mode === 'pending') return !!u.pending_plan
   if (mode === 'multi') return (u.account_count || 1) > 1
-  if (mode === 'pro') return u.plan === 'paid_credit' || u.plan === 'paid_byok'
+  if (mode === 'pro') return ['starter', 'pro', 'business', 'agency', 'paid_credit', 'paid_byok'].includes(u.plan)
   return true
 }
 
@@ -240,7 +252,7 @@ async function loadData() {
 
 function openExtendModal(user: any) {
   selectedUser.value = user
-  extendType.value = user.pending_plan || (user.plan === 'paid_byok' ? 'paid_byok' : 'paid_credit')
+  extendType.value = user.pending_plan || (['starter', 'pro', 'business', 'agency', 'paid_credit', 'paid_byok'].includes(user.plan) ? user.plan : 'pro')
   modalType.value = 'extend'
 }
 

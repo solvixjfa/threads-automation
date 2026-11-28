@@ -263,6 +263,10 @@ const accountStore = useAccountStore()
 
 const planLabel = computed(() => {
   const p = accountStore.effectivePlan
+  if (p === 'agency') return 'Agency BYOK (Maks 50 Akun)'
+  if (p === 'business') return 'Business (Maks 20 Akun)'
+  if (p === 'pro') return 'Pro (Maks 5 Akun)'
+  if (p === 'starter') return 'Starter (Maks 2 Akun)'
   if (p === 'paid_credit') return 'Pro Credit (Maks 10 Akun)'
   if (p === 'paid_byok') return 'Pro BYOK (Maks 3 Akun)'
   if (p === 'trial') return 'Trial (Maks 1 Akun)'

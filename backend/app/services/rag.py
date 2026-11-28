@@ -331,6 +331,11 @@ Create a 3-DAY CONTENT PLAN based on the TOPIC below. Avoid repeating recent pos
             try:
                 db.schema("threads").from_("api_call_logs").insert({"account_id": account_id, "endpoint": "generate_post", "status": 200, "prompt_tokens": prompt_t, "completion_tokens": comp_t}).execute()
             except: pass
+            prompt_t = getattr(chat_completion.usage, "prompt_tokens", 0) or 0
+            comp_t = getattr(chat_completion.usage, "completion_tokens", 0) or 0
+            try:
+                db.schema("threads").from_("api_call_logs").insert({"account_id": account_id, "endpoint": "repurpose", "status": 200, "prompt_tokens": prompt_t, "completion_tokens": comp_t}).execute()
+            except Exception: pass
             parsed = json.loads(chat_completion.choices[0].message.content)
             result_options = parsed.get("options", [])
         except Exception as e:
@@ -369,8 +374,9 @@ Create a 3-DAY CONTENT PLAN based on the TOPIC below. Avoid repeating recent pos
         else:
             raise Exception(f"AI returned unexpected JSON structure: {type(parsed).__name__}")
 
-    # NOTE: kredit sudah dipotong via check_and_spend() di endpoint.
-    # Manual deduction (credits - 1) di-REMOVE untuk cegah DOUBLE DEDUCT.
+    if is_using_saas and (prompt_t + comp_t) > 0:
+        from app.services.billing import spend_token_credits
+        spend_token_credits(account_id, "generate", prompt_t + comp_t)
     if not isinstance(result_options, list) or not result_options:
         raise Exception("AI returned empty content.")
 
@@ -429,6 +435,7 @@ Do not invent new facts, just change the format, tone, and structure to fit the 
 """
 
     result_options = []
+    prompt_t, comp_t = 0, 0
     
     if provider == "groq":
         try:
@@ -440,6 +447,11 @@ Do not invent new facts, just change the format, tone, and structure to fit the 
                 response_format={"type": "json_object"},
                 temperature=0.7,
             )
+            prompt_t = getattr(chat_completion.usage, "prompt_tokens", 0) or 0
+            comp_t = getattr(chat_completion.usage, "completion_tokens", 0) or 0
+            try:
+                db.schema("threads").from_("api_call_logs").insert({"account_id": account_id, "endpoint": "repurpose", "status": 200, "prompt_tokens": prompt_t, "completion_tokens": comp_t}).execute()
+            except Exception: pass
             parsed = json.loads(chat_completion.choices[0].message.content)
             result_options = parsed.get("options", [])
         except Exception as e:
@@ -460,6 +472,8 @@ Do not invent new facts, just change the format, tone, and structure to fit the 
         
         if not response: raise Exception(f"Gemini failed. Last error: {last_error}")
         
+        prompt_t = getattr(response.usage_metadata, "prompt_token_count", 0) or 0
+        comp_t = getattr(response.usage_metadata, "candidates_token_count", 0) or 0
         raw_text = response.text.strip()
         if raw_text.startswith("```json"): raw_text = raw_text.replace("```json", "", 1).rstrip("`").strip()
         parsed = json.loads(raw_text)
@@ -470,8 +484,9 @@ Do not invent new facts, just change the format, tone, and structure to fit the 
         else:
             raise Exception(f"AI returned unexpected JSON structure: {type(parsed).__name__}")
 
-    # NOTE: kredit sudah dipotong via check_and_spend() di endpoint.
-    # Manual deduction (credits - 1) di-REMOVE untuk cegah DOUBLE DEDUCT.
+    if is_using_saas and (prompt_t + comp_t) > 0:
+        from app.services.billing import spend_token_credits
+        spend_token_credits(account_id, "repurpose", prompt_t + comp_t)
     if not isinstance(result_options, list) or not result_options:
         raise Exception("AI returned empty content.")
 
@@ -582,6 +597,7 @@ MUST return a pure JSON object with this exact structure:
 """
 
     result = {"score": 0, "feedback": []}
+    prompt_t, comp_t = 0, 0
     
     if provider == "groq":
         try:
@@ -593,6 +609,8 @@ MUST return a pure JSON object with this exact structure:
                 response_format={"type": "json_object"},
                 temperature=0.5,
             )
+            prompt_t = getattr(chat_completion.usage, "prompt_tokens", 0) or 0
+            comp_t = getattr(chat_completion.usage, "completion_tokens", 0) or 0
             result = json.loads(chat_completion.choices[0].message.content)
         except Exception as e:
             raise Exception(f"Groq Analysis Failed: {str(e)}")
@@ -612,12 +630,16 @@ MUST return a pure JSON object with this exact structure:
         
         if not response: raise Exception(f"Gemini failed. Last error: {last_error}")
         
+        prompt_t = getattr(response.usage_metadata, "prompt_token_count", 0) or 0
+        comp_t = getattr(response.usage_metadata, "candidates_token_count", 0) or 0
         raw_text = response.text.strip()
         if raw_text.startswith("```json"): raw_text = raw_text.replace("```json", "", 1).rstrip("`").strip()
         result = json.loads(raw_text)
 
     if is_using_saas:
-        db.schema("threads").from_("threads_accounts").update({"credit_balance": credits - 1}).eq("id", account_id).execute()
+        if (prompt_t + comp_t) > 0:
+            from app.services.billing import spend_token_credits
+            spend_token_credits(account_id, "deep_scoring", prompt_t + comp_t)
 
     return result
 
@@ -656,6 +678,7 @@ Return ONLY the improved text. No explanations, no quotes, just the plain text.
 """
 
     improved_text = ""
+    prompt_t, comp_t = 0, 0
     
     if provider == "groq":
         try:
@@ -666,6 +689,8 @@ Return ONLY the improved text. No explanations, no quotes, just the plain text.
                 model=model_to_run,
                 temperature=0.7,
             )
+            prompt_t = getattr(chat_completion.usage, "prompt_tokens", 0) or 0
+            comp_t = getattr(chat_completion.usage, "completion_tokens", 0) or 0
             improved_text = chat_completion.choices[0].message.content.strip()
         except Exception as e:
             raise Exception(f"Groq Failed: {str(e)}")
@@ -684,10 +709,13 @@ Return ONLY the improved text. No explanations, no quotes, just the plain text.
                 last_error = str(e)
         
         if not response: raise Exception(f"Gemini failed: {last_error}")
+        prompt_t = getattr(response.usage_metadata, "prompt_token_count", 0) or 0
+        comp_t = getattr(response.usage_metadata, "candidates_token_count", 0) or 0
         improved_text = response.text.strip()
 
-    if is_using_saas:
-        db.schema("threads").from_("threads_accounts").update({"credit_balance": credits - 1}).eq("id", account_id).execute()
+    if is_using_saas and (prompt_t + comp_t) > 0:
+        from app.services.billing import spend_token_credits
+        spend_token_credits(account_id, "improve_draft", prompt_t + comp_t)
 
     return improved_text
 
@@ -727,6 +755,7 @@ async def label_topics_ai(account_id: str, clusters: list, provider: str = "groq
     prompt += 'Return ONLY a JSON object like this: {"topics": ["Name 1", "Name 2", "Name 3", "Name 4"]} - one name per cluster in order.\n'
     
     result_names = []
+    prompt_t, comp_t = 0, 0
     
     try:
         if provider == "groq":
@@ -739,6 +768,8 @@ async def label_topics_ai(account_id: str, clusters: list, provider: str = "groq
                 response_format={"type": "json_object"},
                 temperature=0.5,
             )
+            prompt_t = getattr(completion.usage, "prompt_tokens", 0) or 0
+            comp_t = getattr(completion.usage, "completion_tokens", 0) or 0
             parsed = json.loads(completion.choices[0].message.content)
         else:
             client = genai.Client(api_key=api_key_to_use)
@@ -747,6 +778,8 @@ async def label_topics_ai(account_id: str, clusters: list, provider: str = "groq
                 contents=prompt,
                 config=types.GenerateContentConfig(response_mime_type="application/json")
             )
+            prompt_t = getattr(response.usage_metadata, "prompt_token_count", 0) or 0
+            comp_t = getattr(response.usage_metadata, "candidates_token_count", 0) or 0
             raw = response.text.strip()
             if raw.startswith("```json"): raw = raw.replace("```json", "", 1).rstrip("`").strip()
             parsed = json.loads(raw)
@@ -757,6 +790,8 @@ async def label_topics_ai(account_id: str, clusters: list, provider: str = "groq
     
     # Charge 1 credit if using SaaS key
     if is_using_saas:
-        db.schema("threads").from_("threads_accounts").update({"credit_balance": credits - 1}).eq("id", account_id).execute()
+        if (prompt_t + comp_t) > 0:
+            from app.services.billing import spend_token_credits
+            spend_token_credits(account_id, "label_topics", prompt_t + comp_t)
     
     return result_names

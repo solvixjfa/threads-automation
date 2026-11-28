@@ -124,7 +124,7 @@
       "saving": "Processing...",
       "modal_title": "Draft Score Analysis",
       "modal_feedback": "Feedback Notes",
-      "modal_deep_ai": "Deep AI (1 Credit)",
+      "modal_deep_ai": "Deep AI",
       "modal_deep_ai_loading": "Analyzing...",
       "modal_close": "Close",
       "tones": {
@@ -306,7 +306,7 @@
     "topic_create_btn": "Create Post",
     "enhancing": "Enhancing...",
     "enhance_free": "Enhance with AI",
-    "enhance_credit": "Enhance (1 Credit)",
+    "enhance_credit": "Enhance",
     "desc_best": "Best posting time per day",
     "desc_hook": "Hook type performance",
     "desc_length": "Optimal post length",

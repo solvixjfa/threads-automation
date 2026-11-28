@@ -94,6 +94,7 @@ Do NOT translate. Do NOT reply in a different language than the user used.
 """
 
     result_text = ""
+    prompt_t, comp_t = 0, 0
     
     # 4. EKSEKUSI AI
     if provider == "groq":
@@ -105,6 +106,8 @@ Do NOT translate. Do NOT reply in a different language than the user used.
                 model=model_to_run,
                 temperature=0.6,
             )
+            prompt_t = getattr(chat_completion.usage, "prompt_tokens", 0) or 0
+            comp_t = getattr(chat_completion.usage, "completion_tokens", 0) or 0
             result_text = chat_completion.choices[0].message.content.strip()
         except Exception as e:
             raise Exception(f"Groq failed: {str(e)}")
@@ -115,6 +118,8 @@ Do NOT translate. Do NOT reply in a different language than the user used.
         for m_name in models_to_try:
             try:
                 response = client.models.generate_content(model=m_name, contents=prompt)
+                prompt_t = getattr(response.usage_metadata, "prompt_token_count", 0) or 0
+                comp_t = getattr(response.usage_metadata, "candidates_token_count", 0) or 0
                 result_text = response.text.strip()
                 break
             except Exception as e:
@@ -125,6 +130,10 @@ Do NOT translate. Do NOT reply in a different language than the user used.
 
     # Kredit sudah dipotong otomatis oleh check_and_spend() di awal fungsi.
     # Manual deduction dihapus untuk mencegah DOUBLE DEDUCT.
+
+    if is_using_saas and (prompt_t + comp_t) > 0:
+        from app.services.billing import spend_token_credits
+        spend_token_credits(account_id, "reply_ai", prompt_t + comp_t)
 
     return result_text
 

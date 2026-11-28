@@ -426,7 +426,7 @@ async def run_deep_analyze(account_id: str, payload: dict = None):
     if not acc_res.data: raise HTTPException(404, "Account not found")
     acc = acc_res.data[0]
     plan = acc.get("plan", "none")
-    is_paid = plan in ("paid_credit", "paid_byok")
+    is_paid = plan in ("starter", "pro", "business", "agency", "paid_credit", "paid_byok")
 
     ref_id = None
     if is_paid:
@@ -460,6 +460,8 @@ async def run_deep_analyze(account_id: str, payload: dict = None):
                 except: pass
             raise HTTPException(400, "Gemini API Key required")
 
+        is_using_saas = not acc.get("custom_gemini_key")
+        total_prompt_t, total_comp_t = 0, 0
         client = genai.Client(api_key=gemini_key)
         all_results = []
         CHUNK = 20
@@ -499,6 +501,9 @@ Return JSON array only. DO NOT write any introduction, explanation, or markdown 
             if not resp:
                 raise Exception(f"LLM failed: {last_err}")
 
+            total_prompt_t += getattr(resp.usage_metadata, "prompt_token_count", 0) or 0
+            total_comp_t += getattr(resp.usage_metadata, "candidates_token_count", 0) or 0
+
             raw = resp.text.strip()
             # Hapus markdown blocks
             raw = raw.replace("```json", "").replace("```", "").strip()
@@ -518,6 +523,10 @@ Return JSON array only. DO NOT write any introduction, explanation, or markdown 
                 resp = None
                 last_err = str(e)
                 continue # Paksa loop lanjut ke model fallback berikutnya
+
+        if is_using_saas and (total_prompt_t + total_comp_t) > 0:
+            from app.services.billing import spend_token_credits
+            spend_token_credits(account_id, "advanced_analytics", total_prompt_t + total_comp_t, ref_id)
 
         now_iso = datetime.now(timezone.utc).isoformat()
         updated = 0

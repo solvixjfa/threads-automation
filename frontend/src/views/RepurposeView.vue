@@ -58,7 +58,7 @@
               :style="isUsingOwnKey ? 'border-color: var(--success); color: var(--success);' : (aiCredits > 0 ? 'border-color: var(--accent); color: var(--accent);' : 'border-color: var(--danger); color: var(--danger);')">
               <span class="w-2 h-2 rounded-full" :style="isUsingOwnKey ? 'background: var(--success);' : (aiCredits > 0 ? 'background: var(--accent);' : 'background: var(--danger);')"></span>
               <span v-if="isUsingOwnKey">Unlimited (Own Key)</span>
-              <span v-else-if="aiCredits > 0">{{ aiCredits }} Credits</span>
+              <span v-else-if="aiCredits > 0">{{ aiCredits.toLocaleString('id-ID') }} Credits</span>
               <span v-else>Out of Credits</span>
             </div>
           </div>
@@ -204,7 +204,8 @@ async function generateRepurpose() {
     const data = await res.json()
     if (!res.ok) throw new Error(data.detail)
     results.value = data.options || []
-    if (!isUsingOwnKey.value) aiCredits.value = Math.max(0, aiCredits.value - 1)
+    await accountStore.fetchAccounts(true)
+    if (accountStore.activeAccount) aiCredits.value = accountStore.activeAccount.credit_balance ?? aiCredits.value
     showToast('Successfully repurposed!', 'success')
   } catch (err: any) {
     if (err.name === 'AbortError') showToast('Request timed out.', 'error')

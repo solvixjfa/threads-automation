@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header, Depends
 from pydantic import BaseModel
 from app.services.rag import get_supabase
-from app.core.config import PAID_DAYS, PAID_CREDITS
+from app.core.config import TRIAL_DAYS, TRIAL_CREDITS, PAID_DAYS, PLAN_CREDITS
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 import httpx
@@ -132,11 +132,11 @@ async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin))
         raise HTTPException(404, "Account not found")
 
     if payload.plan_type == 'trial':
-        days = 7
-        credits = 20
+        days = TRIAL_DAYS
+        credits = TRIAL_CREDITS
     else:
         days = PAID_DAYS
-        credits = PAID_CREDITS if payload.plan_type == 'paid_credit' else 0
+        credits = PLAN_CREDITS.get(payload.plan_type, 0)
 
     now = datetime.now(timezone.utc)
     target_user_id = acc.data[0].get("user_id")
@@ -179,7 +179,16 @@ async def extend_plan(payload: AdminActionRequest, user = Depends(verify_admin))
     try:
         user_res = db.auth.admin.get_user_by_id(target_user_id)
         if user_res and user_res.user and user_res.user.email:
-            plan_name = "Pro Credit" if payload.plan_type == 'paid_credit' else "Pro BYOK" if payload.plan_type == 'paid_byok' else "Trial"
+            plan_labels = {
+                "starter": "Starter",
+                "pro": "Pro",
+                "business": "Business",
+                "agency": "Agency (BYOK)",
+                "paid_credit": "Pro Credit",
+                "paid_byok": "Pro BYOK",
+                "trial": "Trial",
+            }
+            plan_name = plan_labels.get(payload.plan_type, payload.plan_type)
             await send_approval_email(user_res.user.email, plan_name)
     except Exception as e:
         logger.error(f"Gagal ambil data user untuk email: {str(e)}")
@@ -245,28 +254,26 @@ async def get_admin_stats(user = Depends(verify_admin)):
     rows = accs.data or []
     total_accounts = len(rows)
 
+    plan_rank = {"agency": 7, "business": 6, "pro": 5, "starter": 4, "paid_credit": 4, "paid_byok": 3, "trial": 2, "none": 1}
+    plan_price = {"starter": 59000, "pro": 99000, "business": 179000, "agency": 249000, "paid_credit": 29000, "paid_byok": 19000}
     user_plans = {}
     pending_users = set()
     for acc in rows:
         uid = acc.get("user_id")
         if not uid:
             continue
-        p = acc.get("plan")
-        if p == "paid_credit":
-            user_plans[uid] = "paid_credit"
-        elif p == "paid_byok" and user_plans.get(uid) != "paid_credit":
-            user_plans[uid] = "paid_byok"
-        elif uid not in user_plans:
-            user_plans[uid] = p or "none"
+        p = acc.get("plan") or "none"
+        if plan_rank.get(p, 1) > plan_rank.get(user_plans.get(uid, "none"), 0):
+            user_plans[uid] = p
 
         if acc.get("pending_plan"):
             pending_users.add(uid)
 
     total_users = len(user_plans)
-    total_pro_credit = sum(1 for p in user_plans.values() if p == "paid_credit")
-    total_pro_byok = sum(1 for p in user_plans.values() if p == "paid_byok")
+    total_pro_credit = sum(1 for p in user_plans.values() if p in ("starter", "pro", "business", "paid_credit"))
+    total_pro_byok = sum(1 for p in user_plans.values() if p in ("agency", "paid_byok"))
     total_pending = len(pending_users)
-    mrr_est = (total_pro_credit * 29000) + (total_pro_byok * 19000)
+    mrr_est = sum(plan_price.get(p, 0) for p in user_plans.values())
 
     return {
         "success": True,

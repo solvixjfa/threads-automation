@@ -2,7 +2,7 @@ import time
 from fastapi import APIRouter, HTTPException, Header, Form
 from pydantic import BaseModel
 from app.services.rag import get_supabase
-from app.core.config import PAID_DAYS, PAID_CREDITS
+from app.core.config import PAID_DAYS, PLAN_CREDITS
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 import hashlib
@@ -14,8 +14,19 @@ router = APIRouter()
 logger = logging.getLogger("uvicorn.error")
 
 PLANS = {
-    "paid_credit": {"amount": 29000, "name": "Ixiera Pro Credit (1 Bulan)"},
-    "paid_byok": {"amount": 19000, "name": "Ixiera Pro BYOK (1 Bulan)"},
+    "starter": {"amount": 59000, "name": "Ixiera Starter (1 Bulan)", "code": "st"},
+    "pro": {"amount": 99000, "name": "Ixiera Pro (1 Bulan)", "code": "pr"},
+    "business": {"amount": 179000, "name": "Ixiera Business (1 Bulan)", "code": "bs"},
+    "agency": {"amount": 249000, "name": "Ixiera Agency BYOK (1 Bulan)", "code": "ag"},
+}
+
+CODE_TO_PLAN = {
+    "st": "starter",
+    "pr": "pro",
+    "bs": "business",
+    "ag": "agency",
+    "pc": "paid_credit",
+    "pb": "paid_byok",
 }
 
 class CreateInvoiceRequest(BaseModel):
@@ -55,9 +66,9 @@ async def create_invoice(payload: CreateInvoiceRequest, authorization: Optional[
     if not merchant_code or not api_key:
         raise HTTPException(status_code=500, detail="Konfigurasi Duitku belum diisi di server")
 
-    # Format orderId <= 50 chars: IX-<32_hex_uid>-<pc|pb>-<timestamp> (49 chars)
+    # Format orderId <= 50 chars: IX-<32_hex_uid>-<st|pr|bs|ag>-<timestamp> (49 chars)
     uid_hex = str(user.id).replace("-", "")
-    plan_code = "pc" if payload.plan_type == "paid_credit" else "pb"
+    plan_code = selected["code"]
     merchant_order_id = f"IX-{uid_hex}-{plan_code}-{int(time.time())}"
     amount = selected["amount"]
     signature = _md5(f"{merchant_code}{merchant_order_id}{amount}{api_key}")
@@ -120,7 +131,7 @@ async def duitku_callback(
             if len(parts) >= 4 and len(parts[1]) == 32:
                 raw_uid = parts[1]
                 user_id = f"{raw_uid[:8]}-{raw_uid[8:12]}-{raw_uid[12:16]}-{raw_uid[16:20]}-{raw_uid[20:]}"
-                plan_type = {"pc": "paid_credit", "pb": "paid_byok"}.get(parts[2])
+                plan_type = CODE_TO_PLAN.get(parts[2])
         elif "--" in merchantOrderId:
             parts = merchantOrderId.split("--")
             if len(parts) >= 3:
@@ -130,13 +141,12 @@ async def duitku_callback(
         if user_id and plan_type:
             db = get_supabase()
             now = datetime.now(timezone.utc)
-            credits = PAID_CREDITS if plan_type == "paid_credit" else 0
+            added_credits = PLAN_CREDITS.get(plan_type, 0)
 
-            # Cek masa aktif tertinggi dari semua akun milik user maupun profiles
             accs = (
                 db.schema("threads")
                 .from_("threads_accounts")
-                .select("id, plan_expires_at, created_at")
+                .select("id, plan_expires_at, credit_balance, created_at")
                 .eq("user_id", user_id)
                 .order("created_at", desc=False)
                 .execute()
@@ -144,16 +154,25 @@ async def duitku_callback(
             prof = (
                 db.schema("threads")
                 .from_("profiles")
-                .select("plan_expires_at")
+                .select("plan_expires_at, credit_balance")
                 .eq("id", user_id)
                 .limit(1)
                 .execute()
             )
 
             latest_exp = None
-            candidates = [a.get("plan_expires_at") for a in (accs.data or []) if a.get("plan_expires_at")]
-            if prof.data and prof.data[0].get("plan_expires_at"):
-                candidates.append(prof.data[0]["plan_expires_at"])
+            current_balance = 0
+            candidates = []
+
+            for a in (accs.data or []):
+                if a.get("plan_expires_at"):
+                    candidates.append(a["plan_expires_at"])
+                current_balance = max(current_balance, int(a.get("credit_balance") or 0))
+
+            if prof.data:
+                if prof.data[0].get("plan_expires_at"):
+                    candidates.append(prof.data[0]["plan_expires_at"])
+                current_balance = max(current_balance, int(prof.data[0].get("credit_balance") or 0))
 
             for exp_str in candidates:
                 try:
@@ -163,38 +182,39 @@ async def duitku_callback(
                 except ValueError:
                     continue
 
+            # Jika perpanjang/upgrade sebelum habis, tambahkan sisa saldo lama + kuota baru
             if latest_exp and latest_exp > now:
                 new_exp = latest_exp + timedelta(days=PAID_DAYS)
+                final_credits = (current_balance + added_credits) if added_credits > 0 else current_balance
             else:
                 new_exp = now + timedelta(days=PAID_DAYS)
+                final_credits = added_credits
 
-            # 1. Update profiles (cadangan terpusat jika akun Threads belum terhubung)
             db.schema("threads").from_("profiles").update({
                 "plan": plan_type,
                 "plan_started_at": now.isoformat(),
                 "plan_expires_at": new_exp.isoformat(),
-                "credit_balance": credits,
+                "credit_balance": final_credits,
                 "pending_plan": None,
             }).eq("id", user_id).execute()
 
-            # 2. Update seluruh threads_accounts milik user_id
             if accs.data:
                 primary_acc_id = accs.data[0]["id"]
                 db.schema("threads").from_("threads_accounts").update({
                     "plan": plan_type,
                     "plan_started_at": now.isoformat(),
                     "plan_expires_at": new_exp.isoformat(),
-                    "credit_balance": credits,
+                    "credit_balance": final_credits,
                     "pending_plan": None,
                 }).eq("user_id", user_id).execute()
 
                 db.schema("threads").from_("credit_ledger").insert({
                     "account_id": primary_acc_id,
-                    "delta": credits,
+                    "delta": added_credits,
                     "reason": "renewal_reset",
                     "note": f"Duitku paid {plan_type} ({merchantOrderId})",
                 }).execute()
 
-            logger.info(f"Duitku payment success: user={user_id}, plan={plan_type}, accounts={len(accs.data or [])}, order={merchantOrderId}")
+            logger.info(f"Duitku payment success: user={user_id}, plan={plan_type}, credits={final_credits}, order={merchantOrderId}")
 
     return "OK"

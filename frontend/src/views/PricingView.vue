@@ -1,8 +1,8 @@
 <template>
-  <div class="max-w-4xl mx-auto p-6 space-y-8 theme-bg theme-text min-h-screen">
+  <div class="max-w-6xl mx-auto p-6 space-y-8 theme-bg theme-text min-h-screen">
     <div class="text-center space-y-2">
       <h1 class="text-3xl font-bold">Pilih Paket Kamu</h1>
-      <p class="theme-text-muted">Upgrade instan untuk lanjut pakai fitur AI Ixiera tanpa batas.</p>
+      <p class="theme-text-muted">1 Credit = 1 Token AI. Pilih kapasitas kredit dan jumlah akun sesuai kebutuhanmu.</p>
     </div>
 
     <div v-if="loading" class="text-center py-10 theme-text-muted animate-pulse">Memuat status...</div>
@@ -14,45 +14,82 @@
       </div>
 
       <div v-if="currentPlan && currentPlan !== 'free' && currentPlan !== 'none'" class="p-4 rounded-xl border border-emerald-500/40 bg-emerald-500/5 text-center">
-        <p class="text-sm">Paket aktif saat ini: <b class="uppercase">{{ currentPlan.replace('paid_', 'Pro ') }}</b></p>
+        <p class="text-sm">Paket aktif saat ini: <b class="uppercase">{{ formatPlanDisplay(currentPlan) }}</b></p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Plan 1: Pro Credit -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <!-- 1. Starter -->
         <div class="card p-6 border-2 theme-border space-y-4 flex flex-col justify-between">
           <div>
-            <h2 class="text-xl font-bold">Pro Credit</h2>
-            <p class="text-2xl font-black mt-2">Rp 29.000 <span class="text-sm font-normal theme-text-muted">/ bulan</span></p>
+            <h2 class="text-xl font-bold">Starter</h2>
+            <p class="text-2xl font-black mt-2">Rp 59.000 <span class="text-xs font-normal theme-text-muted">/ bulan</span></p>
             <ul class="mt-4 space-y-2 text-sm theme-text-muted">
-              <li class="flex items-center gap-2">✓ 100 Kredit AI per bulan</li>
-              <li class="flex items-center gap-2">✓ Akses semua fitur AI</li>
+              <li class="flex items-center gap-2">✓ <b>100.000</b> Credits AI / bulan</li>
+              <li class="flex items-center gap-2">✓ Maksimal <b>2 Akun</b> Threads</li>
+              <li class="flex items-center gap-2">✓ Semua fitur AI & Analytics</li>
               <li class="flex items-center gap-2">✓ Tanpa perlu API Key sendiri</li>
             </ul>
           </div>
-          <button @click="checkoutPlan('paid_credit')" :disabled="isProcessing" class="btn btn-primary w-full mt-6">
-            {{ isProcessing && selectedPlan === 'paid_credit' ? 'Memproses...' : 'Bayar Sekarang (Pro Credit)' }}
+          <button @click="checkoutPlan('starter')" :disabled="isProcessing" class="btn btn-primary w-full mt-6">
+            {{ isProcessing && selectedPlan === 'starter' ? 'Memproses...' : 'Pilih Starter' }}
           </button>
         </div>
 
-        <!-- Plan 2: Pro BYOK -->
-        <div class="card p-6 border-2 border-black dark:border-white space-y-4 flex flex-col justify-between relative">
-          <div class="absolute top-0 right-0 bg-black text-white dark:bg-white dark:text-black text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">Paling Hemat</div>
+        <!-- 2. Pro (Most Popular) -->
+        <div class="card p-6 border-2 border-black dark:border-white space-y-4 flex flex-col justify-between relative shadow-lg">
+          <div class="absolute top-0 right-0 bg-black text-white dark:bg-white dark:text-black text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">Paling Populer</div>
           <div>
-            <h2 class="text-xl font-bold">Pro BYOK</h2>
-            <p class="text-2xl font-black mt-2">Rp 19.000 <span class="text-sm font-normal theme-text-muted">/ bulan</span></p>
+            <h2 class="text-xl font-bold">Pro</h2>
+            <p class="text-2xl font-black mt-2">Rp 99.000 <span class="text-xs font-normal theme-text-muted">/ bulan</span></p>
             <ul class="mt-4 space-y-2 text-sm theme-text-muted">
-              <li class="flex items-center gap-2">✓ Unlimited AI (pakai API Key sendiri)</li>
-              <li class="flex items-center gap-2">✓ Support Gemini & Groq</li>
-              <li class="flex items-center gap-2">✓ Biaya API ditanggung sendiri</li>
+              <li class="flex items-center gap-2">✓ <b>300.000</b> Credits AI / bulan</li>
+              <li class="flex items-center gap-2">✓ Maksimal <b>5 Akun</b> Threads</li>
+              <li class="flex items-center gap-2">✓ Semua fitur AI & Analytics</li>
+              <li class="flex items-center gap-2">✓ Tanpa perlu API Key sendiri</li>
             </ul>
           </div>
-          <button @click="checkoutPlan('paid_byok')" :disabled="isProcessing" class="btn btn-primary w-full mt-6">
-            {{ isProcessing && selectedPlan === 'paid_byok' ? 'Memproses...' : 'Bayar Sekarang (Pro BYOK)' }}
+          <button @click="checkoutPlan('pro')" :disabled="isProcessing" class="btn btn-primary w-full mt-6">
+            {{ isProcessing && selectedPlan === 'pro' ? 'Memproses...' : 'Pilih Pro' }}
+          </button>
+        </div>
+
+        <!-- 3. Business -->
+        <div class="card p-6 border-2 theme-border space-y-4 flex flex-col justify-between">
+          <div>
+            <h2 class="text-xl font-bold">Business</h2>
+            <p class="text-2xl font-black mt-2">Rp 179.000 <span class="text-xs font-normal theme-text-muted">/ bulan</span></p>
+            <ul class="mt-4 space-y-2 text-sm theme-text-muted">
+              <li class="flex items-center gap-2">✓ <b>750.000</b> Credits AI / bulan</li>
+              <li class="flex items-center gap-2">✓ Maksimal <b>20 Akun</b> Threads</li>
+              <li class="flex items-center gap-2">✓ Semua fitur AI & Analytics</li>
+              <li class="flex items-center gap-2">✓ Tanpa perlu API Key sendiri</li>
+            </ul>
+          </div>
+          <button @click="checkoutPlan('business')" :disabled="isProcessing" class="btn btn-primary w-full mt-6">
+            {{ isProcessing && selectedPlan === 'business' ? 'Memproses...' : 'Pilih Business' }}
+          </button>
+        </div>
+
+        <!-- 4. Agency (BYOK) -->
+        <div class="card p-6 border-2 theme-border space-y-4 flex flex-col justify-between relative">
+          <div class="absolute top-0 right-0 bg-emerald-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">Unlimited BYOK</div>
+          <div>
+            <h2 class="text-xl font-bold">Agency (BYOK)</h2>
+            <p class="text-2xl font-black mt-2">Rp 249.000 <span class="text-xs font-normal theme-text-muted">/ bulan</span></p>
+            <ul class="mt-4 space-y-2 text-sm theme-text-muted">
+              <li class="flex items-center gap-2">✓ <b>Unlimited</b> AI (API Key sendiri)</li>
+              <li class="flex items-center gap-2">✓ Maksimal <b>50 Akun</b> Threads</li>
+              <li class="flex items-center gap-2">✓ Support Gemini & Groq</li>
+              <li class="flex items-center gap-2">✓ Biaya token ditanggung sendiri</li>
+            </ul>
+          </div>
+          <button @click="checkoutPlan('agency')" :disabled="isProcessing" class="btn btn-primary w-full mt-6">
+            {{ isProcessing && selectedPlan === 'agency' ? 'Memproses...' : 'Pilih Agency' }}
           </button>
         </div>
       </div>
 
-      <p class="text-xs text-center theme-text-muted mt-6 italic">Pembayaran aman & otomatis diproses via Duitku Payment Gateway.</p>
+      <p class="text-xs text-center theme-text-muted mt-6 italic">Pembayaran aman & otomatis diproses via Duitku Payment Gateway. Perpanjangan sebelum masa aktif habis akan mengakumulasi sisa kredit kamu.</p>
     </template>
 
     <div class="text-center pt-6">
@@ -69,7 +106,6 @@ import { useNotify } from '../composables/useNotify'
 import { useAccountStore } from '../stores/accounts'
 
 const accountStore = useAccountStore()
-
 const route = useRoute()
 const { showToast } = useNotify()
 const loading = ref(true)
@@ -80,12 +116,24 @@ const paymentSuccess = ref(false)
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'https://api.ixiera.online').replace(/\/$/, '')
 
+function formatPlanDisplay(p: string) {
+  const map: Record<string, string> = {
+    starter: 'Starter',
+    pro: 'Pro',
+    business: 'Business',
+    agency: 'Agency (BYOK)',
+    paid_credit: 'Pro Credit (Beta)',
+    paid_byok: 'Pro BYOK (Beta)',
+    trial: 'Free Trial',
+  }
+  return map[p] || p
+}
+
 onMounted(async () => {
   try {
     if (route.query.payment === 'success') {
       paymentSuccess.value = true
     }
-
     await accountStore.fetchAccounts()
     currentPlan.value = accountStore.effectivePlan || 'free'
   } finally {

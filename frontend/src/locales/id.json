@@ -124,7 +124,7 @@
       "saving": "Memproses...",
       "modal_title": "Hasil Skor Draf",
       "modal_feedback": "Catatan Feedback",
-      "modal_deep_ai": "Analisa AI (1 Kredit)",
+      "modal_deep_ai": "Analisa AI",
       "modal_deep_ai_loading": "Menganalisa...",
       "modal_close": "Tutup",
       "tones": {
@@ -306,7 +306,7 @@
     "topic_create_btn": "Buat Post",
     "enhancing": "Memperbagus...",
     "enhance_free": "Perbagus dengan AI",
-    "enhance_credit": "Perbagus (1 Kredit)",
+    "enhance_credit": "Perbagus",
     "desc_best": "Waktu posting terbaik per hari",
     "desc_hook": "Performa tipe hook",
     "desc_length": "Panjang post optimal",

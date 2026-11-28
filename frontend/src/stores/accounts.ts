@@ -30,9 +30,17 @@ const STORAGE_KEY = 'ixiera_active_account_id'
 
 export function getMaxAccountsByPlan(plan: string, role = 'user'): number {
   if (role === 'admin') return 50
+  if (plan === 'agency') return 50
+  if (plan === 'business') return 20
+  if (plan === 'pro') return 5
+  if (plan === 'starter') return 2
   if (plan === 'paid_credit') return 10
   if (plan === 'paid_byok') return 3
   return 1
+}
+
+export function isByokPlan(plan: string): boolean {
+  return plan === 'agency' || plan === 'paid_byok'
 }
 
 export const useAccountStore = defineStore('accounts', () => {
@@ -58,11 +66,23 @@ export const useAccountStore = defineStore('accounts', () => {
   })
 
   const effectivePlan = computed<string>(() => {
+    const rank: Record<string, number> = {
+      agency: 7,
+      business: 6,
+      pro: 5,
+      starter: 4,
+      paid_credit: 4,
+      paid_byok: 3,
+      trial: 2,
+      free: 1,
+      none: 1,
+    }
     let best = profilePlan.value || 'free'
     for (const acc of accounts.value) {
-      if (acc.plan === 'paid_credit') return 'paid_credit'
-      if (acc.plan === 'paid_byok' && best !== 'paid_credit') best = 'paid_byok'
-      else if (acc.plan === 'trial' && (best === 'free' || best === 'none')) best = 'trial'
+      const p = acc.plan || 'free'
+      if ((rank[p] || 1) > (rank[best] || 1)) {
+        best = p
+      }
     }
     return best === 'none' ? 'free' : best
   })

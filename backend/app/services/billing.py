@@ -1,6 +1,6 @@
 import uuid
 import logging
-from app.core.config import CREDIT_COSTS
+from app.core.config import BYOK_PLANS
 from app.services.rag import get_supabase
 from fastapi import HTTPException
 from datetime import datetime, timezone
@@ -12,11 +12,13 @@ class BillingError(Exception):
         super().__init__(self.message)
 
 def check_and_spend(account_id: str, action_type: str) -> str:
-    """Mengecek plan dan memotong kredit. Return ref_id untuk refund."""
+    """Validasi plan aktif & saldo > 0 di awal. Pemotongan dilakukan setelah token AI diketahui."""
     db = get_supabase()
-    
-    acc = db.schema("threads").from_("threads_accounts").select("plan, plan_expires_at, credit_balance, custom_gemini_key, custom_groq_key").eq("id", account_id).limit(1).execute()
-    
+
+    acc = db.schema("threads").from_("threads_accounts").select(
+        "plan, plan_expires_at, credit_balance, custom_gemini_key, custom_groq_key"
+    ).eq("id", account_id).limit(1).execute()
+
     if not acc.data:
         raise BillingError("Account not found", "NOT_FOUND")
 
@@ -24,7 +26,7 @@ def check_and_spend(account_id: str, action_type: str) -> str:
     plan = acc_data.get("plan", "none")
     expires_at = acc_data.get("plan_expires_at")
     balance = acc_data.get("credit_balance", 0)
-    
+
     if plan == "none":
         raise BillingError("Plan kamu sudah berakhir. Perpanjang untuk memakai fitur AI.", "PLAN_EXPIRED")
 
@@ -34,48 +36,49 @@ def check_and_spend(account_id: str, action_type: str) -> str:
             if exp_dt < datetime.now(timezone.utc):
                 raise BillingError("Plan kamu sudah berakhir. Perpanjang untuk memakai fitur AI.", "PLAN_EXPIRED")
         except ValueError:
-            pass 
+            pass
 
-    cost = CREDIT_COSTS.get(action_type, 1)
-    if cost == 0:
+    # Bypass pengecekan kredit untuk paket BYOK (Agency / legacy Pro BYOK)
+    if plan in BYOK_PLANS:
         return str(uuid.uuid4())
 
-    ref_id = str(uuid.uuid4())
-    try:
-        # FIX: Tambahkan .schema("threads") sebelum .rpc
-        db.schema("threads").rpc("spend_credits", {
-            "p_account_id": account_id,
-            "p_amount": cost,
-            "p_action_type": action_type,
-            "p_ref_id": ref_id
-        }).execute()
-    except Exception as e:
-        err_str = str(e)
-        if "INSUFFICIENT_CREDITS" in err_str:
-            raise BillingError("Kredit bulan ini habis. Reply otomatis memakai template sampai periode berikutnya.", "INSUFFICIENT_CREDITS")
-        elif "PLAN_EXPIRED" in err_str:
-            raise BillingError("Plan kamu sudah berakhir. Perpanjang untuk memakai fitur AI.", "PLAN_EXPIRED")
-        else:
-            logging.error(f"Billing RPC Error: {err_str}")
-            raise HTTPException(status_code=500, detail="Internal billing error")
+    if balance <= 0:
+        raise BillingError("Kredit token bulan ini habis. Upgrade atau tunggu periode berikutnya.", "INSUFFICIENT_CREDITS")
 
-    return ref_id
+    return str(uuid.uuid4())
 
-def refund_credits(account_id: str, action_type: str, ref_id: str):
-    """Mengembalikan kredit jika LLM gagal."""
-    db = get_supabase()
-    cost = CREDIT_COSTS.get(action_type, 1)
-    if cost == 0:
+def spend_token_credits(account_id: str, action_type: str, total_tokens: int, ref_id: str = None):
+    """Memotong credit_balance sesuai total token (prompt + completion) setelah AI selesai."""
+    tokens = int(total_tokens or 0)
+    if tokens <= 0:
         return
 
+    db = get_supabase()
+    acc = db.schema("threads").from_("threads_accounts").select("plan, credit_balance").eq("id", account_id).limit(1).execute()
+    if not acc.data:
+        return
+
+    plan = acc.data[0].get("plan", "none")
+    balance = int(acc.data[0].get("credit_balance") or 0)
+
+    if plan in BYOK_PLANS or balance <= 0:
+        return
+
+    # Batasi maksimal sebesar sisa saldo agar generasi terakhir tidak gagal RPC
+    deduct_amount = min(balance, tokens)
+    tx_ref = ref_id or str(uuid.uuid4())
+
     try:
-        # FIX: Tambahkan .schema("threads") sebelum .rpc
-        db.schema("threads").rpc("refund_credits", {
+        db.schema("threads").rpc("spend_credits", {
             "p_account_id": account_id,
-            "p_amount": cost,
+            "p_amount": deduct_amount,
             "p_action_type": action_type,
-            "p_ref_id": ref_id
+            "p_ref_id": tx_ref
         }).execute()
-        logging.info(f"[Billing] Refunded {cost} credits for {action_type} ({ref_id})")
+        logging.info(f"[Billing] Deducted {deduct_amount} token-credits for {action_type} (acc={account_id})")
     except Exception as e:
-        logging.error(f"[Billing] Failed to refund: {str(e)}")
+        logging.error(f"[Billing] Failed to deduct {deduct_amount} token-credits: {str(e)}")
+
+def refund_credits(account_id: str, action_type: str, ref_id: str):
+    """No-op karena pemotongan dilakukan setelah generasi sukses."""
+    return

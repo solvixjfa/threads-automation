@@ -43,11 +43,11 @@
           <div class="flex items-center justify-between">
             <div>
               <div class="text-2xl font-black">{{ planName }}</div>
-              <div v-if="plan === 'paid_byok'" class="text-sm font-bold text-[var(--success)] mt-1">
+              <div v-if="plan === 'agency' || plan === 'paid_byok'" class="text-sm font-bold text-[var(--success)] mt-1">
                 Unlimited (BYOK Active)
               </div>
               <div v-else class="text-sm theme-text-muted mt-1">
-                {{ creditBalance }} Credits Remaining
+                {{ creditBalance.toLocaleString('id-ID') }} Credits Remaining
               </div>
             </div>
             <RouterLink to="/pricing" class="btn btn-primary btn-sm">Upgrade Plan</RouterLink>
@@ -58,11 +58,11 @@
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <h3 class="text-sm font-bold">API Keys (BYOK)</h3>
-            <Badge v-if="plan !== 'paid_byok'" variant="danger">Locked</Badge>
+            <Badge v-if="plan !== 'agency' && plan !== 'paid_byok'" variant="danger">Locked</Badge>
           </div>
           
-          <div v-if="plan !== 'paid_byok'" class="p-4 rounded-lg border border-red-500/20 bg-red-500/5 text-red-500 text-xs text-center">
-            Fitur ini terkunci. Upgrade ke <b>Pro BYOK</b> untuk menggunakan API Key sendiri.
+          <div v-if="plan !== 'agency' && plan !== 'paid_byok'" class="p-4 rounded-lg border border-red-500/20 bg-red-500/5 text-red-500 text-xs text-center">
+            Fitur ini terkunci. Upgrade ke <b>Agency (BYOK)</b> untuk menggunakan API Key sendiri.
           </div>
 
           <div v-else class="space-y-4 pt-2">
@@ -134,6 +134,10 @@ const planName = computed(() => getPlanLabel(plan.value))
 
 function getPlanLabel(p: string) {
   if (p === 'trial') return 'Trial'
+  if (p === 'starter') return 'Starter'
+  if (p === 'pro') return 'Pro'
+  if (p === 'business') return 'Business'
+  if (p === 'agency') return 'Agency (BYOK)'
   if (p === 'paid_credit') return 'Pro Credit'
   if (p === 'paid_byok') return 'Pro BYOK'
   return 'Free'
@@ -171,7 +175,8 @@ async function load(isSilent = false) {
       }
 
       // MUNCULIN MODAL KALAU PLAN BERUBAH DARI NONE/TRIAL KE PAID
-      if (isSilent && oldPlan !== plan.value && (plan.value === 'paid_credit' || plan.value === 'paid_byok')) {
+      const paidPlans = ['starter', 'pro', 'business', 'agency', 'paid_credit', 'paid_byok']
+      if (isSilent && oldPlan !== plan.value && paidPlans.includes(plan.value)) {
         showSuccessModal.value = true
         if (pollInterval) clearInterval(pollInterval)
       }
@@ -230,7 +235,7 @@ async function removeKey(provider: 'gemini' | 'groq') {
 onMounted(() => {
   load()
   pollInterval = setInterval(() => {
-    if (plan.value !== 'paid_credit' && plan.value !== 'paid_byok') {
+    if (!['starter', 'pro', 'business', 'agency', 'paid_credit', 'paid_byok'].includes(plan.value)) {
       load(true)
     }
   }, 60000)

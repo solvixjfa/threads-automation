@@ -26,7 +26,7 @@
           :style="isUsingOwnKey ? 'border-color: var(--border-strong);' : (aiCredits > 0 ? 'border-color: var(--border-strong);' : 'border-color: var(--danger); color: var(--danger);')">
           <span class="w-2 h-2 rounded-full shrink-0" :style="isUsingOwnKey ? 'background: var(--text-primary);' : (aiCredits > 0 ? 'background: var(--text-primary);' : 'background: var(--danger);')"></span>
           <span v-if="isUsingOwnKey">Unlimited (Own Key)</span>
-          <span v-else-if="aiCredits > 0">{{ aiCredits }} Credits Left</span>
+          <span v-else-if="aiCredits > 0">{{ aiCredits.toLocaleString('id-ID') }} Credits Left</span>
           <span v-else>Out of Credits</span>
         </div>
       </div>
@@ -464,7 +464,8 @@ async function generateAIDraft(item: any) {
 
     item.draftText = data.reply
     item.draft_mode = 'llm'
-    if (!isUsingOwnKey.value) aiCredits.value = Math.max(0, aiCredits.value - 1)
+    await accountStore.fetchAccounts(true)
+    if (accountStore.activeAccount) aiCredits.value = accountStore.activeAccount.credit_balance ?? aiCredits.value
 
     const savedData = await safeSaveLog({ account_id: item.account_id, reply_id: item.id, status: 'pending_review', final_text: data.reply, llm_meta: { incoming_comment: item.text, username: item.author_username, model: aiModel.value, mode: 'llm' } })
     if (savedData) { item.log_id = savedData.id; item.log_status = savedData.status }

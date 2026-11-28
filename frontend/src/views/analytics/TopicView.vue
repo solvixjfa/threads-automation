@@ -214,9 +214,10 @@ async function enhanceNames() {
     }))
     enhanced.value = true
     
-    // Kurangi kredit lokal (kalau pakai SaaS key)
-    if (!isUsingOwnKey.value) {
-      aiCredits.value = Math.max(0, aiCredits.value - 1)
+    // Sinkronkan saldo kredit token terbaru dari database
+    await accountStore.fetchAccounts(true)
+    if (accountStore.activeAccount) {
+      aiCredits.value = accountStore.activeAccount.credit_balance ?? aiCredits.value
     }
     
     // Simpan ke cache di DB

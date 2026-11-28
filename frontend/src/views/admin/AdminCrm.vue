@@ -667,12 +667,20 @@ const activeFilterCount = computed(() => {
 
 function getQuotaLimit(plan: string, role = 'user'): number {
   if (role === 'admin') return 50
+  if (plan === 'agency') return 50
+  if (plan === 'business') return 20
+  if (plan === 'pro') return 5
+  if (plan === 'starter') return 2
   if (plan === 'paid_credit') return 10
   if (plan === 'paid_byok') return 3
   return 1
 }
 
 function formatIxieraPlan(plan: string): string {
+  if (plan === 'agency') return 'Agency BYOK'
+  if (plan === 'business') return 'Business'
+  if (plan === 'pro') return 'Pro'
+  if (plan === 'starter') return 'Starter'
   if (plan === 'paid_credit') return 'Pro Credit'
   if (plan === 'paid_byok') return 'Pro BYOK'
   if (plan === 'trial') return 'Trial'
@@ -685,7 +693,7 @@ function getIxieraUser(handle: string): IxieraAccountMatch | null {
 }
 
 function getIxieraBadgeClass(match: IxieraAccountMatch): string {
-  if (match.plan === 'paid_credit' || match.plan === 'paid_byok') {
+  if (['starter', 'pro', 'business', 'agency', 'paid_credit', 'paid_byok'].includes(match.plan)) {
     return 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30'
   }
   if (match.plan === 'trial') {
@@ -695,7 +703,7 @@ function getIxieraBadgeClass(match: IxieraAccountMatch): string {
 }
 
 function getSuggestedConversion(lead: CrmLead, match: IxieraAccountMatch): string | null {
-  if ((match.plan === 'paid_credit' || match.plan === 'paid_byok') && lead.conversion_status !== 'Paid') {
+  if (['starter', 'pro', 'business', 'agency', 'paid_credit', 'paid_byok'].includes(match.plan) && lead.conversion_status !== 'Paid') {
     return 'Paid'
   }
   if (match.plan === 'trial' && ['Potential', 'Interested'].includes(lead.conversion_status)) {
@@ -918,7 +926,7 @@ async function quickAddLead() {
     const nowIso = new Date().toISOString()
     const matched = getIxieraUser(handle)
     const initialConv = matched
-      ? (matched.plan === 'paid_credit' || matched.plan === 'paid_byok' ? 'Paid' : matched.plan === 'trial' ? 'Trial Started' : 'Potential')
+      ? (['starter', 'pro', 'business', 'agency', 'paid_credit', 'paid_byok'].includes(matched.plan) ? 'Paid' : matched.plan === 'trial' ? 'Trial Started' : 'Potential')
       : 'Potential'
 
     const { data, error } = await supabase
