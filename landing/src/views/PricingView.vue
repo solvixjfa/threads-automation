@@ -53,9 +53,9 @@
           </div>
 
           <ul class="space-y-3 text-sm text-[var(--muted)] mb-8 border-t border-[var(--line)] pt-5">
-            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span><strong class="text-[var(--text)]">100.000 Token AI</strong> / bulan</span></li>
-            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span><strong class="text-[var(--text)]">Maksimal 2 Akun</strong> Threads</span></li>
-            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span>Unlimited Jadwal Post & Thread Splitter</span></li>
+            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span><strong class="text-[var(--text)]">{{ locale === 'id' ? '100.000 Token AI' : '100,000 AI Tokens' }}</strong> {{ locale === 'id' ? '/ bulan' : '/ month' }}</span></li>
+            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span><strong class="text-[var(--text)]">{{ locale === 'id' ? 'Maksimal 2 Akun' : 'Up to 2' }}</strong> {{ locale === 'id' ? 'Threads' : 'Threads Accounts' }}</span></li>
+            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span>{{ locale === 'id' ? 'Unlimited Jadwal Post & Thread Splitter' : 'Unlimited Post Scheduling & Thread Splitter' }}</span></li>
             <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span>Auto Reply, Location Tag & IG Cross-Post</span></li>
           </ul>
 
@@ -81,8 +81,8 @@
           </div>
 
           <ul class="space-y-3 text-sm text-[var(--muted)] mb-8 border-t border-[var(--line)] pt-5">
-            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span><strong class="text-[var(--text)]">300.000 Token AI</strong> / bulan</span></li>
-            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span><strong class="text-[var(--text)]">Maksimal 5 Akun</strong> Threads</span></li>
+            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span><strong class="text-[var(--text)]">{{ locale === 'id' ? '300.000 Token AI' : '300,000 AI Tokens' }}</strong> {{ locale === 'id' ? '/ bulan' : '/ month' }}</span></li>
+            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span><strong class="text-[var(--text)]">{{ locale === 'id' ? 'Maksimal 5 Akun' : 'Up to 5' }}</strong> {{ locale === 'id' ? 'Threads' : 'Threads Accounts' }}</span></li>
             <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span>Full Auto Reply + Custom Knowledge Base</span></li>
             <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span>Trending Radar, Discovery & Analytics</span></li>
           </ul>
@@ -106,8 +106,8 @@
           </div>
 
           <ul class="space-y-3 text-sm text-[var(--muted)] mb-8 border-t border-[var(--line)] pt-5">
-            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span><strong class="text-[var(--text)]">750.000 Token AI</strong> / bulan</span></li>
-            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span><strong class="text-[var(--text)]">Maksimal 20 Akun</strong> Threads</span></li>
+            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span><strong class="text-[var(--text)]">{{ locale === 'id' ? '750.000 Token AI' : '750,000 AI Tokens' }}</strong> {{ locale === 'id' ? '/ bulan' : '/ month' }}</span></li>
+            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span><strong class="text-[var(--text)]">{{ locale === 'id' ? 'Maksimal 20 Akun' : 'Up to 20' }}</strong> {{ locale === 'id' ? 'Threads' : 'Threads Accounts' }}</span></li>
             <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span>Smart Inbox (Comments + Mentions)</span></li>
             <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span>Custom Knowledge Base & Deep Analytics</span></li>
           </ul>
@@ -131,10 +131,10 @@
           </div>
 
           <ul class="space-y-3 text-sm text-[var(--muted)] mb-8 border-t border-[var(--line)] pt-5">
-            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span><strong class="text-[var(--text)]">Unlimited Token</strong> (pakai kuota API-mu)</span></li>
-            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span><strong class="text-[var(--text)]">Maksimal 50 Akun</strong> Threads</span></li>
-            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span>Semua fitur Composer, Scheduler & IG Cross-Post</span></li>
-            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span>Cocok untuk Agensi & High-Volume</span></li>
+            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span><strong class="text-[var(--text)]">{{ locale === 'id' ? 'Unlimited Token' : 'Unlimited Tokens' }}</strong> ({{ locale === 'id' ? 'pakai kuota API-mu' : 'use your own API quota' }})</span></li>
+            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span><strong class="text-[var(--text)]">{{ locale === 'id' ? 'Maksimal 50 Akun' : 'Up to 50' }}</strong> {{ locale === 'id' ? 'Threads' : 'Threads Accounts' }}</span></li>
+            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span>{{ locale === 'id' ? 'Semua fitur Composer, Scheduler & IG Cross-Post' : 'All Composer, Scheduler & IG Cross-Post features' }}</span></li>
+            <li class="flex items-start gap-2.5"><span class="text-[var(--text)] font-bold">✓</span> <span>{{ locale === 'id' ? 'Cocok untuk Agensi & High-Volume' : 'Ideal for Agencies & High-Volume' }}</span></li>
           </ul>
 
           <a href="https://app.ixiera.online/login" class="mt-auto block text-center py-3.5 rounded-full text-sm font-bold border border-[var(--line)] hover:bg-[var(--surface-2)] transition">

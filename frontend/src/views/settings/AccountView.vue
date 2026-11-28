@@ -9,7 +9,7 @@
         </div>
         <div class="flex items-center gap-2">
           <span class="px-3 py-1 rounded-full border theme-border bg-[var(--surface-2)] text-xs font-bold">
-            {{ accountStore.accounts.length }} / {{ accountStore.maxAccounts }} Akun
+            {{ accountStore.accounts.length }} / {{ accountStore.maxAccounts }} {{ $i18n.locale === 'id' ? 'Akun' : 'Accounts' }}
           </span>
           <span class="px-2.5 py-1 rounded-full border theme-border text-xs font-bold uppercase">
             {{ planLabel }}
@@ -41,7 +41,7 @@
                   v-if="acc.id === accountStore.activeAccountId"
                   class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-500/15 text-green-500"
                 >
-                  AKTIF
+                  {{ $i18n.locale === 'id' ? 'AKTIF' : 'ACTIVE' }}
                 </span>
                 <span
                   v-else
@@ -51,7 +51,7 @@
                 </span>
               </div>
               <p class="text-xs theme-text-muted mt-0.5">
-                Token berlaku s/d {{ acc.token_expires_at ? formatDate(acc.token_expires_at) : '-' }}
+                {{ $i18n.locale === 'id' ? 'Token berlaku s/d' : 'Token valid until' }} {{ acc.token_expires_at ? formatDate(acc.token_expires_at) : '-' }}
               </p>
             </div>
           </div>
@@ -62,11 +62,11 @@
               @click="handleSwitch(acc.id, acc.username)"
               class="btn btn-primary text-xs"
             >
-              Gunakan Akun
+              {{ $i18n.locale === 'id' ? 'Gunakan Akun' : 'Switch Account' }}
             </button>
             <div class="flex items-center gap-2"><button @click="handleConnect" class="btn btn-secondary text-xs">
               Reconnect
-            </button><button type="button" :disabled="disconnectingId === acc.id" @click="handleDisconnectAccount(acc)" class="px-3 py-1.5 rounded-lg text-xs font-medium border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition">{{ disconnectingId === acc.id ? 'Memutus...' : 'Putus' }}</button></div>
+            </button><button type="button" :disabled="disconnectingId === acc.id" @click="handleDisconnectAccount(acc)" class="px-3 py-1.5 rounded-lg text-xs font-medium border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition">{{ disconnectingId === acc.id ? ($i18n.locale === 'id' ? 'Memutus...' : 'Disconnecting...') : ($i18n.locale === 'id' ? 'Putus' : 'Disconnect') }}</button></div>
           </div>
         </div>
 
@@ -74,10 +74,20 @@
         <div class="pt-3 border-t theme-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <p class="text-xs theme-text-muted">
             <template v-if="accountStore.canAddAccount">
-              Semua akun berbagi paket <b>{{ planLabel }}</b>, saldo token, dan API key yang sama.
+              <template v-if="$i18n.locale === 'id'">
+                Semua akun berbagi paket <b>{{ planLabel }}</b>, saldo token, dan API key yang sama.
+              </template>
+              <template v-else>
+                All accounts share the same <b>{{ planLabel }}</b> plan, token balance, and API keys.
+              </template>
             </template>
             <template v-else>
-              Batas maksimal paket <b>{{ planLabel }}</b> ({{ accountStore.maxAccounts }} akun) sudah tercapai.
+              <template v-if="$i18n.locale === 'id'">
+                Batas maksimal paket <b>{{ planLabel }}</b> ({{ accountStore.maxAccounts }} akun) sudah tercapai.
+              </template>
+              <template v-else>
+                Maximum limit for <b>{{ planLabel }}</b> ({{ accountStore.maxAccounts }} accounts) has been reached.
+              </template>
             </template>
           </p>
 
@@ -86,14 +96,14 @@
             @click="handleConnect"
             class="btn btn-primary text-xs shrink-0"
           >
-            + Tambah Akun Threads
+            {{ $i18n.locale === 'id' ? '+ Tambah Akun Threads' : '+ Add Threads Account' }}
           </button>
           <RouterLink
             v-else
             to="/pricing"
             class="btn btn-primary text-xs shrink-0"
           >
-            Upgrade Kuota Akun
+            {{ $i18n.locale === 'id' ? 'Upgrade Kuota Akun' : 'Upgrade Account Limit' }}
           </RouterLink>
         </div>
       </div>
@@ -113,7 +123,7 @@
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-bold">Dark Mode</p>
-            <p class="text-xs theme-text-muted mt-0.5">Ubah tema gelap atau terang</p>
+            <p class="text-xs theme-text-muted mt-0.5">{{ $i18n.locale === 'id' ? 'Ubah tema gelap atau terang' : 'Switch between dark and light theme' }}</p>
           </div>
           <button
             @click="toggleTheme"
@@ -131,7 +141,7 @@
         <div class="flex items-center justify-between pt-4 border-t theme-border">
           <div>
             <p class="text-sm font-bold">Language</p>
-            <p class="text-xs theme-text-muted mt-0.5">Pilih bahasa aplikasi</p>
+            <p class="text-xs theme-text-muted mt-0.5">{{ $i18n.locale === 'id' ? 'Pilih bahasa aplikasi' : 'Choose application language' }}</p>
           </div>
           <LanguageSwitcher />
         </div>
@@ -150,21 +160,21 @@
       </button>
     </div>
   
-    <!-- Zona Bahaya: Hapus Akun & Hapus Full Data -->
+    <!-- Danger Zone: Delete Account & Delete Full Data -->
     <div class="rounded-2xl border border-red-500/25 bg-zinc-900/60 p-5 space-y-4 mt-6">
       <div>
-        <h3 class="text-base font-semibold text-red-400">Zona Bahaya</h3>
+        <h3 class="text-base font-semibold text-red-400">{{ $i18n.locale === 'id' ? 'Zona Bahaya' : 'Danger Zone' }}</h3>
         <p class="text-xs text-zinc-400 mt-1">
-          Kelola penghapusan akun Ixiera dan data yang terhubung. Tindakan ini bersifat permanen.
+          {{ $i18n.locale === 'id' ? 'Kelola penghapusan akun Ixiera dan data yang terhubung. Tindakan ini bersifat permanen.' : 'Manage deletion of your Ixiera account and connected data. This action is permanent.' }}
         </p>
       </div>
 
       <div class="space-y-3 pt-1">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3.5 rounded-xl border border-zinc-800 bg-zinc-950/60">
           <div>
-            <p class="text-sm font-medium text-zinc-100">Hapus Akun Saja</p>
+            <p class="text-sm font-medium text-zinc-100">{{ $i18n.locale === 'id' ? 'Hapus Akun Saja' : 'Delete Account Only' }}</p>
             <p class="text-xs text-zinc-400 mt-0.5">
-              Hapus akun login Ixiera dan putus koneksi Threads. Riwayat analitik sistem tetap disimpan secara anonim.
+              {{ $i18n.locale === 'id' ? 'Hapus akun login Ixiera dan putus koneksi Threads. Riwayat analitik sistem tetap disimpan secara anonim.' : 'Delete your Ixiera login account and disconnect Threads. System analytics history is retained anonymously.' }}
             </p>
           </div>
           <button
@@ -172,15 +182,15 @@
             @click="openDeleteModal('account_only')"
             class="shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold border border-red-500/40 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition"
           >
-            Hapus Akun Saja
+            {{ $i18n.locale === 'id' ? 'Hapus Akun Saja' : 'Delete Account Only' }}
           </button>
         </div>
 
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3.5 rounded-xl border border-red-500/30 bg-red-950/20">
           <div>
-            <p class="text-sm font-medium text-red-300">Hapus Full Data</p>
+            <p class="text-sm font-medium text-red-300">{{ $i18n.locale === 'id' ? 'Hapus Full Data' : 'Delete All Data' }}</p>
             <p class="text-xs text-zinc-400 mt-0.5">
-              Hapus permanen akun Ixiera beserta seluruh akun Threads, jadwal konten, auto-reply, knowledge base, dan riwayat token.
+              {{ $i18n.locale === 'id' ? 'Hapus permanen akun Ixiera beserta seluruh akun Threads, jadwal konten, auto-reply, knowledge base, dan riwayat token.' : 'Permanently delete your Ixiera account along with all connected Threads accounts, scheduled posts, auto-replies, knowledge base, and token history.' }}
             </p>
           </div>
           <button
@@ -188,31 +198,36 @@
             @click="openDeleteModal('full_data')"
             class="shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold bg-red-600 text-white hover:bg-red-500 transition"
           >
-            Hapus Full Data
+            {{ $i18n.locale === 'id' ? 'Hapus Full Data' : 'Delete All Data' }}
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Modal Konfirmasi Hapus Akun -->
+    <!-- Modal Confirm Account Deletion -->
     <div
       v-if="deleteModalMode"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
     >
       <div class="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900 p-5 space-y-4 shadow-2xl">
         <h4 class="text-base font-semibold text-white">
-          {{ deleteModalMode === 'full_data' ? 'Konfirmasi Hapus Full Data' : 'Konfirmasi Hapus Akun Saja' }}
+          {{ deleteModalMode === 'full_data' ? ($i18n.locale === 'id' ? 'Konfirmasi Hapus Full Data' : 'Confirm Delete All Data') : ($i18n.locale === 'id' ? 'Konfirmasi Hapus Akun Saja' : 'Confirm Delete Account Only') }}
         </h4>
         <p class="text-xs text-zinc-300 leading-relaxed">
           {{
             deleteModalMode === 'full_data'
-              ? 'Seluruh data akun, koneksi Threads, jadwal post, auto-reply, knowledge base, dan sisa token akan dihapus permanen dan tidak bisa dikembalikan.'
-              : 'Akun login Ixiera Anda akan dihapus dan koneksi Threads diputus secara permanen.'
+              ? ($i18n.locale === 'id'
+                  ? 'Seluruh data akun, koneksi Threads, jadwal post, auto-reply, knowledge base, dan sisa token akan dihapus permanen dan tidak bisa dikembalikan.'
+                  : 'All account data, Threads connections, scheduled posts, auto-replies, knowledge base, and remaining tokens will be permanently deleted and cannot be undone.')
+              : ($i18n.locale === 'id'
+                  ? 'Akun login Ixiera Anda akan dihapus dan koneksi Threads diputus secara permanen.'
+                  : 'Your Ixiera login account will be permanently deleted and Threads connections disconnected.')
           }}
         </p>
         <div>
           <label class="block text-xs text-zinc-400 mb-1.5">
-            Ketik <span class="font-bold text-red-400">HAPUS</span> untuk melanjutkan:
+            <template v-if="$i18n.locale === 'id'">Ketik <span class="font-bold text-red-400">HAPUS</span> untuk melanjutkan:</template>
+            <template v-else>Type <span class="font-bold text-red-400">HAPUS</span> to continue:</template>
           </label>
           <input
             v-model="deleteConfirmInput"
@@ -229,7 +244,7 @@
             @click="deleteModalMode = null"
             class="px-4 py-2 rounded-xl text-xs font-medium border border-zinc-700 text-zinc-300 hover:bg-zinc-800"
           >
-            Batal
+            {{ $i18n.locale === 'id' ? 'Batal' : 'Cancel' }}
           </button>
           <button
             type="button"
@@ -237,7 +252,7 @@
             @click="executeAccountDeletion"
             class="px-4 py-2 rounded-xl text-xs font-semibold bg-red-600 text-white hover:bg-red-500 disabled:opacity-40"
           >
-            {{ isDeletingAccount ? 'Menghapus...' : 'Konfirmasi Hapus' }}
+            {{ isDeletingAccount ? ($i18n.locale === 'id' ? 'Menghapus...' : 'Deleting...') : ($i18n.locale === 'id' ? 'Konfirmasi Hapus' : 'Confirm Delete') }}
           </button>
         </div>
       </div>
@@ -249,6 +264,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { supabase } from '../../lib/supabase'
 import { useNotify } from '../../composables/useNotify'
 import { useTheme } from '../../composables/useTheme'
@@ -257,30 +273,32 @@ import LanguageSwitcher from '../../components/LanguageSwitcher.vue'
 
 const route = useRoute()
 const router = useRouter()
+const { locale } = useI18n()
 const { showToast } = useNotify()
 const { theme, toggle: toggleTheme } = useTheme()
 const accountStore = useAccountStore()
 
 const planLabel = computed(() => {
   const p = accountStore.effectivePlan
-  if (p === 'agency') return 'Agency BYOK (Maks 50 Akun)'
-  if (p === 'business') return 'Business (Maks 20 Akun)'
-  if (p === 'pro') return 'Pro (Maks 5 Akun)'
-  if (p === 'starter') return 'Starter (Maks 2 Akun)'
-  if (p === 'paid_credit') return 'Pro Token (Maks 10 Akun)'
-  if (p === 'paid_byok') return 'Pro BYOK (Maks 3 Akun)'
-  if (p === 'trial') return 'Trial (Maks 1 Akun)'
-  return 'Free (Maks 1 Akun)'
+  const isId = locale.value === 'id'
+  if (p === 'agency') return isId ? 'Agency BYOK (Maks 50 Akun)' : 'Agency BYOK (Max 50 Accounts)'
+  if (p === 'business') return isId ? 'Business (Maks 20 Akun)' : 'Business (Max 20 Accounts)'
+  if (p === 'pro') return isId ? 'Pro (Maks 5 Akun)' : 'Pro (Max 5 Accounts)'
+  if (p === 'starter') return isId ? 'Starter (Maks 2 Akun)' : 'Starter (Max 2 Accounts)'
+  if (p === 'paid_credit') return isId ? `Pro Token (Maks ${accountStore.maxAccounts} Akun)` : `Pro Token (Max ${accountStore.maxAccounts} Accounts)`
+  if (p === 'paid_byok') return isId ? `Pro BYOK (Maks ${accountStore.maxAccounts} Akun)` : `Pro BYOK (Max ${accountStore.maxAccounts} Accounts)`
+  if (p === 'trial') return isId ? 'Trial (Maks 1 Akun)' : 'Trial (Max 1 Account)'
+  return isId ? 'Free (Maks 1 Akun)' : 'Free (Max 1 Account)'
 })
 
 function formatDate(iso: string) {
   if (!iso) return ''
-  return new Date(iso).toLocaleDateString('id-ID', { dateStyle: 'medium' })
+  return new Date(iso).toLocaleDateString(locale.value === 'id' ? 'id-ID' : 'en-US', { dateStyle: 'medium' })
 }
 
 function handleSwitch(id: string, username: string | null) {
   accountStore.setActiveAccount(id)
-  showToast(`Beralih ke akun @${username || 'Threads'}`, 'success')
+  showToast(locale.value === 'id' ? `Beralih ke akun @${username || 'Threads'}` : `Switched to @${username || 'Threads'}`, 'success')
 }
 
 async function handleLogout() {

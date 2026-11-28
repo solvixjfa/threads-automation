@@ -454,14 +454,14 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <!-- Starter -->
             <div class="border border-[var(--line)] rounded-2xl p-7 bg-[var(--bg)] flex flex-col">
-              <div class="text-xs font-mono uppercase text-[var(--muted)] mb-1">Starter (30 Hari)</div>
-              <div class="text-3xl font-bold mb-2">Rp 59.000<span class="text-xs font-normal text-[var(--muted)]"> / 30 hari</span></div>
+              <div class="text-xs font-mono uppercase text-[var(--muted)] mb-1">{{ locale === 'id' ? 'Starter (30 Hari)' : 'Starter (30 Days)' }}</div>
+              <div class="text-3xl font-bold mb-2">Rp 59.000<span class="text-xs font-normal text-[var(--muted)]"> / {{ locale === 'id' ? '30 hari' : '30 days' }}</span></div>
               <p class="text-xs text-[var(--muted)] mb-5">
                 {{ locale === 'id' ? 'Untuk kreator solo & personal branding rutin.' : 'For solo creators & consistent personal branding.' }}
               </p>
               <ul class="space-y-2.5 text-sm text-[var(--muted)] mb-7 border-t border-[var(--line)] pt-5">
-                <li>✓ <strong class="text-[var(--text)]">100.000 Token AI</strong> / bulan</li>
-                <li>✓ <strong class="text-[var(--text)]">Maksimal 2 Akun</strong> Threads</li>
+                <li>✓ <strong class="text-[var(--text)]">{{ locale === 'id' ? '100.000 Token AI' : '100,000 AI Tokens' }}</strong> {{ locale === 'id' ? '/ bulan' : '/ month' }}</li>
+                <li>✓ <strong class="text-[var(--text)]">{{ locale === 'id' ? 'Maksimal 2 Akun' : 'Up to 2' }}</strong> {{ locale === 'id' ? 'Threads' : 'Threads Accounts' }}</li>
                 <li>✓ AI Planner, Repurpose & Auto Reply</li>
                 <li>✓ Location Tag & IG Cross-Post</li>
               </ul>
@@ -475,14 +475,14 @@
               <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-[var(--text)] text-[var(--bg)] text-[10px] font-bold px-3 py-1 rounded-full uppercase">
                 {{ locale === 'id' ? 'Paling Laris' : 'Most Popular' }}
               </div>
-              <div class="text-xs font-mono uppercase text-[var(--muted)] mb-1">Pro (30 Hari)</div>
-              <div class="text-3xl font-bold mb-2">Rp 99.000<span class="text-xs font-normal text-[var(--muted)]"> / 30 hari</span></div>
+              <div class="text-xs font-mono uppercase text-[var(--muted)] mb-1">{{ locale === 'id' ? 'Pro (30 Hari)' : 'Pro (30 Days)' }}</div>
+              <div class="text-3xl font-bold mb-2">Rp 99.000<span class="text-xs font-normal text-[var(--muted)]"> / {{ locale === 'id' ? '30 hari' : '30 days' }}</span></div>
               <p class="text-xs text-[var(--muted)] mb-5">
                 {{ locale === 'id' ? 'Kuota besar untuk kreator aktif & multi-akun.' : 'High token quota for active creators & multi-account.' }}
               </p>
               <ul class="space-y-2.5 text-sm text-[var(--muted)] mb-7 border-t border-[var(--line)] pt-5">
-                <li>✓ <strong class="text-[var(--text)]">300.000 Token AI</strong> / bulan</li>
-                <li>✓ <strong class="text-[var(--text)]">Maksimal 5 Akun</strong> Threads</li>
+                <li>✓ <strong class="text-[var(--text)]">{{ locale === 'id' ? '300.000 Token AI' : '300,000 AI Tokens' }}</strong> {{ locale === 'id' ? '/ bulan' : '/ month' }}</li>
+                <li>✓ <strong class="text-[var(--text)]">{{ locale === 'id' ? 'Maksimal 5 Akun' : 'Up to 5' }}</strong> {{ locale === 'id' ? 'Threads' : 'Threads Accounts' }}</li>
                 <li>✓ Full Auto Reply + Knowledge Base</li>
                 <li>✓ Trending Radar, Discovery & Analytics</li>
               </ul>
@@ -493,15 +493,15 @@
 
             <!-- Business -->
             <div class="border border-[var(--line)] rounded-2xl p-7 bg-[var(--bg)] flex flex-col">
-              <div class="text-xs font-mono uppercase text-[var(--muted)] mb-1">Business (30 Hari)</div>
-              <div class="text-3xl font-bold mb-2">Rp 179.000<span class="text-xs font-normal text-[var(--muted)]"> / 30 hari</span></div>
+              <div class="text-xs font-mono uppercase text-[var(--muted)] mb-1">{{ locale === 'id' ? 'Business (30 Hari)' : 'Business (30 Days)' }}</div>
+              <div class="text-3xl font-bold mb-2">Rp 179.000<span class="text-xs font-normal text-[var(--muted)]"> / {{ locale === 'id' ? '30 hari' : '30 days' }}</span></div>
               <p class="text-xs text-[var(--muted)] mb-5">
                 {{ locale === 'id' ? 'Untuk tim bisnis, brand & social media manager.' : 'For business teams, brands & social managers.' }}
               </p>
               <ul class="space-y-2.5 text-sm text-[var(--muted)] mb-7 border-t border-[var(--line)] pt-5">
-                <li>✓ <strong class="text-[var(--text)]">750.000 Token AI</strong> / bulan</li>
-                <li>✓ <strong class="text-[var(--text)]">Maksimal 20 Akun</strong> Threads</li>
-                <li>✓ Semua Fitur Otomatisasi Penuh</li>
+                <li>✓ <strong class="text-[var(--text)]">{{ locale === 'id' ? '750.000 Token AI' : '750,000 AI Tokens' }}</strong> {{ locale === 'id' ? '/ bulan' : '/ month' }}</li>
+                <li>✓ <strong class="text-[var(--text)]">{{ locale === 'id' ? 'Maksimal 20 Akun' : 'Up to 20' }}</strong> {{ locale === 'id' ? 'Threads' : 'Threads Accounts' }}</li>
+                <li>✓ {{ locale === 'id' ? 'Semua Fitur Otomatisasi Penuh' : 'All Full Automation Features' }}</li>
                 <li>✓ Smart Inbox, Mentions & Knowledge Base</li>
               </ul>
               <a href="https://app.ixiera.online/login" class="mt-auto block text-center py-3 rounded-full text-sm font-bold border border-[var(--line)] hover:bg-[var(--surface-2)] transition">
@@ -511,16 +511,16 @@
 
             <!-- Agency BYOK -->
             <div class="border border-[var(--line)] rounded-2xl p-7 bg-[var(--bg)] flex flex-col">
-              <div class="text-xs font-mono uppercase text-[var(--muted)] mb-1">Agency BYOK (30 Hari)</div>
-              <div class="text-3xl font-bold mb-2">Rp 249.000<span class="text-xs font-normal text-[var(--muted)]"> / 30 hari</span></div>
+              <div class="text-xs font-mono uppercase text-[var(--muted)] mb-1">{{ locale === 'id' ? 'Agency BYOK (30 Hari)' : 'Agency BYOK (30 Days)' }}</div>
+              <div class="text-3xl font-bold mb-2">Rp 249.000<span class="text-xs font-normal text-[var(--muted)]"> / {{ locale === 'id' ? '30 hari' : '30 days' }}</span></div>
               <p class="text-xs text-[var(--muted)] mb-5">
                 {{ locale === 'id' ? 'Pakai API key Gemini / Groq milikmu sendiri.' : 'Use your own Gemini / Groq API keys.' }}
               </p>
               <ul class="space-y-2.5 text-sm text-[var(--muted)] mb-7 border-t border-[var(--line)] pt-5">
-                <li>✓ <strong class="text-[var(--text)]">Unlimited Token</strong> (API Key Sendiri)</li>
-                <li>✓ <strong class="text-[var(--text)]">Maksimal 50 Akun</strong> Threads</li>
-                <li>✓ Tanpa Batas Pemakaian AI</li>
-                <li>✓ Cocok untuk Agensi & High-Volume</li>
+                <li>✓ <strong class="text-[var(--text)]">{{ locale === 'id' ? 'Unlimited Token' : 'Unlimited Tokens' }}</strong> ({{ locale === 'id' ? 'API Key Sendiri' : 'Own API Keys' }})</li>
+                <li>✓ <strong class="text-[var(--text)]">{{ locale === 'id' ? 'Maksimal 50 Akun' : 'Up to 50' }}</strong> {{ locale === 'id' ? 'Threads' : 'Threads Accounts' }}</li>
+                <li>✓ {{ locale === 'id' ? 'Tanpa Batas Pemakaian AI' : 'No AI Usage Limits' }}</li>
+                <li>✓ {{ locale === 'id' ? 'Cocok untuk Agensi & High-Volume' : 'Ideal for Agencies & High-Volume' }}</li>
               </ul>
               <a href="https://app.ixiera.online/login" class="mt-auto block text-center py-3 rounded-full text-sm font-bold border border-[var(--line)] hover:bg-[var(--surface-2)] transition">
                 {{ locale === 'id' ? 'Pilih Agency BYOK' : 'Choose Agency BYOK' }}

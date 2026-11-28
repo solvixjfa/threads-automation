@@ -22,10 +22,10 @@
 
         <div class="min-w-0">
           <div class="text-xs font-bold truncate theme-text">
-            {{ active?.username ? '@' + active.username : 'Hubungkan Akun' }}
+            {{ active?.username ? '@' + active.username : ($i18n.locale === 'id' ? 'Hubungkan Akun' : 'Connect Account') }}
           </div>
           <div class="text-[10px] theme-text-muted truncate">
-            {{ store.isSyncing ? 'Menyinkronkan data...' : `${store.accounts.length}/${store.maxAccounts} akun aktif` }}
+            {{ store.isSyncing ? ($i18n.locale === 'id' ? 'Menyinkronkan data...' : 'Syncing data...') : ($i18n.locale === 'id' ? `${store.accounts.length}/${store.maxAccounts} akun aktif` : `${store.accounts.length}/${store.maxAccounts} active accounts`) }}
           </div>
         </div>
       </div>
@@ -44,7 +44,7 @@
       class="fixed top-3 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2 px-4 py-2 rounded-full border border-zinc-700 bg-zinc-900/95 text-white text-xs font-medium shadow-2xl backdrop-blur"
     >
       <RefreshCw class="w-3.5 h-3.5 animate-spin text-emerald-400 shrink-0" />
-      <span>{{ store.syncStatusText || 'Menyinkronkan data akun...' }}</span>
+      <span>{{ store.syncStatusText || ($i18n.locale === 'id' ? 'Menyinkronkan data akun...' : 'Syncing account data...') }}</span>
     </div>
 
     <div
@@ -52,12 +52,12 @@
       class="absolute left-0 right-0 mt-1.5 z-50 rounded-xl border theme-border theme-bg shadow-xl p-1.5 space-y-1"
     >
       <div class="px-2 py-1 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider theme-text-muted">
-        <span>Akun Threads</span>
+        <span>{{ $i18n.locale === 'id' ? 'Akun Threads' : 'Threads Accounts' }}</span>
         <span>{{ store.accounts.length }}/{{ store.maxAccounts }}</span>
       </div>
 
       <div v-if="store.accounts.length === 0" class="px-2.5 py-2 text-xs theme-text-muted">
-        Belum ada akun terhubung.
+        {{ $i18n.locale === 'id' ? 'Belum ada akun terhubung.' : 'No accounts connected yet.' }}
       </div>
 
       <button
