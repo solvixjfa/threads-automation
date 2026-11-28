@@ -35,8 +35,8 @@
 
           <p class="text-xs text-[var(--muted)] pt-1">
             {{ locale === 'id'
-              ? 'Gratis 7 hari + 20 kredit AI • Tanpa kartu kredit • Langsung aktif'
-              : 'Free 7-day trial + 20 AI credits • No credit card • Instant access' }}
+              ? 'Gratis 7 hari + 15.000 Token AI • Tanpa kartu kredit • Langsung aktif'
+              : 'Free 7-day trial + 15,000 AI Tokens • No credit card • Instant access' }}
           </p>
 
           <div class="flex flex-col sm:flex-row gap-4 pt-6 text-xs text-[var(--muted)] justify-center md:justify-start">
@@ -417,8 +417,8 @@
 
       <!-- PRICING SECTION -->
       <section id="pricing" class="py-20 md:py-32 border-t border-[var(--line)] bg-[var(--surface)]">
-        <div class="max-w-[1120px] mx-auto px-6">
-          <div class="text-center mb-16 fade-in">
+        <div class="max-w-[1160px] mx-auto px-6">
+          <div class="text-center mb-14 fade-in">
             <span class="text-xs font-mono font-bold uppercase tracking-widest text-[var(--muted)]">
               {{ locale === 'id' ? 'HARGA TRANSPARAN • TANPA AUTO-RENEW' : 'TRANSPARENT PRICING • NO AUTO-RENEW' }}
             </span>
@@ -432,68 +432,105 @@
             </p>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            <!-- Trial -->
-            <div class="border border-[var(--line)] rounded-2xl p-8 bg-[var(--bg)] flex flex-col">
-              <div class="text-xs font-mono uppercase text-[var(--muted)] mb-1">7-Day Trial</div>
-              <div class="text-3xl font-bold mb-2">Rp 0</div>
-              <p class="text-xs text-[var(--muted)] mb-6">
-                {{ locale === 'id' ? '7 hari penuh + 20 kredit AI gratis.' : 'Full 7 days + 20 free AI credits.' }}
+          <!-- Free Trial Banner -->
+          <div class="border border-[var(--line)] rounded-2xl p-6 bg-[var(--bg)] mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2.5 mb-1">
+                <span class="text-xs font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded bg-[var(--surface-2)] text-[var(--text)]">7-Day Free Trial</span>
+                <span class="text-lg font-bold">Rp 0</span>
+              </div>
+              <p class="text-sm text-[var(--muted)]">
+                {{ locale === 'id'
+                  ? '15.000 Token AI (Gemini & Groq) • 1 Akun Threads • Akses penuh Composer, Inbox & Analytics tanpa kartu kredit.'
+                  : '15,000 AI Tokens (Gemini & Groq) • 1 Threads Account • Full access to Composer, Inbox & Analytics with no credit card.' }}
               </p>
-              <ul class="space-y-2.5 text-sm text-[var(--muted)] mb-8 border-t border-[var(--line)] pt-5">
-                <li>✓ 20 Kredit AI (Gemini & Groq)</li>
-                <li>✓ Semua Fitur Composer, Inbox & Analytics</li>
-                <li>✓ Location Tag & Cross-Post Instagram</li>
-                <li>✓ Tanpa Kartu Kredit</li>
+            </div>
+            <a href="https://app.ixiera.online/login" class="w-full md:w-auto shrink-0 text-center px-6 py-3 rounded-full text-sm font-bold border border-[var(--line)] hover:bg-[var(--surface-2)] transition">
+              {{ locale === 'id' ? 'Mulai Trial Gratis' : 'Start Free Trial' }}
+            </a>
+          </div>
+
+          <!-- 4 Paid Tiers -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <!-- Starter -->
+            <div class="border border-[var(--line)] rounded-2xl p-7 bg-[var(--bg)] flex flex-col">
+              <div class="text-xs font-mono uppercase text-[var(--muted)] mb-1">Starter (30 Hari)</div>
+              <div class="text-3xl font-bold mb-2">Rp 59.000<span class="text-xs font-normal text-[var(--muted)]"> / 30 hari</span></div>
+              <p class="text-xs text-[var(--muted)] mb-5">
+                {{ locale === 'id' ? 'Untuk kreator solo & personal branding rutin.' : 'For solo creators & consistent personal branding.' }}
+              </p>
+              <ul class="space-y-2.5 text-sm text-[var(--muted)] mb-7 border-t border-[var(--line)] pt-5">
+                <li>✓ <strong class="text-[var(--text)]">100.000 Token AI</strong> / bulan</li>
+                <li>✓ <strong class="text-[var(--text)]">Maksimal 2 Akun</strong> Threads</li>
+                <li>✓ AI Planner, Repurpose & Auto Reply</li>
+                <li>✓ Location Tag & IG Cross-Post</li>
               </ul>
               <a href="https://app.ixiera.online/login" class="mt-auto block text-center py-3 rounded-full text-sm font-bold border border-[var(--line)] hover:bg-[var(--surface-2)] transition">
-                {{ locale === 'id' ? 'Mulai Trial Gratis' : 'Start Free Trial' }}
+                {{ locale === 'id' ? 'Pilih Starter' : 'Choose Starter' }}
               </a>
             </div>
 
             <!-- Pro -->
-            <div class="border-2 border-[var(--text)] rounded-2xl p-8 bg-[var(--bg)] relative shadow-xl flex flex-col">
+            <div class="border-2 border-[var(--text)] rounded-2xl p-7 bg-[var(--bg)] relative shadow-xl flex flex-col">
               <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-[var(--text)] text-[var(--bg)] text-[10px] font-bold px-3 py-1 rounded-full uppercase">
                 {{ locale === 'id' ? 'Paling Laris' : 'Most Popular' }}
               </div>
               <div class="text-xs font-mono uppercase text-[var(--muted)] mb-1">Pro (30 Hari)</div>
-              <div class="text-3xl font-bold mb-2">Rp 29.000<span class="text-xs font-normal text-[var(--muted)]"> / 30 hari</span></div>
-              <p class="text-xs text-[var(--muted)] mb-6">
-                {{ locale === 'id' ? 'Langsung pakai tanpa perlu API key sendiri.' : 'Plug-and-play AI without managing API keys.' }}
+              <div class="text-3xl font-bold mb-2">Rp 99.000<span class="text-xs font-normal text-[var(--muted)]"> / 30 hari</span></div>
+              <p class="text-xs text-[var(--muted)] mb-5">
+                {{ locale === 'id' ? 'Kuota besar untuk kreator aktif & multi-akun.' : 'High token quota for active creators & multi-account.' }}
               </p>
-              <ul class="space-y-2.5 text-sm text-[var(--muted)] mb-8 border-t border-[var(--line)] pt-5">
-                <li>✓ <strong class="text-[var(--text)]">100 Kredit AI / bulan</strong> (Gemini + Groq)</li>
-                <li>✓ Unlimited Jadwal Post & IG Cross-Post</li>
+              <ul class="space-y-2.5 text-sm text-[var(--muted)] mb-7 border-t border-[var(--line)] pt-5">
+                <li>✓ <strong class="text-[var(--text)]">300.000 Token AI</strong> / bulan</li>
+                <li>✓ <strong class="text-[var(--text)]">Maksimal 5 Akun</strong> Threads</li>
                 <li>✓ Full Auto Reply + Knowledge Base</li>
-                <li>✓ Trending Topics, Search & Profile Discovery</li>
+                <li>✓ Trending Radar, Discovery & Analytics</li>
               </ul>
               <a href="https://app.ixiera.online/login" class="mt-auto block text-center py-3 rounded-full text-sm font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">
-                {{ locale === 'id' ? 'Pilih Paket Pro' : 'Choose Pro Plan' }}
+                {{ locale === 'id' ? 'Pilih Pro' : 'Choose Pro' }}
               </a>
             </div>
 
-            <!-- BYOK -->
-            <div class="border border-[var(--line)] rounded-2xl p-8 bg-[var(--bg)] flex flex-col">
-              <div class="text-xs font-mono uppercase text-[var(--muted)] mb-1">BYOK (30 Hari)</div>
-              <div class="text-3xl font-bold mb-2">Rp 19.000<span class="text-xs font-normal text-[var(--muted)]"> / 30 hari</span></div>
-              <p class="text-xs text-[var(--muted)] mb-6">
-                {{ locale === 'id' ? 'Gunakan API key Gemini / Groq milikmu sendiri.' : 'Use your own Gemini / Groq API keys.' }}
+            <!-- Business -->
+            <div class="border border-[var(--line)] rounded-2xl p-7 bg-[var(--bg)] flex flex-col">
+              <div class="text-xs font-mono uppercase text-[var(--muted)] mb-1">Business (30 Hari)</div>
+              <div class="text-3xl font-bold mb-2">Rp 179.000<span class="text-xs font-normal text-[var(--muted)]"> / 30 hari</span></div>
+              <p class="text-xs text-[var(--muted)] mb-5">
+                {{ locale === 'id' ? 'Untuk tim bisnis, brand & social media manager.' : 'For business teams, brands & social managers.' }}
               </p>
-              <ul class="space-y-2.5 text-sm text-[var(--muted)] mb-8 border-t border-[var(--line)] pt-5">
-                <li>✓ <strong class="text-[var(--text)]">Tanpa Batas Kredit</strong> (kuota API sendiri)</li>
-                <li>✓ Semua Fitur Otomatisasi Terbuka Penuh</li>
+              <ul class="space-y-2.5 text-sm text-[var(--muted)] mb-7 border-t border-[var(--line)] pt-5">
+                <li>✓ <strong class="text-[var(--text)]">750.000 Token AI</strong> / bulan</li>
+                <li>✓ <strong class="text-[var(--text)]">Maksimal 20 Akun</strong> Threads</li>
+                <li>✓ Semua Fitur Otomatisasi Penuh</li>
                 <li>✓ Smart Inbox, Mentions & Knowledge Base</li>
-                <li>✓ Cocok untuk Power User & Agency</li>
               </ul>
               <a href="https://app.ixiera.online/login" class="mt-auto block text-center py-3 rounded-full text-sm font-bold border border-[var(--line)] hover:bg-[var(--surface-2)] transition">
-                {{ locale === 'id' ? 'Pilih Paket BYOK' : 'Choose BYOK Plan' }}
+                {{ locale === 'id' ? 'Pilih Business' : 'Choose Business' }}
+              </a>
+            </div>
+
+            <!-- Agency BYOK -->
+            <div class="border border-[var(--line)] rounded-2xl p-7 bg-[var(--bg)] flex flex-col">
+              <div class="text-xs font-mono uppercase text-[var(--muted)] mb-1">Agency BYOK (30 Hari)</div>
+              <div class="text-3xl font-bold mb-2">Rp 249.000<span class="text-xs font-normal text-[var(--muted)]"> / 30 hari</span></div>
+              <p class="text-xs text-[var(--muted)] mb-5">
+                {{ locale === 'id' ? 'Pakai API key Gemini / Groq milikmu sendiri.' : 'Use your own Gemini / Groq API keys.' }}
+              </p>
+              <ul class="space-y-2.5 text-sm text-[var(--muted)] mb-7 border-t border-[var(--line)] pt-5">
+                <li>✓ <strong class="text-[var(--text)]">Unlimited Token</strong> (API Key Sendiri)</li>
+                <li>✓ <strong class="text-[var(--text)]">Maksimal 50 Akun</strong> Threads</li>
+                <li>✓ Tanpa Batas Pemakaian AI</li>
+                <li>✓ Cocok untuk Agensi & High-Volume</li>
+              </ul>
+              <a href="https://app.ixiera.online/login" class="mt-auto block text-center py-3 rounded-full text-sm font-bold border border-[var(--line)] hover:bg-[var(--surface-2)] transition">
+                {{ locale === 'id' ? 'Pilih Agency BYOK' : 'Choose Agency BYOK' }}
               </a>
             </div>
           </div>
 
           <div class="text-center mt-8">
             <RouterLink to="/pricing" class="text-xs font-bold underline underline-offset-4 text-[var(--muted)] hover:text-[var(--text)] transition">
-              {{ locale === 'id' ? 'Lihat tabel perbandingan fitur lengkap & aturan kredit →' : 'View full feature comparison table & credit rules →' }}
+              {{ locale === 'id' ? 'Lihat tabel perbandingan fitur lengkap & aturan token →' : 'View full feature comparison table & token rules →' }}
             </RouterLink>
           </div>
         </div>
@@ -575,8 +612,8 @@
           </h2>
           <p class="text-base text-[var(--muted)]">
             {{ locale === 'id'
-              ? 'Daftar dalam 30 detik, hubungkan akun lewat login resmi Meta, dan klaim 20 kredit AI gratis sekarang.'
-              : 'Sign up in 30 seconds, connect via official Meta login, and claim 20 free AI credits today.' }}
+              ? 'Daftar dalam 30 detik, hubungkan akun lewat login resmi Meta, dan klaim 15.000 Token AI gratis sekarang.'
+              : 'Sign up in 30 seconds, connect via official Meta login, and claim 15,000 free AI Tokens today.' }}
           </p>
           <div class="pt-2">
             <a href="https://app.ixiera.online/login" class="inline-block px-10 py-4 rounded-full text-base font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">

@@ -324,7 +324,7 @@
       "new_ph": "Write new template...",
       "add": "Add",
       "remove": "Remove",
-      "ai_cost": "This category will generate replies using AI (costs 1 credit per reply, unless using your own API key)."
+      "ai_cost": "This category will generate replies using AI (deducts tokens per reply, unless using your own API key)."
     }
   },
   "landing": {
@@ -342,7 +342,7 @@
       "subtitle": "Ixiera reads your best-performing posts (time, hook, length, topic), then helps you plan content and reply to comments in your style.",
       "cta_primary": "Start Free Trial",
       "cta_secondary": "See examples",
-      "microcopy": "7-day trial · 20 free credits · No upfront payment",
+      "microcopy": "7-day trial · 15,000 free Tokens · No upfront payment",
       "trust_1": "Secure login via Meta, no password saved",
       "trust_2": "Kill Switch anytime",
       "trust_3": "Data isolated per user"
@@ -350,11 +350,11 @@
     "problems": {
       "title": "Being your own account admin is exhausting.",
       "p1_title": "Don't know what to post.",
-      "p1_desc": "Out of ideas but need to stay consistent.",
+      "p1_desc": "7 days · 15,000 free Tokens · 1 Threads account",
       "p2_title": "Comments pile up.",
-      "p2_desc": "Late replies, lost interaction and momentum.",
+      "p2_desc": "From Rp59,000 · up to 750,000 Tokens/month · no auto-renew",
       "p3_title": "Don't know what works.",
-      "p3_desc": "Which post, what time, what hook, all just a feeling."
+      "p3_desc": "Rp249,000 (Agency BYOK) · own API key · up to 50 accounts"
     },
     "features": {
       "title": "More than just a scheduler.",
@@ -399,12 +399,12 @@
       "title": "Start from here.",
       "desc": "Choose a plan that fits. We are constantly improving based on your feedback.",
       "p1_title": "7-Day Trial",
-      "p1_desc": "7 days · 20 free credits · all features",
+      "p1_desc": "7 days · 15,000 free Tokens · 1 Threads account",
       "p2_title": "30-day plan",
-      "p2_desc": "Rp29,000 · 100 credits/month · no auto-renew",
+      "p2_desc": "From Rp59,000 · up to 750,000 Tokens/month · no auto-renew",
       "p3_title": "30-day plan + own API key",
-      "p3_desc": "Rp19,000 · use your own API key · no credits",
-      "note": "1 credit = 1 AI action (generate, AI reply, repurpose, advanced analysis). Reply templates and Quick Score are free. Own API key is only available in paid plans.",
+      "p3_desc": "Rp249,000 (Agency BYOK) · own API key · up to 50 accounts",
+      "note": "Token usage is calculated transparently based on actual AI tokens (prompt + output). Reply templates and Quick Score are free.",
       "cta": "Start Free Trial"
     },
     "faq": {
@@ -412,9 +412,9 @@
       "q1": "Why request access?",
       "a1": "Ixiera is still in early access, so each account is added manually and needs approval first. You'll be notified via email.",
       "q2": "Is this free?",
-      "a2": "There's a 7-day trial with 20 free credits, no upfront payment. After that, a 30-day plan with no auto-renew.",
-      "q3": "What is a credit?",
-      "a3": "One credit is used for one AI action. Reply templates and Quick Score don't use credits.",
+      "a2": "There's a 7-day trial with 15,000 free Tokens, no upfront payment. Afterward, choose from 30-day plans (Starter Rp59k, Pro Rp99k, Business Rp179k, or Agency BYOK Rp249k) with no auto-renew.",
+      "q3": "How does Token billing work?",
+      "a3": "Tokens are deducted transparently based on actual AI tokens used for generation or AI replies. Manual reply templates and Quick Score are free.",
       "q4": "Will it post without my permission?",
       "a4": "No, unless you enable it. Replies have two modes: Manual Review and Full Auto. Kill Switch turns everything off anytime.",
       "q5": "Can my account get blocked?",

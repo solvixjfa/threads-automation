@@ -66,8 +66,8 @@
             </h3>
             <p class="text-sm text-[var(--muted)]">
               {{ locale === 'id'
-                ? 'Trial gratis 7 hari + 20 kredit AI (Gemini & Groq). Tanpa kartu kredit.'
-                : '7-day free trial + 20 AI credits (Gemini & Groq). No credit card required.' }}
+                ? 'Trial gratis 7 hari + 15.000 Token AI (Gemini & Groq). Tanpa kartu kredit.'
+                : '7-day free trial + 15,000 AI Tokens (Gemini & Groq). No credit card required.' }}
             </p>
           </div>
           <a href="https://app.ixiera.online/login" class="shrink-0 px-6 py-3 rounded-full text-sm font-bold bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition">

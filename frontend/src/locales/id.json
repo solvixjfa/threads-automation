@@ -426,7 +426,7 @@
       "new_ph": "Tulis template baru...",
       "add": "Tambah",
       "remove": "Hapus",
-      "ai_cost": "Kategori ini bakal pakai AI buat balas (potong 1 token per balasan, kecuali pakai API key sendiri)."
+      "ai_cost": "Kategori ini bakal pakai AI buat balas (potong token sesuai pemakaian, kecuali pakai API key sendiri)."
     }
   },
   "landing": {
@@ -451,11 +451,11 @@
     "problems": {
       "title": "Jadi admin akun sendiri itu melelahkan.",
       "p1_title": "Bingung mau posting apa.",
-      "p1_desc": "Ide habis padahal harus konsisten.",
+      "p1_desc": "7 hari · 15.000 Token gratis · 1 akun Threads",
       "p2_title": "Komentar numpuk.",
-      "p2_desc": "Telat balas, interaksi dan momentum hilang.",
+      "p2_desc": "Mulai Rp59.000 · hingga 750.000 Token/bulan · tanpa auto-renew",
       "p3_title": "Nggak tahu apa yang jalan.",
-      "p3_desc": "Post mana, jam berapa, hook seperti apa, semua cuma feeling."
+      "p3_desc": "Rp249.000 (Agency BYOK) · API key sendiri · hingga 50 akun"
     },
     "features": {
       "title": "Bukan sekadar scheduler.",

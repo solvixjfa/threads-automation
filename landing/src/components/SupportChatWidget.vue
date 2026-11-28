@@ -252,16 +252,21 @@ const FAQ_NODES: Record<string, FaqOption> = {
   },
   pricing: {
     id: 'pricing',
-    label: 'Paket & Harga (Credit vs BYOK)',
+    label: 'Paket & Harga (Token vs BYOK)',
     answer:
-      'Tersedia 2 paket berlangganan 30 hari:\n• Pro Credit (Rp29.000): Dapat 100 kredit AI siap pakai (tanpa perlu API key sendiri), maksimal 10 akun Threads.\n• Pro BYOK (Rp19.000): Pakai API key Gemini/Groq milikmu sendiri tanpa batas kredit, maksimal 3 akun Threads.\nPengguna baru juga mendapat akses Free Trial.',
+      'Tersedia 4 paket berlangganan 30 hari (tanpa auto-renew):
+• Starter (Rp59.000): 100.000 Token AI, maks 2 akun.
+• Pro (Rp99.000): 300.000 Token AI, maks 5 akun.
+• Business (Rp179.000): 750.000 Token AI, maks 20 akun.
+• Agency BYOK (Rp249.000): Unlimited Token pakai API key sendiri, maks 50 akun.
+Pengguna baru mendapat Free Trial 7 hari + 15.000 Token gratis.',
     nextIds: ['byok_diff', 'safety', 'about'],
   },
   byok_diff: {
     id: 'byok_diff',
-    label: 'Apa bedanya Pro Credit dan Pro BYOK?',
+    label: 'Apa bedanya paket Token dan Agency BYOK?',
     answer:
-      'Di Pro Credit (Rp29.000), seluruh biaya AI sudah ditanggung kuota 100 kredit Ixiera. Di Pro BYOK (Rp19.000), kamu menempelkan API key gratis/berbayar dari Google AI Studio (Gemini) atau Groq di menu Profil sehingga biaya langganan lebih hemat.',
+      'Di paket Starter, Pro, dan Business, kuota Token AI sudah disediakan Ixiera sehingga langsung siap pakai. Di paket Agency BYOK (Rp249.000, maks 50 akun), kamu bisa menempelkan API key Gemini atau Groq milikmu sendiri untuk pemakaian AI tanpa batas.',
     nextIds: ['pricing', 'multi_account'],
   },
   safety: {
@@ -275,7 +280,7 @@ const FAQ_NODES: Record<string, FaqOption> = {
     id: 'multi_account',
     label: 'Bisa kelola banyak akun sekaligus?',
     answer:
-      'Bisa. Satu akun Ixiera mendukung multi-akun Threads dalam satu dashboard (hingga 3 akun di Pro BYOK dan 10 akun di Pro Credit) dengan pembagian paket & kredit yang otomatis tersinkronisasi.',
+      'Bisa. Satu akun Ixiera mendukung multi-akun Threads dalam satu dashboard: 1 akun (Trial), 2 akun (Starter), 5 akun (Pro), 20 akun (Business), hingga 50 akun (Agency BYOK) dengan saldo token yang otomatis tersinkronisasi.',
     nextIds: ['pricing', 'safety'],
   },
 }

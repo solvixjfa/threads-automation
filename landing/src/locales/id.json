@@ -324,7 +324,7 @@
       "new_ph": "Tulis template baru...",
       "add": "Tambah",
       "remove": "Hapus",
-      "ai_cost": "Kategori ini bakal pakai AI buat balas (potong 1 kredit per balasan, kecuali pakai API key sendiri)."
+      "ai_cost": "Kategori ini bakal pakai AI buat balas (potong token sesuai pemakaian, kecuali pakai API key sendiri)."
     }
   },
   "landing": {
@@ -342,7 +342,7 @@
       "subtitle": "Ixiera membaca post kamu yang paling jalan (jam, hook, panjang, topik), lalu membantu bikin rencana konten dan membalas komentar dengan gayamu.",
       "cta_primary": "Minta Akses",
       "cta_secondary": "Lihat contohnya",
-      "microcopy": "Trial 7 hari · 20 kredit gratis · Tanpa bayar di awal",
+      "microcopy": "Trial 7 hari · 15.000 Token gratis · Tanpa bayar di awal",
       "trust_1": "Login aman via Meta, tanpa simpan password",
       "trust_2": "Kill Switch kapan saja",
       "trust_3": "Data terpisah per user"
@@ -350,11 +350,11 @@
     "problems": {
       "title": "Jadi admin akun sendiri itu melelahkan.",
       "p1_title": "Bingung mau posting apa.",
-      "p1_desc": "Ide habis padahal harus konsisten.",
+      "p1_desc": "7 hari · 15.000 Token gratis · 1 akun Threads",
       "p2_title": "Komentar numpuk.",
-      "p2_desc": "Telat balas, interaksi dan momentum hilang.",
+      "p2_desc": "Mulai Rp59.000 · hingga 750.000 Token/bulan · tanpa auto-renew",
       "p3_title": "Nggak tahu apa yang jalan.",
-      "p3_desc": "Post mana, jam berapa, hook seperti apa, semua cuma feeling."
+      "p3_desc": "Rp249.000 (Agency BYOK) · API key sendiri · hingga 50 akun"
     },
     "features": {
       "title": "Bukan sekadar scheduler.",
@@ -399,12 +399,12 @@
       "title": "Mulai dari sini.",
       "desc": "Pilih paket yang sesuai. Kami terus berbenah dari masukanmu.",
       "p1_title": "Trial 7 Hari",
-      "p1_desc": "7 hari · 20 kredit gratis · semua fitur",
+      "p1_desc": "7 hari · 15.000 Token gratis · 1 akun Threads",
       "p2_title": "Paket 30 hari",
-      "p2_desc": "Rp29.000 · 100 kredit per bulan · tanpa auto-renew",
+      "p2_desc": "Mulai Rp59.000 · hingga 750.000 Token/bulan · tanpa auto-renew",
       "p3_title": "Paket 30 hari + API key sendiri",
-      "p3_desc": "Rp19.000 · pakai API key milikmu · tanpa kredit",
-      "note": "1 kredit = 1 aksi AI (generate, balasan AI, repurpose, analisis lanjutan). Template balasan dan Quick Score gratis. API key sendiri hanya tersedia di paket berbayar.",
+      "p3_desc": "Rp249.000 (Agency BYOK) · API key sendiri · hingga 50 akun",
+      "note": "Pemakaian token dihitung sesuai jumlah token AI aktual (prompt + output). Template balasan dan Quick Score gratis.",
       "cta": "Minta Akses"
     },
     "faq": {
@@ -412,9 +412,9 @@
       "q1": "Kenapa harus minta akses?",
       "a1": "Ixiera masih dalam tahap early access, jadi tiap akun ditambahkan manual dan perlu disetujui dulu. Kabar lewat email.",
       "q2": "Apakah ini gratis?",
-      "a2": "Ada trial 7 hari dengan 20 kredit gratis, tanpa bayar di awal. Setelah itu berlangganan paket 30 hari tanpa auto-renew.",
-      "q3": "Apa itu kredit?",
-      "a3": "Satu kredit dipakai untuk satu aksi AI. Template balasan dan Quick Score tidak memakai kredit.",
+      "a2": "Ada trial 7 hari dengan 15.000 Token gratis, tanpa bayar di awal. Setelah itu tersedia paket 30 hari (Starter Rp59rb, Pro Rp99rb, Business Rp179rb, dan Agency BYOK Rp249rb) tanpa auto-renew.",
+      "q3": "Bagaimana sistem perhitungan Token?",
+      "a3": "Token terpotong secara transparan sesuai jumlah token AI yang dipakai saat generate konten atau balasan AI. Template balasan manual dan Quick Score gratis.",
       "q4": "Apakah posting tanpa izinku?",
       "a4": "Nggak, kecuali kamu aktifkan. Balasan punya dua mode: Review Manual dan Full Auto. Kill Switch mematikan semuanya kapan saja.",
       "q5": "Apakah akunku bisa kena blokir?",
