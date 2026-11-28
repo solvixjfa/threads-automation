@@ -254,12 +254,7 @@ const FAQ_NODES: Record<string, FaqOption> = {
     id: 'pricing',
     label: 'Paket & Harga (Token vs BYOK)',
     answer:
-      'Tersedia 4 paket berlangganan 30 hari (tanpa auto-renew):
-• Starter (Rp59.000): 100.000 Token AI, maks 2 akun.
-• Pro (Rp99.000): 300.000 Token AI, maks 5 akun.
-• Business (Rp179.000): 750.000 Token AI, maks 20 akun.
-• Agency BYOK (Rp249.000): Unlimited Token pakai API key sendiri, maks 50 akun.
-Pengguna baru mendapat Free Trial 7 hari + 15.000 Token gratis.',
+      'Tersedia 4 paket berlangganan 30 hari (tanpa auto-renew):\n• Starter (Rp59.000): 100.000 Token AI, maks 2 akun.\n• Pro (Rp99.000): 300.000 Token AI, maks 5 akun.\n• Business (Rp179.000): 750.000 Token AI, maks 20 akun.\n• Agency BYOK (Rp249.000): Unlimited Token pakai API key sendiri, maks 50 akun.\nPengguna baru mendapat Free Trial 7 hari + 15.000 Token gratis.',
     nextIds: ['byok_diff', 'safety', 'about'],
   },
   byok_diff: {
